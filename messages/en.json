@@ -1,0 +1,11 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "auth_login_welcome": "Welcome back",
+  "auth_login_description": "Enter your email and password to sign in",
+  "auth_login_email_label": "Email",
+  "auth_login_password_label": "Password",
+  "auth_login_button_label": "Sign in",
+  "auth_login_email_invalid": "Enter a valid email address.",
+  "auth_login_password_min": "Password must be at least 8 characters.",
+  "auth_login_forgot_password_label": "Forgot password?"
+}

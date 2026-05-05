@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+#app {
+  height: 100vh;
+}
+
+body {
+  margin: 0;
+}
+
+.text-muted-foreground {
+  color: var(--color-neutral-500);
+}

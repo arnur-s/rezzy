@@ -1,0 +1,11 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "auth_login_welcome": "Добро пожаловать обратно",
+  "auth_login_description": "Введите ваш email и пароль для входа в систему.",
+  "auth_login_email_label": "Email",
+  "auth_login_password_label": "Пароль",
+  "auth_login_button_label": "Войти",
+  "auth_login_email_invalid": "Введите корректный email.",
+  "auth_login_password_min": "Пароль должен быть не менее 8 символов.",
+  "auth_login_forgot_password_label": "Забыли пароль?"
+}
