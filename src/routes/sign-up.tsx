@@ -202,7 +202,7 @@ function RouteComponent() {
                 </InputGroup.Prefix>
                 <InputGroup.Input
                   autoComplete="new-password"
-                  placeholder="8 characters minimum"
+                  placeholder={m.auth_sign_up_password_placeholder()}
                   type={showPassword ? 'text' : 'password'}
                   {...register('password')}
                 />

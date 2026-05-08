@@ -6,7 +6,7 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function RouteComponent() {
-  const { isLoading, session, signOut, user } = useAuth()
+  useAuth()
 
   return <main className="min-h-dvh bg-background text-foreground"></main>
 }

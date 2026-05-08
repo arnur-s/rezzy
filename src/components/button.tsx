@@ -1,4 +1,5 @@
-import { Button, Spinner, type ButtonProps } from '@heroui/react'
+import { Button, Spinner } from '@heroui/react'
+import type { ButtonProps } from '@heroui/react'
 
 type Props = ButtonProps & {
   isLoading?: boolean

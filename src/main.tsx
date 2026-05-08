@@ -3,7 +3,11 @@ import { queryClient } from '@/utils/query-client'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import ReactDOM from 'react-dom/client'
+import { setLocale } from './paraglide/runtime'
+import './styles.css'
 import { getRouter } from './utils/router'
+
+setLocale('ru')
 
 const router = getRouter()
 const rootElement = document.getElementById('app')!

@@ -19,10 +19,29 @@ pnpm build
 
 ## Testing
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+This project uses [Vitest](https://vitest.dev/) with
+[React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
+for unit and component tests. Keep business logic in small modules where
+possible, and test UI through visible behavior.
 
 ```bash
 pnpm test
+```
+
+Useful local commands:
+
+```bash
+pnpm test
+pnpm test:watch
+pnpm typecheck
+pnpm lint
+```
+
+Supabase schema/RLS contract tests live in `supabase/tests/database` and run
+through the Supabase CLI:
+
+```bash
+pnpm test:db
 ```
 
 ## Styling

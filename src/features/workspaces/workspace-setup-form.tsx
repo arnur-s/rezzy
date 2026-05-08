@@ -1,5 +1,5 @@
 import { AppButton } from '@/components/button'
-import { createSlug } from '@/utils/slug'
+import { createWorkspaceWithUniqueSlug } from '@/features/workspaces/workspace-service'
 import { supabase } from '@/utils/supabase'
 import {
   Card,
@@ -22,49 +22,8 @@ const workspaceSetupFormSchema = z.object({
 
 type WorkspaceSetupFormValues = z.infer<typeof workspaceSetupFormSchema>
 
-type WorkspaceRecord = {
-  id: string
-  slug: string
-}
-
 const defaultValues: WorkspaceSetupFormValues = {
   name: '',
-}
-
-async function createWorkspaceWithUniqueSlug(
-  name: string,
-  userId: string,
-): Promise<WorkspaceRecord> {
-  const baseSlug = createSlug(name)
-  let lastSlugError: unknown
-
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const slug = attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`
-    const { data, error } = await supabase
-      .from('workspaces')
-      .insert({
-        created_by: userId,
-        name,
-        slug,
-      })
-      .select('id, slug')
-      .single()
-
-    if (!error && data) {
-      return data
-    }
-
-    if (error?.code === '23505') {
-      lastSlugError = error
-      continue
-    }
-
-    throw error
-  }
-
-  throw lastSlugError instanceof Error
-    ? lastSlugError
-    : new Error('Could not create a unique workspace URL.')
 }
 
 export function WorkspaceSetupForm() {
