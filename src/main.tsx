@@ -1,28 +1,11 @@
-import { AuthProvider, useAuth } from '#/providers/auth-provider'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { AuthProvider, useAuth } from '@/providers/auth-provider'
+import { queryClient } from '@/utils/query-client'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { RouterProvider } from '@tanstack/react-router'
 import ReactDOM from 'react-dom/client'
-import { routeTree } from './routeTree.gen'
+import { getRouter } from './utils/router'
 
-const queryClient = new QueryClient()
-
-const router = createRouter({
-  routeTree,
-  context: {
-    queryClient,
-    auth: null,
-  },
-  defaultPreload: 'intent',
-  defaultPreloadStaleTime: 0,
-  scrollRestoration: true,
-})
-
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
-}
-
+const router = getRouter()
 const rootElement = document.getElementById('app')!
 
 function App() {

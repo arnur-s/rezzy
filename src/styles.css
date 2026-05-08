@@ -1,6 +1,15 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
 
+@theme inline {
+  --color-card: var(--surface);
+  --color-card-foreground: var(--surface-foreground);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-foreground);
+  --color-ring: var(--focus);
+  --color-muted-foreground: var(--muted);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -16,8 +25,49 @@ body {
 
 body {
   margin: 0;
+  background: var(--background);
+  color: var(--foreground);
 }
 
 .text-muted-foreground {
-  color: var(--color-neutral-500);
+  color: var(--muted);
+}
+
+.auth-ambient {
+  position: relative;
+}
+
+.auth-ambient::before {
+  z-index: 0;
+  position: absolute;
+  inset: 0;
+  content: '';
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in oklab, var(--accent) 18%, transparent),
+      transparent 34rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--background) 92%, var(--surface) 8%),
+      var(--background)
+    );
+}
+
+.auth-ambient::after {
+  z-index: 0;
+  position: absolute;
+  inset: 0;
+  content: '';
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  mask-image: radial-gradient(
+    circle at center,
+    var(--foreground),
+    transparent 72%
+  );
+  opacity: 0.26;
 }

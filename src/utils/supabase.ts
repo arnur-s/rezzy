@@ -9,4 +9,8 @@ if (!supabaseUrl || !supabaseKey) {
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export function createBrowserSupabaseClient() {
+  return createClient(supabaseUrl, supabaseKey)
+}
+
+export const supabase = createBrowserSupabaseClient()
