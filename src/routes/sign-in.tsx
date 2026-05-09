@@ -1,4 +1,5 @@
-import { AppButton } from '@/components/button'
+import { AppButton } from '@/components/app-button'
+import { SidebarInset } from '@/components/sidebar'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import { supabase } from '@/utils/supabase'
@@ -79,7 +80,7 @@ function RouteComponent() {
   }
 
   return (
-    <main className="auth-ambient flex min-h-dvh items-center justify-center overflow-hidden bg-background px-4 py-10 text-foreground">
+    <SidebarInset className="min-h-dvh flex items-center justify-center">
       <Card className="w-full max-w-md border border-border bg-card text-card-foreground shadow-surface z-1">
         <Card.Header>
           <Card.Title>{m.auth_sign_in_welcome()}</Card.Title>
@@ -159,6 +160,6 @@ function RouteComponent() {
           </Card.Footer>
         </form>
       </Card>
-    </main>
+    </SidebarInset>
   )
 }

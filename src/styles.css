@@ -8,6 +8,13 @@
   --color-primary-foreground: var(--accent-foreground);
   --color-ring: var(--focus);
   --color-muted-foreground: var(--muted);
+
+  --color-sidebar: var(--surface);
+  --color-sidebar-foreground: var(--foreground);
+  --color-sidebar-accent: color-mix(in oklab, var(--accent) 12%, transparent);
+  --color-sidebar-accent-foreground: var(--accent);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--focus);
 }
 
 * {
@@ -33,11 +40,11 @@ body {
   color: var(--muted);
 }
 
-.auth-ambient {
+.ambient {
   position: relative;
 }
 
-.auth-ambient::before {
+.ambient::before {
   z-index: 0;
   position: absolute;
   inset: 0;
@@ -55,14 +62,14 @@ body {
     );
 }
 
-.auth-ambient::after {
+.ambient::after {
   z-index: 0;
   position: absolute;
   inset: 0;
   content: '';
   background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    linear-gradient(var(--border) 1px, transparent 2px),
+    linear-gradient(90deg, var(--border) 2px, transparent 2px);
   background-size: 4rem 4rem;
   mask-image: radial-gradient(
     circle at center,

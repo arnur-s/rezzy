@@ -1,0 +1,109 @@
+---
+description: CRM product philosophy and UX direction
+globs:
+  - 'src/**/*'
+alwaysApply: true
+---
+
+# Product Context
+
+This project is a realistic business CRM / Client Management System demo.
+
+The goal is NOT to build a SaaS startup right now.
+
+The goal is:
+
+- showcase production-quality business system skills
+- attract real clients
+- reuse architecture later
+- evolve into SaaS only if strong patterns emerge
+
+This app must feel like a real product, not a CRUD tutorial.
+
+# Product Philosophy
+
+The application should communicate:
+
+"I can build real business systems."
+
+NOT:
+
+"I can generate admin panels."
+
+Product thinking is more important than CRUD implementation.
+
+# UX Direction
+
+Prioritize:
+
+- workflow clarity
+- polished interactions
+- realistic business flows
+- responsiveness
+- spacing consistency
+- visual hierarchy
+- typography quality
+- perceived quality
+
+Always include:
+
+- loading states
+- skeletons
+- polished empty states
+- hover states
+- transitions
+- optimistic updates where reasonable
+- realistic seeded data
+
+Avoid:
+
+- lorem ipsum
+- fake tutorial-style dashboards
+- generic admin templates
+- overcrowded screens
+- excessive charts
+
+# Visual Direction
+
+Preferred style:
+
+- premium dark aesthetic
+- elegant spacing
+- modern SaaS/product feel
+- boutique software quality
+- clean layouts
+
+Avoid:
+
+- bootstrap admin appearance
+- cyberpunk visuals
+- neon overload
+- cluttered UI
+
+# Architecture Direction
+
+Architecture priorities:
+
+- clarity
+- maintainability
+- fast iteration
+- clean FSD structure
+- reusable patterns
+- KISS
+
+Do not over-engineer.
+
+# Technical Context
+
+Stack:
+
+- React
+- TypeScript
+- TanStack Router
+- TanStack Query
+- HeroUI
+- Tailwind CSS
+- Supabase
+- React Hook Form
+- Zod
+- Paraglide/Inlang

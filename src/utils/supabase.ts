@@ -1,3 +1,4 @@
+import type { Database } from '@/api/types'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -10,7 +11,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export function createBrowserSupabaseClient() {
-  return createClient(supabaseUrl, supabaseKey)
+  return createClient<Database>(supabaseUrl, supabaseKey)
 }
 
 export const supabase = createBrowserSupabaseClient()

@@ -12,9 +12,17 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PasswordResetRouteImport } from './routes/password-reset'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as OnboardingWorkspaceRouteImport } from './routes/onboarding/workspace'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_authenticated/workspaces/index'
+import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated/onboarding/index'
+import { Route as AuthenticatedWorkspacesCreateRouteImport } from './routes/_authenticated/workspaces/create'
+import { Route as AuthenticatedWorkspacesIdIndexRouteImport } from './routes/_authenticated/workspaces/$id/index'
+import { Route as AuthenticatedWorkspacesIdTeamsRouteImport } from './routes/_authenticated/workspaces/$id/teams'
+import { Route as AuthenticatedWorkspacesIdSettingsRouteImport } from './routes/_authenticated/workspaces/$id/settings'
+import { Route as AuthenticatedWorkspacesIdProjectsRouteImport } from './routes/_authenticated/workspaces/$id/projects'
+import { Route as AuthenticatedWorkspacesIdMembersRouteImport } from './routes/_authenticated/workspaces/$id/members'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -31,81 +39,170 @@ const PasswordResetRoute = PasswordResetRouteImport.update({
   path: '/password-reset',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const OnboardingWorkspaceRoute = OnboardingWorkspaceRouteImport.update({
-  id: '/onboarding/workspace',
-  path: '/onboarding/workspace',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedWorkspacesIndexRoute =
+  AuthenticatedWorkspacesIndexRouteImport.update({
+    id: '/workspaces/',
+    path: '/workspaces/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedOnboardingIndexRoute =
+  AuthenticatedOnboardingIndexRouteImport.update({
+    id: '/onboarding/',
+    path: '/onboarding/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspacesCreateRoute =
+  AuthenticatedWorkspacesCreateRouteImport.update({
+    id: '/workspaces/create',
+    path: '/workspaces/create',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspacesIdIndexRoute =
+  AuthenticatedWorkspacesIdIndexRouteImport.update({
+    id: '/workspaces/$id/',
+    path: '/workspaces/$id/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspacesIdTeamsRoute =
+  AuthenticatedWorkspacesIdTeamsRouteImport.update({
+    id: '/workspaces/$id/teams',
+    path: '/workspaces/$id/teams',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspacesIdSettingsRoute =
+  AuthenticatedWorkspacesIdSettingsRouteImport.update({
+    id: '/workspaces/$id/settings',
+    path: '/workspaces/$id/settings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspacesIdProjectsRoute =
+  AuthenticatedWorkspacesIdProjectsRouteImport.update({
+    id: '/workspaces/$id/projects',
+    path: '/workspaces/$id/projects',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspacesIdMembersRoute =
+  AuthenticatedWorkspacesIdMembersRouteImport.update({
+    id: '/workspaces/$id/members',
+    path: '/workspaces/$id/members',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/': typeof AuthenticatedIndexRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/onboarding/workspace': typeof OnboardingWorkspaceRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/workspaces/create': typeof AuthenticatedWorkspacesCreateRoute
+  '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
+  '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
+  '/workspaces/$id/members': typeof AuthenticatedWorkspacesIdMembersRoute
+  '/workspaces/$id/projects': typeof AuthenticatedWorkspacesIdProjectsRoute
+  '/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsRoute
+  '/workspaces/$id/teams': typeof AuthenticatedWorkspacesIdTeamsRoute
+  '/workspaces/$id/': typeof AuthenticatedWorkspacesIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/onboarding/workspace': typeof OnboardingWorkspaceRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/workspaces/create': typeof AuthenticatedWorkspacesCreateRoute
+  '/onboarding': typeof AuthenticatedOnboardingIndexRoute
+  '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
+  '/workspaces/$id/members': typeof AuthenticatedWorkspacesIdMembersRoute
+  '/workspaces/$id/projects': typeof AuthenticatedWorkspacesIdProjectsRoute
+  '/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsRoute
+  '/workspaces/$id/teams': typeof AuthenticatedWorkspacesIdTeamsRoute
+  '/workspaces/$id': typeof AuthenticatedWorkspacesIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/onboarding/workspace': typeof OnboardingWorkspaceRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/workspaces/create': typeof AuthenticatedWorkspacesCreateRoute
+  '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
+  '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
+  '/_authenticated/workspaces/$id/members': typeof AuthenticatedWorkspacesIdMembersRoute
+  '/_authenticated/workspaces/$id/projects': typeof AuthenticatedWorkspacesIdProjectsRoute
+  '/_authenticated/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsRoute
+  '/_authenticated/workspaces/$id/teams': typeof AuthenticatedWorkspacesIdTeamsRoute
+  '/_authenticated/workspaces/$id/': typeof AuthenticatedWorkspacesIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
-    | '/onboarding/workspace'
+    | '/profile'
+    | '/workspaces/create'
+    | '/onboarding/'
+    | '/workspaces/'
+    | '/workspaces/$id/members'
+    | '/workspaces/$id/projects'
+    | '/workspaces/$id/settings'
+    | '/workspaces/$id/teams'
+    | '/workspaces/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/dashboard'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
-    | '/onboarding/workspace'
+    | '/profile'
+    | '/'
+    | '/workspaces/create'
+    | '/onboarding'
+    | '/workspaces'
+    | '/workspaces/$id/members'
+    | '/workspaces/$id/projects'
+    | '/workspaces/$id/settings'
+    | '/workspaces/$id/teams'
+    | '/workspaces/$id'
   id:
     | '__root__'
-    | '/'
-    | '/dashboard'
+    | '/_authenticated'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
-    | '/onboarding/workspace'
+    | '/_authenticated/profile'
+    | '/_authenticated/'
+    | '/_authenticated/workspaces/create'
+    | '/_authenticated/onboarding/'
+    | '/_authenticated/workspaces/'
+    | '/_authenticated/workspaces/$id/members'
+    | '/_authenticated/workspaces/$id/projects'
+    | '/_authenticated/workspaces/$id/settings'
+    | '/_authenticated/workspaces/$id/teams'
+    | '/_authenticated/workspaces/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   PasswordResetRoute: typeof PasswordResetRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
-  OnboardingWorkspaceRoute: typeof OnboardingWorkspaceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -131,37 +228,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PasswordResetRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/onboarding/workspace': {
-      id: '/onboarding/workspace'
-      path: '/onboarding/workspace'
-      fullPath: '/onboarding/workspace'
-      preLoaderRoute: typeof OnboardingWorkspaceRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspaces/': {
+      id: '/_authenticated/workspaces/'
+      path: '/workspaces'
+      fullPath: '/workspaces/'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/onboarding/': {
+      id: '/_authenticated/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof AuthenticatedOnboardingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspaces/create': {
+      id: '/_authenticated/workspaces/create'
+      path: '/workspaces/create'
+      fullPath: '/workspaces/create'
+      preLoaderRoute: typeof AuthenticatedWorkspacesCreateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspaces/$id/': {
+      id: '/_authenticated/workspaces/$id/'
+      path: '/workspaces/$id'
+      fullPath: '/workspaces/$id/'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspaces/$id/teams': {
+      id: '/_authenticated/workspaces/$id/teams'
+      path: '/workspaces/$id/teams'
+      fullPath: '/workspaces/$id/teams'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdTeamsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspaces/$id/settings': {
+      id: '/_authenticated/workspaces/$id/settings'
+      path: '/workspaces/$id/settings'
+      fullPath: '/workspaces/$id/settings'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspaces/$id/projects': {
+      id: '/_authenticated/workspaces/$id/projects'
+      path: '/workspaces/$id/projects'
+      fullPath: '/workspaces/$id/projects'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdProjectsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspaces/$id/members': {
+      id: '/_authenticated/workspaces/$id/members'
+      path: '/workspaces/$id/members'
+      fullPath: '/workspaces/$id/members'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdMembersRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedWorkspacesCreateRoute: typeof AuthenticatedWorkspacesCreateRoute
+  AuthenticatedOnboardingIndexRoute: typeof AuthenticatedOnboardingIndexRoute
+  AuthenticatedWorkspacesIndexRoute: typeof AuthenticatedWorkspacesIndexRoute
+  AuthenticatedWorkspacesIdMembersRoute: typeof AuthenticatedWorkspacesIdMembersRoute
+  AuthenticatedWorkspacesIdProjectsRoute: typeof AuthenticatedWorkspacesIdProjectsRoute
+  AuthenticatedWorkspacesIdSettingsRoute: typeof AuthenticatedWorkspacesIdSettingsRoute
+  AuthenticatedWorkspacesIdTeamsRoute: typeof AuthenticatedWorkspacesIdTeamsRoute
+  AuthenticatedWorkspacesIdIndexRoute: typeof AuthenticatedWorkspacesIdIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedWorkspacesCreateRoute: AuthenticatedWorkspacesCreateRoute,
+  AuthenticatedOnboardingIndexRoute: AuthenticatedOnboardingIndexRoute,
+  AuthenticatedWorkspacesIndexRoute: AuthenticatedWorkspacesIndexRoute,
+  AuthenticatedWorkspacesIdMembersRoute: AuthenticatedWorkspacesIdMembersRoute,
+  AuthenticatedWorkspacesIdProjectsRoute:
+    AuthenticatedWorkspacesIdProjectsRoute,
+  AuthenticatedWorkspacesIdSettingsRoute:
+    AuthenticatedWorkspacesIdSettingsRoute,
+  AuthenticatedWorkspacesIdTeamsRoute: AuthenticatedWorkspacesIdTeamsRoute,
+  AuthenticatedWorkspacesIdIndexRoute: AuthenticatedWorkspacesIdIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   PasswordResetRoute: PasswordResetRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
-  OnboardingWorkspaceRoute: OnboardingWorkspaceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

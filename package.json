@@ -6,7 +6,7 @@
     "@/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "vite dev --port 3000 --open --host",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -16,12 +16,14 @@
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
-    "machine-translate": "inlang machine translate --project project.inlang"
+    "machine-translate": "inlang machine translate --project project.inlang",
+    "types:supabase": "npx supabase gen types typescript > ./src/api/types.ts"
   },
   "dependencies": {
     "@heroui/react": "^3.0.3",
     "@heroui/styles": "^3.0.3",
     "@hookform/resolvers": "^5.2.2",
+    "@sindresorhus/slugify": "^3.0.0",
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",

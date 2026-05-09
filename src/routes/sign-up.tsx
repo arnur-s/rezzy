@@ -1,4 +1,5 @@
-import { AppButton } from '@/components/button'
+import { AppButton } from '@/components/app-button'
+import { SidebarInset } from '@/components/sidebar'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import {
@@ -84,21 +85,6 @@ function RouteComponent() {
         }
       }
 
-      const { error: profileError } = await supabase.from('profiles').upsert(
-        {
-          email,
-          full_name: fullName,
-          id: data.user.id,
-        },
-        {
-          onConflict: 'id',
-        },
-      )
-
-      if (profileError) {
-        throw profileError
-      }
-
       return {
         status: 'ready',
       }
@@ -121,7 +107,7 @@ function RouteComponent() {
         return
       }
 
-      navigate({ to: '/onboarding/workspace' })
+      navigate({ to: '/workspaces' })
     },
   })
 
@@ -142,7 +128,7 @@ function RouteComponent() {
   }
 
   return (
-    <main className="auth-ambient flex min-h-dvh items-center justify-center overflow-hidden bg-background px-4 py-10 text-foreground">
+    <SidebarInset className="min-h-dvh flex items-center justify-center">
       <Card className="w-full max-w-md border border-border bg-card text-card-foreground shadow-surface z-1">
         <Card.Header>
           <Card.Title>{m.auth_sign_up_welcome()}</Card.Title>
@@ -238,6 +224,6 @@ function RouteComponent() {
           </Card.Footer>
         </form>
       </Card>
-    </main>
+    </SidebarInset>
   )
 }

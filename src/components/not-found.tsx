@@ -1,9 +1,10 @@
 import { m } from '@/paraglide/messages'
 import { Link } from '@tanstack/react-router'
+import { SidebarInset } from './sidebar'
 
 export function NotFound() {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background text-foreground">
+    <SidebarInset>
       <div className="flex flex-col items-center justify-center">
         <h1 className="text-4xl font-bold">{m.not_found_title()}</h1>
         <p className="text-lg">{m.not_found_description()}</p>
@@ -11,6 +12,6 @@ export function NotFound() {
           {m.not_found_go_home_link()}
         </Link>
       </div>
-    </main>
+    </SidebarInset>
   )
 }

@@ -15,6 +15,7 @@ export default [
     ignores: [
       'eslint.config.js',
       'prettier.config.js',
+      'src/api/types.ts',
       'src/paraglide/**',
       'src/routeTree.gen.ts',
     ],

@@ -14,6 +14,7 @@ const rootElement = document.getElementById('app')!
 
 function App() {
   const auth = useAuth()
+
   return <RouterProvider router={router} context={{ auth }} />
 }
 
