@@ -1,5 +1,4 @@
 import { AppButton } from '@/components/app-button'
-import { SidebarInset } from '@/components/sidebar'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import {
@@ -128,7 +127,7 @@ function RouteComponent() {
   }
 
   return (
-    <SidebarInset className="min-h-dvh flex items-center justify-center">
+    <div className="min-h-dvh flex items-center justify-center">
       <Card className="w-full max-w-md border border-border bg-card text-card-foreground shadow-surface z-1">
         <Card.Header>
           <Card.Title>{m.auth_sign_up_welcome()}</Card.Title>
@@ -224,6 +223,6 @@ function RouteComponent() {
           </Card.Footer>
         </form>
       </Card>
-    </SidebarInset>
+    </div>
   )
 }

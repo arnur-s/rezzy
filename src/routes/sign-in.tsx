@@ -16,7 +16,6 @@ import { z } from 'zod'
 import { supabase } from '@/utils/supabase'
 import { getLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
-import { SidebarInset } from '@/components/sidebar'
 import { AppButton } from '@/components/app-button'
 
 export const Route = createFileRoute('/sign-in')({
@@ -80,7 +79,7 @@ function RouteComponent() {
   }
 
   return (
-    <SidebarInset className="min-h-dvh flex items-center justify-center">
+    <div className="min-h-dvh flex items-center justify-center">
       <Card className="w-full max-w-md border border-border bg-card text-card-foreground shadow-surface z-1">
         <Card.Header>
           <Card.Title>{m.auth_sign_in_welcome()}</Card.Title>
@@ -160,6 +159,6 @@ function RouteComponent() {
           </Card.Footer>
         </form>
       </Card>
-    </SidebarInset>
+    </div>
   )
 }

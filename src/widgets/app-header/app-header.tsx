@@ -1,4 +1,3 @@
-import { SidebarTrigger } from '@/components/sidebar'
 import {
   getUserDisplayName,
   getUserInitials,
@@ -7,14 +6,31 @@ import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import type { Workspace } from '@/features/workspaces/types'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
-import { Avatar, Dropdown, Label } from '@heroui/react'
+import type { Theme } from '@/providers/theme-provider'
+import { useTheme } from '@/providers/theme-provider'
+import { Avatar, Button, Dropdown, Label, Separator } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import { ChevronRightIcon, SettingsIcon, UserRoundIcon } from 'lucide-react'
+import {
+  BellIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  MonitorIcon,
+  MoonIcon,
+  PanelLeftIcon,
+  SearchIcon,
+  SettingsIcon,
+  SunIcon,
+  UserRoundIcon,
+} from 'lucide-react'
 import { useMemo } from 'react'
 
 type BreadcrumbLink = {
-  to: '/workspaces' | '/workspaces/$id' | '/workspaces/$id/settings' | '/workspaces/$id/settings/channels'
+  to:
+    | '/workspaces'
+    | '/workspaces/$id'
+    | '/workspaces/$id/settings'
+    | '/workspaces/$id/settings/channels'
   params?: { id: string }
 }
 
@@ -49,28 +65,20 @@ function buildBreadcrumbs({
   }
 
   const id = match[1]
-  const tail = match[2].replace(/\/$/, '')
+  const rawTail: string | undefined = match[2]
+  const tail = rawTail ? rawTail.replace(/\/$/, '') : ''
   const parts = tail ? tail.split('/').filter(Boolean) : []
   const workspaceName =
     workspaces?.find((w) => w.id === id)?.name ??
     m.app_breadcrumbs_workspace_fallback()
 
   const crumbs: Array<BreadcrumbItem> = [
-    {
-      label: m.app_breadcrumbs_workspaces(),
-      link: { to: '/workspaces' },
-    },
-    {
-      label: workspaceName,
-      link: { to: '/workspaces/$id', params: { id } },
-    },
+    { label: m.app_breadcrumbs_workspaces(), link: { to: '/workspaces' } },
+    { label: workspaceName, link: { to: '/workspaces/$id', params: { id } } },
   ]
 
   if (parts.length === 0) {
-    crumbs.push({
-      label: m.app_breadcrumbs_dashboard(),
-      current: true,
-    })
+    crumbs.push({ label: m.app_breadcrumbs_dashboard(), current: true })
     return crumbs
   }
 
@@ -122,14 +130,6 @@ function buildBreadcrumbs({
       return crumbs
     }
 
-    if (parts.length === 1) {
-      crumbs.push({
-        label: m.app_breadcrumbs_workspace_settings(),
-        current: true,
-      })
-      return crumbs
-    }
-
     crumbs.push({
       label: m.app_breadcrumbs_workspace_settings(),
       current: true,
@@ -144,21 +144,20 @@ function buildBreadcrumbs({
   return crumbs
 }
 
-export function AppHeader({ className }: { className?: string }) {
+export interface AppHeaderProps {
+  className?: string
+  onToggleSidebar?: () => void
+}
+
+export function AppHeader({ className, onToggleSidebar }: AppHeaderProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   const workspacesQuery = useWorkspaces(user?.id ?? '')
 
   const items = useMemo(
-    () =>
-      buildBreadcrumbs({
-        pathname,
-        workspaces: workspacesQuery.data,
-      }),
+    () => buildBreadcrumbs({ pathname, workspaces: workspacesQuery.data }),
     [pathname, workspacesQuery.data],
   )
 
@@ -169,15 +168,23 @@ export function AppHeader({ className }: { className?: string }) {
   return (
     <header
       className={cn(
-        'flex shrink-0 items-center gap-3 border-b border-border/60 bg-background/80 p-4 backdrop-blur',
+        'border-border/60 bg-background/80 flex h-[60px] shrink-0 items-center gap-2 border-b px-4 backdrop-blur',
         className,
       )}
     >
-      <SidebarTrigger />
+      <Button
+        isIconOnly
+        variant="ghost"
+        size="sm"
+        aria-label={m.app_sidebar_toggle_label()}
+        onPress={onToggleSidebar}
+      >
+        <PanelLeftIcon className="size-4" />
+      </Button>
+
       <nav
         aria-label={m.app_breadcrumbs_aria_label()}
-        data-slot="breadcrumbs"
-        className="text-muted-foreground flex min-w-0 flex-1 items-center gap-1 text-sm"
+        className="text-muted-foreground flex min-w-0 flex-1 items-center text-sm"
       >
         <ol className="flex min-w-0 flex-wrap items-center gap-1">
           {items.map((item, index) => {
@@ -186,7 +193,7 @@ export function AppHeader({ className }: { className?: string }) {
               <li key={index} className="flex min-w-0 items-center gap-1">
                 {index > 0 ? (
                   <ChevronRightIcon
-                    className="size-3.5 shrink-0"
+                    className="text-foreground/30 size-3.5 shrink-0"
                     aria-hidden
                   />
                 ) : null}
@@ -214,42 +221,110 @@ export function AppHeader({ className }: { className?: string }) {
           })}
         </ol>
       </nav>
-      {user ? (
-        <Dropdown>
-          <Dropdown.Trigger
-            aria-label={m.app_sidebar_user_menu_label()}
-            className="ring-offset-background ml-auto shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Avatar color="accent" size="sm" variant="soft">
-              <Avatar.Fallback>{getUserInitials(displayName)}</Avatar.Fallback>
-            </Avatar>
-          </Dropdown.Trigger>
-          <Dropdown.Popover className="min-w-48">
-            <Dropdown.Menu
-              onAction={(key) => {
-                if (key === 'profile') {
-                  void navigate({ to: '/profile' })
-                }
-                if (key === 'app-settings') {
-                  void navigate({ to: '/settings' })
-                }
-              }}
-            >
-              <Dropdown.Item id="profile" textValue={m.app_sidebar_profile()}>
-                <UserRoundIcon className="size-4" />
-                <Label>{m.app_sidebar_profile()}</Label>
-              </Dropdown.Item>
-              <Dropdown.Item
-                id="app-settings"
-                textValue={m.app_sidebar_app_settings_label()}
+
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <Button
+          isIconOnly
+          variant="ghost"
+          size="sm"
+          aria-label={m.app_header_search_label()}
+        >
+          <SearchIcon className="size-4" />
+        </Button>
+        <Button
+          isIconOnly
+          variant="ghost"
+          size="sm"
+          aria-label={m.app_header_notifications_label()}
+        >
+          <BellIcon className="size-4" />
+        </Button>
+
+        <ThemeSwitcher />
+
+        {user ? (
+          <>
+            <Separator orientation="vertical" className="mx-1 h-6" />
+            <Dropdown>
+              <Dropdown.Trigger
+                aria-label={m.app_sidebar_user_menu_label()}
+                className="ring-offset-background focus-visible:ring-ring shrink-0 rounded-full outline-none focus-visible:ring-2"
               >
-                <SettingsIcon className="size-4" />
-                <Label>{m.app_sidebar_app_settings_label()}</Label>
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
-      ) : null}
+                <Avatar color="accent" size="sm" variant="soft">
+                  <Avatar.Fallback>
+                    {getUserInitials(displayName)}
+                  </Avatar.Fallback>
+                </Avatar>
+              </Dropdown.Trigger>
+              <Dropdown.Popover className="min-w-48">
+                <Dropdown.Menu
+                  onAction={(key) => {
+                    if (key === 'profile') void navigate({ to: '/profile' })
+                    if (key === 'app-settings')
+                      void navigate({ to: '/settings' })
+                  }}
+                >
+                  <Dropdown.Item
+                    id="profile"
+                    textValue={m.app_sidebar_profile()}
+                  >
+                    <UserRoundIcon className="size-4" />
+                    <Label>{m.app_sidebar_profile()}</Label>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="app-settings"
+                    textValue={m.app_sidebar_app_settings_label()}
+                  >
+                    <SettingsIcon className="size-4" />
+                    <Label>{m.app_sidebar_app_settings_label()}</Label>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+          </>
+        ) : null}
+      </div>
     </header>
+  )
+}
+
+function ThemeSwitcher() {
+  const { theme, resolvedTheme, setTheme } = useTheme()
+  const TriggerIcon = resolvedTheme === 'dark' ? MoonIcon : SunIcon
+
+  return (
+    <Dropdown>
+      <Dropdown.Trigger
+        aria-label={m.app_header_theme_label()}
+        className="text-foreground hover:bg-sidebar-accent inline-flex size-8 shrink-0 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+      >
+        <TriggerIcon className="size-4" />
+      </Dropdown.Trigger>
+      <Dropdown.Popover className="min-w-40">
+        <Dropdown.Menu onAction={(key) => setTheme(key as Theme)}>
+          <Dropdown.Item id="system" textValue={m.app_header_theme_system()}>
+            <MonitorIcon className="size-4" />
+            <Label className="flex-1">{m.app_header_theme_system()}</Label>
+            {theme === 'system' && (
+              <CheckIcon className="text-primary ml-auto size-3.5" />
+            )}
+          </Dropdown.Item>
+          <Dropdown.Item id="light" textValue={m.app_header_theme_light()}>
+            <SunIcon className="size-4" />
+            <Label className="flex-1">{m.app_header_theme_light()}</Label>
+            {theme === 'light' && (
+              <CheckIcon className="text-primary ml-auto size-3.5" />
+            )}
+          </Dropdown.Item>
+          <Dropdown.Item id="dark" textValue={m.app_header_theme_dark()}>
+            <MoonIcon className="size-4" />
+            <Label className="flex-1">{m.app_header_theme_dark()}</Label>
+            {theme === 'dark' && (
+              <CheckIcon className="text-primary ml-auto size-3.5" />
+            )}
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   )
 }

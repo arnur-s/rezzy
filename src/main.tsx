@@ -1,4 +1,5 @@
 import { AuthProvider, useAuth } from '@/providers/auth-provider'
+import { ThemeProvider } from '@/providers/theme-provider'
 import { queryClient } from '@/utils/query-client'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
@@ -21,10 +22,12 @@ function App() {
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </QueryClientProvider>,
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>,
   )
 }

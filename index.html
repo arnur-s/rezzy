@@ -4,8 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>cms</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('app:theme')
+          var theme = stored === 'dark' || stored === 'light' ? stored : 'system'
+          var resolved =
+            theme === 'system'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : theme
+          var root = document.documentElement
+          root.classList.add(resolved)
+          root.setAttribute('data-theme', resolved)
+          root.style.colorScheme = resolved
+        } catch (_) {
+          document.documentElement.classList.add('dark')
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      })()
+    </script>
   </head>
-  <body>
+  <body class="bg-background text-foreground">
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
