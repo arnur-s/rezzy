@@ -1,7 +1,7 @@
-import { supabase } from '@/utils/supabase'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import type { ReactNode } from 'react'
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { supabase } from '@/utils/supabase'
 
 export type AuthContextValue = {
   isLoading: boolean

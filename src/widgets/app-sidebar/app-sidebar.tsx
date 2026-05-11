@@ -4,10 +4,8 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
@@ -15,38 +13,43 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-  useSidebar,
+  sidebarMenuButtonClasses,
 } from '@/components/sidebar'
-import { useWorkspaceProjects } from '@/features/projects/hooks/use-projects'
-import type { Project } from '@/features/projects/types'
-import {
-  getUserDisplayName,
-  getUserInitials,
-} from '@/features/users/utils/user-display'
+import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import type { Workspace } from '@/features/workspaces/types'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
-import { Avatar, Button, Dropdown, Label, toast } from '@heroui/react'
-import type { User } from '@supabase/supabase-js'
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
-  Building2Icon,
+  Disclosure,
+  Dropdown,
+  Label,
+  toast,
+} from '@heroui/react'
+import { cn } from '@heroui/styles'
+import type { User } from '@supabase/supabase-js'
+import { Link, useNavigate, useParams, useRouterState } from '@tanstack/react-router'
+import {
+  BarChart3,
+  CheckIcon,
   ChevronRightIcon,
-  FolderKanbanIcon,
+  ChevronsUpDownIcon,
+  CircleHelpIcon,
+  InboxIcon,
+  LayoutDashboard,
   LogOutIcon,
-  MoreVerticalIcon,
-  UserRoundIcon,
+  Plug,
+  PlusIcon,
+  SettingsIcon,
+  UsersIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+
+const HELP_DOCS_URL = 'https://heroui.com' as const
 
 export function AppSidebar() {
   const { user } = useAuth()
-
-  if (!user) {
-    return null
-  }
-
+  if (!user) return null
   return <AuthenticatedAppSidebar user={user} />
 }
 
@@ -54,49 +57,23 @@ function AuthenticatedAppSidebar({ user }: { user: User }) {
   const navigate = useNavigate()
   const { signOut } = useAuth()
   const [isSigningOut, setIsSigningOut] = useState(false)
-  const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<Set<string>>(
-    () => new Set(),
-  )
+  const [isCreateWorkspaceOpen, setIsCreateWorkspaceOpen] = useState(false)
+
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
+
+  const params = useParams({ strict: false })
+  const currentWorkspaceId = params.id
+
   const workspacesQuery = useWorkspaces(user.id)
-  const workspaceIds = useMemo(
-    () => workspacesQuery.data?.map((workspace) => workspace.id) ?? [],
-    [workspacesQuery.data],
+
+  const currentWorkspace = useMemo(
+    () =>
+      workspacesQuery.data?.find((w) => w.id === currentWorkspaceId) ??
+      workspacesQuery.data?.[0],
+    [workspacesQuery.data, currentWorkspaceId],
   )
-  const projectsQuery = useWorkspaceProjects(workspaceIds)
-  const projectsByWorkspaceId = useMemo(
-    () => groupProjectsByWorkspaceId(projectsQuery.data ?? []),
-    [projectsQuery.data],
-  )
-  const displayName = useMemo(
-    () => getUserDisplayName(user, m.app_sidebar_unknown_user()),
-    [user],
-  )
-  const email = user.email ?? m.app_sidebar_unknown_email()
-
-  useEffect(() => {
-    const activeWorkspace = workspacesQuery.data?.find((workspace) => {
-      const workspacePath = `/workspaces/${workspace.id}`
-
-      return (
-        pathname === workspacePath || pathname.startsWith(`${workspacePath}/`)
-      )
-    })
-
-    if (!activeWorkspace) {
-      return
-    }
-
-    setExpandedWorkspaceIds((currentIds) => {
-      if (currentIds.has(activeWorkspace.id)) {
-        return currentIds
-      }
-
-      return new Set([...currentIds, activeWorkspace.id])
-    })
-  }, [pathname, workspacesQuery.data])
 
   async function handleSignOut() {
     try {
@@ -111,322 +88,375 @@ function AuthenticatedAppSidebar({ user }: { user: User }) {
     }
   }
 
-  function toggleWorkspace(workspaceId: string) {
-    setExpandedWorkspaceIds((currentIds) => {
-      const nextIds = new Set(currentIds)
-
-      if (nextIds.has(workspaceId)) {
-        nextIds.delete(workspaceId)
-      } else {
-        nextIds.add(workspaceId)
-      }
-
-      return nextIds
-    })
-  }
-
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              size="lg"
-              tooltip={m.app_logo_placeholder()}
-            >
-              <Link
-                aria-label={m.app_sidebar_home_label()}
-                to="/workspaces"
-                className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
-              >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground group-data-[collapsible=icon]:size-7 group-data-[collapsible=icon]:rounded-md">
-                  <Building2Icon className="size-5 group-data-[collapsible=icon]:size-4" />
-                </span>
-                <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
-                  {m.app_logo_placeholder()}
-                </span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>
-            {m.app_sidebar_workspaces_label()}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            {workspacesQuery.isPending ? (
-              <WorkspacesLoadingSkeleton />
-            ) : workspacesQuery.isError ? (
-              <p className="rounded-md bg-danger/5 px-2 py-2 text-xs leading-5 text-danger group-data-[collapsible=icon]:hidden">
-                {m.workspaces_load_error_title()}
-              </p>
-            ) : workspacesQuery.data.length > 0 ? (
-              <SidebarMenu>
-                {workspacesQuery.data.map((workspace) => (
-                  <WorkspaceMenuItem
-                    key={workspace.id}
-                    workspace={workspace}
-                    pathname={pathname}
-                    isExpanded={expandedWorkspaceIds.has(workspace.id)}
-                    projects={projectsByWorkspaceId.get(workspace.id) ?? []}
-                    projectsLoading={projectsQuery.isPending}
-                    projectsError={projectsQuery.isError}
-                    onToggle={() => toggleWorkspace(workspace.id)}
-                  />
-                ))}
-              </SidebarMenu>
-            ) : (
-              <p className="rounded-md bg-card/60 px-2 py-2 text-xs leading-5 text-muted-foreground group-data-[collapsible=icon]:hidden">
-                {m.app_sidebar_no_workspaces()}
-              </p>
+    <>
+      <Sidebar collapsible="icon">
+        <SidebarHeader className="border-sidebar-border/60 gap-0 border-b p-2">
+          <Link
+            to="/"
+            aria-label={m.app_sidebar_home_label()}
+            className={cn(
+              'ring-sidebar-ring flex items-center gap-3 rounded-md px-1 py-2 outline-none transition-colors',
+              'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              'focus-visible:ring-2',
             )}
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+          >
+            <span className="bg-accent flex size-6 shrink-0 items-center justify-center rounded-md">
+              <span className="text-sm font-bold text-white">
+                {m.app_sidebar_brand_label().charAt(0)}
+              </span>
+            </span>
+            <span
+              className="text-foreground group-data-[collapsible=icon]:hidden text-sm font-semibold"
+              data-sidebar="label"
+            >
+              {m.app_sidebar_brand_label()}
+            </span>
+          </Link>
+        </SidebarHeader>
 
-      <SidebarFooter>
-        <UserMenuItem
-          email={email}
-          name={displayName}
-          isSigningOut={isSigningOut}
-          onOpenProfile={() => void navigate({ to: '/profile' })}
-          onSignOut={() => void handleSignOut()}
-        />
-      </SidebarFooter>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <WorkspaceSwitcher
+                    currentWorkspace={currentWorkspace}
+                    workspaces={workspacesQuery.data ?? []}
+                    isLoading={workspacesQuery.isPending}
+                    isError={workspacesQuery.isError}
+                    onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
+                    onSelect={(workspace) =>
+                      navigate({
+                        to: '/workspaces/$id/inbox',
+                        params: { id: workspace.id },
+                      })
+                    }
+                  />
+                </SidebarMenuItem>
+              </SidebarMenu>
 
-      <SidebarRail />
-    </Sidebar>
+              <div className="group-data-[collapsible=icon]:mx-1 mx-2 my-1 h-px bg-border/60" />
+
+              {currentWorkspace && (
+                <WorkspaceSidebarNav
+                  workspaceId={currentWorkspace.id}
+                  pathname={pathname}
+                />
+              )}
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+
+        <SidebarFooter aria-label={m.app_sidebar_footer_actions_aria_label()}>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip={m.app_sidebar_footer_help_label()}
+              >
+                <a
+                  href={HELP_DOCS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center gap-2"
+                >
+                  <CircleHelpIcon className="size-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden truncate">
+                    {m.app_sidebar_footer_help_label()}
+                  </span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={m.app_sidebar_logout()}
+                disabled={isSigningOut}
+                onClick={() => void handleSignOut()}
+              >
+                <LogOutIcon className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden truncate">
+                  {m.app_sidebar_logout()}
+                </span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+
+        <SidebarRail />
+      </Sidebar>
+      <CreateWorkspaceModal
+        isOpen={isCreateWorkspaceOpen}
+        onOpenChange={setIsCreateWorkspaceOpen}
+      />
+    </>
   )
 }
 
-function WorkspaceMenuItem({
-  workspace,
-  pathname,
-  isExpanded,
-  projects,
-  projectsLoading,
-  projectsError,
-  onToggle,
-}: {
-  workspace: Workspace
-  pathname: string
-  isExpanded: boolean
-  projects: Array<Project>
-  projectsLoading: boolean
-  projectsError: boolean
-  onToggle: () => void
-}) {
-  const workspacePath = `/workspaces/${workspace.id}`
-  const isWorkspaceActive =
-    pathname === workspacePath || pathname.startsWith(`${workspacePath}/`)
-  const isWorkspaceCurrent =
-    pathname === workspacePath || pathname === `${workspacePath}/`
-  const projectRegionId = `workspace-projects-${workspace.id}`
-
+function isOperationsPath(pathname: string, workspaceId: string) {
+  const prefix = `/workspaces/${workspaceId}/`
   return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        asChild
-        isActive={isWorkspaceActive}
-        tooltip={workspace.name}
-      >
-        <Link
-          aria-current={isWorkspaceCurrent ? 'page' : undefined}
-          aria-label={workspace.name}
-          params={{ id: workspace.id }}
-          to="/workspaces/$id"
-          className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
-        >
-          <WorkspaceMark isActive={isWorkspaceActive} name={workspace.name} />
-          <span className="font-medium group-data-[collapsible=icon]:hidden">
-            {workspace.name}
-          </span>
-        </Link>
-      </SidebarMenuButton>
-
-      <SidebarMenuAction
-        aria-controls={projectRegionId}
-        aria-expanded={isExpanded}
-        aria-label={
-          isExpanded
-            ? m.app_sidebar_collapse_workspace({ workspace: workspace.name })
-            : m.app_sidebar_expand_workspace({ workspace: workspace.name })
-        }
-        onClick={onToggle}
-        showOnHover
-      >
-        <ChevronRightIcon
-          className={`transition-transform duration-150 ${
-            isExpanded ? 'rotate-90' : ''
-          }`}
-        />
-      </SidebarMenuAction>
-
-      {isExpanded ? (
-        <ProjectMenuList
-          id={projectRegionId}
-          projects={projects}
-          projectsLoading={projectsLoading}
-          projectsError={projectsError}
-          workspaceId={workspace.id}
-          pathname={pathname}
-        />
-      ) : null}
-    </SidebarMenuItem>
+    pathname.startsWith(`${prefix}inbox`) ||
+    pathname.startsWith(`${prefix}contacts`) ||
+    pathname.startsWith(`${prefix}settings/channels`)
   )
 }
 
-function ProjectMenuList({
-  id,
-  projects,
-  projectsLoading,
-  projectsError,
+function isWorkspaceSettingsPath(pathname: string, workspaceId: string) {
+  const base = `/workspaces/${workspaceId}/settings`
+  if (!pathname.startsWith(base)) {
+    return false
+  }
+  return !pathname.includes('/settings/channels')
+}
+
+function WorkspaceSidebarNav({
   workspaceId,
   pathname,
 }: {
-  id: string
-  projects: Array<Project>
-  projectsLoading: boolean
-  projectsError: boolean
   workspaceId: string
   pathname: string
 }) {
-  if (projectsLoading) {
-    return (
-      <SidebarMenuSub id={id}>
-        {Array.from({ length: 2 }).map((_, index) => (
-          <SidebarMenuSubItem key={index}>
-            <SidebarMenuSkeleton />
-          </SidebarMenuSubItem>
-        ))}
-      </SidebarMenuSub>
-    )
-  }
+  const operationsOpen = isOperationsPath(pathname, workspaceId)
 
-  if (projectsError) {
-    return (
-      <SidebarMenuSub id={id}>
-        <SidebarMenuSubItem>
-          <p className="rounded-md bg-danger/5 px-2 py-1 text-xs leading-5 text-danger">
-            {m.app_sidebar_projects_error()}
-          </p>
-        </SidebarMenuSubItem>
-      </SidebarMenuSub>
-    )
-  }
+  const overviewPath = `/workspaces/${workspaceId}`
+  const isDashboardActive =
+    pathname === overviewPath || pathname === `${overviewPath}/`
 
-  if (projects.length === 0) {
-    return (
-      <SidebarMenuSub id={id}>
-        <SidebarMenuSubItem>
-          <p className="px-2 py-1 text-xs leading-5 text-muted-foreground">
-            {m.app_sidebar_projects_empty()}
-          </p>
-        </SidebarMenuSubItem>
-      </SidebarMenuSub>
-    )
-  }
+  const isInboxActive =
+    pathname === `${overviewPath}/inbox` ||
+    pathname.startsWith(`${overviewPath}/inbox/`)
 
-  const projectsPath = `/workspaces/${workspaceId}/projects`
-  const isProjectsActive = pathname.startsWith(projectsPath)
+  const isContactsActive =
+    pathname === `${overviewPath}/contacts` ||
+    pathname.startsWith(`${overviewPath}/contacts/`)
 
-  return (
-    <SidebarMenuSub id={id}>
-      {projects.map((project) => (
-        <SidebarMenuSubItem key={project.id}>
-          <SidebarMenuSubButton asChild isActive={isProjectsActive}>
-            <Link
-              aria-label={project.name}
-              params={{ id: workspaceId }}
-              to="/workspaces/$id/projects"
-            >
-              <FolderKanbanIcon />
-              <span>{project.name}</span>
-            </Link>
-          </SidebarMenuSubButton>
-        </SidebarMenuSubItem>
-      ))}
-    </SidebarMenuSub>
+  const isChannelsActive = pathname.startsWith(
+    `${overviewPath}/settings/channels`,
   )
-}
 
-function WorkspacesLoadingSkeleton() {
+  const isSettingsActive = isWorkspaceSettingsPath(pathname, workspaceId)
+
+  const disclosureKey = `ops-${workspaceId}-${operationsOpen ? 'x' : 'y'}`
+
   return (
-    <SidebarMenu>
-      {Array.from({ length: 4 }).map((_, index) => (
-        <SidebarMenuItem key={index}>
-          <SidebarMenuSkeleton showIcon />
-        </SidebarMenuItem>
-      ))}
+    <SidebarMenu aria-label={m.app_sidebar_workspace_nav_aria_label()}>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          isActive={isDashboardActive}
+          tooltip={m.app_sidebar_dashboard_label()}
+        >
+          <Link
+            to="/workspaces/$id"
+            params={{ id: workspaceId }}
+            aria-current={isDashboardActive ? 'page' : undefined}
+            className="flex w-full items-center gap-2"
+          >
+            <LayoutDashboard className="size-4 shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden truncate">
+              {m.app_sidebar_dashboard_label()}
+            </span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+
+      <SidebarMenuItem>
+        <Disclosure
+          key={disclosureKey}
+          defaultExpanded={operationsOpen}
+          className="w-full"
+        >
+          <Disclosure.Heading>
+            <Disclosure.Trigger
+              className={cn(
+                sidebarMenuButtonClasses({ size: 'default' }),
+                'text-sidebar-foreground w-full justify-between font-medium',
+                operationsOpen &&
+                  'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
+              )}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-2">
+                <BarChart3 className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden truncate">
+                  {m.app_sidebar_operations_group_label()}
+                </span>
+              </span>
+              <Disclosure.Indicator>
+                <ChevronRightIcon className="text-muted-foreground size-4 shrink-0 transition-transform data-[expanded=true]:rotate-90" />
+              </Disclosure.Indicator>
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <Disclosure.Body className="p-0">
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isInboxActive}
+                    size="md"
+                  >
+                    <Link
+                      to="/workspaces/$id/inbox"
+                      params={{ id: workspaceId }}
+                      aria-current={isInboxActive ? 'page' : undefined}
+                    >
+                      <InboxIcon className="size-4 shrink-0" />
+                      <span className="truncate">{m.app_sidebar_inbox_label()}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isContactsActive}
+                    size="md"
+                  >
+                    <Link
+                      to="/workspaces/$id/contacts"
+                      params={{ id: workspaceId }}
+                      aria-current={isContactsActive ? 'page' : undefined}
+                    >
+                      <UsersIcon className="size-4 shrink-0" />
+                      <span className="truncate">
+                        {m.app_sidebar_contacts_label()}
+                      </span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isChannelsActive}
+                    size="md"
+                  >
+                    <Link
+                      to="/workspaces/$id/settings/channels"
+                      params={{ id: workspaceId }}
+                      aria-current={isChannelsActive ? 'page' : undefined}
+                    >
+                      <Plug className="size-4 shrink-0" />
+                      <span className="truncate">
+                        {m.app_sidebar_channels_nav_label()}
+                      </span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            </Disclosure.Body>
+          </Disclosure.Content>
+        </Disclosure>
+      </SidebarMenuItem>
+
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          isActive={isSettingsActive}
+          tooltip={m.common_settings()}
+        >
+          <Link
+            to="/workspaces/$id/settings"
+            params={{ id: workspaceId }}
+            aria-current={isSettingsActive ? 'page' : undefined}
+            className="flex w-full items-center gap-2"
+          >
+            <SettingsIcon className="size-4 shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden truncate">
+              {m.common_settings()}
+            </span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     </SidebarMenu>
   )
 }
 
-function UserMenuItem({
-  email,
-  name,
-  isSigningOut,
-  onOpenProfile,
-  onSignOut,
+function WorkspaceSwitcher({
+  currentWorkspace,
+  workspaces,
+  isLoading,
+  isError,
+  onSelect,
+  onCreateWorkspace,
 }: {
-  email: string
-  name: string
-  isSigningOut: boolean
-  onOpenProfile: () => void
-  onSignOut: () => void
+  currentWorkspace: Workspace | undefined
+  workspaces: Array<Workspace>
+  isLoading: boolean
+  isError: boolean
+  onSelect: (workspace: Workspace) => void
+  onCreateWorkspace: () => void
 }) {
-  const { state, isMobile } = useSidebar()
-  const isCollapsed = state === 'collapsed' && !isMobile
+  if (isLoading) {
+    return <SidebarMenuSkeleton showIcon />
+  }
+
+  if (isError) {
+    return (
+      <p className="text-danger group-data-[collapsible=icon]:hidden rounded-md bg-danger/5 px-2 py-2 text-xs">
+        {m.workspaces_load_error_title()}
+      </p>
+    )
+  }
 
   return (
-    <div className="flex items-center gap-2 rounded-md bg-card/60 p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0">
-      <Avatar color="accent" size="sm" variant="soft">
-        <Avatar.Fallback>{getUserInitials(name)}</Avatar.Fallback>
-      </Avatar>
-
-      <div className="min-w-0 flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-        <p className="truncate text-sm font-medium">{name}</p>
-        <p className="truncate text-xs text-muted-foreground">{email}</p>
-      </div>
-
+    <div className="group-data-[collapsible=icon]:justify-center flex w-full items-center gap-1 px-1">
       <Dropdown>
-        <Button
-          isIconOnly
-          aria-label={m.app_sidebar_user_menu_label()}
-          isDisabled={isSigningOut}
-          size="sm"
-          variant="tertiary"
-          className={isCollapsed ? 'hidden' : undefined}
+        <Dropdown.Trigger
+          aria-label={m.app_sidebar_select_workspace_label()}
+          className={cn(
+            sidebarMenuButtonClasses({ variant: 'default', size: 'default' }),
+            'text-sidebar-foreground font-medium',
+          )}
         >
-          <MoreVerticalIcon className="size-4" />
-        </Button>
-        <Dropdown.Popover className="min-w-48">
+          {currentWorkspace ? (
+            <WorkspaceMark name={currentWorkspace.name} isActive />
+          ) : (
+            <span className="bg-muted flex size-5 shrink-0 items-center justify-center rounded-md" />
+          )}
+          <span
+            className={cn(
+              'group-data-[collapsible=icon]:hidden min-w-0 flex-1 truncate text-left text-sm',
+              !currentWorkspace && 'text-muted-foreground',
+            )}
+          >
+            {currentWorkspace
+              ? currentWorkspace.name
+              : m.app_sidebar_select_workspace_label()}
+          </span>
+          <ChevronsUpDownIcon className="text-muted-foreground group-data-[collapsible=icon]:hidden ml-auto size-3.5 shrink-0" />
+        </Dropdown.Trigger>
+
+        <Dropdown.Popover className="min-w-56">
           <Dropdown.Menu
             onAction={(key) => {
-              if (key === 'profile') {
-                onOpenProfile()
+              if (key === 'create') {
+                onCreateWorkspace()
+                return
               }
-
-              if (key === 'logout') {
-                onSignOut()
-              }
+              const workspace = workspaces.find((w) => w.id === key)
+              if (workspace) onSelect(workspace)
             }}
           >
-            <Dropdown.Item id="profile" textValue={m.app_sidebar_profile()}>
-              <UserRoundIcon className="size-4" />
-              <Label>{m.app_sidebar_profile()}</Label>
-            </Dropdown.Item>
-            <Dropdown.Item
-              id="logout"
-              textValue={m.app_sidebar_logout()}
-              variant="danger"
-            >
-              <LogOutIcon className="size-4" />
-              <Label>{m.app_sidebar_logout()}</Label>
+            {workspaces.map((workspace) => (
+              <Dropdown.Item
+                key={workspace.id}
+                id={workspace.id}
+                textValue={workspace.name}
+              >
+                <WorkspaceMark
+                  name={workspace.name}
+                  isActive={workspace.id === currentWorkspace?.id}
+                />
+                <Label className="flex-1">{workspace.name}</Label>
+                {workspace.id === currentWorkspace?.id && (
+                  <CheckIcon className="text-primary ml-auto size-3.5" />
+                )}
+              </Dropdown.Item>
+            ))}
+
+            <Dropdown.Item id="create" textValue={m.workspaces_create_button()}>
+              <PlusIcon className="size-4" />
+              <Label>{m.workspaces_create_button()}</Label>
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown.Popover>
@@ -436,15 +466,15 @@ function UserMenuItem({
 }
 
 function WorkspaceMark({
-  isActive,
   name,
+  isActive,
 }: {
-  isActive: boolean
   name: string
+  isActive: boolean
 }) {
   return (
     <span
-      className={`flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold group-data-[collapsible=icon]:size-4 group-data-[collapsible=icon]:rounded-sm group-data-[collapsible=icon]:text-[10px] ${
+      className={`flex size-5 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold ${
         isActive
           ? 'bg-primary text-primary-foreground'
           : 'bg-primary/10 text-primary'
@@ -453,20 +483,6 @@ function WorkspaceMark({
       {name.trim().charAt(0).toUpperCase() || 'W'}
     </span>
   )
-}
-
-function groupProjectsByWorkspaceId(projects: Array<Project>) {
-  const projectsByWorkspaceId = new Map<string, Array<Project>>()
-
-  for (const project of projects) {
-    const workspaceProjects =
-      projectsByWorkspaceId.get(project.workspace_id) ?? []
-
-    workspaceProjects.push(project)
-    projectsByWorkspaceId.set(project.workspace_id, workspaceProjects)
-  }
-
-  return projectsByWorkspaceId
 }
 
 function getErrorMessage(error: unknown) {

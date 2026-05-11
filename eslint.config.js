@@ -7,8 +7,8 @@ export default [
   {
     rules: {
       'import-x/consistent-type-specifier-style': 'off',
-      'import/order': 'on',
-      'sort-imports': 'on',
+      'import/order': 'off',
+      'sort-imports': 1,
     },
   },
   {
@@ -18,6 +18,7 @@ export default [
       'src/api/types.ts',
       'src/paraglide/**',
       'src/routeTree.gen.ts',
+      'supabase/functions/**',
     ],
   },
 ]

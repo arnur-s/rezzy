@@ -1,5 +1,9 @@
-import { createFileRoute, Navigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/')({
-  component: () => <Navigate to="/workspaces" />,
+  component: RouteComponent,
 })
+
+function RouteComponent() {
+  return <div>Dashboard</div>
+}

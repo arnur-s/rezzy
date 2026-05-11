@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ncase\\\\Documents\\\\cms\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-Content \"c:\\\\Users\\\\ncase\\\\Documents\\\\cms\\\\HeroUI Pro _ LAYOUT.html\")",
+      "Bash(Select-Object -First 200)",
+      "Bash(Out-String)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('exports', {}\\).keys\\(\\)\\)[:50]\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); keys=list\\(d.get\\('exports', {}\\).keys\\(\\)\\); print\\([k for k in keys if 'nav' in k.lower\\(\\) or 'sidebar' in k.lower\\(\\) or 'layout' in k.lower\\(\\) or 'menu' in k.lower\\(\\)]\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.items\\(\\) if 'sidebar' in k.lower\\(\\) or 'breadcrumb' in k.lower\\(\\) or 'app_' in k.lower\\(\\)]\")"
+    ]
+  }
+}

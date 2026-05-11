@@ -1,6 +1,6 @@
-import { m } from '@/paraglide/messages'
 import { Link } from '@tanstack/react-router'
 import { SidebarInset } from './sidebar'
+import { m } from '@/paraglide/messages'
 
 export function NotFound() {
   return (

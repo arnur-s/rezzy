@@ -1,6 +1,7 @@
 import {
   Button,
   Drawer,
+  ListBox,
   ScrollShadow,
   Separator,
   Skeleton,
@@ -8,15 +9,13 @@ import {
 } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { PanelLeftIcon } from 'lucide-react'
-import {
-  cloneElement,
-  isValidElement,
-  useState,
-  type ComponentProps,
-  type CSSProperties,
-  type ReactElement,
-  type ReactNode,
+import type {
+  CSSProperties,
+  ComponentProps,
+  ReactElement,
+  ReactNode,
 } from 'react'
+import { cloneElement, isValidElement, useState } from 'react'
 import { SIDEBAR_WIDTH_MOBILE, useSidebar } from './sidebar-context'
 
 type SidebarSide = 'left' | 'right'
@@ -25,9 +24,9 @@ type SidebarCollapsible = 'offcanvas' | 'icon' | 'none'
 
 type WithAsChild<T> = T & { asChild?: boolean }
 
-function renderAsChild<P extends { className?: string }>(
+function renderAsChild<TProps extends { className?: string }>(
   child: ReactNode,
-  baseProps: P,
+  baseProps: TProps,
 ): ReactElement | null {
   if (!isValidElement(child)) {
     return null
@@ -36,11 +35,11 @@ function renderAsChild<P extends { className?: string }>(
   const childProps = (child.props ?? {}) as { className?: string }
 
   return cloneElement(
-    child as ReactElement<P>,
+    child as ReactElement<TProps>,
     {
       ...baseProps,
       className: cn(baseProps.className, childProps.className),
-    } as P,
+    } as TProps,
   )
 }
 
@@ -83,12 +82,10 @@ export function Sidebar({
               data-slot="sidebar"
               data-mobile="true"
               className="flex h-full flex-col bg-sidebar p-0 text-sidebar-foreground outline-none"
-              style={
-                {
-                  width: SIDEBAR_WIDTH_MOBILE,
-                  maxWidth: SIDEBAR_WIDTH_MOBILE,
-                } as CSSProperties
-              }
+              style={{
+                width: SIDEBAR_WIDTH_MOBILE,
+                maxWidth: SIDEBAR_WIDTH_MOBILE,
+              }}
             >
               {children}
             </Drawer.Dialog>
@@ -202,9 +199,9 @@ export function SidebarInset({
 }: ComponentProps<'main'>) {
   return (
     <main
-      data-slot="sidebar-inset"
+      data-slot="sidebar-main"
       className={cn(
-        'ambient relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2',
+        'ambient relative flex w-full flex-1 flex-col md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2',
       )}
       {...props}
     >
@@ -220,7 +217,10 @@ export function SidebarHeader({ className, ...props }: ComponentProps<'div'>) {
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn('flex flex-col gap-2 p-2', className)}
+      className={cn(
+        'flex flex-col gap-2 p-2 group-data-[collapsible=icon]:px-1',
+        className,
+      )}
       {...props}
     />
   )
@@ -231,7 +231,10 @@ export function SidebarFooter({ className, ...props }: ComponentProps<'div'>) {
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
-      className={cn('flex flex-col gap-2 p-2', className)}
+      className={cn(
+        'flex flex-col gap-2 p-2 group-data-[collapsible=icon]:px-1',
+        className,
+      )}
       {...props}
     />
   )
@@ -277,7 +280,10 @@ export function SidebarGroup({ className, ...props }: ComponentProps<'div'>) {
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
-      className={cn('relative flex w-full min-w-0 flex-col p-2', className)}
+      className={cn(
+        'relative flex w-full min-w-0 flex-col p-2 group-data-[collapsible=icon]:px-1',
+        className,
+      )}
       {...props}
     />
   )
@@ -300,9 +306,6 @@ export function SidebarGroupLabel({
       'data-slot': 'sidebar-group-label',
       'data-sidebar': 'group-label',
       className: baseClassName,
-    } as ComponentProps<'div'> & {
-      'data-slot': string
-      'data-sidebar': string
     })
 
     if (slot) return slot
@@ -337,9 +340,6 @@ export function SidebarGroupAction({
       'data-slot': 'sidebar-group-action',
       'data-sidebar': 'group-action',
       className: baseClassName,
-    } as ComponentProps<'button'> & {
-      'data-slot': string
-      'data-sidebar': string
     })
 
     if (slot) return slot
@@ -394,6 +394,64 @@ export function SidebarMenuItem({ className, ...props }: ComponentProps<'li'>) {
   )
 }
 
+const sidebarNavItemLayoutClassName =
+  'peer/menu-button flex h-8 w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm text-sidebar-foreground ring-sidebar-ring outline-none transition-[width,height,padding] group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2! focus-visible:ring-2 [&_svg]:size-4 [&_svg]:shrink-0'
+
+const sidebarNavItemSelectionClassName =
+  '[&[aria-selected=true]]:bg-sidebar-accent [&[aria-selected=true]]:font-medium [&[aria-selected=true]]:text-sidebar-accent-foreground'
+
+export type SidebarNavListProps = ComponentProps<typeof ListBox>
+
+export function SidebarNavList({ className, ...props }: SidebarNavListProps) {
+  return (
+    <ListBox
+      data-slot="sidebar-nav-list"
+      data-sidebar="menu"
+      className={cn('flex w-full min-w-0 flex-col gap-0', className)}
+      {...props}
+    />
+  )
+}
+
+type SidebarNavItemProps = ComponentProps<typeof ListBox.Item> & {
+  tooltip?: ReactNode
+}
+
+export function SidebarNavItem({
+  tooltip,
+  className,
+  children,
+  ...props
+}: SidebarNavItemProps) {
+  const { isMobile, state } = useSidebar()
+
+  const item = (
+    <ListBox.Item
+      data-slot="sidebar-nav-item"
+      data-sidebar="menu-item"
+      className={cn(
+        sidebarNavItemLayoutClassName,
+        sidebarNavItemSelectionClassName,
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </ListBox.Item>
+  )
+
+  if (!tooltip || state !== 'collapsed' || isMobile) {
+    return item
+  }
+
+  return (
+    <Tooltip delay={300}>
+      {item}
+      <Tooltip.Content placement="right">{tooltip}</Tooltip.Content>
+    </Tooltip>
+  )
+}
+
 type SidebarMenuButtonVariant = 'default' | 'outline'
 type SidebarMenuButtonSize = 'default' | 'sm' | 'lg'
 
@@ -405,7 +463,7 @@ export function sidebarMenuButtonClasses({
   size?: SidebarMenuButtonSize
 } = {}) {
   return cn(
-    'peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-none transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate',
+    'peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-none transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate',
     variant === 'outline'
       ? 'bg-background shadow-[0_0_0_1px_var(--color-sidebar-border)] hover:shadow-[0_0_0_1px_var(--color-sidebar-accent)]'
       : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -448,11 +506,6 @@ export function SidebarMenuButton({
       'data-size': size,
       'data-active': isActive,
       className: baseClassName,
-    } as ComponentProps<'button'> & {
-      'data-slot': string
-      'data-sidebar': string
-      'data-size': string
-      'data-active': boolean
     })
   }
 
@@ -504,9 +557,6 @@ export function SidebarMenuAction({
       'data-slot': 'sidebar-menu-action',
       'data-sidebar': 'menu-action',
       className: baseClassName,
-    } as ComponentProps<'button'> & {
-      'data-slot': string
-      'data-sidebar': string
     })
 
     if (slot) return slot
@@ -553,7 +603,10 @@ export function SidebarMenuSkeleton({
     <div
       data-slot="sidebar-menu-skeleton"
       data-sidebar="menu-skeleton"
-      className={cn('flex h-8 items-center gap-2 rounded-md px-2', className)}
+      className={cn(
+        'flex h-8 items-center gap-2 rounded-md px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-1',
+        className,
+      )}
       {...props}
     >
       {showIcon && (
@@ -564,7 +617,7 @@ export function SidebarMenuSkeleton({
       )}
       <Skeleton
         data-sidebar="menu-skeleton-text"
-        className="h-4 max-w-(--skeleton-width) flex-1"
+        className="h-4 max-w-(--skeleton-width) flex-1 group-data-[collapsible=icon]:hidden"
         style={{ '--skeleton-width': width } as CSSProperties}
       />
     </div>
@@ -625,11 +678,6 @@ export function SidebarMenuSubButton({
       'data-size': size,
       'data-active': isActive,
       className: baseClassName,
-    } as ComponentProps<'a'> & {
-      'data-slot': string
-      'data-sidebar': string
-      'data-size': string
-      'data-active': boolean
     })
 
     if (slot) return slot

@@ -1,4 +1,3 @@
-import { useIsMobile } from '@/hooks/use-is-mobile'
 import { cn } from '@heroui/styles'
 import {
   createContext,
@@ -6,9 +5,9 @@ import {
   useContext,
   useMemo,
   useState,
-  type ComponentProps,
-  type CSSProperties,
 } from 'react'
+import type { CSSProperties, ComponentProps } from 'react'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 
 export const SIDEBAR_WIDTH = '16rem'
 export const SIDEBAR_WIDTH_MOBILE = '18rem'

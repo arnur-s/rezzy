@@ -1,8 +1,7 @@
 import { m } from '@/paraglide/messages'
-import { Popover, SearchField } from '@heroui/react'
-import { cn } from '@heroui/styles'
-import { DynamicIcon, iconNames, type IconName } from 'lucide-react/dynamic'
-import { CheckIcon, SearchIcon } from 'lucide-react'
+import { Button, Popover, SearchField } from '@heroui/react'
+import type { IconName } from 'lucide-react/dynamic'
+import { DynamicIcon, iconNames } from 'lucide-react/dynamic'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { WORKSPACE_CURATED_ICONS } from '../utils/workspace-icons'
 
@@ -21,7 +20,7 @@ export function WorkspaceIconPicker({
 }: WorkspaceIconPickerProps) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-8 gap-2 sm:grid-cols-8">
+      <div className="grid grid-cols-8 gap-2 sm:grid-cols-8 place-items-center">
         {WORKSPACE_CURATED_ICONS.map((name) => (
           <IconTile
             key={name}
@@ -54,28 +53,15 @@ function IconTile({
   onSelect: (value: IconName) => void
 }) {
   return (
-    <button
-      aria-label={name}
-      aria-pressed={isSelected}
-      className={cn(
-        'group relative flex aspect-square items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition',
-        'hover:border-primary/40 hover:text-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        isSelected &&
-          'border-primary bg-primary/10 text-primary hover:border-primary',
-        isDisabled && 'cursor-not-allowed opacity-50',
-      )}
-      disabled={isDisabled}
+    <Button
+      variant={isSelected ? 'primary' : 'ghost'}
+      size="sm"
+      isIconOnly
+      isDisabled={isDisabled}
       onClick={() => onSelect(name)}
-      type="button"
     >
       <DynamicIcon name={name} className="size-5" />
-      {isSelected && (
-        <span className="absolute right-1 top-1 flex size-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <CheckIcon className="size-2.5" strokeWidth={3} />
-        </span>
-      )}
-    </button>
+    </Button>
   )
 }
 
@@ -119,20 +105,10 @@ function BrowseAllIconsPopover({
         if (!open) setQuery('')
       }}
     >
-      <Popover.Trigger>
-        <button
-          className={cn(
-            'inline-flex w-fit items-center gap-2 self-start rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition',
-            'hover:border-primary/40 hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-            isDisabled && 'cursor-not-allowed opacity-50',
-          )}
-          disabled={isDisabled}
-          type="button"
-        >
-          <SearchIcon className="size-3.5" />
+      <Popover.Trigger className="w-fit">
+        <Button variant="outline" size="sm" isDisabled={isDisabled}>
           {m.workspaces_icon_browse_all()}
-        </button>
+        </Button>
       </Popover.Trigger>
 
       <Popover.Content className="w-80">
@@ -157,26 +133,18 @@ function BrowseAllIconsPopover({
               {m.workspaces_icon_empty()}
             </p>
           ) : (
-            <div className="grid max-h-72 grid-cols-6 gap-1.5 overflow-auto pr-1">
+            <div className="grid max-h-72 grid-cols-6 gap-1.5 overflow-auto place-items-center">
               {results.map((name) => (
-                <button
-                  aria-label={name}
-                  aria-pressed={value === name}
-                  className={cn(
-                    'flex aspect-square items-center justify-center rounded-md text-muted-foreground transition',
-                    'hover:bg-muted hover:text-foreground',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                    value === name && 'bg-primary/10 text-primary',
-                  )}
+                <Button
                   key={name}
-                  onClick={() => {
-                    onSelect(name)
-                    setIsOpen(false)
-                  }}
-                  type="button"
+                  variant={value === name ? 'primary' : 'ghost'}
+                  size="sm"
+                  isDisabled={isDisabled}
+                  onClick={() => onSelect(name)}
+                  isIconOnly
                 >
                   <DynamicIcon name={name} className="size-4" />
-                </button>
+                </Button>
               ))}
             </div>
           )}

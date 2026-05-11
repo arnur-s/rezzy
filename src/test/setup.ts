@@ -5,17 +5,23 @@ vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost:54321')
 vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-publishable-key')
 
 vi.stubGlobal('PointerEvent', MouseEvent)
-vi.stubGlobal('ResizeObserver', class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-})
+vi.stubGlobal(
+  'ResizeObserver',
+  class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  },
+)
 
-vi.stubGlobal('IntersectionObserver', class IntersectionObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-})
+vi.stubGlobal(
+  'IntersectionObserver',
+  class IntersectionObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  },
+)
 
 Object.defineProperty(window, 'matchMedia', {
   configurable: true,

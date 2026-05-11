@@ -1,8 +1,3 @@
-import { AppButton } from '@/components/app-button'
-import { SidebarInset } from '@/components/sidebar'
-import { m } from '@/paraglide/messages'
-import { getLocale } from '@/paraglide/runtime'
-import { supabase } from '@/utils/supabase'
 import {
   Card,
   FieldError,
@@ -13,11 +8,16 @@ import {
 } from '@heroui/react'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useMutation } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { supabase } from '@/utils/supabase'
+import { getLocale } from '@/paraglide/runtime'
+import { m } from '@/paraglide/messages'
+import { SidebarInset } from '@/components/sidebar'
+import { AppButton } from '@/components/app-button'
 
 export const Route = createFileRoute('/sign-in')({
   component: RouteComponent,

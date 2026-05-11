@@ -5,10 +5,7 @@ export {
   SidebarProvider,
   useSidebar,
 } from './sidebar-context'
-export type {
-  SidebarContextValue,
-  SidebarState,
-} from './sidebar-context'
+export type { SidebarContextValue, SidebarState } from './sidebar-context'
 export {
   Sidebar,
   SidebarContent,
@@ -28,6 +25,8 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarNavItem,
+  SidebarNavList,
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,

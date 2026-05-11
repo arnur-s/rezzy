@@ -1,5 +1,6 @@
-import { iconNames, type IconName } from 'lucide-react/dynamic'
+import {  iconNames } from 'lucide-react/dynamic'
 import { z } from 'zod'
+import type {IconName} from 'lucide-react/dynamic';
 
 const iconNameSet = new Set<string>(iconNames)
 

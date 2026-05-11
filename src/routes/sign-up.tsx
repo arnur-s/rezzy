@@ -12,7 +12,7 @@ import {
 } from '@heroui/react'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useMutation } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   EyeIcon,
   EyeOffIcon,
@@ -107,7 +107,7 @@ function RouteComponent() {
         return
       }
 
-      navigate({ to: '/workspaces' })
+      navigate({ to: '/' })
     },
   })
 

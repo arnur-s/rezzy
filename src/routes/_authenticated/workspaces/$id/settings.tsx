@@ -1,7 +1,25 @@
-import { WorkspaceSectionPage } from '@/features/workspaces/components/workspace-section-page'
-import { useAuth } from '@/providers/auth-provider'
-import { Spinner } from '@heroui/react'
-import { Navigate, createFileRoute } from '@tanstack/react-router'
+import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
+import { m } from '@/paraglide/messages'
+import { ListBox } from '@heroui/react'
+import {
+  Outlet,
+  createFileRoute,
+  useNavigate,
+  useParams,
+  useRouterState,
+} from '@tanstack/react-router'
+import type { LucideIcon } from 'lucide-react'
+import { MailIcon, PlugIcon, UsersIcon } from 'lucide-react'
+
+type SettingsNavItem = {
+  key: 'general' | 'channels' | 'members'
+  to:
+    | '/workspaces/$id/settings'
+    | '/workspaces/$id/settings/channels'
+    | '/workspaces/$id/settings/members'
+  icon: LucideIcon
+  label: string
+}
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
   {
@@ -10,16 +28,108 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
 )
 
 function RouteComponent() {
-  const { id } = Route.useParams()
-  const { isLoading, session } = useAuth()
+  const params = useParams({
+    from: '/_authenticated/workspaces/$id/settings',
+  })
+  const workspaceId = params.id
+  const navigate = useNavigate()
 
-  if (isLoading) {
-    return <Spinner size="sm" />
+  const workspaceQuery = useWorkspace(workspaceId)
+
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
+  const navItems: Array<SettingsNavItem> = [
+    {
+      key: 'general',
+      to: '/workspaces/$id/settings',
+      icon: MailIcon,
+      label: m.workspace_settings_general_label(),
+    },
+    {
+      key: 'channels',
+      to: '/workspaces/$id/settings/channels',
+      icon: PlugIcon,
+      label: m.workspace_settings_channels_label(),
+    },
+    {
+      key: 'members',
+      to: '/workspaces/$id/settings/members',
+      icon: UsersIcon,
+      label: m.workspace_settings_members_label(),
+    },
+  ]
+
+  let selectedKey: SettingsNavItem['key'] = 'general'
+  for (const item of navItems) {
+    const fullPath = item.to.replace('$id', workspaceId).replace(/\/$/, '')
+    if (pathname === fullPath || pathname === `${fullPath}/`) {
+      selectedKey = item.key
+      break
+    }
   }
 
-  if (!session) {
-    return <Navigate to="/sign-in" />
+  function handleSectionChange(keys: 'all' | Set<React.Key>) {
+    if (keys === 'all') {
+      return
+    }
+    const key = [...keys][0] as SettingsNavItem['key'] | undefined
+    if (!key) {
+      return
+    }
+    const item = navItems.find((i) => i.key === key)
+    if (item) {
+      void navigate({ to: item.to, params: { id: workspaceId } })
+    }
   }
 
-  return <WorkspaceSectionPage section="settings" workspaceId={id} />
+  return (
+    <div className="flex h-full w-full flex-col overflow-y-auto">
+      <header className="border-b border-border/60 px-4 py-6 sm:px-8">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {m.workspace_settings_kicker()}
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {m.workspace_settings_description()}
+        </p>
+      </header>
+
+      <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8 md:flex-row md:gap-10 md:py-10">
+        <nav className="md:w-56 md:shrink-0">
+          <ListBox
+            aria-label={m.workspace_settings_sections_nav_aria_label()}
+            selectionMode="single"
+            disallowEmptySelection
+            selectedKeys={new Set([selectedKey])}
+            onSelectionChange={handleSectionChange}
+            className="flex gap-1 overflow-x-auto md:flex-col md:gap-0.5"
+          >
+            {navItems.map((item) => {
+              const Icon = item.icon
+
+              return (
+                <ListBox.Item
+                  key={item.key}
+                  id={item.key}
+                  textValue={item.label}
+                  className="aria-selected:bg-primary/10 aria-selected:text-primary"
+                >
+                  <Icon className="size-4 shrink-0" />
+                  <span>{item.label}</span>
+                </ListBox.Item>
+              )
+            })}
+          </ListBox>
+        </nav>
+
+        <div className="min-w-0 flex-1">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  )
 }

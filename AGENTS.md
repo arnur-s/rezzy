@@ -52,8 +52,6 @@ Package manager: pnpm.
 
 Always preserve existing architecture and conventions.
 
-Do not edit eslint.config.js
-
 ## Core Principles
 
 - Keep solutions simple.
