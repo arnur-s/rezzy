@@ -28,6 +28,9 @@ export const Route = createFileRoute(
   '/_authenticated/workspaces/$id/settings/',
 )({
   component: RouteComponent,
+  staticData: {
+    crumb: () => null,
+  },
 })
 
 function RouteComponent() {

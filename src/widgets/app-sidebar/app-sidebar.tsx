@@ -4,7 +4,6 @@ import type { Workspace } from '@/features/workspaces/types'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import {
-  Disclosure,
   Drawer,
   Dropdown,
   Label,
@@ -14,26 +13,23 @@ import {
 } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import type { User } from '@supabase/supabase-js'
-import { Link, useNavigate, useParams, useRouterState } from '@tanstack/react-router'
 import {
-  BarChart3,
+  Link,
+  useNavigate,
+  useParams,
+  useRouterState,
+} from '@tanstack/react-router'
+import {
   CheckIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
   ChevronsUpDownIcon,
-  CircleHelpIcon,
-  InboxIcon,
   LayoutDashboard,
   LogOutIcon,
-  Plug,
+  MessageCircleIcon,
   PlusIcon,
   SettingsIcon,
-  UsersIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
-
-const HELP_DOCS_URL = 'https://heroui.com' as const
 
 const navItemBase =
   'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring'
@@ -41,12 +37,6 @@ const navItemInactive =
   'text-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
 const navItemActive = 'bg-sidebar-accent text-sidebar-accent-foreground'
 const navItemCollapsed = 'justify-center gap-0 px-0'
-
-const subItemBase =
-  'flex w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring'
-const subItemInactive =
-  'text-foreground/50 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground'
-const subItemActive = 'bg-sidebar-accent/70 text-sidebar-accent-foreground font-medium'
 
 export interface AppSidebarProps {
   isCollapsed: boolean
@@ -66,7 +56,7 @@ export function AppSidebar({
     <>
       {/* Desktop sidebar */}
       <aside
-        className="bg-sidebar border-sidebar-border/60 hidden shrink-0 flex-col overflow-hidden border-r transition-[width] duration-200 ease-out md:flex"
+        className="border-sidebar-border/60 hidden shrink-0 flex-col overflow-hidden border-r transition-[width] duration-200 ease-out md:flex"
         style={{ width: isCollapsed ? '64px' : '260px' }}
         data-collapsed={isCollapsed || undefined}
       >
@@ -124,7 +114,9 @@ function SidebarBody({
       await navigate({ to: '/sign-in' })
     } catch (error) {
       setIsSigningOut(false)
-      toast.danger(m.app_sidebar_logout_error(), { description: getErrorMessage(error) })
+      toast.danger(m.app_sidebar_logout_error(), {
+        description: getErrorMessage(error),
+      })
     }
   }
 
@@ -132,7 +124,12 @@ function SidebarBody({
     <>
       <div className="flex h-full flex-col">
         {/* Brand */}
-        <div className={cn('border-sidebar-border/60 border-b', isCollapsed ? 'p-3' : 'p-4')}>
+        <div
+          className={cn(
+            'border-sidebar-border/60 border-b h-[64px]',
+            isCollapsed ? 'p-3' : 'p-4',
+          )}
+        >
           <Link
             to="/"
             aria-label={m.app_sidebar_home_label()}
@@ -166,7 +163,10 @@ function SidebarBody({
             onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
             onSelect={(workspace) => {
               onNavigate?.()
-              void navigate({ to: '/workspaces/$id/inbox', params: { id: workspace.id } })
+              void navigate({
+                to: '/workspaces/$id/inbox',
+                params: { id: workspace.id },
+              })
             }}
           />
         </div>
@@ -174,7 +174,9 @@ function SidebarBody({
         <div className="bg-border/60 mx-3 my-2 h-px" />
 
         {/* Nav */}
-        <ScrollShadow className={cn('flex-1 py-1', isCollapsed ? 'px-2' : 'px-3')}>
+        <ScrollShadow
+          className={cn('flex-1 py-1', isCollapsed ? 'px-2' : 'px-3')}
+        >
           {currentWorkspace && (
             <WorkspaceNav
               workspaceId={currentWorkspace.id}
@@ -192,23 +194,6 @@ function SidebarBody({
             isCollapsed ? 'px-2' : 'px-3',
           )}
         >
-          <CollapsibleNavTooltip
-            isCollapsed={isCollapsed}
-            label={m.app_sidebar_footer_help_label()}
-          >
-            <a
-              href={HELP_DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={m.app_sidebar_footer_help_label()}
-              className={cn(navItemBase, navItemInactive, isCollapsed && navItemCollapsed)}
-            >
-              <CircleHelpIcon className="size-4 shrink-0" />
-              {!isCollapsed && (
-                <span className="truncate">{m.app_sidebar_footer_help_label()}</span>
-              )}
-            </a>
-          </CollapsibleNavTooltip>
           <CollapsibleNavTooltip
             isCollapsed={isCollapsed}
             label={m.app_sidebar_logout()}
@@ -254,15 +239,12 @@ function WorkspaceNav({
   onNavigate?: () => void
 }) {
   const overviewPath = `/workspaces/${workspaceId}`
-  const operationsOpen = isOperationsPath(pathname, workspaceId)
 
-  const isDashboardActive = pathname === overviewPath || pathname === `${overviewPath}/`
+  const isDashboardActive =
+    pathname === overviewPath || pathname === `${overviewPath}/`
   const isInboxActive =
-    pathname === `${overviewPath}/inbox` || pathname.startsWith(`${overviewPath}/inbox/`)
-  const isContactsActive =
-    pathname === `${overviewPath}/contacts` ||
-    pathname.startsWith(`${overviewPath}/contacts/`)
-  const isChannelsActive = pathname.startsWith(`${overviewPath}/settings/channels`)
+    pathname === `${overviewPath}/inbox` ||
+    pathname.startsWith(`${overviewPath}/inbox/`)
   const isSettingsActive = isWorkspaceSettingsPath(pathname, workspaceId)
 
   return (
@@ -294,93 +276,36 @@ function WorkspaceNav({
         </Link>
       </CollapsibleNavTooltip>
 
-      {/* Operations group */}
-      {isCollapsed ? (
-        <CollapsibleNavTooltip
-          isCollapsed
-          label={m.app_sidebar_operations_group_label()}
+      <CollapsibleNavTooltip
+        isCollapsed={isCollapsed}
+        label={m.app_sidebar_inbox_label()}
+      >
+        <Link
+          to="/workspaces/$id/inbox"
+          params={{ id: workspaceId }}
+          aria-label={m.app_sidebar_inbox_label()}
+          aria-current={isInboxActive ? 'page' : undefined}
+          className={cn(
+            navItemBase,
+            isInboxActive ? navItemActive : navItemInactive,
+            isCollapsed && navItemCollapsed,
+          )}
+          onClick={onNavigate}
         >
-          <Link
-            to="/workspaces/$id/inbox"
-            params={{ id: workspaceId }}
-            aria-label={m.app_sidebar_operations_group_label()}
-            aria-current={operationsOpen ? 'page' : undefined}
-            className={cn(
-              navItemBase,
-              operationsOpen ? navItemActive : navItemInactive,
-              navItemCollapsed,
-            )}
-            onClick={onNavigate}
-          >
-            <BarChart3 className="size-4 shrink-0" />
-          </Link>
-        </CollapsibleNavTooltip>
-      ) : (
-        <Disclosure defaultExpanded={operationsOpen}>
-          <Disclosure.Heading>
-            <Disclosure.Trigger
-              className={cn(
-                navItemBase,
-                'w-full justify-between',
-                operationsOpen ? navItemActive : navItemInactive,
-              )}
-            >
-              <span className="flex min-w-0 flex-1 items-center gap-2.5">
-                <BarChart3 className="size-4 shrink-0" />
-                <span className="truncate">{m.app_sidebar_operations_group_label()}</span>
-              </span>
-              <Disclosure.Indicator>
-                <ChevronDownIcon className="text-foreground/40 size-4 shrink-0 transition-transform data-[expanded=true]:rotate-180" />
-              </Disclosure.Indicator>
-            </Disclosure.Trigger>
-          </Disclosure.Heading>
-          <Disclosure.Content>
-            <Disclosure.Body className="p-0 pt-0.5">
-              <div className="border-border/60 ml-3 space-y-0.5 border-l pl-3">
-                <Link
-                  to="/workspaces/$id/inbox"
-                  params={{ id: workspaceId }}
-                  aria-current={isInboxActive ? 'page' : undefined}
-                  className={cn(subItemBase, isInboxActive ? subItemActive : subItemInactive)}
-                  onClick={onNavigate}
-                >
-                  <InboxIcon className="size-4 shrink-0" />
-                  <span className="truncate">{m.app_sidebar_inbox_label()}</span>
-                </Link>
-                <Link
-                  to="/workspaces/$id/contacts"
-                  params={{ id: workspaceId }}
-                  aria-current={isContactsActive ? 'page' : undefined}
-                  className={cn(
-                    subItemBase,
-                    isContactsActive ? subItemActive : subItemInactive,
-                  )}
-                  onClick={onNavigate}
-                >
-                  <UsersIcon className="size-4 shrink-0" />
-                  <span className="truncate">{m.app_sidebar_contacts_label()}</span>
-                </Link>
-                <Link
-                  to="/workspaces/$id/settings/channels"
-                  params={{ id: workspaceId }}
-                  aria-current={isChannelsActive ? 'page' : undefined}
-                  className={cn(
-                    subItemBase,
-                    isChannelsActive ? subItemActive : subItemInactive,
-                  )}
-                  onClick={onNavigate}
-                >
-                  <Plug className="size-4 shrink-0" />
-                  <span className="truncate">{m.app_sidebar_channels_nav_label()}</span>
-                </Link>
-              </div>
-            </Disclosure.Body>
-          </Disclosure.Content>
-        </Disclosure>
-      )}
+          <MessageCircleIcon className="size-4 shrink-0" />
+          {!isCollapsed && (
+            <span className="flex-1 truncate">
+              {m.app_sidebar_inbox_label()}
+            </span>
+          )}
+        </Link>
+      </CollapsibleNavTooltip>
 
       {/* Settings */}
-      <CollapsibleNavTooltip isCollapsed={isCollapsed} label={m.common_settings()}>
+      <CollapsibleNavTooltip
+        isCollapsed={isCollapsed}
+        label={m.common_settings()}
+      >
         <Link
           to="/workspaces/$id/settings"
           params={{ id: workspaceId }}
@@ -395,10 +320,7 @@ function WorkspaceNav({
         >
           <SettingsIcon className="size-4 shrink-0" />
           {!isCollapsed && (
-            <>
-              <span className="flex-1 truncate">{m.common_settings()}</span>
-              <ChevronRightIcon className="text-foreground/30 size-4 shrink-0" />
-            </>
+            <span className="flex-1 truncate">{m.common_settings()}</span>
           )}
         </Link>
       </CollapsibleNavTooltip>
@@ -506,7 +428,11 @@ function WorkspaceSwitcher({
           }}
         >
           {workspaces.map((workspace) => (
-            <Dropdown.Item key={workspace.id} id={workspace.id} textValue={workspace.name}>
+            <Dropdown.Item
+              key={workspace.id}
+              id={workspace.id}
+              textValue={workspace.name}
+            >
               <WorkspaceMark
                 name={workspace.name}
                 isActive={workspace.id === currentWorkspace?.id}
@@ -527,12 +453,20 @@ function WorkspaceSwitcher({
   )
 }
 
-function WorkspaceMark({ name, isActive }: { name: string; isActive: boolean }) {
+function WorkspaceMark({
+  name,
+  isActive,
+}: {
+  name: string
+  isActive: boolean
+}) {
   return (
     <span
       className={cn(
         'flex size-5 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold',
-        isActive ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary',
+        isActive
+          ? 'bg-primary text-primary-foreground'
+          : 'bg-primary/10 text-primary',
       )}
     >
       {name.trim().charAt(0).toUpperCase() || 'W'}
@@ -558,19 +492,14 @@ function CollapsibleNavTooltip({
   )
 }
 
-function isOperationsPath(pathname: string, workspaceId: string) {
-  const prefix = `/workspaces/${workspaceId}/`
-  return (
-    pathname.startsWith(`${prefix}inbox`) ||
-    pathname.startsWith(`${prefix}contacts`) ||
-    pathname.startsWith(`${prefix}settings/channels`)
-  )
-}
-
 function isWorkspaceSettingsPath(pathname: string, workspaceId: string) {
   const base = `/workspaces/${workspaceId}/settings`
   if (!pathname.startsWith(base)) return false
-  return !pathname.includes('/settings/channels')
+  return (
+    pathname.endsWith('/settings') ||
+    pathname.includes('channels') ||
+    pathname.includes('members')
+  )
 }
 
 function getErrorMessage(error: unknown) {

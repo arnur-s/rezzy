@@ -2,15 +2,14 @@ import {
   getUserDisplayName,
   getUserInitials,
 } from '@/features/users/utils/user-display'
-import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
-import type { Workspace } from '@/features/workspaces/types'
+import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import type { Theme } from '@/providers/theme-provider'
 import { useTheme } from '@/providers/theme-provider'
 import { Avatar, Button, Dropdown, Label, Separator } from '@heroui/react'
 import { cn } from '@heroui/styles'
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, useMatches, useNavigate } from '@tanstack/react-router'
 import {
   BellIcon,
   CheckIcon,
@@ -25,125 +24,6 @@ import {
 } from 'lucide-react'
 import { useMemo } from 'react'
 
-type BreadcrumbLink = {
-  to:
-    | '/workspaces'
-    | '/workspaces/$id'
-    | '/workspaces/$id/settings'
-    | '/workspaces/$id/settings/channels'
-  params?: { id: string }
-}
-
-type BreadcrumbItem = {
-  label: string
-  link?: BreadcrumbLink
-  current?: boolean
-}
-
-function buildBreadcrumbs({
-  pathname,
-  workspaces,
-}: {
-  pathname: string
-  workspaces: Array<Workspace> | undefined
-}): Array<BreadcrumbItem> {
-  if (pathname === '/profile') {
-    return [{ label: m.app_breadcrumbs_profile(), current: true }]
-  }
-
-  if (pathname === '/settings') {
-    return [{ label: m.app_breadcrumbs_app_settings(), current: true }]
-  }
-
-  if (pathname === '/workspaces' || pathname === '/workspaces/') {
-    return [{ label: m.app_breadcrumbs_workspaces(), current: true }]
-  }
-
-  const match = pathname.match(/^\/workspaces\/([^/]+)(?:\/(.*))?$/)
-  if (!match) {
-    return []
-  }
-
-  const id = match[1]
-  const rawTail: string | undefined = match[2]
-  const tail = rawTail ? rawTail.replace(/\/$/, '') : ''
-  const parts = tail ? tail.split('/').filter(Boolean) : []
-  const workspaceName =
-    workspaces?.find((w) => w.id === id)?.name ??
-    m.app_breadcrumbs_workspace_fallback()
-
-  const crumbs: Array<BreadcrumbItem> = [
-    { label: m.app_breadcrumbs_workspaces(), link: { to: '/workspaces' } },
-    { label: workspaceName, link: { to: '/workspaces/$id', params: { id } } },
-  ]
-
-  if (parts.length === 0) {
-    crumbs.push({ label: m.app_breadcrumbs_dashboard(), current: true })
-    return crumbs
-  }
-
-  if (parts[0] === 'inbox' && parts.length === 1) {
-    crumbs.push({ label: m.app_breadcrumbs_inbox(), current: true })
-    return crumbs
-  }
-
-  if (parts[0] === 'contacts' && parts.length === 1) {
-    crumbs.push({ label: m.app_breadcrumbs_contacts(), current: true })
-    return crumbs
-  }
-
-  if (parts[0] === 'settings') {
-    if (parts[1] === 'channels' && parts[2] === 'new') {
-      crumbs.push(
-        {
-          label: m.app_breadcrumbs_workspace_settings(),
-          link: { to: '/workspaces/$id/settings', params: { id } },
-        },
-        {
-          label: m.app_breadcrumbs_channels(),
-          link: { to: '/workspaces/$id/settings/channels', params: { id } },
-        },
-        { label: m.app_breadcrumbs_connect_channel(), current: true },
-      )
-      return crumbs
-    }
-
-    if (parts[1] === 'channels' && parts.length === 2) {
-      crumbs.push(
-        {
-          label: m.app_breadcrumbs_workspace_settings(),
-          link: { to: '/workspaces/$id/settings', params: { id } },
-        },
-        { label: m.app_breadcrumbs_channels(), current: true },
-      )
-      return crumbs
-    }
-
-    if (parts[1] === 'members' && parts.length === 2) {
-      crumbs.push(
-        {
-          label: m.app_breadcrumbs_workspace_settings(),
-          link: { to: '/workspaces/$id/settings', params: { id } },
-        },
-        { label: m.app_breadcrumbs_members(), current: true },
-      )
-      return crumbs
-    }
-
-    crumbs.push({
-      label: m.app_breadcrumbs_workspace_settings(),
-      current: true,
-    })
-    return crumbs
-  }
-
-  crumbs.push({
-    label: tail || m.app_breadcrumbs_workspace_fallback(),
-    current: true,
-  })
-  return crumbs
-}
-
 export interface AppHeaderProps {
   className?: string
   onToggleSidebar?: () => void
@@ -152,14 +32,27 @@ export interface AppHeaderProps {
 export function AppHeader({ className, onToggleSidebar }: AppHeaderProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const matches = useMatches()
 
-  const workspacesQuery = useWorkspaces(user?.id ?? '')
+  const workspaceId = matches.reduce<string | undefined>((found, match) => {
+    const params = match.params as Record<string, string>
+    return typeof params.id === 'string' ? params.id : found
+  }, undefined)
+  const workspaceQuery = useWorkspace(workspaceId ?? '')
 
-  const items = useMemo(
-    () => buildBreadcrumbs({ pathname, workspaces: workspacesQuery.data }),
-    [pathname, workspacesQuery.data],
-  )
+  const items = useMemo(() => {
+    const workspaceName = workspaceQuery.data?.name
+    return matches.flatMap((match) => {
+      const crumb = match.staticData.crumb
+      if (!crumb) return []
+      const result = crumb({
+        params: match.params,
+        workspaceName,
+      })
+      if (!result) return []
+      return Array.isArray(result) ? result : [result]
+    })
+  }, [matches, workspaceQuery.data?.name])
 
   const displayName = user
     ? getUserDisplayName(user, m.app_sidebar_unknown_user())
@@ -168,7 +61,7 @@ export function AppHeader({ className, onToggleSidebar }: AppHeaderProps) {
   return (
     <header
       className={cn(
-        'border-border/60 bg-background/80 flex h-[60px] shrink-0 items-center gap-2 border-b px-4 backdrop-blur',
+        'border-border/60 border-b flex h-[64px] shrink-0 items-center gap-2 px-4 backdrop-blur z-1',
         className,
       )}
     >

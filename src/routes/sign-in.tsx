@@ -1,3 +1,7 @@
+import { AppButton } from '@/components/app-button'
+import { m } from '@/paraglide/messages'
+import { getLocale } from '@/paraglide/runtime'
+import { supabase } from '@/utils/supabase'
 import {
   Card,
   FieldError,
@@ -13,10 +17,6 @@ import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { supabase } from '@/utils/supabase'
-import { getLocale } from '@/paraglide/runtime'
-import { m } from '@/paraglide/messages'
-import { AppButton } from '@/components/app-button'
 
 export const Route = createFileRoute('/sign-in')({
   component: RouteComponent,
@@ -79,7 +79,7 @@ function RouteComponent() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center">
+    <div className="ambient min-h-dvh flex items-center justify-center">
       <Card className="w-full max-w-md border border-border bg-card text-card-foreground shadow-surface z-1">
         <Card.Header>
           <Card.Title>{m.auth_sign_in_welcome()}</Card.Title>

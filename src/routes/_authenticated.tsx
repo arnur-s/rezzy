@@ -45,9 +45,9 @@ function RouteComponent() {
             isMobileOpen={isMobileSidebarOpen}
             onMobileOpenChange={setIsMobileSidebarOpen}
           />
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="ambient flex min-w-0 flex-1 flex-col overflow-hidden">
             <AppHeader onToggleSidebar={handleToggleSidebar} />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto z-1">
               <Outlet />
             </main>
           </div>

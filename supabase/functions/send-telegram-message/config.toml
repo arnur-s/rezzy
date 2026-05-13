@@ -1,0 +1,2 @@
+[functions.send-telegram-message]
+verify_jwt = true

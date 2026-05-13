@@ -1,6 +1,7 @@
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
+import { workspaceCrumbs } from '@/lib/breadcrumbs'
 import { m } from '@/paraglide/messages'
-import { ListBox } from '@heroui/react'
+import { Tabs } from '@heroui/react'
 import {
   Outlet,
   createFileRoute,
@@ -24,6 +25,18 @@ type SettingsNavItem = {
 export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
   {
     component: RouteComponent,
+    staticData: {
+      crumb: (ctx) => [
+        ...workspaceCrumbs(ctx),
+        {
+          label: m.app_breadcrumbs_workspace_settings(),
+          link: {
+            to: '/workspaces/$id/settings',
+            params: { id: ctx.params.id },
+          },
+        },
+      ],
+    },
   },
 )
 
@@ -70,18 +83,13 @@ function RouteComponent() {
     }
   }
 
-  function handleSectionChange(keys: 'all' | Set<React.Key>) {
-    if (keys === 'all') {
-      return
-    }
-    const key = [...keys][0] as SettingsNavItem['key'] | undefined
-    if (!key) {
-      return
-    }
-    const item = navItems.find((i) => i.key === key)
-    if (item) {
-      void navigate({ to: item.to, params: { id: workspaceId } })
-    }
+  const handleSectionChange = (key: string) => {
+    const basePath = `/workspaces/${workspaceId}/settings`
+    const to = key === 'general' ? basePath : `${basePath}/${key}`
+    navigate({
+      to,
+      params: { id: workspaceId },
+    })
   }
 
   return (
@@ -98,7 +106,41 @@ function RouteComponent() {
         </p>
       </header>
 
-      <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8 md:flex-row md:gap-10 md:py-10">
+      <div className="container px-4 py-6 sm:px-8 md:flex-row md:gap-10 md:py-10">
+        <Tabs
+          variant="secondary"
+          selectedKey={selectedKey}
+          onSelectionChange={(key) => handleSectionChange(key as string)}
+        >
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Options">
+              <Tabs.Tab id="general">
+                {m.workspace_settings_general_label()}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="channels">
+                {m.workspace_settings_channels_label()}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="members">
+                {m.workspace_settings_members_label()}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
+          <Tabs.Panel id="general">
+            <Outlet />
+          </Tabs.Panel>
+          <Tabs.Panel id="channels">
+            <Outlet />
+          </Tabs.Panel>
+          <Tabs.Panel id="members">
+            <Outlet />
+          </Tabs.Panel>
+        </Tabs>
+      </div>
+
+      {/* <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8 md:flex-row md:gap-10 md:py-10">
         <nav className="md:w-56 md:shrink-0">
           <ListBox
             aria-label={m.workspace_settings_sections_nav_aria_label()}
@@ -129,7 +171,7 @@ function RouteComponent() {
         <div className="min-w-0 flex-1">
           <Outlet />
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }

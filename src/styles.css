@@ -42,6 +42,7 @@ body {
 
 .ambient {
   position: relative;
+  overflow: hidden;
 }
 
 .ambient::before {
@@ -67,14 +68,16 @@ body {
   position: absolute;
   inset: 0;
   content: '';
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 2px),
-    linear-gradient(90deg, var(--border) 2px, transparent 2px);
-  background-size: 4rem 4rem;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--border) 70%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 1.6rem 1.6rem;
   mask-image: radial-gradient(
     circle at center,
     var(--foreground),
     transparent 72%
   );
-  opacity: 0.26;
+  opacity: 0.22;
 }

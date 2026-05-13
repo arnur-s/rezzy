@@ -18,6 +18,18 @@ export const Route = createFileRoute(
   '/_authenticated/workspaces/$id/settings/channels/new',
 )({
   component: RouteComponent,
+  staticData: {
+    crumb: (ctx) => [
+      {
+        label: m.app_breadcrumbs_channels(),
+        link: {
+          to: '/workspaces/$id/settings/channels',
+          params: { id: ctx.params.id },
+        },
+      },
+      { label: m.app_breadcrumbs_connect_channel() },
+    ],
+  },
   validateSearch: (search: Record<string, unknown>): ChannelsNewSearch => {
     const rawType = search.type
     if (typeof rawType === 'string' && isChannelType(rawType)) {
