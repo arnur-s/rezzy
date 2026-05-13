@@ -69,7 +69,7 @@ export function useConversationsRealtime(workspaceId: string) {
         },
         (payload) => {
           const removed = payload.old as { id?: string }
-          const id = removed?.id
+          const id = removed.id
           if (!id) return
           queryClient.setQueryData<Array<ConversationWithRelations>>(
             key,

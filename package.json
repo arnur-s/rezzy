@@ -1,5 +1,5 @@
 {
-  "name": "cms",
+  "name": "birhq",
   "private": true,
   "type": "module",
   "imports": {
@@ -14,7 +14,7 @@
     "test:db": "supabase test db",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
-    "format": "prettier --write . && eslint --fix",
+    "format": "eslint --fix . && prettier --write .",
     "check": "prettier --check .",
     "machine-translate": "inlang machine translate --project project.inlang",
     "types:supabase": "npx supabase gen types typescript > ./src/api/types.ts"
@@ -53,6 +53,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
     "jsdom": "^28.1.0",
     "prettier": "^3.8.1",
     "typescript": "^6.0.2",

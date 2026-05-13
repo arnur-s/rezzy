@@ -54,7 +54,6 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside
         className="border-sidebar-border/60 hidden shrink-0 flex-col overflow-hidden border-r transition-[width] duration-200 ease-out md:flex"
         style={{ width: isCollapsed ? '64px' : '260px' }}
@@ -63,19 +62,26 @@ export function AppSidebar({
         <SidebarBody user={user} isCollapsed={isCollapsed} />
       </aside>
 
-      {/* Mobile drawer — always full width */}
-      <Drawer isOpen={isMobileOpen} onOpenChange={onMobileOpenChange}>
-        <Drawer.Backdrop />
+      <Drawer.Backdrop
+        variant="blur"
+        isOpen={isMobileOpen}
+        onOpenChange={onMobileOpenChange}
+      >
         <Drawer.Content placement="left">
-          <Drawer.Dialog className="bg-sidebar h-full w-[260px] rounded-none">
-            <SidebarBody
-              user={user}
-              isCollapsed={false}
-              onNavigate={() => onMobileOpenChange(false)}
-            />
+          <Drawer.Dialog
+            className="bg-sidebar h-full w-[260px] rounded-none"
+            aria-label={m.app_sidebar_brand_label()}
+          >
+            <Drawer.Body>
+              <SidebarBody
+                user={user}
+                isCollapsed={false}
+                onNavigate={() => onMobileOpenChange(false)}
+              />
+            </Drawer.Body>
           </Drawer.Dialog>
         </Drawer.Content>
-      </Drawer>
+      </Drawer.Backdrop>
     </>
   )
 }
@@ -97,14 +103,17 @@ function SidebarBody({
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const params = useParams({ strict: false })
   const currentWorkspaceId = params.id
+  const isHomeRoute = pathname === '/'
 
   const workspacesQuery = useWorkspaces(user.id)
 
   const currentWorkspace = useMemo(
     () =>
-      workspacesQuery.data?.find((w) => w.id === currentWorkspaceId) ??
-      workspacesQuery.data?.[0],
-    [workspacesQuery.data, currentWorkspaceId],
+      isHomeRoute
+        ? undefined
+        : (workspacesQuery.data?.find((w) => w.id === currentWorkspaceId) ??
+          workspacesQuery.data?.[0]),
+    [workspacesQuery.data, currentWorkspaceId, isHomeRoute],
   )
 
   async function handleSignOut() {
@@ -140,7 +149,7 @@ function SidebarBody({
             onClick={onNavigate}
           >
             <span className="bg-accent flex size-8 shrink-0 items-center justify-center rounded-lg">
-              <span className="text-sm font-bold text-white">
+              <span className="text-lg font-bold text-white">
                 {m.app_sidebar_brand_label().charAt(0)}
               </span>
             </span>
@@ -153,25 +162,29 @@ function SidebarBody({
         </div>
 
         {/* Workspace switcher */}
-        <div className={cn('pt-3', isCollapsed ? 'px-2' : 'px-3')}>
-          <WorkspaceSwitcher
-            isCollapsed={isCollapsed}
-            currentWorkspace={currentWorkspace}
-            workspaces={workspacesQuery.data ?? []}
-            isLoading={workspacesQuery.isPending}
-            isError={workspacesQuery.isError}
-            onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
-            onSelect={(workspace) => {
-              onNavigate?.()
-              void navigate({
-                to: '/workspaces/$id/inbox',
-                params: { id: workspace.id },
-              })
-            }}
-          />
-        </div>
+        {!isHomeRoute && (
+          <>
+            <div className={cn('pt-3', isCollapsed ? 'px-2' : 'px-3')}>
+              <WorkspaceSwitcher
+                isCollapsed={isCollapsed}
+                currentWorkspace={currentWorkspace}
+                workspaces={workspacesQuery.data ?? []}
+                isLoading={workspacesQuery.isPending}
+                isError={workspacesQuery.isError}
+                onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
+                onSelect={(workspace) => {
+                  onNavigate?.()
+                  void navigate({
+                    to: '/workspaces/$id/inbox',
+                    params: { id: workspace.id },
+                  })
+                }}
+              />
+            </div>
 
-        <div className="bg-border/60 mx-3 my-2 h-px" />
+            <div className="bg-border/60 mx-3 my-2 h-px" />
+          </>
+        )}
 
         {/* Nav */}
         <ScrollShadow

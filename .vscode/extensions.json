@@ -1,3 +1,7 @@
 {
-  "recommendations": ["inlang.vs-code-extension"]
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "inlang.vs-code-extension"
+  ]
 }

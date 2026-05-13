@@ -74,7 +74,6 @@ export function AppHeader({ className, onToggleSidebar }: AppHeaderProps) {
       >
         <PanelLeftIcon className="size-4" />
       </Button>
-
       <nav
         aria-label={m.app_breadcrumbs_aria_label()}
         className="text-muted-foreground flex min-w-0 flex-1 items-center text-sm"
