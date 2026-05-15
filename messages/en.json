@@ -231,6 +231,8 @@
   "inbox_messages_load_error": "Could not load messages",
   "inbox_unread_messages_divider": "Unread messages",
   "inbox_new_messages_button": "New messages",
+  "inbox_new_messages_button_one": "1 new message",
+  "inbox_new_messages_button_many": "{count} new messages",
   "inbox_thread_show_contact": "Show contact profile",
   "inbox_thread_hide_contact": "Hide contact profile",
   "inbox_thread_back_to_list": "Back to conversations",

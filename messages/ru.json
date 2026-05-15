@@ -231,6 +231,8 @@
   "inbox_messages_load_error": "Не удалось загрузить сообщения",
   "inbox_unread_messages_divider": "Непрочитанные сообщения",
   "inbox_new_messages_button": "Новые сообщения",
+  "inbox_new_messages_button_one": "1 новое сообщение",
+  "inbox_new_messages_button_many": "{count} новых сообщений",
   "inbox_thread_show_contact": "Показать профиль контакта",
   "inbox_thread_hide_contact": "Скрыть профиль контакта",
   "inbox_thread_back_to_list": "Назад к диалогам",

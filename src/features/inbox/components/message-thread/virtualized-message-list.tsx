@@ -38,6 +38,27 @@ export function VirtualizedMessageList({
   const markedReadMessageIdRef = useRef<string | null>(null)
   const [frozenDividerMessageId] = useState(() => unreadDividerMessageId)
   const [showNewMessagesButton, setShowNewMessagesButton] = useState(false)
+  const [newMessageCount, setNewMessageCount] = useState(0)
+
+  // Stable refs kept current so the once-registered scroll handler can read them.
+  const latestMessageIdRef = useRef<string | null>(null)
+  const onReadAnchorVisibleRef = useRef(onReadAnchorVisible)
+  const tryMarkReadRef = useRef(() => {})
+
+  useEffect(() => {
+    latestMessageIdRef.current = messages.at(-1)?.id ?? null
+  })
+  useEffect(() => {
+    onReadAnchorVisibleRef.current = onReadAnchorVisible
+  })
+  useEffect(() => {
+    tryMarkReadRef.current = () => {
+      const id = latestMessageIdRef.current
+      if (!id || markedReadMessageIdRef.current === id) return
+      markedReadMessageIdRef.current = id
+      onReadAnchorVisibleRef.current(id)
+    }
+  })
 
   const groups = useMemo(() => buildMessageGroups(messages), [messages])
   const flatItems = useMemo(
@@ -58,56 +79,82 @@ export function VirtualizedMessageList({
 
   const handleNewMessagesPress = useCallback(() => {
     setShowNewMessagesButton(false)
+    setNewMessageCount(0)
     virtualizer.scrollToIndex(flatItems.length - 1, { align: 'end' })
+    tryMarkReadRef.current()
   }, [virtualizer, flatItems.length])
 
+  // Initial scroll: prefer divider item index, then fall back to message item index.
   useEffect(() => {
     if (initialScrollDoneRef.current || flatItems.length === 0) return
 
     if (!initialScrollTarget.messageId) {
       initialScrollDoneRef.current = true
+      stickToBottomRef.current = true
+      tryMarkReadRef.current()
       return
     }
 
-    const targetIndex = flatItems.findIndex(
+    const dividerIndex = flatItems.findIndex((item) => item.kind === 'divider')
+    const messageIndex = flatItems.findIndex(
       (item) =>
         item.kind === 'message' &&
         item.message.id === initialScrollTarget.messageId,
     )
+    const targetIndex =
+      initialScrollTarget.reason === 'first-unread' && dividerIndex !== -1
+        ? dividerIndex
+        : messageIndex
+
     if (targetIndex === -1) return
 
     initialScrollDoneRef.current = true
-    stickToBottomRef.current = initialScrollTarget.reason === 'latest'
-    if (!stickToBottomRef.current) {
+    // `last-read` means all messages are read → treat as sticky, no button.
+    stickToBottomRef.current = initialScrollTarget.reason !== 'first-unread'
+
+    if (initialScrollTarget.reason === 'first-unread') {
       setShowNewMessagesButton(true)
+    } else {
+      tryMarkReadRef.current()
     }
+
     virtualizer.scrollToIndex(targetIndex, { align: 'center' })
   }, [flatItems, initialScrollTarget, virtualizer])
 
+  // New-message arrival: outbound always scrolls to bottom; inbound increments count.
   useEffect(() => {
     const count = messages.length
-    if (count <= lastCountRef.current) {
+
+    if (!initialScrollDoneRef.current) {
       lastCountRef.current = count
       return
     }
 
-    const addedMessages = messages.slice(lastCountRef.current)
-    const hasIncomingMessage = addedMessages.some(
-      (msg) => msg.direction === 'inbound',
-    )
+    if (count > lastCountRef.current) {
+      const addedMessages = messages.slice(lastCountRef.current)
+      const hasOutbound = addedMessages.some((m) => m.direction === 'outbound')
+      const inboundCount = addedMessages.filter(
+        (m) => m.direction === 'inbound',
+      ).length
 
-    if (initialScrollDoneRef.current) {
-      if (stickToBottomRef.current && flatItems.length > 0) {
+      if (stickToBottomRef.current || hasOutbound) {
+        stickToBottomRef.current = true
         setShowNewMessagesButton(false)
-        virtualizer.scrollToIndex(flatItems.length - 1, { align: 'end' })
-      } else if (hasIncomingMessage) {
+        setNewMessageCount(0)
+        if (flatItems.length > 0) {
+          virtualizer.scrollToIndex(flatItems.length - 1, { align: 'end' })
+        }
+        tryMarkReadRef.current()
+      } else if (inboundCount > 0) {
         setShowNewMessagesButton(true)
+        setNewMessageCount((prev) => prev + inboundCount)
       }
     }
 
     lastCountRef.current = count
   }, [messages, flatItems, virtualizer])
 
+  // Geometry-based read visibility check for the initial unread batch.
   const checkReadVisibility = useCallback(() => {
     const node = parentRef.current
     if (
@@ -156,6 +203,7 @@ export function VirtualizedMessageList({
     return () => cancelAnimationFrame(frame)
   }, [checkReadVisibility, virtualItems])
 
+  // Scroll event: update sticky ref, mark read when reaching bottom.
   useEffect(() => {
     const node = parentRef.current
     if (!node) return
@@ -163,7 +211,11 @@ export function VirtualizedMessageList({
     const onScroll = () => {
       const isAtBottom = isNearBottom(node)
       stickToBottomRef.current = isAtBottom
-      if (isAtBottom) setShowNewMessagesButton(false)
+      if (isAtBottom) {
+        setShowNewMessagesButton(false)
+        setNewMessageCount(0)
+        tryMarkReadRef.current()
+      }
       checkReadVisibilityRef.current()
     }
 
@@ -173,7 +225,10 @@ export function VirtualizedMessageList({
 
   return (
     <div className="relative min-h-0 flex-1">
-      <div ref={parentRef} className="h-full overflow-y-auto">
+      <div
+        ref={parentRef}
+        className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+      >
         <div
           style={{
             height: virtualizer.getTotalSize(),
@@ -218,7 +273,10 @@ export function VirtualizedMessageList({
       </div>
 
       {showNewMessagesButton ? (
-        <NewMessagesButton onPress={handleNewMessagesPress} />
+        <NewMessagesButton
+          count={newMessageCount}
+          onPress={handleNewMessagesPress}
+        />
       ) : null}
     </div>
   )

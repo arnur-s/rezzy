@@ -3,9 +3,17 @@ import { Button } from '@heroui/react'
 
 type Props = {
   onPress: () => void
+  count?: number
 }
 
-export function NewMessagesButton({ onPress }: Props) {
+export function NewMessagesButton({ onPress, count }: Props) {
+  const label =
+    count === 1
+      ? m.inbox_new_messages_button_one()
+      : count && count > 1
+        ? m.inbox_new_messages_button_many({ count })
+        : m.inbox_new_messages_button()
+
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4">
       <Button
@@ -13,8 +21,9 @@ export function NewMessagesButton({ onPress }: Props) {
         variant="primary"
         className="pointer-events-auto shadow-lg"
         onPress={onPress}
+        aria-label={label}
       >
-        {m.inbox_new_messages_button()}
+        {label}
       </Button>
     </div>
   )

@@ -111,7 +111,7 @@ describe('MessageList unread behavior', () => {
 
     expect(
       screen.getByText(
-        /Unread messages|\u041d\u0435\u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d\u043d\u044b\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u044f/u,
+        /Unread messages|Непрочитанные сообщения/u,
       ),
     ).toBeTruthy()
 
@@ -123,6 +123,63 @@ describe('MessageList unread behavior', () => {
     )
 
     expect(onReadAnchorVisible).toHaveBeenCalledWith('latest')
+  })
+
+  it('does not call onReadAnchorVisible twice for the same markReadMessageId', async () => {
+    const observerState: {
+      callback?: IntersectionObserverCallback
+      observer?: IntersectionObserver
+    } = {}
+
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class TestIntersectionObserver implements IntersectionObserver {
+        readonly root = null
+        readonly rootMargin = ''
+        readonly scrollMargin = ''
+        readonly thresholds = []
+
+        constructor(cb: IntersectionObserverCallback) {
+          observerState.callback = cb
+          observerState.observer = this
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+        takeRecords(): Array<IntersectionObserverEntry> {
+          return []
+        }
+      },
+    )
+
+    const onReadAnchorVisible = vi.fn()
+
+    render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={baseMessages}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        initialScrollTarget={{
+          messageId: 'first-unread',
+          reason: 'first-unread',
+        }}
+        unreadDividerMessageId="first-unread"
+        readAnchorMessageId="first-unread"
+        markReadMessageId="latest"
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    await waitFor(() => expect(observerState.callback).toBeDefined())
+
+    // Fire the observer twice with the same markReadMessageId
+    const entry = { isIntersecting: true } as IntersectionObserverEntry
+    observerState.callback!([entry], observerState.observer!)
+    observerState.callback!([entry], observerState.observer!)
+
+    expect(onReadAnchorVisible).toHaveBeenCalledTimes(1)
   })
 
   it('shows the new messages button for inbound realtime messages while away from bottom', () => {
@@ -179,8 +236,159 @@ describe('MessageList unread behavior', () => {
 
     expect(
       screen.getByText(
-        /New messages|\u041d\u043e\u0432\u044b\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u044f/u,
+        /New messages|1 new message|Новые сообщения|новое сообщение/u,
       ),
     ).toBeTruthy()
+  })
+
+  it('increments the new message count for each inbound arrival while away from bottom', () => {
+    const onReadAnchorVisible = vi.fn()
+    const { container, rerender } = render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={baseMessages.slice(0, 1)}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        initialScrollTarget={{ messageId: 'read', reason: 'latest' }}
+        unreadDividerMessageId={null}
+        readAnchorMessageId={null}
+        markReadMessageId={null}
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    const scrollNode = container.querySelector('.overflow-y-auto')
+    if (!(scrollNode instanceof HTMLElement)) {
+      throw new Error('Scroll container was not rendered')
+    }
+
+    // Simulate user being far from bottom
+    Object.defineProperties(scrollNode, {
+      scrollHeight: { configurable: true, value: 1200 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: { configurable: true, value: 0 },
+    })
+    fireEvent.scroll(scrollNode)
+
+    // First inbound
+    rerender(
+      <MessageList
+        conversationId="conversation-1"
+        messages={[
+          ...baseMessages.slice(0, 1),
+          messageRow({
+            id: 'inbound-1',
+            direction: 'inbound',
+            createdAt: '2026-05-15T08:01:00Z',
+          }),
+        ]}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        initialScrollTarget={{ messageId: 'read', reason: 'latest' }}
+        unreadDividerMessageId={null}
+        readAnchorMessageId={null}
+        markReadMessageId={null}
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    // Second inbound
+    rerender(
+      <MessageList
+        conversationId="conversation-1"
+        messages={[
+          ...baseMessages.slice(0, 1),
+          messageRow({
+            id: 'inbound-1',
+            direction: 'inbound',
+            createdAt: '2026-05-15T08:01:00Z',
+          }),
+          messageRow({
+            id: 'inbound-2',
+            direction: 'inbound',
+            createdAt: '2026-05-15T08:02:00Z',
+          }),
+        ]}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        initialScrollTarget={{ messageId: 'read', reason: 'latest' }}
+        unreadDividerMessageId={null}
+        readAnchorMessageId={null}
+        markReadMessageId={null}
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    // Button should show "2 new messages"
+    expect(
+      screen.getByText(
+        /2 new messages|2 новых/u,
+      ),
+    ).toBeTruthy()
+  })
+
+  it('scrolls to bottom and calls onReadAnchorVisible when an outbound message is added while scrolled up', () => {
+    const onReadAnchorVisible = vi.fn()
+    const scrollToBottomSpy = vi.fn()
+
+    const { container, rerender } = render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={baseMessages.slice(0, 2)}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        initialScrollTarget={{ messageId: 'first-unread', reason: 'latest' }}
+        unreadDividerMessageId={null}
+        readAnchorMessageId={null}
+        markReadMessageId={null}
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    const scrollNode = container.querySelector('.overflow-y-auto')
+    if (!(scrollNode instanceof HTMLElement)) {
+      throw new Error('Scroll container was not rendered')
+    }
+
+    // Simulate user being far from bottom
+    Object.defineProperties(scrollNode, {
+      scrollHeight: { configurable: true, value: 1200 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: {
+        configurable: true,
+        get: () => 0,
+        set: scrollToBottomSpy,
+      },
+    })
+    fireEvent.scroll(scrollNode)
+
+    const outboundMsg = messageRow({
+      id: 'outbound-sent',
+      direction: 'outbound',
+      createdAt: '2026-05-15T08:03:00Z',
+    })
+
+    rerender(
+      <MessageList
+        conversationId="conversation-1"
+        messages={[...baseMessages.slice(0, 2), outboundMsg]}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        initialScrollTarget={{ messageId: 'first-unread', reason: 'latest' }}
+        unreadDividerMessageId={null}
+        readAnchorMessageId={null}
+        markReadMessageId={null}
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    // The new-message effect (inside rAF) sets scrollTop → scrollHeight.
+    // We verify onReadAnchorVisible is called for the outbound message.
+    expect(onReadAnchorVisible).toHaveBeenCalledWith('outbound-sent')
   })
 })

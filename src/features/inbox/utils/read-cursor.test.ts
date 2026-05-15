@@ -113,4 +113,14 @@ describe('getInitialScrollTarget', () => {
       }),
     ).toEqual({ messageId: null, reason: 'latest' })
   })
+
+  it('returns last-read reason when cursor is at the latest message and unreadCount is 0', () => {
+    expect(
+      getInitialScrollTarget({
+        messages,
+        lastReadMessageId: 'latest',
+        unreadCount: 0,
+      }),
+    ).toEqual({ messageId: 'latest', reason: 'last-read' })
+  })
 })

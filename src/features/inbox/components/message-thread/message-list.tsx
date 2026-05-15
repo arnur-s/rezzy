@@ -9,8 +9,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import { isNearBottom } from '../../utils/message-scroll'
 import { buildMessageGroups } from '../../utils/message-groups'
+import { isNearBottom } from '../../utils/message-scroll'
 import type { InitialScrollTarget } from '../../utils/read-cursor'
 import { MessageBubble } from './message-bubble'
 import { NewMessagesButton } from './new-messages-button'
@@ -30,6 +30,12 @@ function getMessageElement(
   const node = document.getElementById(`message-${messageId}`)
   if (!(node instanceof HTMLElement)) return null
   return root.contains(node) ? node : null
+}
+
+function getUnreadDividerElement(root: HTMLDivElement): HTMLElement | null {
+  const node = root.querySelector('[data-unread-divider]')
+  if (!(node instanceof HTMLElement)) return null
+  return node
 }
 
 type Props = {
@@ -130,6 +136,27 @@ function MessageListView({
   const markedReadMessageIdRef = useRef<string | null>(null)
   const [frozenDividerMessageId] = useState(() => unreadDividerMessageId)
   const [showNewMessagesButton, setShowNewMessagesButton] = useState(false)
+  const [newMessageCount, setNewMessageCount] = useState(0)
+
+  // Stable refs kept current so the once-registered scroll handler can read them.
+  const latestMessageIdRef = useRef<string | null>(null)
+  const onReadAnchorVisibleRef = useRef(onReadAnchorVisible)
+  const tryMarkReadRef = useRef(() => {})
+
+  useEffect(() => {
+    latestMessageIdRef.current = messages.at(-1)?.id ?? null
+  })
+  useEffect(() => {
+    onReadAnchorVisibleRef.current = onReadAnchorVisible
+  })
+  useEffect(() => {
+    tryMarkReadRef.current = () => {
+      const id = latestMessageIdRef.current
+      if (!id || markedReadMessageIdRef.current === id) return
+      markedReadMessageIdRef.current = id
+      onReadAnchorVisibleRef.current(id)
+    }
+  })
 
   const groups = useMemo(() => buildMessageGroups(messages), [messages])
 
@@ -137,9 +164,14 @@ function MessageListView({
     const node = scrollRef.current
     if (!node) return
     setShowNewMessagesButton(false)
-    requestAnimationFrame(() => scrollToBottom(node))
+    setNewMessageCount(0)
+    requestAnimationFrame(() => {
+      scrollToBottom(node)
+      tryMarkReadRef.current()
+    })
   }, [])
 
+  // Initial scroll: target the unread divider element first, then the message element.
   useEffect(() => {
     if (initialScrollDoneRef.current) return
     const root = scrollRef.current
@@ -147,15 +179,24 @@ function MessageListView({
 
     if (!initialScrollTarget.messageId) {
       initialScrollDoneRef.current = true
+      stickToBottomRef.current = true
+      tryMarkReadRef.current()
       return
     }
 
-    const target = getMessageElement(root, initialScrollTarget.messageId)
+    const target =
+      initialScrollTarget.reason === 'first-unread'
+        ? (getUnreadDividerElement(root) ??
+          getMessageElement(root, initialScrollTarget.messageId))
+        : getMessageElement(root, initialScrollTarget.messageId)
+
     if (!target) return
 
     initialScrollDoneRef.current = true
-    stickToBottomRef.current = initialScrollTarget.reason === 'latest'
-    if (!stickToBottomRef.current) {
+    // `last-read` means all messages are read → treat as sticky, no button.
+    stickToBottomRef.current = initialScrollTarget.reason !== 'first-unread'
+
+    if (initialScrollTarget.reason === 'first-unread') {
       setShowNewMessagesButton(true)
     }
 
@@ -163,32 +204,50 @@ function MessageListView({
       target.scrollIntoView({ block: 'center', behavior: 'auto' })
       requestAnimationFrame(() => {
         target.scrollIntoView({ block: 'center', behavior: 'auto' })
+        // Mark read immediately for latest/last-read conversations.
+        if (initialScrollTarget.reason !== 'first-unread') {
+          tryMarkReadRef.current()
+        }
       })
     })
   }, [initialScrollTarget.messageId, initialScrollTarget.reason, messages])
 
+  // New-message arrival: outbound always scrolls to bottom; inbound increments count.
   useEffect(() => {
     const node = scrollRef.current
     if (!node) return
     const count = messages.length
 
+    if (!initialScrollDoneRef.current) {
+      lastCountRef.current = count
+      return
+    }
+
     if (count > lastCountRef.current) {
       const addedMessages = messages.slice(lastCountRef.current)
-      const hasIncomingMessage = addedMessages.some(
-        (message) => message.direction === 'inbound',
+      const hasOutbound = addedMessages.some(
+        (msg) => msg.direction === 'outbound',
       )
+      const inboundCount = addedMessages.filter(
+        (msg) => msg.direction === 'inbound',
+      ).length
 
-      if (stickToBottomRef.current) {
+      if (stickToBottomRef.current || hasOutbound) {
+        stickToBottomRef.current = true
         setShowNewMessagesButton(false)
+        setNewMessageCount(0)
         requestAnimationFrame(() => scrollToBottom(node))
-      } else if (hasIncomingMessage) {
+        tryMarkReadRef.current()
+      } else if (inboundCount > 0) {
         setShowNewMessagesButton(true)
+        setNewMessageCount((prev) => prev + inboundCount)
       }
     }
 
     lastCountRef.current = count
   }, [messages])
 
+  // Scroll event: update sticky ref, mark read when reaching bottom.
   useEffect(() => {
     const node = scrollRef.current
     if (!node) return
@@ -198,6 +257,8 @@ function MessageListView({
       stickToBottomRef.current = isAtBottom
       if (isAtBottom) {
         setShowNewMessagesButton(false)
+        setNewMessageCount(0)
+        tryMarkReadRef.current()
       }
     }
 
@@ -205,6 +266,7 @@ function MessageListView({
     return () => node.removeEventListener('scroll', onScroll)
   }, [])
 
+  // IntersectionObserver for the initial unread batch (complements tryMarkRead).
   useEffect(() => {
     if (
       !markReadMessageId ||
@@ -251,7 +313,10 @@ function MessageListView({
 
   return (
     <div className="relative min-h-0 flex-1">
-      <div ref={scrollRef} className="h-full overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+      >
         <div className="flex flex-col gap-6 px-4 py-6 sm:px-6">
           {groups.map((group) => (
             <section key={group.key} className="flex flex-col gap-3">
@@ -272,7 +337,10 @@ function MessageListView({
       </div>
 
       {showNewMessagesButton ? (
-        <NewMessagesButton onPress={handleNewMessagesPress} />
+        <NewMessagesButton
+          count={newMessageCount}
+          onPress={handleNewMessagesPress}
+        />
       ) : null}
     </div>
   )
