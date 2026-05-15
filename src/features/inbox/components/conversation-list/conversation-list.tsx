@@ -1,5 +1,4 @@
-import type { ChannelType } from '@/entities/channel'
-import type { Channel } from '@/entities/channel'
+import type { Channel, ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { ScrollShadow } from '@heroui/react'
