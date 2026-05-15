@@ -52,23 +52,25 @@ export function ConversationList({
       unassigned: 0,
     }
     for (const row of conversations ?? []) {
-      const count = row.unread_count || 0
+      const count =
+        row.id === selectedConversationId ? 0 : row.unread_count || 0
       counts.all += count
       if (userId !== null && row.assigned_to === userId) counts.mine += count
       if (row.assigned_to === null) counts.unassigned += count
     }
     return counts
-  }, [conversations, userId])
+  }, [conversations, selectedConversationId, userId])
 
   const channelUnreadCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const row of conversations ?? []) {
-      const count = row.unread_count || 0
+      const count =
+        row.id === selectedConversationId ? 0 : row.unread_count || 0
       if (count > 0)
         counts[row.channel.id] = (counts[row.channel.id] ?? 0) + count
     }
     return counts
-  }, [conversations])
+  }, [conversations, selectedConversationId])
 
   const filtered = useMemo(() => {
     const rows = conversations ?? []

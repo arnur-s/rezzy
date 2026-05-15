@@ -25,7 +25,9 @@ export function ConversationListItem({
   const status = isConversationStatus(conversation.status)
     ? conversation.status
     : null
-  const isUnread = conversation.unread_count > 0
+  const rawUnreadCount = Math.max(0, conversation.unread_count ?? 0)
+  const visibleUnreadCount = isActive ? 0 : rawUnreadCount
+  const isUnread = visibleUnreadCount > 0
   const contactName = conversation.contact.name?.trim() || '—'
   const preview = conversation.last_message_preview?.trim()
 
@@ -75,11 +77,11 @@ export function ConversationListItem({
           {isUnread ? (
             <span
               aria-label={m.inbox_unread_aria_label({
-                count: conversation.unread_count,
+                count: visibleUnreadCount,
               })}
               className="inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold leading-4 text-accent-foreground"
             >
-              {conversation.unread_count}
+              {visibleUnreadCount}
             </span>
           ) : null}
         </div>
