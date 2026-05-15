@@ -1,14 +1,19 @@
+import { CHANNEL_META, ChannelTypeIcon } from '@/entities/channel'
+import type { ChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Chip, Surface } from '@heroui/react'
 import { ChevronRightIcon } from 'lucide-react'
-import { CHANNEL_TYPES  } from '../types'
-import type {ChannelType} from '../types';
-import { CHANNEL_META } from '../utils/channel-meta'
-import { ChannelTypeIcon } from './channel-type-icon'
 
 type Props = {
   onSelect: (type: ChannelType) => void
 }
+
+const CONNECT_CHANNEL_TYPES = [
+  'telegram',
+  'instagram',
+  'whatsapp',
+  'email',
+] as const satisfies ReadonlyArray<ChannelType>
 
 export function ConnectChannelPicker({ onSelect }: Props) {
   return (
@@ -23,7 +28,7 @@ export function ConnectChannelPicker({ onSelect }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {CHANNEL_TYPES.map((type) => (
+        {CONNECT_CHANNEL_TYPES.map((type) => (
           <ChannelTypeCard
             key={type}
             type={type}

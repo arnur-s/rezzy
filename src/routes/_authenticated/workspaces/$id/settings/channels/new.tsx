@@ -3,8 +3,8 @@ import {
   ConnectChannelPicker,
   ConnectTelegramForm,
 } from '@/features/channels/components'
-import {  isChannelType } from '@/features/channels/types'
-import type {ChannelType} from '@/features/channels/types';
+import { isChannelType } from '@/entities/channel'
+import type { ChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Button, Surface } from '@heroui/react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'

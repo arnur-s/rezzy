@@ -1,8 +1,8 @@
+import type { ChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { toast } from '@heroui/react'
 
 import { useSendMessage } from '../../hooks/use-messages'
-import type { ChannelType } from '../../types'
 import { ChatInput } from './chat-input'
 
 type Props = {

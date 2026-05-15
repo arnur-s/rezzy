@@ -1,8 +1,8 @@
 import { cn } from '@heroui/styles'
 import { MailIcon } from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
-import type { ChannelType } from '../types'
-import { PLATFORM_META } from '../utils/platform'
+import type { ChannelType } from '../model/types'
+import { PLATFORM_META } from '../lib/platform'
 
 type Props = {
   type: ChannelType

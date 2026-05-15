@@ -1,7 +1,5 @@
 export { ChannelCard } from './channel-card'
 export { ChannelList } from './channel-list'
-export { ChannelStatusBadge } from './channel-status-badge'
-export { ChannelTypeIcon } from './channel-type-icon'
 export { ConnectChannelComingSoon } from './connect-channel-coming-soon'
 export { ConnectChannelPicker } from './connect-channel-picker'
 export { ConnectTelegramForm } from './connect-telegram-form'

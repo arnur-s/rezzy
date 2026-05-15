@@ -4,8 +4,8 @@ export type Channel = Tables<'channels'>
 
 export const CHANNEL_TYPES = [
   'telegram',
-  'instagram',
   'whatsapp',
+  'instagram',
   'email',
 ] as const
 

@@ -1,9 +1,9 @@
 import { AppButton } from '@/components/app-button'
+import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { AlertDialog, Button, toast } from '@heroui/react'
 import { TriangleAlertIcon } from 'lucide-react'
 import { useDeleteChannel } from '../hooks/use-channels'
-import type { Channel } from '../types'
 
 type Props = {
   channel: Channel

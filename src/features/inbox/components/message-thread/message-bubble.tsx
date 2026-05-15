@@ -1,16 +1,17 @@
-import { getUserInitials } from '@/features/users/utils/user-display'
+import {
+  MESSAGE_STATUS_META,
+  getMediaPlaceholder,
+  isMessageStatus,
+  isMessageType,
+} from '@/entities/message'
+import type { MessageRow, MessageType } from '@/entities/message'
+import { getUserInitials } from '@/entities/user'
 import { Avatar } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import {
   effectiveRichMediaType,
   parseMessageMediaMetadata,
 } from '../../schemas/message-metadata'
-import type { MessageRow, MessageType } from '../../types'
-import { isMessageStatus, isMessageType } from '../../types'
-import {
-  MESSAGE_STATUS_META,
-  getMediaPlaceholder,
-} from '../../utils/message-meta'
 import { formatTime } from '../../utils/relative-time'
 import { MessageMediaAttachment } from './message-media'
 

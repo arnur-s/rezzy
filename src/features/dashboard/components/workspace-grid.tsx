@@ -1,5 +1,5 @@
 import type { WorkspaceDashboardStats } from '@/features/dashboard/api/dashboard-stats'
-import type { Workspace } from '@/features/workspaces/types'
+import type { Workspace } from '@/entities/workspace'
 import { useMemo } from 'react'
 import { WorkspaceCard } from './workspace-card'
 

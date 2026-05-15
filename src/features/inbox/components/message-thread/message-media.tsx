@@ -1,3 +1,8 @@
+import {
+  formatFileSize,
+  getMediaPlaceholder,
+} from '@/entities/message'
+import type { MessageType } from '@/entities/message'
 import { m } from '@/paraglide/messages'
 import { Button, Skeleton, Surface } from '@heroui/react'
 import { cn } from '@heroui/styles'
@@ -5,9 +10,6 @@ import { FileTextIcon, ImageOffIcon, SparklesIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useMessageMediaUrl } from '../../hooks/use-message-media-url'
 import type { MessageMediaMetadata } from '../../schemas/message-metadata'
-import type { MessageType } from '../../types'
-import { formatFileSize } from '../../utils/format-file-size'
-import { getMediaPlaceholder } from '../../utils/message-meta'
 import { MessageSticker } from './message-sticker'
 
 type Props = {

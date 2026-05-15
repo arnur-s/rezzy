@@ -1,13 +1,12 @@
+import {
+  CONVERSATION_STATUSES,
+  CONVERSATION_STATUS_META,
+  isConversationStatus,
+} from '@/entities/conversation'
+import type { ConversationStatus } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { Label, ListBox, Select, toast } from '@heroui/react'
 import { useUpdateConversationStatus } from '../../hooks/use-conversations'
-import {
-  CONVERSATION_STATUSES,
-  
-  isConversationStatus
-} from '../../types'
-import type {ConversationStatus} from '../../types';
-import { STATUS_META } from '../../utils/status-meta'
 
 type Props = {
   workspaceId: string
@@ -58,9 +57,9 @@ export function ContactPanelStatusSelect({
             <ListBox.Item
               key={status}
               id={status}
-              textValue={STATUS_META[status].labelKey()}
+              textValue={CONVERSATION_STATUS_META[status].labelKey()}
             >
-              {STATUS_META[status].labelKey()}
+              {CONVERSATION_STATUS_META[status].labelKey()}
               <ListBox.ItemIndicator />
             </ListBox.Item>
           ))}

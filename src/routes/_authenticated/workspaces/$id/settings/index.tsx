@@ -1,5 +1,5 @@
 import { AppButton } from '@/components/app-button'
-import { WorkspaceIconPicker } from '@/features/workspaces/components/workspace-icon-picker'
+import { WorkspaceIconPicker } from '@/entities/workspace'
 import {
   useUpdateWorkspace,
   useWorkspace,

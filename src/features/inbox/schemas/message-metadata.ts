@@ -1,6 +1,6 @@
 import type { Json } from '@/api/types'
+import type { MessageType } from '@/entities/message'
 import { z } from 'zod'
-import type { MessageType } from '../types'
 
 /** Matches Telegram → Storage pipeline metadata (and future outbound media). */
 export const messageMediaMetadataSchema = z

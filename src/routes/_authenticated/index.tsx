@@ -6,8 +6,8 @@ import { useAuth } from '@/providers/auth-provider'
 import { Button, Skeleton } from '@heroui/react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
-import { AggregateStatStrip } from './-components/aggregate-stat-strip'
-import { WorkspaceGrid } from './-components/workspace-grid'
+import { AggregateStatStrip } from '@/features/dashboard/components/aggregate-stat-strip'
+import { WorkspaceGrid } from '@/features/dashboard/components/workspace-grid'
 
 export const Route = createFileRoute('/_authenticated/')({
   component: RouteComponent,

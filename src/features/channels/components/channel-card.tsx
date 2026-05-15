@@ -1,11 +1,13 @@
+import {
+  ChannelStatusBadge,
+  ChannelTypeIcon,
+  isChannelType,
+} from '@/entities/channel'
+import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Dropdown, Label, Surface } from '@heroui/react'
 import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { Channel } from '../types'
-import { isChannelType } from '../types'
-import { ChannelStatusBadge } from './channel-status-badge'
-import { ChannelTypeIcon } from './channel-type-icon'
 import { DeleteChannelDialog } from './delete-channel-dialog'
 import { EditChannelNameModal } from './edit-channel-name-modal'
 

@@ -19,7 +19,7 @@ import {
   createWorkspaceDefaultValues,
   createWorkspaceFormSchema,
 } from '../../schemas/workspace-form-schema'
-import { WorkspaceIconPicker } from '../workspace-icon-picker'
+import { WorkspaceIconPicker } from '@/entities/workspace'
 
 type Props = {
   onSuccess: () => void

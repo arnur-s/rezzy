@@ -1,4 +1,4 @@
-import type { ConversationWithRelations } from '../types'
+import type { ConversationWithRelations } from '../model/types'
 
 /** Matches getWorkspaceConversations: last_message_at DESC, nulls last. */
 export function sortConversationsByActivity(

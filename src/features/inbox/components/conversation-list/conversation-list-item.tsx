@@ -1,10 +1,12 @@
+import { PlatformIcon, isChannelType } from '@/entities/channel'
+import {
+  ConversationStatusChip,
+  isConversationStatus,
+} from '@/entities/conversation'
+import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { cn } from '@heroui/styles'
-import {  isChannelType, isConversationStatus  } from '../../types'
-import type {ConversationWithRelations} from '../../types';
 import { formatRelativeShort } from '../../utils/relative-time'
-import { PlatformIcon } from '../platform-icon'
-import { StatusChip } from '../status-chip'
 
 type Props = {
   conversation: ConversationWithRelations
@@ -84,7 +86,7 @@ export function ConversationListItem({
 
         {status ? (
           <div className="mt-1.5">
-            <StatusChip status={status} size="sm" />
+            <ConversationStatusChip status={status} size="sm" />
           </div>
         ) : null}
       </div>

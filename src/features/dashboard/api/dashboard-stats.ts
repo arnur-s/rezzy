@@ -1,9 +1,6 @@
-import type { ChannelType } from '@/features/inbox/types'
-import {
-  CHANNEL_TYPES,
-  isChannelType,
-  isConversationStatus,
-} from '@/features/inbox/types'
+import { CHANNEL_TYPES, isChannelType } from '@/entities/channel'
+import type { ChannelType } from '@/entities/channel'
+import { isConversationStatus } from '@/entities/conversation'
 import { supabase } from '@/utils/supabase'
 
 export const dashboardQueryKeys = {

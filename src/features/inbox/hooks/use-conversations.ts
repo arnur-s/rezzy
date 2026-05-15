@@ -1,3 +1,7 @@
+import type {
+  ConversationStatus,
+  ConversationWithRelations,
+} from '@/entities/conversation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getWorkspaceConversations,
@@ -5,10 +9,6 @@ import {
   updateConversationStatus,
 } from '../api/conversations'
 import { inboxQueryKeys } from '../api/query-keys'
-import type {
-  ConversationStatus,
-  ConversationWithRelations,
-} from '../types'
 
 export function useConversations(workspaceId: string) {
   return useQuery({

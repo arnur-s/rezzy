@@ -1,12 +1,11 @@
 import {
   AtSignIcon,
   InstagramIcon,
-  
   MessageCircleIcon,
-  SendIcon
+  SendIcon,
 } from 'lucide-react'
-import type {LucideIcon} from 'lucide-react';
-import type { ChannelType } from '../types'
+import type { LucideIcon } from 'lucide-react'
+import type { ChannelType } from '../model/types'
 
 type ChannelMeta = {
   type: ChannelType

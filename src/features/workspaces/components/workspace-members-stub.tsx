@@ -1,4 +1,4 @@
-import { getUserInitials } from '@/features/users/utils/user-display'
+import { getUserInitials } from '@/entities/user'
 import { m } from '@/paraglide/messages'
 import {
   Avatar,

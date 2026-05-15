@@ -3,7 +3,7 @@ import { Button, Popover, SearchField } from '@heroui/react'
 import type { IconName } from 'lucide-react/dynamic'
 import { DynamicIcon, iconNames } from 'lucide-react/dynamic'
 import { useDeferredValue, useMemo, useState } from 'react'
-import { WORKSPACE_CURATED_ICONS } from '../utils/workspace-icons'
+import { WORKSPACE_CURATED_ICONS } from '../lib/workspace-icons'
 
 type WorkspaceIconPickerProps = {
   isDisabled?: boolean

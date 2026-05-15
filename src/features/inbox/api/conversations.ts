@@ -1,9 +1,9 @@
-import { supabase } from '@/utils/supabase'
 import type {
   AssignedProfile,
   ConversationStatus,
   ConversationWithRelations,
-} from '../types'
+} from '@/entities/conversation'
+import { supabase } from '@/utils/supabase'
 
 const CONVERSATION_SELECT = `
   id,

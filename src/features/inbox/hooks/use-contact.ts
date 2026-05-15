@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { ContactWithChannels } from '@/entities/contact'
 import { getContactById, updateContactNotes } from '../api/contacts'
 import { inboxQueryKeys } from '../api/query-keys'
-import type { ContactWithChannels } from '../types'
 
 export function useContact(contactId: string | null) {
   return useQuery({
