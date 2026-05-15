@@ -1,5 +1,6 @@
 import { m } from '@/paraglide/messages'
 import { Button } from '@heroui/react'
+import { ChevronDownIcon } from 'lucide-react'
 
 type Props = {
   onPress: () => void
@@ -18,12 +19,13 @@ export function NewMessagesButton({ onPress, count }: Props) {
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4">
       <Button
         size="sm"
-        variant="primary"
-        className="pointer-events-auto shadow-lg"
+        variant="secondary"
+        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full shadow-md"
         onPress={onPress}
         aria-label={label}
       >
-        {label}
+        <span>{label}</span>
+        <ChevronDownIcon className="size-4 shrink-0 opacity-80" aria-hidden />
       </Button>
     </div>
   )

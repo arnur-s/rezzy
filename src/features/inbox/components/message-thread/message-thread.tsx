@@ -4,7 +4,7 @@ import {
 } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getConversationInitialScrollTarget } from '../../api/read-cursors'
 import {
   useConversationReadCursor,
@@ -13,10 +13,13 @@ import {
 } from '../../hooks/use-messages'
 import { useMessagesRealtime } from '../../hooks/use-messages-realtime'
 import type { InitialScrollTarget } from '../../utils/read-cursor'
+import { getFirstUnreadInboundMessageId } from '../../utils/read-cursor'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
 import { MessageThreadEmpty } from './message-thread-empty'
 import { MessageThreadHeader } from './message-thread-header'
+
+const MARK_READ_DEBOUNCE_MS = 280
 
 type Props = {
   workspaceId: string
@@ -51,31 +54,77 @@ export function MessageThread({
   const messages = messagesQuery.data ?? []
   const isReadCursorLoading = !!senderId && readCursorQuery.isPending
   const initialScrollTarget = useMemo<InitialScrollTarget>(
+    () => getConversationInitialScrollTarget({ messages }),
+    [messages],
+  )
+  const readCursor = readCursorQuery.data ?? null
+  const liveUnreadDividerMessageId = useMemo(
     () =>
-      getConversationInitialScrollTarget({
+      getFirstUnreadInboundMessageId({
         messages,
-        readCursor: readCursorQuery.data ?? null,
+        lastReadMessageId: readCursor?.last_read_message_id ?? null,
+        lastReadAt: readCursor?.last_read_at ?? null,
         unreadCount,
       }),
-    [messages, readCursorQuery.data, unreadCount],
+    [messages, readCursor, unreadCount],
   )
-  const latestMessageId = messages.at(-1)?.id ?? null
+
+  /** WhatsApp-style: keep divider in transcript until leaving this conversation. */
+  const [sessionUnreadDividerMessageId, setSessionUnreadDividerMessageId] =
+    useState<string | null>(null)
+
+  useEffect(() => {
+    setSessionUnreadDividerMessageId(null)
+  }, [conversationId])
+
+  useEffect(() => {
+    if (
+      liveUnreadDividerMessageId != null &&
+      sessionUnreadDividerMessageId == null
+    ) {
+      setSessionUnreadDividerMessageId(liveUnreadDividerMessageId)
+    }
+  }, [liveUnreadDividerMessageId, sessionUnreadDividerMessageId])
+
+  useEffect(() => {
+    if (
+      sessionUnreadDividerMessageId != null &&
+      !messages.some((m) => m.id === sessionUnreadDividerMessageId)
+    ) {
+      setSessionUnreadDividerMessageId(null)
+    }
+  }, [messages, sessionUnreadDividerMessageId])
+
   const unreadDividerMessageId =
-    initialScrollTarget.reason === 'first-unread'
-      ? initialScrollTarget.messageId
-      : null
-  const readAnchorMessageId =
-    unreadCount > 0 ? initialScrollTarget.messageId : null
-  const markReadMessageId =
-    unreadCount > 0 ? latestMessageId : null
+    sessionUnreadDividerMessageId != null
+      ? sessionUnreadDividerMessageId
+      : liveUnreadDividerMessageId
+
+  const hasUnreadInboundMessages = liveUnreadDividerMessageId != null
+
+  const markReadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (markReadDebounceRef.current) {
+        clearTimeout(markReadDebounceRef.current)
+      }
+    }
+  }, [])
 
   const handleReadAnchorVisible = useCallback(
     (lastReadMessageId: string) => {
       if (!senderId || !conversationId) return
-      markRead.mutate({
-        conversationId,
-        lastReadMessageId,
-      })
+      if (markReadDebounceRef.current) {
+        clearTimeout(markReadDebounceRef.current)
+      }
+      markReadDebounceRef.current = setTimeout(() => {
+        markReadDebounceRef.current = null
+        markRead.mutate({
+          conversationId,
+          lastReadMessageId,
+        })
+      }, MARK_READ_DEBOUNCE_MS)
     },
     [conversationId, markRead, senderId],
   )
@@ -111,10 +160,10 @@ export function MessageThread({
         isLoading={messagesQuery.isPending || isReadCursorLoading}
         isError={messagesQuery.isError || readCursorQuery.isError}
         contactName={contactName}
+        currentUserId={senderId}
         initialScrollTarget={initialScrollTarget}
         unreadDividerMessageId={unreadDividerMessageId}
-        readAnchorMessageId={readAnchorMessageId}
-        markReadMessageId={markReadMessageId}
+        hasUnreadInboundMessages={hasUnreadInboundMessages}
         onReadAnchorVisible={handleReadAnchorVisible}
       />
       <MessageComposer

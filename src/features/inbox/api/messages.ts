@@ -1,6 +1,6 @@
+import type { TablesInsert } from '@/api/types'
 import type { ChannelType } from '@/entities/channel'
 import type { MessageRow } from '@/entities/message'
-import type { TablesInsert } from '@/api/types'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import { mapDatabaseError } from '../utils/error-message'
@@ -186,4 +186,36 @@ export async function sendOutboundMessage({
   }
 
   return fresh
+}
+
+const MESSAGE_PAGE_SIZE = 50
+
+export async function getMessagesPage(conversationId: string) {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(
+      `
+      id,
+      workspace_id,
+      conversation_id,
+      direction,
+      type,
+      content,
+      media_url,
+      media_mime_type,
+      media_filename,
+      media_size,
+      sender_id,
+      status,
+      created_at,
+      metadata
+    `,
+    )
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(MESSAGE_PAGE_SIZE)
+
+  if (error) throw error
+
+  return data.reverse()
 }

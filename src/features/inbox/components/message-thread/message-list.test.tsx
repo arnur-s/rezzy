@@ -15,16 +15,18 @@ function messageRow({
   id,
   direction,
   createdAt,
+  senderId = null,
 }: {
   id: string
   direction: 'inbound' | 'outbound'
   createdAt: string
+  senderId?: string | null
 }): MessageRow {
   return {
     id,
     conversation_id: 'conversation-1',
     workspace_id: 'workspace-1',
-    sender_id: null,
+    sender_id: senderId,
     direction,
     type: 'text',
     status: 'sent',
@@ -57,54 +59,36 @@ const baseMessages = [
   }),
 ]
 
+function mockNearBottomScroll(el: HTMLElement) {
+  Object.defineProperties(el, {
+    scrollHeight: { configurable: true, value: 1000 },
+    clientHeight: { configurable: true, value: 400 },
+    scrollTop: { configurable: true, value: 520 },
+  })
+}
+
 describe('MessageList unread behavior', () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn()
   })
 
-  it('renders the unread divider and marks read when the read anchor becomes visible', async () => {
-    const observerState: {
-      callback?: IntersectionObserverCallback
-      observer?: IntersectionObserver
-    } = {}
-
-    vi.stubGlobal(
-      'IntersectionObserver',
-      class TestIntersectionObserver implements IntersectionObserver {
-        readonly root = null
-        readonly rootMargin = ''
-        readonly scrollMargin = ''
-        readonly thresholds = []
-
-        constructor(cb: IntersectionObserverCallback) {
-          observerState.callback = cb
-          observerState.observer = this
-        }
-        observe() {}
-        unobserve() {}
-        disconnect() {}
-        takeRecords(): Array<IntersectionObserverEntry> {
-          return []
-        }
-      },
-    )
-
+  it('renders the unread divider and marks read only after scroll reports near bottom with unreads', async () => {
     const onReadAnchorVisible = vi.fn()
 
-    render(
+    const { container } = render(
       <MessageList
         conversationId="conversation-1"
         messages={baseMessages}
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId={null}
         initialScrollTarget={{
-          messageId: 'first-unread',
-          reason: 'first-unread',
+          messageId: 'latest',
+          reason: 'latest',
         }}
         unreadDividerMessageId="first-unread"
-        readAnchorMessageId="first-unread"
-        markReadMessageId="latest"
+        hasUnreadInboundMessages
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
@@ -115,71 +99,118 @@ describe('MessageList unread behavior', () => {
       ),
     ).toBeTruthy()
 
-    await waitFor(() => expect(observerState.callback).toBeDefined())
-
-    observerState.callback!(
-      [{ isIntersecting: true } as IntersectionObserverEntry],
-      observerState.observer!,
+    await waitFor(() =>
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({
+        block: 'center',
+      }),
     )
 
-    expect(onReadAnchorVisible).toHaveBeenCalledWith('latest')
+    const scrollNode = container.querySelector('.overflow-y-auto')
+    if (!(scrollNode instanceof HTMLElement)) {
+      throw new Error('Scroll container was not rendered')
+    }
+
+    mockNearBottomScroll(scrollNode)
+    fireEvent.scroll(scrollNode)
+
+    await waitFor(() =>
+      expect(onReadAnchorVisible).toHaveBeenCalledWith('latest'),
+    )
   })
 
-  it('does not call onReadAnchorVisible twice for the same markReadMessageId', async () => {
-    const observerState: {
-      callback?: IntersectionObserverCallback
-      observer?: IntersectionObserver
-    } = {}
-
-    vi.stubGlobal(
-      'IntersectionObserver',
-      class TestIntersectionObserver implements IntersectionObserver {
-        readonly root = null
-        readonly rootMargin = ''
-        readonly scrollMargin = ''
-        readonly thresholds = []
-
-        constructor(cb: IntersectionObserverCallback) {
-          observerState.callback = cb
-          observerState.observer = this
-        }
-        observe() {}
-        unobserve() {}
-        disconnect() {}
-        takeRecords(): Array<IntersectionObserverEntry> {
-          return []
-        }
-      },
-    )
-
+  it('does not call onReadAnchorVisible twice for the same latest id at bottom', async () => {
     const onReadAnchorVisible = vi.fn()
 
-    render(
+    const { container } = render(
       <MessageList
         conversationId="conversation-1"
         messages={baseMessages}
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId={null}
         initialScrollTarget={{
-          messageId: 'first-unread',
-          reason: 'first-unread',
+          messageId: 'latest',
+          reason: 'latest',
         }}
         unreadDividerMessageId="first-unread"
-        readAnchorMessageId="first-unread"
-        markReadMessageId="latest"
+        hasUnreadInboundMessages
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
 
-    await waitFor(() => expect(observerState.callback).toBeDefined())
+    const scrollNode = container.querySelector('.overflow-y-auto')
+    if (!(scrollNode instanceof HTMLElement)) {
+      throw new Error('Scroll container was not rendered')
+    }
 
-    // Fire the observer twice with the same markReadMessageId
-    const entry = { isIntersecting: true } as IntersectionObserverEntry
-    observerState.callback!([entry], observerState.observer!)
-    observerState.callback!([entry], observerState.observer!)
+    mockNearBottomScroll(scrollNode)
+    fireEvent.scroll(scrollNode)
+    fireEvent.scroll(scrollNode)
 
-    expect(onReadAnchorVisible).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onReadAnchorVisible).toHaveBeenCalledTimes(1))
+  })
+
+  it('does not mark read when inbound arrives while scrolled up with unreads until bottom', async () => {
+    const onReadAnchorVisible = vi.fn()
+    const { container, rerender } = render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={baseMessages}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        currentUserId={null}
+        initialScrollTarget={{ messageId: 'latest', reason: 'latest' }}
+        unreadDividerMessageId="first-unread"
+        hasUnreadInboundMessages
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    const scrollNode = container.querySelector('.overflow-y-auto')
+    if (!(scrollNode instanceof HTMLElement)) {
+      throw new Error('Scroll container was not rendered')
+    }
+
+    Object.defineProperties(scrollNode, {
+      scrollHeight: { configurable: true, value: 1200 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: { configurable: true, value: 100 },
+    })
+    fireEvent.scroll(scrollNode)
+    onReadAnchorVisible.mockClear()
+
+    rerender(
+      <MessageList
+        conversationId="conversation-1"
+        messages={[
+          ...baseMessages,
+          messageRow({
+            id: 'new-inbound',
+            direction: 'inbound',
+            createdAt: '2026-05-15T08:03:00Z',
+          }),
+        ]}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        currentUserId={null}
+        initialScrollTarget={{ messageId: 'latest', reason: 'latest' }}
+        unreadDividerMessageId="first-unread"
+        hasUnreadInboundMessages
+        onReadAnchorVisible={onReadAnchorVisible}
+      />,
+    )
+
+    expect(onReadAnchorVisible).not.toHaveBeenCalled()
+
+    mockNearBottomScroll(scrollNode)
+    fireEvent.scroll(scrollNode)
+
+    await waitFor(() =>
+      expect(onReadAnchorVisible).toHaveBeenCalledWith('new-inbound'),
+    )
   })
 
   it('shows the new messages button for inbound realtime messages while away from bottom', () => {
@@ -191,10 +222,10 @@ describe('MessageList unread behavior', () => {
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId={null}
         initialScrollTarget={{ messageId: 'first-unread', reason: 'latest' }}
         unreadDividerMessageId={null}
-        readAnchorMessageId={null}
-        markReadMessageId={null}
+        hasUnreadInboundMessages={false}
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
@@ -226,10 +257,10 @@ describe('MessageList unread behavior', () => {
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId={null}
         initialScrollTarget={{ messageId: 'first-unread', reason: 'latest' }}
         unreadDividerMessageId={null}
-        readAnchorMessageId={null}
-        markReadMessageId={null}
+        hasUnreadInboundMessages={false}
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
@@ -250,10 +281,10 @@ describe('MessageList unread behavior', () => {
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId={null}
         initialScrollTarget={{ messageId: 'read', reason: 'latest' }}
         unreadDividerMessageId={null}
-        readAnchorMessageId={null}
-        markReadMessageId={null}
+        hasUnreadInboundMessages={false}
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
@@ -263,7 +294,6 @@ describe('MessageList unread behavior', () => {
       throw new Error('Scroll container was not rendered')
     }
 
-    // Simulate user being far from bottom
     Object.defineProperties(scrollNode, {
       scrollHeight: { configurable: true, value: 1200 },
       clientHeight: { configurable: true, value: 400 },
@@ -271,7 +301,6 @@ describe('MessageList unread behavior', () => {
     })
     fireEvent.scroll(scrollNode)
 
-    // First inbound
     rerender(
       <MessageList
         conversationId="conversation-1"
@@ -286,15 +315,14 @@ describe('MessageList unread behavior', () => {
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId={null}
         initialScrollTarget={{ messageId: 'read', reason: 'latest' }}
         unreadDividerMessageId={null}
-        readAnchorMessageId={null}
-        markReadMessageId={null}
+        hasUnreadInboundMessages={false}
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
 
-    // Second inbound
     rerender(
       <MessageList
         conversationId="conversation-1"
@@ -314,15 +342,14 @@ describe('MessageList unread behavior', () => {
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId={null}
         initialScrollTarget={{ messageId: 'read', reason: 'latest' }}
         unreadDividerMessageId={null}
-        readAnchorMessageId={null}
-        markReadMessageId={null}
+        hasUnreadInboundMessages={false}
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
 
-    // Button should show "2 new messages"
     expect(
       screen.getByText(
         /2 new messages|2 новых/u,
@@ -330,9 +357,9 @@ describe('MessageList unread behavior', () => {
     ).toBeTruthy()
   })
 
-  it('scrolls to bottom and calls onReadAnchorVisible when an outbound message is added while scrolled up', () => {
+  it('scrolls to bottom and calls onReadAnchorVisible when own outbound is added while scrolled up and bottom is reached', async () => {
     const onReadAnchorVisible = vi.fn()
-    const scrollToBottomSpy = vi.fn()
+    let scrollTopVal = 0
 
     const { container, rerender } = render(
       <MessageList
@@ -341,10 +368,10 @@ describe('MessageList unread behavior', () => {
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId="user-1"
         initialScrollTarget={{ messageId: 'first-unread', reason: 'latest' }}
-        unreadDividerMessageId={null}
-        readAnchorMessageId={null}
-        markReadMessageId={null}
+        unreadDividerMessageId="first-unread"
+        hasUnreadInboundMessages
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
@@ -354,22 +381,25 @@ describe('MessageList unread behavior', () => {
       throw new Error('Scroll container was not rendered')
     }
 
-    // Simulate user being far from bottom
     Object.defineProperties(scrollNode, {
       scrollHeight: { configurable: true, value: 1200 },
       clientHeight: { configurable: true, value: 400 },
       scrollTop: {
         configurable: true,
-        get: () => 0,
-        set: scrollToBottomSpy,
+        get: () => scrollTopVal,
+        set: (v: number) => {
+          scrollTopVal = v
+        },
       },
     })
     fireEvent.scroll(scrollNode)
+    onReadAnchorVisible.mockClear()
 
     const outboundMsg = messageRow({
       id: 'outbound-sent',
       direction: 'outbound',
       createdAt: '2026-05-15T08:03:00Z',
+      senderId: 'user-1',
     })
 
     rerender(
@@ -379,16 +409,16 @@ describe('MessageList unread behavior', () => {
         isLoading={false}
         isError={false}
         contactName="Customer"
+        currentUserId="user-1"
         initialScrollTarget={{ messageId: 'first-unread', reason: 'latest' }}
-        unreadDividerMessageId={null}
-        readAnchorMessageId={null}
-        markReadMessageId={null}
+        unreadDividerMessageId="first-unread"
+        hasUnreadInboundMessages
         onReadAnchorVisible={onReadAnchorVisible}
       />,
     )
 
-    // The new-message effect (inside rAF) sets scrollTop → scrollHeight.
-    // We verify onReadAnchorVisible is called for the outbound message.
-    expect(onReadAnchorVisible).toHaveBeenCalledWith('outbound-sent')
+    await waitFor(() =>
+      expect(onReadAnchorVisible).toHaveBeenCalledWith('outbound-sent'),
+    )
   })
 })

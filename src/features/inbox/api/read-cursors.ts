@@ -32,18 +32,10 @@ export async function getConversationReadCursor({
 
 export function getConversationInitialScrollTarget({
   messages,
-  readCursor,
-  unreadCount,
 }: {
   messages: Array<MessageRow>
-  readCursor: ConversationReadCursor | null
-  unreadCount: number
 }): InitialScrollTarget {
-  return getInitialScrollTarget({
-    messages,
-    lastReadMessageId: readCursor?.last_read_message_id ?? null,
-    unreadCount,
-  })
+  return getInitialScrollTarget({ messages })
 }
 
 export async function markConversationReadToMessage({

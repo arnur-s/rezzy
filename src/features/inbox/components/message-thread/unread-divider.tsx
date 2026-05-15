@@ -1,5 +1,4 @@
 import { m } from '@/paraglide/messages'
-import { Chip } from '@heroui/react'
 import { cn } from '@heroui/styles'
 
 type Props = {
@@ -7,13 +6,23 @@ type Props = {
 }
 
 export function UnreadDivider({ className }: Props) {
+  const label = m.inbox_unread_messages_divider()
+
   return (
-    <div data-unread-divider="true" className={cn('flex items-center gap-3 py-1', className)}>
-      <div className="h-px flex-1 bg-border/70" />
-      <Chip color="accent" size="sm" variant="soft">
-        {m.inbox_unread_messages_divider()}
-      </Chip>
-      <div className="h-px flex-1 bg-border/70" />
+    <div
+      data-unread-divider="true"
+      role="separator"
+      aria-label={label}
+      className={cn('flex items-center gap-3 py-2', className)}
+    >
+      <div className="h-px min-w-0 flex-1 bg-border/40" aria-hidden />
+      <span
+        className="shrink-0 text-center text-xs font-medium text-muted-foreground"
+        aria-hidden
+      >
+        {label}
+      </span>
+      <div className="h-px min-w-0 flex-1 bg-border/40" aria-hidden />
     </div>
   )
 }
