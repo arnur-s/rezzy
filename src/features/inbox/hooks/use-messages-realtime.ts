@@ -1,40 +1,11 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { sortConversationsByActivity } from '@/entities/conversation'
-import type { MessageRow, MessageType } from '@/entities/message'
-import { isMessageType } from '@/entities/message'
+import type { MessageRow } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { inboxQueryKeys } from '../api/query-keys'
-import {
-  effectiveRichMediaType,
-  parseMessageMediaMetadata,
-} from '../schemas/message-metadata'
-
-/** Short list preview when content is empty (e.g. media without caption). */
-function listPreviewFromMessage(
-  message: Pick<
-    MessageRow,
-    'content' | 'type' | 'metadata' | 'media_filename' | 'media_mime_type'
-  >,
-): string | null {
-  const trimmed = message.content?.trim()
-  if (trimmed) {
-    return trimmed.length > 100 ? trimmed.slice(0, 100) : trimmed
-  }
-  const rowType: MessageType =
-    message.type && isMessageType(message.type) ? message.type : 'text'
-  if (rowType !== 'text') {
-    const label = effectiveRichMediaType(
-      rowType,
-      parseMessageMediaMetadata(message.metadata),
-      message.media_mime_type,
-      message.media_filename,
-    )
-    return `[${label}]`
-  }
-  return null
-}
+import { listPreviewFromMessage } from '../schemas/message-metadata'
 
 /**
  * Subscribes to INSERT and UPDATE on messages for the open thread, and keeps

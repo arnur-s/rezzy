@@ -3,10 +3,7 @@ import { useChannels } from '@/features/channels/hooks/use-channels'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
 import { useMemo, useState } from 'react'
-import {
-  useConversations,
-  useMarkConversationRead,
-} from '../hooks/use-conversations'
+import { useConversations } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
 import { ContactPanel } from './contact-panel/contact-panel'
 import type { InboxPrimaryFilter } from './conversation-list/conversation-list'
@@ -26,7 +23,6 @@ export function InboxPage({ workspaceId }: Props) {
   const conversationsQuery = useConversations(workspaceId)
   const channelsQuery = useChannels(workspaceId)
   useConversationsRealtime(workspaceId)
-  const markRead = useMarkConversationRead(workspaceId)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
@@ -46,12 +42,6 @@ export function InboxPage({ workspaceId }: Props) {
   function handleSelect(conversationId: string) {
     setSelectedId(conversationId)
     setMobilePane('thread')
-    const target = conversationsQuery.data?.find(
-      (row) => row.id === conversationId,
-    )
-    if (target && target.unread_count > 0) {
-      markRead.mutate(conversationId)
-    }
   }
 
   function handleBackToList() {

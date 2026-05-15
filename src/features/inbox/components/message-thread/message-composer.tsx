@@ -24,10 +24,10 @@ export function MessageComposer({
 }: Props) {
   const sendMessage = useSendMessage({ workspaceId })
 
-  function handleSend(text: string) {
+  function handleSend(text: string, file: File | null) {
     if (sendMessage.isPending) return
     sendMessage.mutate(
-      { conversationId, content: text, senderId, channelType },
+      { conversationId, content: text, file, senderId, channelType },
       {
         onError: (error) => {
           toast.danger(m.inbox_composer_send_error(), {
@@ -46,7 +46,6 @@ export function MessageComposer({
       </p>
       <ChatInput
         onSend={handleSend}
-        onAttach={() => {}}
         disabled={isDisabled || sendMessage.isPending}
         placeholder={m.inbox_composer_placeholder()}
       />

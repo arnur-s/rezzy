@@ -224,7 +224,13 @@
   "inbox_composer_reply_via": "Replying via {channel}",
   "inbox_composer_send_button": "Send",
   "inbox_composer_send_error": "Could not send message",
+  "inbox_composer_attach_file_label": "Attach file",
+  "inbox_composer_emoji_label": "Open emoji picker",
+  "inbox_composer_send_label": "Send message",
+  "inbox_composer_remove_attachment_label": "Remove attachment",
   "inbox_messages_load_error": "Could not load messages",
+  "inbox_unread_messages_divider": "Unread messages",
+  "inbox_new_messages_button": "New messages",
   "inbox_thread_show_contact": "Show contact profile",
   "inbox_thread_hide_contact": "Hide contact profile",
   "inbox_thread_back_to_list": "Back to conversations",
@@ -282,5 +288,18 @@
 
   "not_found_title": "404",
   "not_found_description": "Page not found",
-  "not_found_go_home_link": "Go to home"
+  "not_found_go_home_link": "Go to home",
+
+  "app_image_open_preview": "Open image preview",
+  "app_image_preview_label": "Image preview",
+  "app_image_preview_close": "Close preview",
+  "app_image_preview_zoom_in": "Zoom in",
+  "app_image_preview_zoom_out": "Zoom out",
+  "app_image_preview_reset": "Reset view",
+  "app_image_preview_rotate_left": "Rotate left",
+  "app_image_preview_rotate_right": "Rotate right",
+  "app_image_preview_download": "Download image",
+  "app_image_preview_prev": "Previous image",
+  "app_image_preview_next": "Next image",
+  "app_image_preview_load_error": "Failed to load image"
 }

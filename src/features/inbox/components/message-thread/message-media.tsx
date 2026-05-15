@@ -1,18 +1,14 @@
-import {
-  formatFileSize,
-  getMediaPlaceholder,
-} from '@/entities/message'
 import type { MessageType } from '@/entities/message'
+import { formatFileSize, getMediaPlaceholder } from '@/entities/message'
 import { m } from '@/paraglide/messages'
+import { AppImage } from '@/components/app-image'
 import { Button, Skeleton, Surface } from '@heroui/react'
 import { cn } from '@heroui/styles'
-import { FileTextIcon, ImageOffIcon, SparklesIcon } from 'lucide-react'
+import { FileTextIcon, SparklesIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useMessageMediaUrl } from '../../hooks/use-message-media-url'
-import {
-  getChatMediaStoragePath,
-  type MessageMediaMetadata,
-} from '../../schemas/message-metadata'
+import type { MessageMediaMetadata } from '../../schemas/message-metadata'
+import { getChatMediaStoragePath } from '../../schemas/message-metadata'
 import { MessageSticker } from './message-sticker'
 
 type Props = {
@@ -62,8 +58,7 @@ export function MessageMediaAttachment({
     getMediaPlaceholder(messageType)
 
   const sizeLabel = formatFileSize(mediaSize ?? metadata?.size ?? null)
-  const mimeLabel =
-    mediaMimeType?.trim() || metadata?.mime_type?.trim() || null
+  const mimeLabel = mediaMimeType?.trim() || metadata?.mime_type?.trim() || null
 
   if (uploadFailed || !storagePath) {
     return (
@@ -121,26 +116,13 @@ export function MessageMediaAttachment({
 
   if (messageType === 'image') {
     return (
-      <div className="relative mt-1 max-w-xs">
-        {mediaBroken ? (
-          <Surface
-            variant="secondary"
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-foreground/70"
-          >
-            <ImageOffIcon className="size-4 shrink-0" aria-hidden />
-            <span>{m.inbox_media_image_error()}</span>
-          </Surface>
-        ) : (
-          <img
-            src={url}
-            alt={displayName}
-            loading="lazy"
-            decoding="async"
-            className="max-h-96 w-full rounded-xl object-contain"
-            onError={() => setMediaBroken(true)}
-          />
-        )}
-      </div>
+      <AppImage
+        src={url}
+        alt={displayName}
+        className="mt-1 max-w-xs w-full rounded-xl"
+        imageClassName="max-h-96 object-contain rounded-xl"
+        downloadable
+      />
     )
   }
 

@@ -5,12 +5,76 @@ import type { MessageRow } from '@/entities/message'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getConversationMessages, sendOutboundMessage } from '../api/messages'
 import { inboxQueryKeys } from '../api/query-keys'
+import type { ConversationReadCursor } from '../api/read-cursors'
+import {
+  getConversationReadCursor,
+  markConversationReadToMessage,
+} from '../api/read-cursors'
+import { listPreviewFromMessage } from '../schemas/message-metadata'
 
 export function useMessages(conversationId: string | null) {
   return useQuery({
     queryFn: () => getConversationMessages(conversationId!),
     queryKey: inboxQueryKeys.messages(conversationId ?? ''),
     enabled: !!conversationId,
+  })
+}
+
+export function useConversationReadCursor({
+  conversationId,
+  userId,
+}: {
+  conversationId: string | null
+  userId: string | null
+}) {
+  return useQuery({
+    queryFn: () =>
+      getConversationReadCursor({
+        conversationId: conversationId!,
+        userId: userId!,
+      }),
+    queryKey: inboxQueryKeys.readCursor(conversationId ?? '', userId ?? ''),
+    enabled: !!conversationId && !!userId,
+  })
+}
+
+export function useMarkConversationReadToMessage({
+  workspaceId,
+  userId,
+}: {
+  workspaceId: string
+  userId: string | null
+}) {
+  const queryClient = useQueryClient()
+  const conversationsKey = inboxQueryKeys.conversations(workspaceId)
+
+  return useMutation({
+    mutationFn: ({
+      conversationId,
+      lastReadMessageId,
+    }: {
+      conversationId: string
+      lastReadMessageId: string
+    }) => markConversationReadToMessage({ conversationId, lastReadMessageId }),
+    onSuccess: (_data, { conversationId, lastReadMessageId }) => {
+      queryClient.setQueryData<Array<ConversationWithRelations>>(
+        conversationsKey,
+        (current) =>
+          current?.map((row) =>
+            row.id === conversationId ? { ...row, unread_count: 0 } : row,
+          ),
+      )
+
+      if (!userId) return
+
+      queryClient.setQueryData<ConversationReadCursor | null>(
+        inboxQueryKeys.readCursor(conversationId, userId),
+        {
+          last_read_message_id: lastReadMessageId,
+          last_read_at: new Date().toISOString(),
+        },
+      )
+    },
   })
 }
 
@@ -21,11 +85,13 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
     mutationFn: ({
       conversationId,
       content,
+      file,
       senderId,
       channelType,
     }: {
       conversationId: string
       content: string
+      file?: File | null
       senderId: string | null
       channelType: ChannelType
     }) =>
@@ -33,6 +99,7 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
         conversationId,
         workspaceId,
         content,
+        file,
         senderId,
         channelType,
       }),
@@ -62,7 +129,7 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
                 ? {
                     ...conversation,
                     last_message_at: message.created_at,
-                    last_message_preview: message.content?.trim() || null,
+                    last_message_preview: listPreviewFromMessage(message),
                     assigned_to:
                       conversation.assigned_to ?? message.sender_id ?? null,
                   }

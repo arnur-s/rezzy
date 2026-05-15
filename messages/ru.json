@@ -224,7 +224,13 @@
   "inbox_composer_reply_via": "Ответ через {channel}",
   "inbox_composer_send_button": "Отправить",
   "inbox_composer_send_error": "Не удалось отправить сообщение",
+  "inbox_composer_attach_file_label": "Прикрепить файл",
+  "inbox_composer_emoji_label": "Открыть эмодзи",
+  "inbox_composer_send_label": "Отправить сообщение",
+  "inbox_composer_remove_attachment_label": "Удалить вложение",
   "inbox_messages_load_error": "Не удалось загрузить сообщения",
+  "inbox_unread_messages_divider": "Непрочитанные сообщения",
+  "inbox_new_messages_button": "Новые сообщения",
   "inbox_thread_show_contact": "Показать профиль контакта",
   "inbox_thread_hide_contact": "Скрыть профиль контакта",
   "inbox_thread_back_to_list": "Назад к диалогам",
@@ -282,5 +288,18 @@
 
   "not_found_title": "404",
   "not_found_description": "Страница не найдена",
-  "not_found_go_home_link": "Перейти на главную"
+  "not_found_go_home_link": "Перейти на главную",
+
+  "app_image_open_preview": "Открыть предпросмотр",
+  "app_image_preview_label": "Предпросмотр изображения",
+  "app_image_preview_close": "Закрыть",
+  "app_image_preview_zoom_in": "Увеличить",
+  "app_image_preview_zoom_out": "Уменьшить",
+  "app_image_preview_reset": "Сбросить вид",
+  "app_image_preview_rotate_left": "Повернуть влево",
+  "app_image_preview_rotate_right": "Повернуть вправо",
+  "app_image_preview_download": "Скачать изображение",
+  "app_image_preview_prev": "Предыдущее изображение",
+  "app_image_preview_next": "Следующее изображение",
+  "app_image_preview_load_error": "Не удалось загрузить изображение"
 }

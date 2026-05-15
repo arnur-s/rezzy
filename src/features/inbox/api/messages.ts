@@ -1,5 +1,6 @@
 import type { ChannelType } from '@/entities/channel'
 import type { MessageRow } from '@/entities/message'
+import type { TablesInsert } from '@/api/types'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import { mapDatabaseError } from '../utils/error-message'
@@ -66,36 +67,87 @@ type SendTelegramInvokeResult = {
   message?: { id: string; status: string; external_id: string | null }
 }
 
+function detectMessageType(
+  mimeType: string,
+): 'image' | 'video' | 'audio' | 'document' {
+  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType.startsWith('video/')) return 'video'
+  if (mimeType.startsWith('audio/')) return 'audio'
+  return 'document'
+}
+
+function sanitizeFilename(name: string): string {
+  const safe = name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 200)
+  return safe || 'file'
+}
+
+const CHAT_MEDIA_BUCKET = 'chat-media'
+
 /**
- * Inserts an outbound message row. Telegram delivery runs in Edge Function
- * `send-telegram-message` after insert (`sent` → `delivered` / `failed` → read).
+ * Inserts an outbound message row. For file messages, uploads to Storage first
+ * then inserts with all media fields in one operation (Option B: client-generated
+ * UUID as path segment). Telegram delivery runs in Edge Function after insert.
  */
 export async function sendOutboundMessage({
   conversationId,
   workspaceId,
   content,
+  file,
   senderId,
   channelType,
 }: {
   conversationId: string
   workspaceId: string
   content: string
+  file?: File | null
   senderId: string | null
   channelType: ChannelType
 }): Promise<MessageRow> {
   const isTelegram = channelType === 'telegram'
 
-  const { data: inserted, error: insertError } = await supabase
-    .from('messages')
-    .insert({
+  let insertPayload: TablesInsert<'messages'>
+
+  if (file) {
+    const msgType = detectMessageType(file.type)
+    const uuid = crypto.randomUUID()
+    const safeFilename = sanitizeFilename(file.name)
+    const storagePath = `${workspaceId}/${conversationId}/${uuid}/${safeFilename}`
+    const mimeType = file.type || 'application/octet-stream'
+
+    const { error: uploadError } = await supabase.storage
+      .from(CHAT_MEDIA_BUCKET)
+      .upload(storagePath, file, { contentType: mimeType, upsert: false })
+
+    if (uploadError) throw uploadError
+
+    insertPayload = {
+      conversation_id: conversationId,
+      workspace_id: workspaceId,
+      direction: 'outbound',
+      type: msgType,
+      content: content.trim() || null,
+      media_url: storagePath,
+      media_filename: file.name,
+      media_mime_type: mimeType,
+      media_size: file.size,
+      sender_id: senderId,
+      status: 'sent',
+    }
+  } else {
+    insertPayload = {
       conversation_id: conversationId,
       workspace_id: workspaceId,
       direction: 'outbound',
       type: 'text',
-      content,
+      content: content.trim(),
       sender_id: senderId,
       status: 'sent',
-    })
+    }
+  }
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('messages')
+    .insert(insertPayload)
     .select(MESSAGE_SELECT)
     .single()
 

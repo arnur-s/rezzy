@@ -10,6 +10,7 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { m } from '@/paraglide/messages'
 
 const MAX_HEIGHT = 24 * 5 // 5 lines × 24px line-height
 
@@ -57,7 +58,7 @@ function AttachmentChip({ file, onRemove }: AttachmentChipProps) {
         type="button"
         onClick={onRemove}
         className="ml-auto shrink-0 text-foreground/40 hover:text-foreground"
-        aria-label="Remove attachment"
+        aria-label={m.inbox_composer_remove_attachment_label()}
       >
         <XIcon className="size-3.5" />
       </button>
@@ -66,15 +67,13 @@ function AttachmentChip({ file, onRemove }: AttachmentChipProps) {
 }
 
 export interface ChatInputProps {
-  onSend: (text: string) => void
-  onAttach: (file: File) => void
+  onSend: (text: string, file: File | null) => void
   disabled?: boolean
   placeholder?: string
 }
 
 export function ChatInput({
   onSend,
-  onAttach,
   disabled = false,
   placeholder,
 }: ChatInputProps) {
@@ -108,7 +107,7 @@ export function ChatInput({
 
   function handleSend() {
     if (!canSend) return
-    onSend(text.trim())
+    onSend(text.trim(), attachment)
     setText('')
     setAttachment(null)
     const el = textareaRef.current
@@ -136,19 +135,16 @@ export function ChatInput({
   }
 
   function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
-    const file = Array.from(e.clipboardData.files)[0]
-    if (file.type.startsWith('image/')) {
-      e.preventDefault()
-      setAttachment(file)
-      onAttach(file)
-    }
+    const file = e.clipboardData.files.item(0)
+    if (!file || !file.type.startsWith('image/')) return
+    e.preventDefault()
+    setAttachment(file)
   }
 
   function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setAttachment(file)
-    onAttach(file)
     e.target.value = ''
   }
 
@@ -190,7 +186,7 @@ export function ChatInput({
             isIconOnly
             isDisabled={disabled}
             onPress={() => fileInputRef.current?.click()}
-            aria-label="Attach file"
+            aria-label={m.inbox_composer_attach_file_label()}
           >
             <PaperclipIcon className="size-4" />
           </Button>
@@ -222,7 +218,7 @@ export function ChatInput({
             isIconOnly
             isDisabled={disabled}
             onPress={() => setShowEmojiPicker((v) => !v)}
-            aria-label="Open emoji picker"
+            aria-label={m.inbox_composer_emoji_label()}
           >
             <SmileIcon className="size-4" />
           </Button>
@@ -233,7 +229,7 @@ export function ChatInput({
             isIconOnly
             isDisabled={!canSend}
             onPress={handleSend}
-            aria-label="Send message"
+            aria-label={m.inbox_composer_send_label()}
           >
             <SendIcon className="size-4" />
           </Button>

@@ -1,10 +1,10 @@
+import type { MessageRow, MessageType } from '@/entities/message'
 import {
   MESSAGE_STATUS_META,
   getMediaPlaceholder,
   isMessageStatus,
   isMessageType,
 } from '@/entities/message'
-import type { MessageRow, MessageType } from '@/entities/message'
 import { getUserInitials } from '@/entities/user'
 import { Avatar } from '@heroui/react'
 import { cn } from '@heroui/styles'
@@ -48,6 +48,8 @@ export function MessageBubble({ message, contactName }: Props) {
 
   return (
     <div
+      id={`message-${message.id}`}
+      data-message-id={message.id}
       className={cn(
         'flex w-full items-end gap-2',
         isOutbound ? 'justify-end' : 'justify-start',
@@ -66,14 +68,18 @@ export function MessageBubble({ message, contactName }: Props) {
         )}
       >
         <div
-          className={cn(
-            'rounded-2xl px-3.5 py-2 text-sm shadow-xs',
-            isOutbound
-              ? 'rounded-br-sm bg-accent text-accent-foreground'
-              : 'rounded-bl-sm bg-foreground/5 text-foreground',
-          )}
+          className={
+            showRichAttachment
+              ? undefined
+              : cn(
+                  'min-w-fit rounded-2xl px-3.5 py-2 text-sm shadow-xs',
+                  isOutbound
+                    ? 'rounded-br-sm bg-accent text-accent-foreground'
+                    : 'rounded-bl-sm bg-foreground/5 text-foreground',
+                )
+          }
         >
-          {showRichAttachment ? (
+          {showRichAttachment && (
             <MessageMediaAttachment
               messageType={richType}
               metadata={mediaMetadata}
@@ -84,7 +90,7 @@ export function MessageBubble({ message, contactName }: Props) {
               mediaSize={message.media_size}
               workspaceId={message.workspace_id}
             />
-          ) : null}
+          )}
           {showStickerPlaceholder ? (
             <p
               className={cn(

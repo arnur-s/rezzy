@@ -4,8 +4,15 @@ import {
 } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
-import { useMessages } from '../../hooks/use-messages'
+import { useCallback, useMemo } from 'react'
+import { getConversationInitialScrollTarget } from '../../api/read-cursors'
+import {
+  useConversationReadCursor,
+  useMarkConversationReadToMessage,
+  useMessages,
+} from '../../hooks/use-messages'
 import { useMessagesRealtime } from '../../hooks/use-messages-realtime'
+import type { InitialScrollTarget } from '../../utils/read-cursor'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
 import { MessageThreadEmpty } from './message-thread-empty'
@@ -26,11 +33,52 @@ export function MessageThread({
   onToggleContactPanel,
   onBack,
 }: Props) {
-  const messagesQuery = useMessages(conversation?.id ?? null)
+  const conversationId = conversation?.id ?? null
+  const unreadCount = conversation?.unread_count ?? 0
+  const messagesQuery = useMessages(conversationId)
+  const readCursorQuery = useConversationReadCursor({
+    conversationId,
+    userId: senderId,
+  })
+  const markRead = useMarkConversationReadToMessage({
+    workspaceId,
+    userId: senderId,
+  })
   useMessagesRealtime({
-    conversationId: conversation?.id ?? null,
+    conversationId,
     workspaceId,
   })
+  const messages = messagesQuery.data ?? []
+  const isReadCursorLoading = !!senderId && readCursorQuery.isPending
+  const initialScrollTarget = useMemo<InitialScrollTarget>(
+    () =>
+      getConversationInitialScrollTarget({
+        messages,
+        readCursor: readCursorQuery.data ?? null,
+        unreadCount,
+      }),
+    [messages, readCursorQuery.data, unreadCount],
+  )
+  const latestMessageId = messages.at(-1)?.id ?? null
+  const unreadDividerMessageId =
+    initialScrollTarget.reason === 'first-unread'
+      ? initialScrollTarget.messageId
+      : null
+  const readAnchorMessageId =
+    unreadCount > 0 ? initialScrollTarget.messageId : null
+  const markReadMessageId =
+    unreadCount > 0 ? latestMessageId : null
+
+  const handleReadAnchorVisible = useCallback(
+    (lastReadMessageId: string) => {
+      if (!senderId || !conversationId) return
+      markRead.mutate({
+        conversationId,
+        lastReadMessageId,
+      })
+    },
+    [conversationId, markRead, senderId],
+  )
 
   if (!conversation) {
     return (
@@ -58,10 +106,16 @@ export function MessageThread({
         onBack={onBack}
       />
       <MessageList
+        conversationId={conversation.id}
         messages={messagesQuery.data}
-        isLoading={messagesQuery.isPending}
-        isError={messagesQuery.isError}
+        isLoading={messagesQuery.isPending || isReadCursorLoading}
+        isError={messagesQuery.isError || readCursorQuery.isError}
         contactName={contactName}
+        initialScrollTarget={initialScrollTarget}
+        unreadDividerMessageId={unreadDividerMessageId}
+        readAnchorMessageId={readAnchorMessageId}
+        markReadMessageId={markReadMessageId}
+        onReadAnchorVisible={handleReadAnchorVisible}
       />
       <MessageComposer
         workspaceId={workspaceId}

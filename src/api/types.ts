@@ -156,6 +156,52 @@ export type Database = {
           },
         ]
       }
+      conversation_reads: {
+        Row: {
+          conversation_id: string
+          last_read_at: string
+          last_read_message_id: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          conversation_id: string
+          last_read_at?: string
+          last_read_message_id?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          conversation_id?: string
+          last_read_at?: string
+          last_read_message_id?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_reads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_reads_last_read_message_id_fkey"
+            columns: ["last_read_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_reads_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           assigned_to: string | null
@@ -358,6 +404,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           icon: string | null
           id: string
@@ -369,6 +416,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           icon?: string | null
           id?: string
@@ -380,6 +428,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           icon?: string | null
           id?: string
@@ -401,7 +450,11 @@ export type Database = {
         Returns: boolean
       }
       mark_conversation_read: {
-        Args: { p_conversation_id: string }
+        Args: { p_conversation_id: string; p_last_read_message_id?: string }
+        Returns: undefined
+      }
+      soft_delete_workspace: {
+        Args: { p_workspace_id: string }
         Returns: undefined
       }
       upsert_channel_credentials: {

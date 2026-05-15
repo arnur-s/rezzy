@@ -27,6 +27,10 @@ interface MessageRow {
   status: string | null
   content: string | null
   external_id: string | null
+  type: string
+  media_url: string | null
+  media_filename: string | null
+  media_mime_type: string | null
 }
 
 interface ConversationRow {
@@ -47,6 +51,22 @@ interface ChannelRow {
 }
 
 type SecretField = 'bot_token' | 'webhook_secret'
+
+const TELEGRAM_MEDIA_METHOD: Record<string, string> = {
+  image: 'sendPhoto',
+  video: 'sendVideo',
+  audio: 'sendAudio',
+  voice: 'sendVoice',
+  document: 'sendDocument',
+}
+
+const TELEGRAM_MEDIA_FIELD: Record<string, string> = {
+  image: 'photo',
+  video: 'video',
+  audio: 'audio',
+  voice: 'voice',
+  document: 'document',
+}
 
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
@@ -81,9 +101,18 @@ function logTelegramNetworkError(context: string, error: unknown): void {
   console.error(`${context}: ${detail}`)
 }
 
-function previewFromText(text: string): string {
-  const t = text.trim()
-  return t.length > 100 ? t.slice(0, 100) : t
+function previewFromRow(row: MessageRow): string {
+  const trimmed = row.content?.trim() ?? ''
+  if (trimmed) return trimmed.length > 100 ? trimmed.slice(0, 100) : trimmed
+  switch (row.type) {
+    case 'image':    return '📷 Photo'
+    case 'video':    return '🎥 Video'
+    case 'audio':    return '🎧 Audio'
+    case 'voice':    return '🎤 Voice message'
+    case 'document': return row.media_filename ?? '📎 Document'
+    case 'sticker':  return 'Sticker'
+    default:         return ''
+  }
 }
 
 export default {
@@ -140,7 +169,7 @@ export default {
     const { data: message, error: msgError } = await admin
       .from('messages')
       .select(
-        'id, workspace_id, conversation_id, direction, status, content, external_id',
+        'id, workspace_id, conversation_id, direction, status, content, external_id, type, media_url, media_filename, media_mime_type',
       )
       .eq('id', messageId)
       .maybeSingle()
@@ -193,9 +222,11 @@ export default {
       })
     }
 
-    const content = row.content?.trim() ?? ''
-    if (!content) {
-      return jsonResponse(400, { error: 'Message has no content' })
+    if (row.type === 'text') {
+      const content = row.content?.trim() ?? ''
+      if (!content) {
+        return jsonResponse(400, { error: 'Message has no content' })
+      }
     }
 
     const { data: conversation, error: convError } = await admin
@@ -285,23 +316,66 @@ export default {
     const chatId = contactChannel.external_id.trim()
 
     let telegramJson: TelegramSendMessageResponse
-    try {
-      const tgRes = await fetch(
-        `https://api.telegram.org/bot${botToken}/sendMessage`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: chatId, text: content }),
-        },
-      )
-      telegramJson = (await tgRes.json()) as TelegramSendMessageResponse
-    } catch (e) {
-      logTelegramNetworkError(
-        'send-telegram-message: Telegram network error',
-        e,
-      )
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
-      return jsonResponse(502, { error: 'Telegram request failed' })
+    const isMediaType = row.type !== 'text' && row.type !== 'sticker'
+
+    if (isMediaType && row.media_url) {
+      const { data: signedData, error: signedError } = await admin.storage
+        .from('chat-media')
+        .createSignedUrl(row.media_url, 3600)
+
+      if (signedError || !signedData?.signedUrl) {
+        console.error('send-telegram-message: signed URL error', signedError)
+        await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+        return jsonResponse(502, { error: 'Failed to create signed URL for media' })
+      }
+
+      const method = TELEGRAM_MEDIA_METHOD[row.type] ?? 'sendDocument'
+      const field = TELEGRAM_MEDIA_FIELD[row.type] ?? 'document'
+      const tgBody: Record<string, string> = {
+        chat_id: chatId,
+        [field]: signedData.signedUrl,
+      }
+      const caption = row.content?.trim() ?? ''
+      if (caption) tgBody.caption = caption.slice(0, 1024)
+
+      try {
+        const tgRes = await fetch(
+          `https://api.telegram.org/bot${botToken}/${method}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tgBody),
+          },
+        )
+        telegramJson = (await tgRes.json()) as TelegramSendMessageResponse
+      } catch (e) {
+        logTelegramNetworkError(
+          'send-telegram-message: Telegram network error',
+          e,
+        )
+        await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+        return jsonResponse(502, { error: 'Telegram request failed' })
+      }
+    } else {
+      const content = row.content?.trim() ?? ''
+      try {
+        const tgRes = await fetch(
+          `https://api.telegram.org/bot${botToken}/sendMessage`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: content }),
+          },
+        )
+        telegramJson = (await tgRes.json()) as TelegramSendMessageResponse
+      } catch (e) {
+        logTelegramNetworkError(
+          'send-telegram-message: Telegram network error',
+          e,
+        )
+        await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+        return jsonResponse(502, { error: 'Telegram request failed' })
+      }
     }
 
     if (!telegramJson.ok || telegramJson.result?.message_id == null) {
@@ -311,13 +385,13 @@ export default {
       )
       await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
       return jsonResponse(502, {
-        error: telegramJson.description ?? 'Telegram sendMessage failed',
+        error: telegramJson.description ?? 'Telegram send failed',
       })
     }
 
     const telegramMessageId = String(telegramJson.result.message_id)
     const now = new Date().toISOString()
-    const preview = previewFromText(content)
+    const preview = previewFromRow(row)
 
     const { error: updateMsgError } = await admin
       .from('messages')

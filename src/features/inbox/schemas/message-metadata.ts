@@ -1,4 +1,5 @@
-import type { MessageType } from '@/entities/message'
+import type { MessageRow, MessageType } from '@/entities/message'
+import { isMessageType } from '@/entities/message'
 import { z } from 'zod'
 
 const telegramMetadataSchema = z
@@ -116,6 +117,29 @@ export function effectiveRichMediaType(
     if (IMAGE_EXTS.has(ext)) return 'image'
   }
   return rowType
+}
+
+/** Short list preview when content is empty (e.g. media without caption). */
+export function listPreviewFromMessage(
+  message: Pick<
+    MessageRow,
+    'content' | 'type' | 'metadata' | 'media_filename' | 'media_mime_type'
+  >,
+): string | null {
+  const trimmed = message.content?.trim()
+  if (trimmed) return trimmed.length > 100 ? trimmed.slice(0, 100) : trimmed
+  const rowType: MessageType =
+    message.type && isMessageType(message.type) ? message.type : 'text'
+  if (rowType !== 'text') {
+    const label = effectiveRichMediaType(
+      rowType,
+      parseMessageMediaMetadata(message.metadata),
+      message.media_mime_type,
+      message.media_filename,
+    )
+    return `[${label}]`
+  }
+  return null
 }
 
 /** Stable storage object path for signed URL fetch, or null when not previewable. */

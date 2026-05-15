@@ -80,9 +80,7 @@ export async function markConversationRead(
   conversationId: string,
 ): Promise<void> {
   const { error } = await supabase
-    .from('conversations')
-    .update({ unread_count: 0 })
-    .eq('id', conversationId)
+    .rpc('mark_conversation_read', { p_conversation_id: conversationId })
 
   if (error) {
     throw error
