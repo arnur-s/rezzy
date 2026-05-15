@@ -1,7 +1,7 @@
-import { sortConversationsByActivity } from '@/entities/conversation'
 import type { ConversationWithRelations } from '@/entities/conversation'
-import { isMessageType } from '@/entities/message'
+import { sortConversationsByActivity } from '@/entities/conversation'
 import type { MessageRow, MessageType } from '@/entities/message'
+import { isMessageType } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
@@ -91,11 +91,18 @@ export function useMessagesRealtime({
         (payload) => {
           const message = payload.new as MessageRow
 
-          queryClient.setQueryData<Array<MessageRow>>(messagesKey, (current) => {
-            if (!current) return [message]
-            if (current.some((row) => row.id === message.id)) return current
-            return [...current, message]
-          })
+          queryClient.setQueryData<Array<MessageRow>>(
+            messagesKey,
+            (current) => {
+              if (!current) return [message]
+              if (current.some((row) => row.id === message.id)) return current
+              return [...current, message].sort(
+                (a, b) =>
+                  new Date(a.created_at).getTime() -
+                  new Date(b.created_at).getTime(),
+              )
+            },
+          )
 
           patchConversationList(message)
         },
@@ -111,12 +118,15 @@ export function useMessagesRealtime({
         (payload) => {
           const message = payload.new as MessageRow
 
-          queryClient.setQueryData<Array<MessageRow>>(messagesKey, (current) => {
-            if (!current) return [message]
-            return current.map((row) =>
-              row.id === message.id ? { ...row, ...message } : row,
-            )
-          })
+          queryClient.setQueryData<Array<MessageRow>>(
+            messagesKey,
+            (current) => {
+              if (!current) return [message]
+              return current.map((row) =>
+                row.id === message.id ? { ...row, ...message } : row,
+              )
+            },
+          )
         },
       )
       .subscribe()
