@@ -17,9 +17,12 @@
     "format": "eslint --fix . && prettier --write .",
     "check": "prettier --check .",
     "machine-translate": "inlang machine translate --project project.inlang",
-    "types:supabase": "npx supabase gen types typescript > ./src/api/types.ts"
+    "types:supabase": "npx supabase gen types typescript > ./src/api/types.ts",
+    "full-schema:supabase": "npx supabase db dump -f full-schema.sql"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
+    "@emoji-mart/react": "^1.1.1",
     "@heroui/react": "^3.0.3",
     "@heroui/styles": "^3.0.3",
     "@hookform/resolvers": "^5.2.2",

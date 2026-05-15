@@ -1,3 +1,4 @@
+import { useChannels } from '@/features/channels/hooks/use-channels'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
 import { useMemo, useState } from 'react'
@@ -22,11 +23,13 @@ export function InboxPage({ workspaceId }: Props) {
   const senderId = session?.user.id ?? null
 
   const conversationsQuery = useConversations(workspaceId)
+  const channelsQuery = useChannels(workspaceId)
   useConversationsRealtime(workspaceId)
   const markRead = useMarkConversationRead(workspaceId)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<PlatformFilter>('all')
+  const [channelIdFilter, setChannelIdFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isContactPanelOpen, setIsContactPanelOpen] = useState(false)
   const [mobilePane, setMobilePane] = useState<MobilePane>('list')
@@ -97,9 +100,15 @@ export function InboxPage({ workspaceId }: Props) {
           selectedConversationId={selectedId}
           onSelect={handleSelect}
           filter={filter}
-          onFilterChange={setFilter}
+          onFilterChange={(next) => {
+            setFilter(next)
+            setChannelIdFilter(null)
+          }}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          channels={channelsQuery.data ?? []}
+          channelIdFilter={channelIdFilter}
+          onChannelIdFilterChange={setChannelIdFilter}
         />
       </div>
 

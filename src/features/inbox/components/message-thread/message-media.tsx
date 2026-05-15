@@ -16,7 +16,11 @@ type Props = {
   isOutbound: boolean
 }
 
-export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Props) {
+export function MessageMediaAttachment({
+  messageType,
+  metadata,
+  isOutbound,
+}: Props) {
   const uploadFailed = metadata?.upload_failed === true
   const storagePath = metadata?.storage_path?.trim() ?? null
 
@@ -29,7 +33,9 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
 
   const displayName =
     metadata?.file_name?.trim() ||
-    (messageType === 'document' ? m.inbox_media_document_fallback_name() : null) ||
+    (messageType === 'document'
+      ? m.inbox_media_document_fallback_name()
+      : null) ||
     getMediaPlaceholder(messageType)
 
   const sizeLabel = formatFileSize(metadata?.size ?? null)
@@ -41,11 +47,16 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
         variant="secondary"
         className={cn(
           'mt-1 max-w-full rounded-xl px-3 py-2 text-xs',
-          isOutbound ? 'bg-accent-soft text-accent-foreground/90' : 'text-foreground/80',
+          isOutbound
+            ? 'bg-accent-soft text-accent-foreground/90'
+            : 'text-foreground/80',
         )}
       >
         <div className="flex items-start gap-2">
-          <FileTextIcon className="mt-0.5 size-4 shrink-0 opacity-70" aria-hidden />
+          <FileTextIcon
+            className="mt-0.5 size-4 shrink-0 opacity-70"
+            aria-hidden
+          />
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="font-medium wrap-break-word">{displayName}</p>
             <p className="text-foreground/55">{m.inbox_media_unavailable()}</p>
@@ -65,9 +76,17 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
 
   if (signed.isError || !signed.data) {
     return (
-      <Surface variant="secondary" className="mt-1 max-w-full rounded-xl px-3 py-2 text-xs">
+      <Surface
+        variant="secondary"
+        className="mt-1 max-w-full rounded-xl px-3 py-2 text-xs"
+      >
         <p className="text-danger">{m.inbox_media_signed_url_error()}</p>
-        <Button size="sm" variant="secondary" className="mt-2" onPress={() => void signed.refetch()}>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="mt-2"
+          onPress={() => void signed.refetch()}
+        >
           {m.common_retry()}
         </Button>
       </Surface>
@@ -75,14 +94,11 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
   }
 
   const url = signed.data
-  const openInNewTab = () => {
-    window.open(url, '_blank', 'noopener,noreferrer')
-  }
 
   if (messageType === 'image') {
     return (
       <div className="relative mt-1 max-w-xs">
-        {mediaBroken ? (
+        {mediaBroken && (
           <Surface
             variant="secondary"
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-foreground/70"
@@ -90,27 +106,7 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
             <ImageOffIcon className="size-4 shrink-0" aria-hidden />
             <span>{m.inbox_media_image_error()}</span>
           </Surface>
-        ) : (
-          <button
-            type="button"
-            onClick={openInNewTab}
-            className="group block w-full overflow-hidden rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <img
-              src={url}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="max-h-72 w-full cursor-zoom-in object-cover transition-opacity group-hover:opacity-95"
-              onError={() => setMediaBroken(true)}
-            />
-          </button>
         )}
-        <p className="mt-1 text-[10px] text-foreground/45">
-          <button type="button" className="underline-offset-2 hover:underline" onClick={openInNewTab}>
-            {m.inbox_media_open_full()}
-          </button>
-        </p>
       </div>
     )
   }
@@ -123,7 +119,6 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
             key={url}
             url={url}
             onError={() => setMediaBroken(true)}
-            openInNewTab={openInNewTab}
           />
         ) : (
           <DocumentFallbackCard
@@ -141,7 +136,12 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
   if (messageType === 'audio' || messageType === 'voice') {
     return (
       <div className="mt-1 w-full max-w-md">
-        <audio controls preload="metadata" className="w-full min-w-[220px]" src={url}>
+        <audio
+          controls
+          preload="metadata"
+          className="w-full min-w-[220px]"
+          src={url}
+        >
           {m.inbox_media_audio_unsupported()}
         </audio>
       </div>
@@ -183,36 +183,12 @@ export function MessageMediaAttachment({ messageType, metadata, isOutbound }: Pr
   return null
 }
 
-type VideoWithWebkit = HTMLVideoElement & {
-  webkitEnterFullscreen?: () => void
-}
-
-async function enterVideoFullscreen(video: HTMLVideoElement | null) {
-  if (!video) return
-  const extended = video as VideoWithWebkit
-  try {
-    if (typeof video.requestFullscreen === 'function') {
-      await video.requestFullscreen()
-      return
-    }
-  } catch {
-    /* user dismissed or unsupported */
-  }
-  try {
-    extended.webkitEnterFullscreen?.()
-  } catch {
-    /* iOS / legacy Safari only */
-  }
-}
-
 function MessageInlineVideo({
   url,
   onError,
-  openInNewTab,
 }: {
   url: string
   onError: () => void
-  openInNewTab: () => void
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -233,24 +209,6 @@ function MessageInlineVideo({
       >
         {m.inbox_media_video_unsupported()}
       </video>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Button
-          size="sm"
-          variant="secondary"
-          className="shrink-0"
-          aria-label={m.inbox_media_fullscreen()}
-          onPress={() => void enterVideoFullscreen(videoRef.current)}
-        >
-          {m.inbox_media_fullscreen()}
-        </Button>
-        <button
-          type="button"
-          className="text-[10px] text-foreground/45 underline-offset-2 hover:underline"
-          onClick={openInNewTab}
-        >
-          {m.inbox_media_open_new_tab()}
-        </button>
-      </div>
     </div>
   )
 }

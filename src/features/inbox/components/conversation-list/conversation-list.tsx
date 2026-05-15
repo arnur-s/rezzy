@@ -1,13 +1,14 @@
+import type { Channel } from '@/features/channels/types'
 import { m } from '@/paraglide/messages'
 import { ScrollShadow } from '@heroui/react'
 import { useMemo } from 'react'
 import type { ConversationWithRelations } from '../../types'
 import { isChannelType } from '../../types'
+import type { PlatformFilter } from './channel-nav'
+import { ChannelNav } from './channel-nav'
 import { ConversationListItem } from './conversation-list-item'
 import { ConversationListSkeleton } from './conversation-list-skeleton'
 import { ConversationSearch } from './conversation-search'
-import type { PlatformFilter } from './platform-filter-tabs'
-import { PlatformFilterTabs } from './platform-filter-tabs'
 
 type Props = {
   conversations: Array<ConversationWithRelations> | undefined
@@ -19,6 +20,9 @@ type Props = {
   onFilterChange: (filter: PlatformFilter) => void
   searchQuery: string
   onSearchChange: (value: string) => void
+  channels: Array<Channel>
+  channelIdFilter: string | null
+  onChannelIdFilterChange: (id: string | null) => void
 }
 
 export function ConversationList({
@@ -31,6 +35,9 @@ export function ConversationList({
   onFilterChange,
   searchQuery,
   onSearchChange,
+  channels,
+  channelIdFilter,
+  onChannelIdFilterChange,
 }: Props) {
   const unreadCounts = useMemo(() => {
     const counts: Record<PlatformFilter, number> = {
@@ -50,27 +57,43 @@ export function ConversationList({
     return counts
   }, [conversations])
 
+  const channelUnreadCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const row of conversations ?? []) {
+      const count = row.unread_count || 0
+      if (count > 0) counts[row.channel.id] = (counts[row.channel.id] ?? 0) + count
+    }
+    return counts
+  }, [conversations])
+
   const filtered = useMemo(() => {
     const rows = conversations ?? []
     const needle = searchQuery.trim().toLowerCase()
     return rows.filter((row) => {
       if (filter !== 'all' && row.channel.type !== filter) return false
+      if (channelIdFilter && row.channel.id !== channelIdFilter) return false
       if (!needle) return true
       const name = row.contact.name?.toLowerCase() ?? ''
       const preview = row.last_message_preview?.toLowerCase() ?? ''
       return name.includes(needle) || preview.includes(needle)
     })
-  }, [conversations, filter, searchQuery])
+  }, [conversations, filter, channelIdFilter, searchQuery])
 
   return (
     <div className="flex h-full min-h-0 flex-col border-r border-border/60">
       <div className="border-b border-border/60">
-        <PlatformFilterTabs
-          value={filter}
-          onChange={onFilterChange}
-          unreadCounts={unreadCounts}
-        />
         <ConversationSearch value={searchQuery} onChange={onSearchChange} />
+      </div>
+      <div className="border-b border-border/60">
+        <ChannelNav
+          filter={filter}
+          onFilterChange={onFilterChange}
+          channels={channels}
+          channelIdFilter={channelIdFilter}
+          onChannelIdFilterChange={onChannelIdFilterChange}
+          unreadCounts={unreadCounts}
+          channelUnreadCounts={channelUnreadCounts}
+        />
       </div>
 
       <ScrollShadow className="min-h-0 flex-1">
@@ -82,7 +105,11 @@ export function ConversationList({
           </p>
         ) : filtered.length === 0 ? (
           <EmptyState
-            hasQuery={searchQuery.trim().length > 0 || filter !== 'all'}
+            hasQuery={
+              searchQuery.trim().length > 0 ||
+              filter !== 'all' ||
+              channelIdFilter !== null
+            }
           />
         ) : (
           <ul className="flex flex-col gap-0.5 px-2 py-2">

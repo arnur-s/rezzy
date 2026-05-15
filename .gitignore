@@ -13,3 +13,4 @@ __unconfig*
 todos.json
 # heroui-agents-md
 .heroui-docs/
+full-schema.sql

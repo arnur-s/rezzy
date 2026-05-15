@@ -1,3 +1,4 @@
+// telegram-webhook.ts
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
@@ -109,7 +110,13 @@ interface ChannelCredentials {
   webhook_secret?: string
 }
 
-type DbMessageType = 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker'
+type DbMessageType =
+  | 'text'
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'document'
+  | 'sticker'
 
 interface ResolvedMedia {
   dbType: Exclude<DbMessageType, 'text'>
@@ -448,13 +455,17 @@ async function uploadToChatMedia(
   contentType: string,
 ): Promise<{ error: string | null }> {
   const body =
-    bytes.byteLength === 0 ? new Blob([], { type: contentType }) : new Blob([new Uint8Array(bytes)], {
-      type: contentType,
+    bytes.byteLength === 0
+      ? new Blob([], { type: contentType })
+      : new Blob([new Uint8Array(bytes)], {
+          type: contentType,
+        })
+  const { error } = await supabase.storage
+    .from(CHAT_MEDIA_BUCKET)
+    .upload(objectPath, body, {
+      contentType,
+      upsert: false,
     })
-  const { error } = await supabase.storage.from(CHAT_MEDIA_BUCKET).upload(objectPath, body, {
-    contentType,
-    upsert: false,
-  })
   if (!error) return { error: null }
   const msg = error.message ?? 'upload failed'
   return { error: msg }
@@ -494,7 +505,8 @@ async function processInboundMedia(args: {
 
   const extFromName = extensionFromFileName(media.file_name)
   const extFromTp = extensionFromPath(filePath)
-  const ext = extFromName ?? extFromTp ?? (media.dbType === 'image' ? '.jpg' : '')
+  const ext =
+    extFromName ?? extFromTp ?? (media.dbType === 'image' ? '.jpg' : '')
 
   const uniquePart = sanitizeFilenameSegment(
     (media.file_unique_id ?? media.file_id).replace(/:/g, '_'),
@@ -507,15 +519,32 @@ async function processInboundMedia(args: {
     safeFileName = `${safeFileName}${ext}`
   }
 
-  const contentType = resolveUploadContentType(media.mime_type, ext, media.dbType)
+  const contentType = resolveUploadContentType(
+    media.mime_type,
+    ext,
+    media.dbType,
+  )
 
   let objectPath = `${workspaceId}/${conversationId}/${uniquePart}-${safeFileName}`
-  let uploadResult = await uploadToChatMedia(supabase, objectPath, bytes, contentType)
+  let uploadResult = await uploadToChatMedia(
+    supabase,
+    objectPath,
+    bytes,
+    contentType,
+  )
 
-  if (uploadResult.error && /exists|duplicate|already/i.test(uploadResult.error)) {
+  if (
+    uploadResult.error &&
+    /exists|duplicate|already/i.test(uploadResult.error)
+  ) {
     const suffix = crypto.randomUUID().slice(0, 8)
     objectPath = `${workspaceId}/${conversationId}/${uniquePart}-${suffix}-${safeFileName}`
-    uploadResult = await uploadToChatMedia(supabase, objectPath, bytes, contentType)
+    uploadResult = await uploadToChatMedia(
+      supabase,
+      objectPath,
+      bytes,
+      contentType,
+    )
   }
 
   if (uploadResult.error) {
@@ -752,7 +781,9 @@ export default {
       insertRow.metadata = metadata
     }
 
-    const { error: messageError } = await supabase.from('messages').insert(insertRow)
+    const { error: messageError } = await supabase
+      .from('messages')
+      .insert(insertRow)
 
     if (messageError) {
       console.error('Failed to insert message:', messageError)
@@ -761,11 +792,17 @@ export default {
 
     let unreadCount: number | undefined
     try {
-      const { data, error: unreadRpcError } = await supabase.rpc('increment_unread', {
-        conversation_id: conversationId,
-      })
+      const { data, error: unreadRpcError } = await supabase.rpc(
+        'increment_unread',
+        {
+          conversation_id: conversationId,
+        },
+      )
       if (unreadRpcError) {
-        console.error('telegram-webhook: increment_unread failed', unreadRpcError)
+        console.error(
+          'telegram-webhook: increment_unread failed',
+          unreadRpcError,
+        )
       } else if (typeof data === 'number' && Number.isFinite(data)) {
         unreadCount = data
       } else if (typeof data === 'string' && data.trim() !== '') {
@@ -791,7 +828,10 @@ export default {
       .eq('id', conversationId)
 
     if (convUpdateError) {
-      console.error('telegram-webhook: conversation update failed', convUpdateError)
+      console.error(
+        'telegram-webhook: conversation update failed',
+        convUpdateError,
+      )
     }
 
     console.info(
