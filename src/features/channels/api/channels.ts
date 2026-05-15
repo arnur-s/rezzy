@@ -72,7 +72,7 @@ export async function getWorkspaceChannels(workspaceId: string) {
     .from('channels')
     .select(CHANNEL_PUBLIC_COLUMNS)
     .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
 
   if (error) {
     throw error
@@ -148,8 +148,22 @@ export async function updateChannelName({
   return data
 }
 
-export async function deleteChannel(id: string) {
-  const { error } = await supabase.from('channels').delete().eq('id', id)
+export async function deactivateChannel(id: string) {
+  const { error } = await supabase
+    .from('channels')
+    .update({ is_active: false })
+    .eq('id', id)
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function activateChannel(id: string) {
+  const { error } = await supabase
+    .from('channels')
+    .update({ is_active: true })
+    .eq('id', id)
 
   if (error) {
     throw error

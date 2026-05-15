@@ -3,7 +3,7 @@ import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { AlertDialog, Button, toast } from '@heroui/react'
 import { TriangleAlertIcon } from 'lucide-react'
-import { useDeleteChannel } from '../hooks/use-channels'
+import { useDeactivateChannel } from '../hooks/use-channels'
 
 type Props = {
   channel: Channel
@@ -12,22 +12,20 @@ type Props = {
   workspaceId: string
 }
 
-export function DeleteChannelDialog({
+export function DeactivateChannelDialog({
   channel,
   isOpen,
   onOpenChange,
   workspaceId,
 }: Props) {
-  const deleteChannelMutation = useDeleteChannel(workspaceId)
+  const deactivateChannelMutation = useDeactivateChannel(workspaceId)
 
   function handleConfirm() {
-    deleteChannelMutation.mutate(channel.id, {
+    deactivateChannelMutation.mutate(channel.id, {
       onError: (error) => {
         toast.danger(m.channels_disconnect_error_title(), {
           description:
-            error instanceof Error
-              ? error.message
-              : m.common_unknown_error(),
+            error instanceof Error ? error.message : m.common_unknown_error(),
         })
       },
       onSuccess: () => {
@@ -60,13 +58,13 @@ export function DeleteChannelDialog({
             <Button
               variant="secondary"
               onClick={() => onOpenChange(false)}
-              isDisabled={deleteChannelMutation.isPending}
+              isDisabled={deactivateChannelMutation.isPending}
             >
               {m.common_cancel()}
             </Button>
             <AppButton
               variant="danger"
-              isLoading={deleteChannelMutation.isPending}
+              isLoading={deactivateChannelMutation.isPending}
               onPress={handleConfirm}
             >
               {m.channels_disconnect_action()}

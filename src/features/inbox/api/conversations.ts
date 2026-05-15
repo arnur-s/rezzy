@@ -29,6 +29,7 @@ export async function getWorkspaceConversations(
     .from('conversations')
     .select(CONVERSATION_SELECT)
     .eq('workspace_id', workspaceId)
+    .eq('channel.is_active', true)
     .order('last_message_at', { ascending: false, nullsFirst: false })
 
   if (error) {
@@ -48,7 +49,9 @@ export async function getWorkspaceConversations(
 
   return conversations.map((row) => ({
     ...row,
-    assigned_profile: row.assigned_to ? profilesById.get(row.assigned_to) ?? null : null,
+    assigned_profile: row.assigned_to
+      ? (profilesById.get(row.assigned_to) ?? null)
+      : null,
   }))
 }
 

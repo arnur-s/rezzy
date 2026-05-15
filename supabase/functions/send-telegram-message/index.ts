@@ -40,6 +40,12 @@ interface TelegramSendMessageResponse {
   result?: { message_id: number }
 }
 
+interface ChannelRow {
+  id: string
+  type: string
+  is_active: boolean
+}
+
 type SecretField = 'bot_token' | 'webhook_secret'
 
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
@@ -49,10 +55,7 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
   })
 }
 
-function getCredentialString(
-  credentials: unknown,
-  field: SecretField,
-): string {
+function getCredentialString(credentials: unknown, field: SecretField): string {
   if (
     typeof credentials !== 'object' ||
     credentials === null ||
@@ -210,19 +213,29 @@ export default {
 
     const { data: channel, error: channelError } = await admin
       .from('channels')
-      .select('id, type')
+      .select('id, type, is_active')
       .eq('id', conv.channel_id)
       .maybeSingle()
 
-    if (channelError || !channel) {
+    const channelRow = channel as ChannelRow
+
+    if (channelError || !channelRow) {
       console.error('send-telegram-message: channel load', channelError)
       return jsonResponse(404, { error: 'Channel not found' })
     }
 
-    if (channel.type !== 'telegram') {
+    if (channelRow.type !== 'telegram') {
       return jsonResponse(400, { error: 'Channel is not Telegram' })
     }
 
+    if (!channelRow.is_active) {
+      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+
+      return jsonResponse(409, {
+        error:
+          'Channel is inactive. Activate it in settings before sending messages.',
+      })
+    }
     const { data: credentials, error: secretError } = await admin.rpc(
       'get_channel_credentials',
       { p_channel_id: conv.channel_id },

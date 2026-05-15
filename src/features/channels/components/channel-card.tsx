@@ -1,14 +1,20 @@
+import type { Channel } from '@/entities/channel'
 import {
   ChannelStatusBadge,
   ChannelTypeIcon,
   isChannelType,
 } from '@/entities/channel'
-import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Dropdown, Label, Surface } from '@heroui/react'
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import {
+  CircleCheckIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { DeleteChannelDialog } from './delete-channel-dialog'
+import { ActivateChannelDialog } from './activate-channel-dialog'
+import { DeactivateChannelDialog } from './deactivate-channel-dialog'
 import { EditChannelNameModal } from './edit-channel-name-modal'
 
 type Props = {
@@ -19,6 +25,7 @@ type Props = {
 export function ChannelCard({ channel, workspaceId }: Props) {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isActivateOpen, setIsActivateOpen] = useState(false)
 
   const channelType = isChannelType(channel.type) ? channel.type : null
 
@@ -69,7 +76,8 @@ export function ChannelCard({ channel, workspaceId }: Props) {
             <Dropdown.Menu
               onAction={(key) => {
                 if (key === 'edit') setIsEditOpen(true)
-                if (key === 'delete') setIsDeleteOpen(true)
+                if (key === 'disconnect') setIsDeleteOpen(true)
+                if (key === 'activate') setIsActivateOpen(true)
               }}
             >
               <Dropdown.Item
@@ -79,14 +87,24 @@ export function ChannelCard({ channel, workspaceId }: Props) {
                 <PencilIcon className="size-4" />
                 <Label>{m.channels_card_action_edit()}</Label>
               </Dropdown.Item>
-              <Dropdown.Item
-                id="delete"
-                textValue={m.channels_card_action_disconnect()}
-                variant="danger"
-              >
-                <Trash2Icon className="size-4" />
-                <Label>{m.channels_card_action_disconnect()}</Label>
-              </Dropdown.Item>
+              {channel.is_active ? (
+                <Dropdown.Item
+                  id="disconnect"
+                  textValue={m.channels_card_action_disconnect()}
+                  variant="danger"
+                >
+                  <Trash2Icon className="size-4" />
+                  <Label>{m.channels_card_action_disconnect()}</Label>
+                </Dropdown.Item>
+              ) : (
+                <Dropdown.Item
+                  id="activate"
+                  textValue={m.channels_card_action_activate()}
+                >
+                  <CircleCheckIcon className="size-4" />
+                  <Label>{m.channels_card_action_activate()}</Label>
+                </Dropdown.Item>
+              )}
             </Dropdown.Menu>
           </Dropdown.Popover>
         </Dropdown>
@@ -99,10 +117,17 @@ export function ChannelCard({ channel, workspaceId }: Props) {
         workspaceId={workspaceId}
       />
 
-      <DeleteChannelDialog
+      <DeactivateChannelDialog
         channel={channel}
         isOpen={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
+        workspaceId={workspaceId}
+      />
+
+      <ActivateChannelDialog
+        channel={channel}
+        isOpen={isActivateOpen}
+        onOpenChange={setIsActivateOpen}
         workspaceId={workspaceId}
       />
     </>

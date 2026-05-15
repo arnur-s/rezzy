@@ -2,6 +2,7 @@ import type { ChannelType } from '@/entities/channel'
 import type { MessageRow } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
+import { mapDatabaseError } from '../utils/error-message'
 
 const MESSAGE_SELECT = `
   id,
@@ -99,7 +100,7 @@ export async function sendOutboundMessage({
     .single()
 
   if (insertError) {
-    throw insertError
+    throw mapDatabaseError(insertError.message)
   }
 
   if (!isTelegram) {

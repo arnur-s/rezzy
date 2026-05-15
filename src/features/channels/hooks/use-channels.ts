@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  activateChannel,
   channelQueryKeys,
   createTelegramChannel,
-  deleteChannel,
+  deactivateChannel,
   getWorkspaceChannels,
   updateChannelName,
 } from '../api/channels'
@@ -47,11 +48,24 @@ export function useUpdateChannelName(workspaceId: string) {
   })
 }
 
-export function useDeleteChannel(workspaceId: string) {
+export function useDeactivateChannel(workspaceId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: deleteChannel,
+    mutationFn: deactivateChannel,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: channelQueryKeys.list(workspaceId),
+      })
+    },
+  })
+}
+
+export function useActivateChannel(workspaceId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: activateChannel,
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: channelQueryKeys.list(workspaceId),
