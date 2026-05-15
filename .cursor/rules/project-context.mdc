@@ -1,109 +1,72 @@
 ---
-description: CRM product philosophy and UX direction
+description: Product goals, UX/UI bar, FSD architecture, and stack for this CRM/CMS
 globs:
   - 'src/**/*'
+  - 'supabase/**/*'
 alwaysApply: true
 ---
 
-# Product Context
+# Product context
 
-This project is a realistic business CRM / Client Management System demo.
+This repo is a **real-world CRM and client-management style CMS**: production-quality architecture, workflows, UX, and UI—not a CRUD tutorial or generic admin panel.
 
-The goal is NOT to build a SaaS startup right now.
+**Portfolio angle (still true):** the app should showcase that you can build serious business systems, attract clients, and reuse patterns later. It is **not** “ship a SaaS MVP at all costs” right now; evolve toward productized SaaS only when patterns justify it.
 
-The goal is:
+**Quality bar:** every feature should read as part of a shippable product—clear hierarchy, accessible interactions, and realistic processes—not placeholder flows or lorem ipsum.
 
-- showcase production-quality business system skills
-- attract real clients
-- reuse architecture later
-- evolve into SaaS only if strong patterns emerge
+For full engineering rules (routing, queries, forms, Supabase, i18n, testing, change scope), use **`AGENTS.md`** (and **`CLAUDE.md`** if present—they should stay aligned).
 
-This app must feel like a real product, not a CRUD tutorial.
+**Stack (summary):** React 19, TypeScript, Vite, TanStack Router, TanStack Query, HeroUI, Tailwind CSS v4, React Hook Form, Zod, Supabase, Paraglide/Inlang. Package manager: **pnpm**.
 
-# Product Philosophy
+# What to optimize for
 
-The application should communicate:
+- Workflow-oriented UX, polished interactions, realistic business processes
+- Premium visual quality, spacing consistency, typography, perceived performance
+- Responsiveness and **accessibility**
+- Explicit **loading**, **empty**, and **error** states (skeletons where appropriate)
+- Maintainable architecture and fast iteration—**KISS**, no over-engineering
 
-"I can build real business systems."
+# What to avoid
 
-NOT:
+- Generic dashboards, tutorial CRUD, fake demo patterns
+- Placeholder or lorem ipsum user-facing copy
+- Unrealistic workflows, overcrowded screens, chart overload
+- Bootstrap-style or cyberpunk/neon clutter; keep a **premium dark**, modern product feel
 
-"I can generate admin panels."
+# UI stack (order of preference)
 
-Product thinking is more important than CRUD implementation.
+1. **HeroUI** for components  
+2. **Tailwind CSS v4** for layout, spacing, and small adjustments when HeroUI does not cover it
 
-# UX Direction
+Do not rely on memory for HeroUI v3 APIs: read **`./.heroui-docs/react`** (or the HeroUI section in `AGENTS.md`) before implementing UI.
 
-Prioritize:
+# Architecture (Feature-Sliced Design)
 
-- workflow clarity
-- polished interactions
-- realistic business flows
-- responsiveness
-- spacing consistency
-- visual hierarchy
-- typography quality
-- perceived quality
+- **`src/features`** — business features own API usage, hooks, components, schemas, types, forms, utils  
+- **`src/api`** — Supabase client, global API helpers, **generated** types only (`pnpm types:supabase` → `src/api/types.ts`); no feature business logic  
+- **`src/components`** — shared UI only  
+- **`src/routes`** — TanStack Router file routes; **thin**—loaders and heavy logic live in features  
+- **`src/providers`**, **`src/utils`** — global setup and pure shared helpers only  
 
-Always include:
+Preserve existing conventions; reuse patterns before inventing new ones.
 
-- loading states
-- skeletons
-- polished empty states
-- hover states
-- transitions
-- optimistic updates where reasonable
-- realistic seeded data
+# Data, forms, and copy
 
-Avoid:
+- **TanStack Query** in feature folders—stable keys, no ad-hoc fetch soup in random components  
+- **React Hook Form + Zod** for forms; infer values with `z.infer<typeof schema>`  
+- **Paraglide/Inlang** for all user-visible strings—add keys, no hardcoded UI text  
 
-- lorem ipsum
-- fake tutorial-style dashboards
-- generic admin templates
-- overcrowded screens
-- excessive charts
+# TypeScript and dependencies
 
-# Visual Direction
+- Strict typing: avoid `any`, prefer narrow types and explicit null handling  
+- **Do not add dependencies** unless the user explicitly asks  
 
-Preferred style:
+# Supabase (high level)
 
-- premium dark aesthetic
-- elegant spacing
-- modern SaaS/product feel
-- boutique software quality
-- clean layouts
+- Feature-level data logic stays in features; shared wiring stays in `src/api`  
+- **Never hand-edit** `src/api/types.ts`  
+- Follow project rules for secrets (e.g. RPC helpers instead of direct private schema access where documented in `AGENTS.md`)
 
-Avoid:
+# Before you finish a change
 
-- bootstrap admin appearance
-- cyberpunk visuals
-- neon overload
-- cluttered UI
-
-# Architecture Direction
-
-Architecture priorities:
-
-- clarity
-- maintainability
-- fast iteration
-- clean FSD structure
-- reusable patterns
-- KISS
-
-Do not over-engineer.
-
-# Technical Context
-
-Stack:
-
-- React
-- TypeScript
-- TanStack Router
-- TanStack Query
-- HeroUI
-- Tailwind CSS
-- Supabase
-- React Hook Form
-- Zod
-- Paraglide/Inlang
+Run at least **`pnpm typecheck`**; use **`pnpm lint`** and **`pnpm test`** when the change warrants it. Keep diffs focused—no drive-by refactors or unrelated formatting.

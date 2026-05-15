@@ -19,11 +19,6 @@ interface SendBody {
   messageId?: string
 }
 
-interface ChannelCredentials {
-  bot_token?: string
-  webhook_secret?: string
-}
-
 interface MessageRow {
   id: string
   workspace_id: string
@@ -45,11 +40,42 @@ interface TelegramSendMessageResponse {
   result?: { message_id: number }
 }
 
+type SecretField = 'bot_token' | 'webhook_secret'
+
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
     headers: JSON_HEADERS,
     status,
   })
+}
+
+function getCredentialString(
+  credentials: unknown,
+  field: SecretField,
+): string {
+  if (
+    typeof credentials !== 'object' ||
+    credentials === null ||
+    Array.isArray(credentials)
+  ) {
+    return ''
+  }
+
+  const value = Object.entries(credentials).find(([key]) => key === field)?.[1]
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function hasCredentialObject(credentials: unknown): boolean {
+  return (
+    typeof credentials === 'object' &&
+    credentials !== null &&
+    !Array.isArray(credentials)
+  )
+}
+
+function logTelegramNetworkError(context: string, error: unknown): void {
+  const detail = error instanceof Error ? error.name : typeof error
+  console.error(`${context}: ${detail}`)
 }
 
 function previewFromText(text: string): string {
@@ -184,7 +210,7 @@ export default {
 
     const { data: channel, error: channelError } = await admin
       .from('channels')
-      .select('id, type, credentials')
+      .select('id, type')
       .eq('id', conv.channel_id)
       .maybeSingle()
 
@@ -197,11 +223,26 @@ export default {
       return jsonResponse(400, { error: 'Channel is not Telegram' })
     }
 
-    const creds = channel.credentials as ChannelCredentials | null
-    const botToken = creds?.bot_token?.trim()
+    const { data: credentials, error: secretError } = await admin.rpc(
+      'get_channel_credentials',
+      { p_channel_id: conv.channel_id },
+    )
+
+    if (secretError) {
+      console.error('send-telegram-message: channel secret load', secretError)
+      return jsonResponse(500, { error: 'Failed to load channel secret' })
+    }
+
+    if (!hasCredentialObject(credentials)) {
+      return jsonResponse(400, {
+        error: 'Telegram channel secret missing',
+      })
+    }
+
+    const botToken = getCredentialString(credentials, 'bot_token')
     if (!botToken) {
       return jsonResponse(400, {
-        error: 'Telegram bot token missing on channel',
+        error: 'Telegram bot token missing in channel secret',
       })
     }
 
@@ -242,7 +283,10 @@ export default {
       )
       telegramJson = (await tgRes.json()) as TelegramSendMessageResponse
     } catch (e) {
-      console.error('send-telegram-message: Telegram network error', e)
+      logTelegramNetworkError(
+        'send-telegram-message: Telegram network error',
+        e,
+      )
       await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
       return jsonResponse(502, { error: 'Telegram request failed' })
     }

@@ -16,6 +16,7 @@ function row(
     unread_count: 0,
     last_message_at: last,
     last_message_preview: null,
+    snoozed_until: null,
     created_at: '2020-01-01',
     updated_at: '2020-01-01',
     channel: { id: 'c', type: 'telegram', name: null },

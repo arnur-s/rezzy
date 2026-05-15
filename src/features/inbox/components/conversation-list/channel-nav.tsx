@@ -11,7 +11,7 @@ export type PlatformFilter = ChannelType | 'all'
 type Props = {
   filter: PlatformFilter
   onFilterChange: (filter: PlatformFilter) => void
-  channels: Channel[]
+  channels: Array<Channel>
   channelIdFilter: string | null
   onChannelIdFilterChange: (id: string | null) => void
   unreadCounts: Record<PlatformFilter, number>
@@ -28,7 +28,7 @@ export function ChannelNav({
   channelUnreadCounts,
 }: Props) {
   const channelsByType = useMemo(() => {
-    const map = new Map<ChannelType, Channel[]>()
+    const map = new Map<ChannelType, Array<Channel>>()
     for (const ch of channels) {
       if (ch.is_active && isChannelType(ch.type)) {
         const list = map.get(ch.type) ?? []
@@ -171,7 +171,13 @@ function NavItemButton({
   )
 }
 
-function UnreadBadge({ count, isActive }: { count: number; isActive: boolean }) {
+function UnreadBadge({
+  count,
+  isActive,
+}: {
+  count: number
+  isActive: boolean
+}) {
   return (
     <span
       aria-label={m.inbox_unread_aria_label({ count })}

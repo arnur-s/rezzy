@@ -105,11 +105,6 @@ interface TelegramUpdate {
   message?: TelegramMessage
 }
 
-interface ChannelCredentials {
-  bot_token?: string
-  webhook_secret?: string
-}
-
 type DbMessageType =
   | 'text'
   | 'image'
@@ -130,8 +125,38 @@ interface ResolvedMedia {
 }
 
 type MessageMetadata = Record<string, unknown>
+type SecretField = 'bot_token' | 'webhook_secret'
 
 // ─── Classification ───────────────────────────────────────────────────────────
+
+function getCredentialString(
+  credentials: unknown,
+  field: SecretField,
+): string {
+  if (
+    typeof credentials !== 'object' ||
+    credentials === null ||
+    Array.isArray(credentials)
+  ) {
+    return ''
+  }
+
+  const value = Object.entries(credentials).find(([key]) => key === field)?.[1]
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function hasCredentialObject(credentials: unknown): boolean {
+  return (
+    typeof credentials === 'object' &&
+    credentials !== null &&
+    !Array.isArray(credentials)
+  )
+}
+
+function logErrorType(context: string, error: unknown): void {
+  const detail = error instanceof Error ? error.name : typeof error
+  console.error(`${context}: ${detail}`)
+}
 
 function inferDocumentDbType(
   mime: string | null,
@@ -350,20 +375,6 @@ function sanitizeFilenameSegment(name: string, maxLen: number): string {
   return cleaned.length > 0 ? cleaned : 'file'
 }
 
-function buildPreview(content: string | null, dbType: DbMessageType): string {
-  const trimmed = content?.trim()
-  if (trimmed) return trimmed.length > 100 ? trimmed.slice(0, 100) : trimmed
-  const labels: Record<DbMessageType, string> = {
-    text: 'Message',
-    image: 'Image',
-    video: 'Video',
-    audio: 'Audio',
-    document: 'Document',
-    sticker: 'Sticker',
-  }
-  return `[${labels[dbType]}]`
-}
-
 async function telegramGetFilePath(
   botToken: string,
   fileId: string,
@@ -385,7 +396,7 @@ async function telegramGetFilePath(
     }
     return data.result.file_path
   } catch (e) {
-    console.error('telegram-webhook: getFile failed', e)
+    logErrorType('telegram-webhook: getFile failed', e)
     return null
   }
 }
@@ -407,7 +418,7 @@ async function telegramDownloadFile(
     }
     return await res.arrayBuffer()
   } catch (e) {
-    console.error('telegram-webhook: file download failed', e)
+    logErrorType('telegram-webhook: file download failed', e)
     return null
   }
 }
@@ -586,7 +597,7 @@ export default {
 
     const { data: channel, error: channelError } = await supabase
       .from('channels')
-      .select('id, workspace_id, is_active, credentials')
+      .select('id, workspace_id, is_active')
       .eq('id', channelId)
       .eq('type', 'telegram')
       .single()
@@ -596,10 +607,29 @@ export default {
       return new Response('Channel not found', { status: 404 })
     }
 
-    const creds = channel.credentials as ChannelCredentials | null
-    const expectedSecret = creds?.webhook_secret
+    const { data: credentials, error: secretError } = await supabase.rpc(
+      'get_channel_credentials',
+      { p_channel_id: channel.id },
+    )
+
+    if (secretError) {
+      console.error('telegram-webhook: channel secret load failed', secretError)
+      return new Response('Failed to load channel secret', { status: 500 })
+    }
+
+    if (!hasCredentialObject(credentials)) {
+      console.error('telegram-webhook: channel secret missing', channelId)
+      return new Response('Unauthorized', { status: 401 })
+    }
+
+    const expectedSecret = getCredentialString(credentials, 'webhook_secret')
+    if (!expectedSecret) {
+      console.error('telegram-webhook: webhook secret missing', channelId)
+      return new Response('Unauthorized', { status: 401 })
+    }
+
     const secretFromHeader = req.headers.get('x-telegram-bot-api-secret-token')
-    if (expectedSecret && secretFromHeader !== expectedSecret) {
+    if (secretFromHeader !== expectedSecret) {
       return new Response('Unauthorized', { status: 401 })
     }
 
@@ -661,6 +691,7 @@ export default {
       contactId = newContact.id
 
       await supabase.from('contact_channels').insert({
+        workspace_id: workspaceId,
         contact_id: contactId,
         channel_type: 'telegram',
         external_id: externalChatId,
@@ -720,13 +751,12 @@ export default {
     const media = resolveTelegramMedia(message)
     const dbType = getDbMessageType(message)
     const content = message.caption ?? message.text ?? null
-    const preview = buildPreview(content, dbType)
 
     let metadata: MessageMetadata = {}
     let mediaMimeType: string | null = null
 
     if (media) {
-      const botToken = creds?.bot_token?.trim()
+      const botToken = getCredentialString(credentials, 'bot_token')
       if (!botToken) {
         console.error('telegram-webhook: missing bot_token for media message')
         metadata = {
@@ -749,7 +779,7 @@ export default {
             media,
           })
         } catch (e) {
-          console.error('telegram-webhook: media pipeline error', e)
+          logErrorType('telegram-webhook: media pipeline error', e)
           metadata = {
             storage_path: null,
             file_name: media.file_name,
@@ -790,42 +820,11 @@ export default {
       return new Response('Failed to insert message', { status: 500 })
     }
 
-    let unreadCount: number | undefined
-    try {
-      const { data, error: unreadRpcError } = await supabase.rpc(
-        'increment_unread',
-        {
-          conversation_id: conversationId,
-        },
-      )
-      if (unreadRpcError) {
-        console.error(
-          'telegram-webhook: increment_unread failed',
-          unreadRpcError,
-        )
-      } else if (typeof data === 'number' && Number.isFinite(data)) {
-        unreadCount = data
-      } else if (typeof data === 'string' && data.trim() !== '') {
-        const n = Number(data)
-        if (Number.isFinite(n)) unreadCount = n
-      }
-    } catch (e) {
-      console.error('telegram-webhook: increment_unread threw', e)
-    }
-
-    const convUpdate: Record<string, unknown> = {
-      last_message_at: new Date().toISOString(),
-      last_message_preview: preview,
-      status: 'open',
-    }
-    if (unreadCount !== undefined) {
-      convUpdate.unread_count = unreadCount
-    }
-
     const { error: convUpdateError } = await supabase
       .from('conversations')
-      .update(convUpdate)
+      .update({ status: 'open' })
       .eq('id', conversationId)
+      .neq('status', 'open')
 
     if (convUpdateError) {
       console.error(

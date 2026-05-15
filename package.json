@@ -16,9 +16,11 @@
     "lint": "eslint",
     "format": "eslint --fix . && prettier --write .",
     "check": "prettier --check .",
+    "project-structure": "npx tree-node-cli -I \"node_modules|dist|build|.git|.next|coverage\" > project-structure.txt",
     "machine-translate": "inlang machine translate --project project.inlang",
     "types:supabase": "npx supabase gen types typescript > ./src/api/types.ts",
-    "full-schema:supabase": "npx supabase db dump -f full-schema.sql"
+    "full-schema:supabase": "npx supabase db dump -f full-schema.sql",
+    "deploy-functions:supabase": "npx supabase functions deploy"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",

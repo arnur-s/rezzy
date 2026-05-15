@@ -15,8 +15,6 @@ const JSON_HEADERS = {
   ...CORS_HEADERS,
 }
 
-type Credentials = { bot_token: string; webhook_secret?: string }
-
 interface TelegramUser {
   id: number
   is_bot: boolean
@@ -46,6 +44,11 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
     headers: JSON_HEADERS,
     status,
   })
+}
+
+function logTelegramNetworkError(context: string, error: unknown): void {
+  const detail = error instanceof Error ? error.name : typeof error
+  console.error(`${context}: ${detail}`)
 }
 
 export default {
@@ -136,7 +139,7 @@ export default {
       const tgRes = await fetch(`https://api.telegram.org/bot${rawToken}/getMe`)
       getMe = (await tgRes.json()) as TelegramGetMeResponse
     } catch (e) {
-      console.error('Telegram getMe network error:', e)
+      logTelegramNetworkError('Telegram getMe network error', e)
       return jsonResponse(500, {
         error: 'Something went wrong. Please try again.',
       })
@@ -146,12 +149,14 @@ export default {
       return jsonResponse(400, { error: 'Invalid bot token' })
     }
 
+    const channelName = displayName ?? `@${getMe.result.username}`
+
     const { data: duplicate, error: dupError } = await admin
       .from('channels')
       .select('id')
       .eq('workspace_id', workspaceId)
       .eq('type', 'telegram')
-      .eq('credentials->>bot_token', rawToken)
+      .eq('name', channelName)
       .maybeSingle()
 
     if (dupError) {
@@ -165,17 +170,12 @@ export default {
       return jsonResponse(409, { error: 'This bot is already connected' })
     }
 
-    const channelName = displayName ?? `@${getMe.result.username}`
-
-    const insertCredentials = { bot_token: rawToken } as Credentials
-
     const { data: inserted, error: insertError } = await admin
       .from('channels')
       .insert({
         workspace_id: workspaceId,
         type: 'telegram',
         name: channelName,
-        credentials: insertCredentials,
         is_active: true,
       })
       .select('id')
@@ -188,21 +188,29 @@ export default {
       })
     }
 
-    const channelId = inserted.id as string
-    const webhookSecret = channelId.replace(/-/g, '')
-
-    const updatedCredentials: Credentials = {
-      bot_token: rawToken,
-      webhook_secret: webhookSecret,
+    const channelId = typeof inserted.id === 'string' ? inserted.id : ''
+    if (!channelId) {
+      console.error('Channel insert returned invalid id')
+      return jsonResponse(500, {
+        error: 'Something went wrong. Please try again.',
+      })
     }
 
-    const { error: credError } = await admin
-      .from('channels')
-      .update({ credentials: updatedCredentials })
-      .eq('id', channelId)
+    const webhookSecret = channelId.replace(/-/g, '')
 
-    if (credError) {
-      console.error('Failed to store webhook secret:', credError)
+    const { error: secretError } = await admin.rpc(
+      'upsert_channel_credentials',
+      {
+        p_channel_id: channelId,
+        p_credentials: {
+          bot_token: rawToken,
+          webhook_secret: webhookSecret,
+        },
+      },
+    )
+
+    if (secretError) {
+      console.error('Failed to store channel secret:', secretError)
       await admin.from('channels').delete().eq('id', channelId)
       return jsonResponse(500, {
         error: 'Something went wrong. Please try again.',
@@ -228,7 +236,7 @@ export default {
       )
       setWebhook = (await swRes.json()) as TelegramBoolResponse
     } catch (e) {
-      console.error('Telegram setWebhook network error:', e)
+      logTelegramNetworkError('Telegram setWebhook network error', e)
       await admin.from('channels').delete().eq('id', channelId)
       return jsonResponse(500, {
         error: 'Something went wrong. Please try again.',
@@ -236,7 +244,7 @@ export default {
     }
 
     if (!setWebhook.ok) {
-      console.error('Telegram setWebhook rejected:', setWebhook.description)
+      console.error('Telegram setWebhook rejected')
       await admin.from('channels').delete().eq('id', channelId)
       return jsonResponse(500, {
         error: 'Something went wrong. Please try again.',

@@ -13,7 +13,9 @@ const MESSAGE_SELECT = `
   status,
   content,
   media_url,
+  media_filename,
   media_mime_type,
+  media_size,
   metadata,
   external_id,
   created_at

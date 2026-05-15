@@ -1,7 +1,6 @@
 import type { Tables } from '@/api/types'
 
-/** Client-safe channel row (never includes credentials). */
-export type Channel = Omit<Tables<'channels'>, 'credentials'>
+export type Channel = Tables<'channels'>
 
 export const CHANNEL_TYPES = [
   'telegram',

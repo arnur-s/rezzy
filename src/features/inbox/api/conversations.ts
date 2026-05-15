@@ -15,6 +15,7 @@ const CONVERSATION_SELECT = `
   unread_count,
   last_message_at,
   last_message_preview,
+  snoozed_until,
   created_at,
   updated_at,
   channel:channels!inner(id, type, name),
