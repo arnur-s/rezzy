@@ -9,24 +9,44 @@ import { cn } from '@heroui/styles'
 import { FileTextIcon, ImageOffIcon, SparklesIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useMessageMediaUrl } from '../../hooks/use-message-media-url'
-import type { MessageMediaMetadata } from '../../schemas/message-metadata'
+import {
+  getChatMediaStoragePath,
+  type MessageMediaMetadata,
+} from '../../schemas/message-metadata'
 import { MessageSticker } from './message-sticker'
 
 type Props = {
   messageType: MessageType
   metadata: MessageMediaMetadata | null
   isOutbound: boolean
+  mediaUrl: string | null
+  mediaFilename: string | null
+  mediaMimeType: string | null
+  mediaSize: number | null
+  workspaceId: string
 }
 
 export function MessageMediaAttachment({
   messageType,
   metadata,
   isOutbound,
+  mediaUrl,
+  mediaFilename,
+  mediaMimeType,
+  mediaSize,
+  workspaceId,
 }: Props) {
   const uploadFailed = metadata?.upload_failed === true
-  const storagePath = metadata?.storage_path?.trim() ?? null
+  const storagePath = getChatMediaStoragePath(
+    metadata ?? {},
+    messageType,
+    mediaUrl,
+  )
 
-  const signed = useMessageMediaUrl(storagePath)
+  const signed = useMessageMediaUrl(
+    uploadFailed ? null : storagePath,
+    workspaceId,
+  )
   const [mediaBroken, setMediaBroken] = useState(false)
 
   useEffect(() => {
@@ -34,14 +54,16 @@ export function MessageMediaAttachment({
   }, [signed.data, storagePath, messageType])
 
   const displayName =
+    mediaFilename?.trim() ||
     metadata?.file_name?.trim() ||
     (messageType === 'document'
       ? m.inbox_media_document_fallback_name()
       : null) ||
     getMediaPlaceholder(messageType)
 
-  const sizeLabel = formatFileSize(metadata?.size ?? null)
-  const mimeLabel = metadata?.mime_type?.trim() || null
+  const sizeLabel = formatFileSize(mediaSize ?? metadata?.size ?? null)
+  const mimeLabel =
+    mediaMimeType?.trim() || metadata?.mime_type?.trim() || null
 
   if (uploadFailed || !storagePath) {
     return (
@@ -100,7 +122,7 @@ export function MessageMediaAttachment({
   if (messageType === 'image') {
     return (
       <div className="relative mt-1 max-w-xs">
-        {mediaBroken && (
+        {mediaBroken ? (
           <Surface
             variant="secondary"
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-foreground/70"
@@ -108,6 +130,15 @@ export function MessageMediaAttachment({
             <ImageOffIcon className="size-4 shrink-0" aria-hidden />
             <span>{m.inbox_media_image_error()}</span>
           </Surface>
+        ) : (
+          <img
+            src={url}
+            alt={displayName}
+            loading="lazy"
+            decoding="async"
+            className="max-h-96 w-full rounded-xl object-contain"
+            onError={() => setMediaBroken(true)}
+          />
         )}
       </div>
     )

@@ -119,8 +119,8 @@ function TgsLottieSticker({
 }
 
 function computeStickerDimensions(metadata: MessageMediaMetadata | null) {
-  const w = metadata?.sticker_width ?? null
-  const h = metadata?.sticker_height ?? null
+  const w = metadata?.telegram?.width ?? metadata?.sticker_width ?? null
+  const h = metadata?.telegram?.height ?? metadata?.sticker_height ?? null
   if (!w || !h || w <= 0 || h <= 0) {
     return { width: STICKER_FALLBACK_SQUARE, height: STICKER_FALLBACK_SQUARE }
   }

@@ -33,8 +33,14 @@ export function MessageBubble({ message, contactName }: Props) {
   const isOutbound = message.direction === 'outbound'
   const type: MessageType = isMessageType(message.type) ? message.type : 'text'
   const mediaMetadata = parseMessageMediaMetadata(message.metadata)
-  const richType = effectiveRichMediaType(type, mediaMetadata)
-  const isMedia = type !== 'text' || !!message.media_url
+  const richType = effectiveRichMediaType(
+    type,
+    mediaMetadata,
+    message.media_mime_type,
+    message.media_filename,
+  )
+  const isMedia =
+    type !== 'text' || !!message.media_url || !!mediaMetadata?.storage_path
   const showRichAttachment = RICH_MEDIA_TYPES.has(richType)
   const showStickerPlaceholder = isMedia && !showRichAttachment
   const hasContent = !!message.content?.trim()
@@ -72,6 +78,11 @@ export function MessageBubble({ message, contactName }: Props) {
               messageType={richType}
               metadata={mediaMetadata}
               isOutbound={isOutbound}
+              mediaUrl={message.media_url}
+              mediaFilename={message.media_filename}
+              mediaMimeType={message.media_mime_type}
+              mediaSize={message.media_size}
+              workspaceId={message.workspace_id}
             />
           ) : null}
           {showStickerPlaceholder ? (

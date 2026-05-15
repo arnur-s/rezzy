@@ -13,7 +13,10 @@ import {
 
 /** Short list preview when content is empty (e.g. media without caption). */
 function listPreviewFromMessage(
-  message: Pick<MessageRow, 'content' | 'type' | 'metadata'>,
+  message: Pick<
+    MessageRow,
+    'content' | 'type' | 'metadata' | 'media_filename' | 'media_mime_type'
+  >,
 ): string | null {
   const trimmed = message.content?.trim()
   if (trimmed) {
@@ -25,6 +28,8 @@ function listPreviewFromMessage(
     const label = effectiveRichMediaType(
       rowType,
       parseMessageMediaMetadata(message.metadata),
+      message.media_mime_type,
+      message.media_filename,
     )
     return `[${label}]`
   }
