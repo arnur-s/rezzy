@@ -1,4 +1,5 @@
 import { AppButton } from '@/components/app-button'
+import { ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import {
   Button,
@@ -18,7 +19,6 @@ import {
   telegramChannelSchema,
 } from '../schemas/channel-form-schemas'
 import type { TelegramChannelFormValues } from '../schemas/channel-form-schemas'
-import { ChannelTypeIcon } from './channel-type-icon'
 
 type Props = {
   workspaceId: string

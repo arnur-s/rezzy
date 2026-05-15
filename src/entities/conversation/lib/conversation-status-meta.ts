@@ -1,5 +1,5 @@
 import { m } from '@/paraglide/messages'
-import type { ConversationStatus } from '../types'
+import type { ConversationStatus } from '../model/types'
 
 type StatusMeta = {
   status: ConversationStatus
@@ -8,7 +8,7 @@ type StatusMeta = {
   color: 'accent' | 'warning' | 'success' | 'danger' | 'default'
 }
 
-export const STATUS_META: Record<ConversationStatus, StatusMeta> = {
+export const CONVERSATION_STATUS_META: Record<ConversationStatus, StatusMeta> = {
   open: {
     status: 'open',
     labelKey: () => m.inbox_status_open(),

@@ -1,7 +1,7 @@
 import { m } from '@/paraglide/messages'
 import { CheckCheckIcon, CheckIcon, TriangleAlertIcon } from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
-import type { MessageStatus, MessageType } from '../types'
+import type { MessageStatus, MessageType } from '../model/types'
 
 type MessageStatusMeta = {
   status: MessageStatus

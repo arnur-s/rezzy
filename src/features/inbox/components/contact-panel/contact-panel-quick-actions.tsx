@@ -1,8 +1,8 @@
+import type { ConversationStatus } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { Button, toast } from '@heroui/react'
 import { CheckCircle2Icon, ClockIcon, InboxIcon } from 'lucide-react'
 import { useUpdateConversationStatus } from '../../hooks/use-conversations'
-import type { ConversationStatus } from '../../types'
 
 type Props = {
   workspaceId: string

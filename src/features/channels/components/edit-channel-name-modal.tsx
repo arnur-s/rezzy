@@ -1,4 +1,5 @@
 import { AppButton } from '@/components/app-button'
+import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import {
   Button,
@@ -17,7 +18,6 @@ import {
   editChannelNameSchema
 } from '../schemas/channel-form-schemas'
 import type {EditChannelNameFormValues} from '../schemas/channel-form-schemas';
-import type { Channel } from '../types'
 import { useUpdateChannelName } from '../hooks/use-channels'
 
 type Props = {

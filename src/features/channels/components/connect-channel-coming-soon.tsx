@@ -1,7 +1,7 @@
+import { ChannelTypeIcon } from '@/entities/channel'
+import type { ChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Button, Chip } from '@heroui/react'
-import type { ChannelType } from '../types'
-import { ChannelTypeIcon } from './channel-type-icon'
 
 type Props = {
   type: Exclude<ChannelType, 'telegram'>

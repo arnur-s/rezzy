@@ -1,10 +1,10 @@
+import type { ChannelType } from '@/entities/channel'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getConversationMessages,
   sendOutboundMessage,
 } from '../api/messages'
 import { inboxQueryKeys } from '../api/query-keys'
-import type { ChannelType } from '../types'
 
 export function useMessages(conversationId: string | null) {
   return useQuery({

@@ -1,8 +1,11 @@
+import {
+  PLATFORM_META,
+  isChannelType,
+} from '@/entities/channel'
+import type { ChannelType } from '@/entities/channel'
+import type { ConversationWithRelations } from '@/entities/conversation'
 import { useMessages } from '../../hooks/use-messages'
 import { useMessagesRealtime } from '../../hooks/use-messages-realtime'
-import type { ChannelType, ConversationWithRelations } from '../../types'
-import { isChannelType } from '../../types'
-import { PLATFORM_META } from '../../utils/platform'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
 import { MessageThreadEmpty } from './message-thread-empty'

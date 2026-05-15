@@ -1,6 +1,6 @@
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
-import type { Workspace } from '@/features/workspaces/types'
+import type { Workspace } from '@/entities/workspace'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import {

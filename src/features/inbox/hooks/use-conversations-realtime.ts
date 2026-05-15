@@ -1,9 +1,11 @@
+import {
+  sortConversationsByActivity,
+} from '@/entities/conversation'
+import type { ConversationWithRelations } from '@/entities/conversation'
 import { supabase } from '@/utils/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { inboxQueryKeys } from '../api/query-keys'
-import type { ConversationWithRelations } from '../types'
-import { sortConversationsByActivity } from '../utils/conversation-sort'
 
 /**
  * Subscribes to INSERT / UPDATE / DELETE on conversations for the active workspace

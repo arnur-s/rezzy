@@ -1,3 +1,7 @@
+import { sortConversationsByActivity } from '@/entities/conversation'
+import type { ConversationWithRelations } from '@/entities/conversation'
+import { isMessageType } from '@/entities/message'
+import type { MessageRow, MessageType } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
@@ -6,13 +10,6 @@ import {
   effectiveRichMediaType,
   parseMessageMediaMetadata,
 } from '../schemas/message-metadata'
-import type {
-  ConversationWithRelations,
-  MessageRow,
-  MessageType,
-} from '../types'
-import { isMessageType } from '../types'
-import { sortConversationsByActivity } from '../utils/conversation-sort'
 
 /** Short list preview when content is empty (e.g. media without caption). */
 function listPreviewFromMessage(

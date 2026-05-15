@@ -1,7 +1,7 @@
+import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
 import { Chip, Spinner } from '@heroui/react'
 import { useEffect, useMemo, useRef } from 'react'
-import type { MessageRow } from '../../types'
 import { dayKey, formatDayHeading } from '../../utils/relative-time'
 import { MessageBubble } from './message-bubble'
 

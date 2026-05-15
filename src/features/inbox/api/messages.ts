@@ -1,7 +1,7 @@
+import type { ChannelType } from '@/entities/channel'
+import type { MessageRow } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
-
-import type { ChannelType, MessageRow } from '../types'
 
 const MESSAGE_SELECT = `
   id,

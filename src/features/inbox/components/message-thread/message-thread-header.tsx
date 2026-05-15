@@ -1,12 +1,14 @@
-import { getUserInitials } from '@/features/users/utils/user-display'
+import {
+  PLATFORM_META,
+  PlatformIcon,
+  isChannelType,
+} from '@/entities/channel'
+import type { ConversationWithRelations } from '@/entities/conversation'
+import { getUserInitials } from '@/entities/user'
 import { m } from '@/paraglide/messages'
 import { Avatar, Button } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { ArrowLeftIcon, InfoIcon } from 'lucide-react'
-import type { ConversationWithRelations } from '../../types'
-import { isChannelType } from '../../types'
-import { PLATFORM_META } from '../../utils/platform'
-import { PlatformIcon } from '../platform-icon'
 
 type Props = {
   conversation: ConversationWithRelations

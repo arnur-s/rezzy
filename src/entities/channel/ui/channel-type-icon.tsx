@@ -1,6 +1,6 @@
 import { cn } from '@heroui/styles'
-import { CHANNEL_META } from '../utils/channel-meta'
-import type { ChannelType } from '../types'
+import { CHANNEL_META } from '../lib/channel-meta'
+import type { ChannelType } from '../model/types'
 
 type Props = {
   type: ChannelType

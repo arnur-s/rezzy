@@ -1,6 +1,6 @@
 import { Chip } from '@heroui/react'
-import type { ConversationStatus } from '../types'
-import { STATUS_META } from '../utils/status-meta'
+import { CONVERSATION_STATUS_META } from '../lib/conversation-status-meta'
+import type { ConversationStatus } from '../model/types'
 
 type Props = {
   status: ConversationStatus
@@ -8,8 +8,12 @@ type Props = {
   className?: string
 }
 
-export function StatusChip({ status, size = 'sm', className }: Props) {
-  const meta = STATUS_META[status]
+export function ConversationStatusChip({
+  status,
+  size = 'sm',
+  className,
+}: Props) {
+  const meta = CONVERSATION_STATUS_META[status]
 
   return (
     <Chip

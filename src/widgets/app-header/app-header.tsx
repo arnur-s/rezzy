@@ -1,7 +1,7 @@
 import {
   getUserDisplayName,
   getUserInitials,
-} from '@/features/users/utils/user-display'
+} from '@/entities/user'
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'

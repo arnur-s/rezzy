@@ -1,13 +1,16 @@
-import { getUserInitials } from '@/features/users/utils/user-display'
+import {
+  PLATFORM_META,
+  PlatformIcon,
+  isChannelType,
+} from '@/entities/channel'
+import { isConversationStatus } from '@/entities/conversation'
+import type { ConversationWithRelations } from '@/entities/conversation'
+import { getUserInitials } from '@/entities/user'
 import { m } from '@/paraglide/messages'
 import { Avatar, Button, ScrollShadow, Skeleton } from '@heroui/react'
 import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useContact } from '../../hooks/use-contact'
-import type { ConversationWithRelations } from '../../types'
-import { isChannelType, isConversationStatus } from '../../types'
-import { PLATFORM_META } from '../../utils/platform'
-import { PlatformIcon } from '../platform-icon'
 import { ContactPanelNotes } from './contact-panel-notes'
 import { ContactPanelQuickActions } from './contact-panel-quick-actions'
 import { ContactPanelStatusSelect } from './contact-panel-status-select'

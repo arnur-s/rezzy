@@ -1,10 +1,12 @@
-import type { Channel } from '@/features/channels/types'
+import {
+  CHANNEL_TYPES,
+  PlatformIcon,
+  isChannelType,
+} from '@/entities/channel'
+import type { Channel, ChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { cn } from '@heroui/styles'
 import { useMemo } from 'react'
-import type { ChannelType } from '../../types'
-import { CHANNEL_TYPES, isChannelType } from '../../types'
-import { PlatformIcon } from '../platform-icon'
 
 export type PlatformFilter = ChannelType | 'all'
 

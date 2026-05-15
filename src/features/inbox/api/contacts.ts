@@ -1,5 +1,5 @@
+import type { ContactWithChannels } from '@/entities/contact'
 import { supabase } from '@/utils/supabase'
-import type { ContactWithChannels } from '../types'
 
 const CONTACT_SELECT = `
   id,

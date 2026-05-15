@@ -1,5 +1,5 @@
 import { m } from '@/paraglide/messages'
-import type { ChannelType } from '../types'
+import type { ChannelType } from '../model/types'
 
 type PlatformMeta = {
   type: ChannelType

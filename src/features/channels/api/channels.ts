@@ -1,8 +1,7 @@
 import type { TablesUpdate } from '@/api/types'
+import type { Channel } from '@/entities/channel'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
-
-import type { Channel } from '../types'
 
 export const channelQueryKeys = {
   all: ['channels'] as const,

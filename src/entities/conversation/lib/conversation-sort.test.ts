@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ConversationWithRelations } from '../types'
+import type { ConversationWithRelations } from '../model/types'
 import { sortConversationsByActivity } from './conversation-sort'
 
 function row(
