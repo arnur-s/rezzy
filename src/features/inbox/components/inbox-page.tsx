@@ -1,3 +1,4 @@
+import type { ChannelType } from '@/entities/channel'
 import { useChannels } from '@/features/channels/hooks/use-channels'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
@@ -8,7 +9,7 @@ import {
 } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
 import { ContactPanel } from './contact-panel/contact-panel'
-import type { PlatformFilter } from './conversation-list/conversation-list'
+import type { InboxPrimaryFilter } from './conversation-list/conversation-list'
 import { ConversationList } from './conversation-list/conversation-list'
 import { MessageThread } from './message-thread/message-thread'
 
@@ -28,14 +29,17 @@ export function InboxPage({ workspaceId }: Props) {
   const markRead = useMarkConversationRead(workspaceId)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [filter, setFilter] = useState<PlatformFilter>('all')
+  const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
+  const [channelTypeFilter, setChannelTypeFilter] =
+    useState<ChannelType | null>(null)
   const [channelIdFilter, setChannelIdFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isContactPanelOpen, setIsContactPanelOpen] = useState(false)
   const [mobilePane, setMobilePane] = useState<MobilePane>('list')
 
   const selectedConversation = useMemo(
-    () => conversationsQuery.data?.find((row) => row.id === selectedId) ?? null,
+    () =>
+      conversationsQuery.data?.find((row) => row.id === selectedId) ?? null,
     [conversationsQuery.data, selectedId],
   )
 
@@ -99,9 +103,11 @@ export function InboxPage({ workspaceId }: Props) {
           isError={conversationsQuery.isError}
           selectedConversationId={selectedId}
           onSelect={handleSelect}
-          filter={filter}
-          onFilterChange={(next) => {
-            setFilter(next)
+          primaryFilter={primaryFilter}
+          onPrimaryFilterChange={setPrimaryFilter}
+          channelTypeFilter={channelTypeFilter}
+          onChannelTypeFilterChange={(type) => {
+            setChannelTypeFilter(type)
             setChannelIdFilter(null)
           }}
           searchQuery={searchQuery}
@@ -109,6 +115,7 @@ export function InboxPage({ workspaceId }: Props) {
           channels={channelsQuery.data ?? []}
           channelIdFilter={channelIdFilter}
           onChannelIdFilterChange={setChannelIdFilter}
+          userId={senderId}
         />
       </div>
 
