@@ -1,6 +1,6 @@
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
-import { Button } from '@heroui/react'
+import { Button, Popover, TextArea } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import {
   FileTextIcon,
@@ -54,14 +54,16 @@ function AttachmentChip({ file, onRemove }: AttachmentChipProps) {
           {file.type.split('/')[1]?.toUpperCase()}
         </span>
       )}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="ml-auto shrink-0 text-foreground/40 hover:text-foreground"
+      <Button
+        size="sm"
+        variant="ghost"
+        isIconOnly
+        onPress={onRemove}
+        className="ml-auto min-w-0 shrink-0 text-foreground/40 hover:text-foreground"
         aria-label={m.inbox_composer_remove_attachment_label()}
       >
         <XIcon className="size-3.5" />
-      </button>
+      </Button>
     </div>
   )
 }
@@ -79,29 +81,14 @@ export function ChatInput({
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [attachment, setAttachment] = useState<File | null>(null)
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const emojiContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     textareaRef.current?.focus()
   }, [])
-
-  useEffect(() => {
-    if (!showEmojiPicker) return
-    function handleMouseDown(e: MouseEvent) {
-      if (
-        emojiContainerRef.current &&
-        !emojiContainerRef.current.contains(e.target as Node)
-      ) {
-        setShowEmojiPicker(false)
-      }
-    }
-    document.addEventListener('mousedown', handleMouseDown)
-    return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [showEmojiPicker])
 
   const canSend = (text.trim().length > 0 || attachment !== null) && !disabled
 
@@ -150,21 +137,12 @@ export function ChatInput({
 
   function handleEmojiSelect(emoji: { native: string }) {
     setText((prev) => prev + emoji.native)
-    setShowEmojiPicker(false)
+    setEmojiPickerOpen(false)
     textareaRef.current?.focus()
   }
 
   return (
     <div className="relative">
-      {showEmojiPicker && (
-        <div
-          ref={emojiContainerRef}
-          className="absolute bottom-full right-0 z-50 mb-2"
-        >
-          <Picker data={data} onEmojiSelect={handleEmojiSelect} theme="auto" />
-        </div>
-      )}
-
       <div
         className={cn(
           'flex flex-col gap-2 rounded-2xl border border-border/60 p-2 transition-colors',
@@ -199,10 +177,14 @@ export function ChatInput({
             onChange={handleFileInputChange}
           />
 
-          <textarea
+          <TextArea
             ref={textareaRef}
-            className="flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-1 text-sm leading-6 outline-none placeholder:text-foreground/40"
-            style={{ height: '36px' }}
+            variant="secondary"
+            className={cn(
+              'flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-1 shadow-none ring-0',
+              'text-sm leading-6 outline-none placeholder:text-foreground/40',
+            )}
+            style={{ height: '36px', minHeight: '36px' }}
             rows={1}
             value={text}
             placeholder={placeholder}
@@ -212,16 +194,34 @@ export function ChatInput({
             onPaste={handlePaste}
           />
 
-          <Button
-            size="sm"
-            variant="ghost"
-            isIconOnly
-            isDisabled={disabled}
-            onPress={() => setShowEmojiPicker((v) => !v)}
-            aria-label={m.inbox_composer_emoji_label()}
+          <Popover
+            isOpen={emojiPickerOpen}
+            onOpenChange={setEmojiPickerOpen}
           >
-            <SmileIcon className="size-4" />
-          </Button>
+            <Popover.Trigger>
+              <Button
+                size="sm"
+                variant="ghost"
+                isIconOnly
+                isDisabled={disabled}
+                aria-label={m.inbox_composer_emoji_label()}
+              >
+                <SmileIcon className="size-4" />
+              </Button>
+            </Popover.Trigger>
+            <Popover.Content
+              className="max-w-none border-0 bg-transparent p-0 shadow-none"
+              placement="top"
+            >
+              <Popover.Dialog className="max-h-[min(24rem,70vh)] overflow-auto border-0 p-0 shadow-lg">
+                <Picker
+                  data={data}
+                  onEmojiSelect={handleEmojiSelect}
+                  theme="auto"
+                />
+              </Popover.Dialog>
+            </Popover.Content>
+          </Popover>
 
           <Button
             size="sm"

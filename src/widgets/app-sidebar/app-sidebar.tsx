@@ -4,6 +4,7 @@ import type { Workspace } from '@/entities/workspace'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import {
+  Button,
   Drawer,
   Dropdown,
   Label,
@@ -211,23 +212,24 @@ function SidebarBody({
             isCollapsed={isCollapsed}
             label={m.app_sidebar_logout()}
           >
-            <button
+            <Button
               type="button"
-              disabled={isSigningOut}
-              onClick={() => void handleSignOut()}
+              variant="ghost"
+              isDisabled={isSigningOut}
+              onPress={() => void handleSignOut()}
               aria-label={m.app_sidebar_logout()}
               className={cn(
                 navItemBase,
                 navItemInactive,
                 isCollapsed && navItemCollapsed,
-                'disabled:pointer-events-none disabled:opacity-50',
+                'h-auto min-h-0 justify-start font-[inherit] disabled:opacity-50',
               )}
             >
               <LogOutIcon className="size-4 shrink-0" />
               {!isCollapsed && (
                 <span className="truncate">{m.app_sidebar_logout()}</span>
               )}
-            </button>
+            </Button>
           </CollapsibleNavTooltip>
         </div>
       </div>

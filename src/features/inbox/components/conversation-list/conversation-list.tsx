@@ -1,7 +1,9 @@
 import type { Channel, ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
-import { ScrollShadow } from '@heroui/react'
+import { Alert, ListBox, ScrollShadow, Text } from '@heroui/react'
+import type { Selection } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import { useMemo } from 'react'
 import { ChannelFilters } from './channel-filters'
 import { ConversationListItem } from './conversation-list-item'
@@ -26,6 +28,13 @@ type Props = {
   channelIdFilter: string | null
   onChannelIdFilterChange: (id: string | null) => void
   userId: string | null
+}
+
+function selectionToConversationId(keys: Selection): string | undefined {
+  for (const id of keys) {
+    return String(id)
+  }
+  return undefined
 }
 
 export function ConversationList({
@@ -121,23 +130,55 @@ export function ConversationList({
         {isLoading ? (
           <ConversationListSkeleton />
         ) : isError ? (
-          <p className="px-6 py-8 text-sm text-danger">
-            {m.inbox_list_load_error()}
-          </p>
+          <div className="px-4 py-6">
+            <Alert status="danger">
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Title>{m.inbox_list_load_error()}</Alert.Title>
+              </Alert.Content>
+            </Alert>
+          </div>
         ) : filtered.length === 0 ? (
           <EmptyState hasQuery={hasActiveFilter} />
         ) : (
-          <ul className="flex flex-col gap-0.5 px-2 py-2">
-            {filtered.map((conversation) => (
-              <li key={conversation.id}>
-                <ConversationListItem
-                  conversation={conversation}
-                  isActive={conversation.id === selectedConversationId}
-                  onSelect={onSelect}
-                />
-              </li>
-            ))}
-          </ul>
+          <ListBox
+            aria-label={m.inbox_conversation_list_aria_label()}
+            selectionMode="single"
+            selectedKeys={
+              selectedConversationId
+                ? new Set([selectedConversationId])
+                : new Set<string>()
+            }
+            onSelectionChange={(keys) => {
+              const id = selectionToConversationId(keys)
+              if (id) onSelect(id)
+            }}
+            className="flex flex-col gap-0.5 px-2 py-2 outline-none"
+          >
+            {filtered.map((conversation) => {
+              const isActive = conversation.id === selectedConversationId
+              const contactName =
+                conversation.contact.name?.trim() || '—'
+              return (
+                <ListBox.Item
+                  key={conversation.id}
+                  id={conversation.id}
+                  textValue={contactName}
+                  className={cn(
+                    'flex w-full cursor-default items-start gap-3 rounded-xl px-3 py-2.5 text-left outline-none transition-colors',
+                    'data-[selected=true]:bg-accent/10',
+                    'data-[selected=false]:hover:bg-foreground/5',
+                    'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring',
+                  )}
+                >
+                  <ConversationListItem
+                    conversation={conversation}
+                    isActive={isActive}
+                  />
+                </ListBox.Item>
+              )
+            })}
+          </ListBox>
         )}
       </ScrollShadow>
 
@@ -158,19 +199,21 @@ export function ConversationList({
 function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   if (hasQuery) {
     return (
-      <p className="px-6 py-12 text-center text-sm text-foreground/60">
-        {m.inbox_list_search_empty()}
-      </p>
+      <div className="px-6 py-12 text-center">
+        <Text className="text-sm text-muted-foreground">
+          {m.inbox_list_search_empty()}
+        </Text>
+      </div>
     )
   }
   return (
     <div className="px-6 py-12 text-center">
-      <p className="text-sm font-medium text-foreground">
+      <Text className="text-sm font-medium">
         {m.inbox_list_empty_title()}
-      </p>
-      <p className="mt-1 text-xs text-foreground/60">
+      </Text>
+      <Text className="mt-1 text-xs text-muted-foreground">
         {m.inbox_list_empty_description()}
-      </p>
+      </Text>
     </div>
   )
 }

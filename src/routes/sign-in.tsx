@@ -5,14 +5,16 @@ import { supabase } from '@/utils/supabase'
 import {
   Card,
   FieldError,
+  Link as HeroLink,
   InputGroup,
   Label,
   TextField,
   toast,
 } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useMutation } from '@tanstack/react-query'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link as RouterLink, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -132,9 +134,19 @@ function RouteComponent() {
             </TextField>
 
             <div className="text-right">
-              <Link to="/password-reset" className="link">
+              <HeroLink
+                href="/password-reset"
+                render={({ className, children }) => (
+                  <RouterLink
+                    to="/password-reset"
+                    className={cn(className)}
+                  >
+                    {children}
+                  </RouterLink>
+                )}
+              >
                 {m.auth_sign_in_forgot_password_label()}
-              </Link>
+              </HeroLink>
             </div>
           </Card.Content>
 
@@ -152,9 +164,16 @@ function RouteComponent() {
                 {m.auth_sign_in_dont_have_an_account_label()}
               </span>
 
-              <Link to="/sign-up" className="link">
+              <HeroLink
+                href="/sign-up"
+                render={({ className, children }) => (
+                  <RouterLink to="/sign-up" className={cn(className)}>
+                    {children}
+                  </RouterLink>
+                )}
+              >
                 {m.common_sign_up()}
-              </Link>
+              </HeroLink>
             </div>
           </Card.Footer>
         </form>

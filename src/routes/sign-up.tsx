@@ -4,14 +4,16 @@ import { supabase } from '@/utils/supabase'
 import {
   Card,
   FieldError,
+  Link as HeroLink,
   InputGroup,
   Label,
   TextField,
   toast,
 } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useMutation } from '@tanstack/react-query'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link as RouterLink, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   EyeIcon,
   EyeOffIcon,
@@ -216,9 +218,16 @@ function RouteComponent() {
               <span className="text-sm text-muted-foreground">
                 {m.auth_sign_up_already_have_an_account_label()}
               </span>
-              <Link to="/sign-in" className="link">
+              <HeroLink
+                href="/sign-in"
+                render={({ className, children }) => (
+                  <RouterLink to="/sign-in" className={cn(className)}>
+                    {children}
+                  </RouterLink>
+                )}
+              >
                 {m.common_sign_in()}
-              </Link>
+              </HeroLink>
             </div>
           </Card.Footer>
         </form>

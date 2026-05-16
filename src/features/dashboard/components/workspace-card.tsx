@@ -3,6 +3,7 @@ import type { ChannelType } from '@/entities/channel'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
 import type { Workspace } from '@/entities/workspace'
 import { m } from '@/paraglide/messages'
+import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import { Card } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { Link } from '@tanstack/react-router'
@@ -63,14 +64,14 @@ export function WorkspaceCard({
             </div>
           </div>
           {hasUnread ? (
-            <span
+            <NumericUnreadChip
+              count={unread}
+              tone="primary"
+              capAt99
               aria-label={m.dashboard_workspace_card_unread_aria({
                 count: unread,
               })}
-              className="bg-primary text-primary-foreground flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums"
-            >
-              {unread > 99 ? '99+' : unread}
-            </span>
+            />
           ) : null}
         </Card.Header>
 

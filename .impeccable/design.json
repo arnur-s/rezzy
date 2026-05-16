@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-16T00:00:00Z",
+  "title": "Design System: BirHQ",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "oklch(62.04% 0.195 253.83)",
+        "tonalRamp": [
+          "oklch(15% 0.04 253.83)",
+          "oklch(25% 0.10 253.83)",
+          "oklch(35% 0.15 253.83)",
+          "oklch(45% 0.18 253.83)",
+          "oklch(55% 0.19 253.83)",
+          "oklch(62.04% 0.195 253.83)",
+          "oklch(73% 0.14 253.83)",
+          "oklch(85% 0.07 253.83)"
+        ]
+      },
+      "ash-canvas": {
+        "role": "neutral",
+        "displayName": "Ash Canvas",
+        "canonical": "oklch(97.02% 0 0)",
+        "tonalRamp": [
+          "oklch(20% 0 0)",
+          "oklch(35% 0 0)",
+          "oklch(50% 0 0)",
+          "oklch(65% 0 0)",
+          "oklch(78% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(93% 0 0)",
+          "oklch(97.02% 0 0)"
+        ]
+      },
+      "midnight-ink": {
+        "role": "neutral",
+        "displayName": "Midnight Ink",
+        "canonical": "oklch(12% 0.005 285.823)",
+        "tonalRamp": [
+          "oklch(6% 0.003 285.823)",
+          "oklch(12% 0.005 285.823)",
+          "oklch(18% 0.005 285.823)",
+          "oklch(24% 0.006 285.823)",
+          "oklch(31% 0.006 285.823)",
+          "oklch(40% 0.008 285.823)",
+          "oklch(55% 0.012 285.823)",
+          "oklch(70% 0.015 285.823)"
+        ]
+      },
+      "graphite-text": {
+        "role": "neutral",
+        "displayName": "Graphite Text",
+        "canonical": "oklch(21.03% 0.0059 285.89)",
+        "tonalRamp": [
+          "oklch(8% 0.003 285.89)",
+          "oklch(15% 0.005 285.89)",
+          "oklch(21.03% 0.0059 285.89)",
+          "oklch(32% 0.007 285.89)",
+          "oklch(45% 0.010 285.89)",
+          "oklch(58% 0.013 285.89)",
+          "oklch(72% 0.012 285.89)",
+          "oklch(86% 0.006 285.89)"
+        ]
+      },
+      "meadow-green": {
+        "role": "tertiary",
+        "displayName": "Meadow Green",
+        "canonical": "oklch(73.29% 0.1935 150.81)",
+        "tonalRamp": [
+          "oklch(20% 0.07 150.81)",
+          "oklch(32% 0.11 150.81)",
+          "oklch(44% 0.15 150.81)",
+          "oklch(55% 0.18 150.81)",
+          "oklch(64% 0.19 150.81)",
+          "oklch(73.29% 0.1935 150.81)",
+          "oklch(83% 0.14 150.81)",
+          "oklch(92% 0.07 150.81)"
+        ]
+      },
+      "coral-alert": {
+        "role": "tertiary",
+        "displayName": "Coral Alert",
+        "canonical": "oklch(65.32% 0.2328 25.74)",
+        "tonalRamp": [
+          "oklch(20% 0.08 25.74)",
+          "oklch(32% 0.13 25.74)",
+          "oklch(43% 0.18 25.74)",
+          "oklch(54% 0.21 25.74)",
+          "oklch(65.32% 0.2328 25.74)",
+          "oklch(75% 0.18 25.74)",
+          "oklch(84% 0.11 25.74)",
+          "oklch(93% 0.05 25.74)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Title", "purpose": "Section headings, card titles, panel headers. Weight-only distinction." },
+      "body": { "displayName": "Body", "purpose": "Conversation previews, contact names, form content. The workhorse." },
+      "label": { "displayName": "Label", "purpose": "Timestamps, metadata, filter labels. Always supporting, never leading." },
+      "small": { "displayName": "Small", "purpose": "Unread counts, compact badges. Tabular figures mandatory." }
+    },
+    "shadows": [
+      {
+        "name": "surface",
+        "value": "0 2px 4px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.06)",
+        "purpose": "Cards and inline containers at rest in light mode. Resolves to transparent in dark mode via --surface-shadow token."
+      },
+      {
+        "name": "elevated",
+        "value": "0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.05)",
+        "purpose": "Cards on hover in light mode (shadow-md equivalent). Provides feedback without drama."
+      },
+      {
+        "name": "overlay",
+        "value": "0 2px 8px rgba(0,0,0,0.06), 0 -6px 12px rgba(0,0,0,0.03), 0 14px 28px rgba(0,0,0,0.08)",
+        "purpose": "Popovers, dropdowns, tooltips, modals. Most prominent shadow in the system; still subtle."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions (color, opacity, background)."
+      },
+      {
+        "name": "ease-exit",
+        "value": "cubic-bezier(0, 0, 0.2, 1)",
+        "purpose": "Elements leaving the screen. Fast exit, ease-in quality."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Color transitions, hover states, focus rings."
+      },
+      {
+        "name": "duration-medium",
+        "value": "200ms",
+        "purpose": "Sidebar collapse, panel open/close."
+      }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px", "purpose": "Two-column inbox layout (list + thread)" },
+      { "name": "lg", "value": "1024px", "purpose": "Three-column inbox layout (list + thread + contact panel)" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main call-to-action. Signal Blue fill. Used for form submits, primary confirmations.",
+      "html": "<button class=\"ds-btn-primary\">Sign in</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; background: var(--accent, oklch(62.04% 0.195 253.83)); color: var(--accent-foreground, oklch(99.11% 0 0)); border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; font-family: inherit; cursor: pointer; transition: opacity 0.15s ease-out; outline: none; white-space: nowrap; } .ds-btn-primary:hover { opacity: 0.88; } .ds-btn-primary:active { opacity: 0.78; } .ds-btn-primary:focus-visible { box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent); } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary actions. Transparent at rest, Signal Blue tint on hover.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; background: transparent; color: color-mix(in oklab, var(--foreground, oklch(21.03% 0.0059 285.89)) 90%, transparent); border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; font-family: inherit; cursor: pointer; transition: background 0.15s ease-out, color 0.15s ease-out; outline: none; } .ds-btn-ghost:hover { background: color-mix(in oklab, var(--accent, oklch(62.04% 0.195 253.83)) 10%, transparent); color: var(--accent, oklch(62.04% 0.195 253.83)); } .ds-btn-ghost:focus-visible { box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent); }"
+    },
+    {
+      "name": "Nav Item (Active)",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Sidebar navigation item in active/current state. Signal Blue tint background.",
+      "html": "<a class=\"ds-nav-item ds-nav-item--active\" href=\"#\">\n  <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/></svg>\n  <span>Inbox</span>\n</a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; background: transparent; color: color-mix(in oklab, var(--foreground, oklch(21.03% 0.0059 285.89)) 60%, transparent); border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; font-family: inherit; text-decoration: none; cursor: pointer; transition: background 0.15s ease-out, color 0.15s ease-out; outline: none; } .ds-nav-item:hover { background: color-mix(in oklab, var(--accent, oklch(62.04% 0.195 253.83)) 8%, transparent); color: var(--accent, oklch(62.04% 0.195 253.83)); } .ds-nav-item:focus-visible { box-shadow: 0 0 0 2px var(--focus, oklch(62.04% 0.195 253.83)); } .ds-nav-item--active { background: color-mix(in oklab, var(--accent, oklch(62.04% 0.195 253.83)) 12%, transparent); color: var(--accent, oklch(62.04% 0.195 253.83)); }"
+    },
+    {
+      "name": "Input with Icon Prefix",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Labeled text field with leading icon. Used on sign-in, search, and contact forms.",
+      "html": "<div class=\"ds-field\">\n  <label class=\"ds-label\">Email</label>\n  <div class=\"ds-input-group\">\n    <div class=\"ds-input-prefix\">\n      <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/><path d=\"m2 7 10 7 10-7\"/></svg>\n    </div>\n    <input class=\"ds-input\" type=\"email\" placeholder=\"you@company.com\" />\n  </div>\n</div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-label { font-size: 0.875rem; font-weight: 500; font-family: inherit; color: var(--foreground, oklch(21.03% 0.0059 285.89)); } .ds-input-group { display: flex; align-items: center; background: oklch(95.24% 0.0013 286.37); border-radius: 12px; border: 1px solid transparent; transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out; overflow: hidden; } .ds-input-group:focus-within { border-color: var(--focus, oklch(62.04% 0.195 253.83)); box-shadow: 0 0 0 2px color-mix(in oklab, var(--focus, oklch(62.04% 0.195 253.83)) 20%, transparent); } .ds-input-prefix { display: flex; align-items: center; justify-content: center; padding: 0 12px; color: var(--muted, oklch(55.17% 0.0138 285.94)); flex-shrink: 0; } .ds-input { flex: 1; height: 40px; padding: 0 12px 0 0; background: transparent; border: none; outline: none; font-size: 0.875rem; font-family: inherit; color: var(--foreground, oklch(21.03% 0.0059 285.89)); } .ds-input::placeholder { color: var(--muted, oklch(55.17% 0.0138 285.94)); }"
+    },
+    {
+      "name": "Conversation List Item",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Primary list row in the inbox. Platform avatar + contact name + message preview + unread chip.",
+      "html": "<div class=\"ds-convo-item\">\n  <div class=\"ds-convo-avatar\" aria-hidden=\"true\">TG</div>\n  <div class=\"ds-convo-body\">\n    <div class=\"ds-convo-row\">\n      <span class=\"ds-convo-name ds-convo-name--unread\">Alex Kowalski</span>\n      <span class=\"ds-convo-time\">2m</span>\n    </div>\n    <div class=\"ds-convo-row\">\n      <span class=\"ds-convo-preview ds-convo-preview--unread\">Can we schedule a call this week?</span>\n      <span class=\"ds-chip-unread\" aria-label=\"3 unread messages\">3</span>\n    </div>\n  </div>\n</div>",
+      "css": ".ds-convo-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; cursor: pointer; border-radius: 8px; transition: background 0.1s ease-out; } .ds-convo-item:hover { background: color-mix(in oklab, var(--accent, oklch(62.04% 0.195 253.83)) 6%, transparent); } .ds-convo-avatar { width: 36px; height: 36px; border-radius: 12px; background: color-mix(in oklab, var(--accent, oklch(62.04% 0.195 253.83)) 15%, transparent); color: var(--accent, oklch(62.04% 0.195 253.83)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: inherit; flex-shrink: 0; } .ds-convo-body { min-width: 0; flex: 1; } .ds-convo-row { display: flex; align-items: baseline; gap: 8px; } .ds-convo-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; font-weight: 500; color: color-mix(in oklab, var(--foreground, oklch(21.03% 0.0059 285.89)) 90%, transparent); } .ds-convo-name--unread { font-weight: 600; color: var(--foreground, oklch(21.03% 0.0059 285.89)); } .ds-convo-time { flex-shrink: 0; font-size: 11px; color: color-mix(in oklab, var(--foreground, oklch(21.03% 0.0059 285.89)) 50%, transparent); font-variant-numeric: tabular-nums; } .ds-convo-preview { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; color: color-mix(in oklab, var(--foreground, oklch(21.03% 0.0059 285.89)) 55%, transparent); margin-top: 2px; } .ds-convo-preview--unread { color: color-mix(in oklab, var(--foreground, oklch(21.03% 0.0059 285.89)) 80%, transparent); } .ds-chip-unread { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 18px; padding: 0 4px; background: var(--accent, oklch(62.04% 0.195 253.83)); color: oklch(99.11% 0 0); border-radius: 9999px; font-size: 10px; font-weight: 600; font-family: inherit; font-variant-numeric: tabular-nums; flex-shrink: 0; }"
+    },
+    {
+      "name": "Workspace Card",
+      "kind": "card",
+      "refersTo": null,
+      "description": "Dashboard card linking to a workspace. Shows workspace name, stats, and channel icons.",
+      "html": "<div class=\"ds-workspace-card\">\n  <div class=\"ds-workspace-card-header\">\n    <span class=\"ds-workspace-mark\">A</span>\n    <div class=\"ds-workspace-info\">\n      <span class=\"ds-workspace-name\">Acme Corp</span>\n      <span class=\"ds-workspace-desc\">Enterprise account</span>\n    </div>\n    <span class=\"ds-chip-unread\" aria-label=\"5 unread\">5</span>\n  </div>\n  <div class=\"ds-workspace-card-content\">\n    <p class=\"ds-workspace-stats\">12 open &nbsp;&middot;&nbsp; 2 channels &nbsp;&middot;&nbsp; 34 contacts</p>\n  </div>\n</div>",
+      "css": ".ds-workspace-card { background: var(--surface, oklch(100% 0 0)); border: 1px solid oklch(90% 0.004 286.32); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease-out, transform 0.15s ease-out; cursor: pointer; } .ds-workspace-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.05); transform: translateY(-2px); } .ds-workspace-card-header { display: flex; align-items: flex-start; gap: 10px; } .ds-workspace-mark { width: 36px; height: 36px; border-radius: 8px; background: color-mix(in oklab, var(--accent, oklch(62.04% 0.195 253.83)) 12%, transparent); color: var(--accent, oklch(62.04% 0.195 253.83)); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; font-family: inherit; flex-shrink: 0; } .ds-workspace-info { flex: 1; min-width: 0; } .ds-workspace-name { display: block; font-size: 0.875rem; font-weight: 600; color: var(--foreground, oklch(21.03% 0.0059 285.89)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-workspace-desc { display: block; font-size: 0.75rem; color: var(--muted, oklch(55.17% 0.0138 285.94)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-workspace-stats { font-size: 0.875rem; color: color-mix(in oklab, var(--foreground, oklch(21.03% 0.0059 285.89)) 70%, transparent); margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Operator",
+    "overview": "BirHQ is designed for the rhythm of sustained professional work. Sales reps and account managers open this tool to scan new messages, reply to leads, check contact history, and move on. The interface should feel like a well-organized desk: everything findable, nothing asserting itself. The UI does not perform — it performs for you.\n\nThe system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with ambient shadow giving depth to cards and panels. In dark mode, everything flattens: midnight ink backgrounds, tonal steps replacing shadows, the same Signal Blue accent unchanged between both. Both modes share the same restraint.\n\nColor is rationed. Signal Blue is the only expressive color in the system. It marks where to act — active navigation, unread counts, primary buttons. Every other pixel is neutral infrastructure.",
+    "keyCharacteristics": [
+      "System-adaptive theming: full light and dark support with shared token vocabulary",
+      "Restrained accent: Signal Blue occupies at most 10% of any given surface",
+      "Tonal elevation: light mode uses ambient shadow; dark mode uses flat tonal layering",
+      "Work-dense scale: 14px body, 12px labels, no display sizes",
+      "System typography: no loaded typeface; the interface defers to the OS font",
+      "Ambient effect reserved: dot-grid radial background appears only on auth and onboarding screens"
+    ],
+    "rules": [
+      {
+        "name": "The Signal Rule",
+        "body": "Signal Blue is used on at most 10% of any given screen. Its rarity is the point. When it appears in an unread chip or an active nav item, it draws the eye precisely. Dilute it and you lose that signal entirely.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mode Split Rule",
+        "body": "Light mode and dark mode are not the same theme inverted. Light mode uses ambient shadow for elevation; dark mode uses tonal layering. Never apply shadow-* unconditionally. Trust the --surface-shadow token to resolve to the correct value per theme.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Display Rule",
+        "body": "There is no display size. No heading exceeds 1.125rem (18px) in the application shell. This is a tool, not a publication.",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight-First Rule",
+        "body": "Hierarchy is expressed through weight contrast (400 → 500 → 600), not through size steps. Don't introduce new font sizes; introduce new font weights.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest in dark mode. Shadow appears in light mode as part of the token system, not as an expressive choice per component. If a component looks wrong in dark mode because it relies on shadow for definition, the structure is wrong.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Reserve Signal Blue for interactive signals: unread counts, active navigation, primary actions. Nowhere else.",
+      "Use color-mix(in oklab, var(--accent) 12%, transparent) for active nav background tints.",
+      "Express dark-mode elevation through tonal steps (Midnight Ink → Charcoal Surface), never through shadow.",
+      "Use OKLCH for all color declarations; never hardcode hex equivalents alongside token references.",
+      "Use HeroUI's token vocabulary (--accent, --surface, --foreground, --border) rather than custom properties that shadow them.",
+      "Use the ambient class pattern only on authentication and onboarding screens.",
+      "Keep interface text at 14px or 12px; escalate through weight, not size.",
+      "Use tabular-nums for any numeric content in chips, counts, and timestamps."
+    ],
+    "donts": [
+      "Don't build generic SaaS admin layouts: grey table rows, blue primary buttons on white backgrounds, stock sidebar patterns.",
+      "Don't build cluttered enterprise CRM layouts in the style of Salesforce or HubSpot: too many columns, nested panels without clear hierarchy, screens with no discernible primary action.",
+      "Don't use gradient text (background-clip: text with gradient fill). Emphasis is weight and size, not decoration.",
+      "Don't use side-stripe borders (border-left or border-right greater than 1px as colored accent).",
+      "Don't use glassmorphism decoratively. No blur + transparency cards outside of a purposeful, specific context.",
+      "Don't use the hero-metric template: big number, small label, gradient accent. This is an operational tool, not a pitch deck.",
+      "Don't apply shadows unconditionally across themes. Dark mode is flat by design.",
+      "Don't nest HeroUI Cards. A Card inside another Card is always wrong structurally.",
+      "Don't load a custom display typeface for branding. The system font is fast, familiar, and correct.",
+      "Don't use uppercase labels or all-caps text. Labels are sentence case throughout."
+    ]
+  }
+}

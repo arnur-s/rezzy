@@ -1,4 +1,4 @@
-import { Skeleton } from '@heroui/react'
+import { Button, Skeleton } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { ImageOff, ZoomIn } from 'lucide-react'
 import { useContext, useEffect, useId, useRef, useState } from 'react'
@@ -116,15 +116,17 @@ export function AppImage({
 
         {/* Preview trigger overlay */}
         {preview && !hasError && (
-          <button
+          <Button
             ref={triggerRef}
             type="button"
+            variant="ghost"
             aria-label={m.app_image_open_preview()}
-            onClick={handleOpen}
+            onPress={handleOpen}
             className={cn(
-              'absolute inset-0 flex items-center justify-center',
-              'bg-black/0 hover:bg-black/30 transition-colors duration-200',
-              'cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50',
+              'absolute inset-0 size-auto min-h-0 rounded-none',
+              'flex items-center justify-center',
+              'bg-black/0 hover:bg-black/30',
+              'cursor-zoom-in focus-visible:ring-2 focus-visible:ring-white/50',
               isLoading && 'pointer-events-none',
             )}
           >
@@ -134,7 +136,7 @@ export function AppImage({
                 'opacity-0 transition-opacity duration-200 group-hover:opacity-100',
               )}
             />
-          </button>
+          </Button>
         )}
       </div>
 

@@ -1,3 +1,4 @@
+import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import { PlatformIcon, isChannelType } from '@/entities/channel'
 import {
   ConversationStatusChip,
@@ -11,13 +12,11 @@ import { formatRelativeShort } from '../../utils/relative-time'
 type Props = {
   conversation: ConversationWithRelations
   isActive: boolean
-  onSelect: (conversationId: string) => void
 }
 
 export function ConversationListItem({
   conversation,
   isActive,
-  onSelect,
 }: Props) {
   const channelType = isChannelType(conversation.channel.type)
     ? conversation.channel.type
@@ -25,25 +24,14 @@ export function ConversationListItem({
   const status = isConversationStatus(conversation.status)
     ? conversation.status
     : null
-  const rawUnreadCount = Math.max(0, conversation.unread_count ?? 0)
+  const rawUnreadCount = Math.max(0, conversation.unread_count)
   const visibleUnreadCount = isActive ? 0 : rawUnreadCount
   const isUnread = visibleUnreadCount > 0
   const contactName = conversation.contact.name?.trim() || '—'
   const preview = conversation.last_message_preview?.trim()
 
   return (
-    <button
-      type="button"
-      aria-selected={isActive}
-      onClick={() => onSelect(conversation.id)}
-      className={cn(
-        'group flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors',
-        'outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        isActive
-          ? 'bg-accent/10'
-          : 'hover:bg-foreground/5',
-      )}
-    >
+    <>
       {channelType ? (
         <PlatformIcon type={channelType} size="md" withPlate />
       ) : (
@@ -55,7 +43,9 @@ export function ConversationListItem({
           <span
             className={cn(
               'min-w-0 flex-1 truncate text-sm',
-              isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
+              isUnread
+                ? 'font-semibold text-foreground'
+                : 'font-medium text-foreground/90',
             )}
           >
             {contactName}
@@ -75,14 +65,13 @@ export function ConversationListItem({
             {preview || ' '}
           </span>
           {isUnread ? (
-            <span
+            <NumericUnreadChip
+              count={visibleUnreadCount}
+              flat={isActive}
               aria-label={m.inbox_unread_aria_label({
                 count: visibleUnreadCount,
               })}
-              className="inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold leading-4 text-accent-foreground"
-            >
-              {visibleUnreadCount}
-            </span>
+            />
           ) : null}
         </div>
 
@@ -92,6 +81,6 @@ export function ConversationListItem({
           </div>
         ) : null}
       </div>
-    </button>
+    </>
   )
 }
