@@ -1,9 +1,18 @@
 import type { ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { sortConversationsByActivity } from '@/entities/conversation'
-import type { MessageRow } from '@/entities/message'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getConversationMessages, sendOutboundMessage } from '../api/messages'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { useMemo } from 'react'
+import type { MessagePageCursor } from '../api/messages'
+import {
+  getConversationMessagesPage,
+  sendOutboundMessage,
+} from '../api/messages'
 import { inboxQueryKeys } from '../api/query-keys'
 import type { ConversationReadCursor } from '../api/read-cursors'
 import {
@@ -11,13 +20,42 @@ import {
   markConversationReadToMessage,
 } from '../api/read-cursors'
 import { listPreviewFromMessage } from '../schemas/message-metadata'
+import {
+  appendMessageToNewestPage,
+  flattenMessagePages,
+  getNextPageCursorFromPages,
+  patchInfiniteMessagesCache,
+} from '../utils/message-pages'
 
 export function useMessages(conversationId: string | null) {
-  return useQuery({
-    queryFn: () => getConversationMessages(conversationId!),
+  const query = useInfiniteQuery({
+    queryFn: ({ pageParam }) =>
+      getConversationMessagesPage({
+        conversationId: conversationId!,
+        cursor: pageParam,
+      }),
     queryKey: inboxQueryKeys.messages(conversationId ?? ''),
     enabled: !!conversationId,
+    initialPageParam: null as MessagePageCursor | null,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined
+      return getNextPageCursorFromPages(allPages)
+    },
   })
+
+  const messages = useMemo(
+    () => flattenMessagePages(query.data?.pages),
+    [query.data?.pages],
+  )
+
+  return {
+    messages,
+    isPending: query.isPending,
+    isError: query.isError,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: query.hasNextPage ?? false,
+    fetchNextPage: query.fetchNextPage,
+  }
 }
 
 export function useConversationReadCursor({
@@ -108,14 +146,18 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
       const messagesKey = inboxQueryKeys.messages(message.conversation_id)
       const conversationsKey = inboxQueryKeys.conversations(workspaceId)
 
-      queryClient.setQueryData<Array<MessageRow>>(messagesKey, (current) => {
-        if (!current) return [message]
-        if (current.some((row) => row.id === message.id)) return current
+      patchInfiniteMessagesCache(queryClient, messagesKey, (current) => {
+        if (!current) {
+          return {
+            pages: [{ messages: [message], hasMore: false }],
+            pageParams: [null],
+          }
+        }
 
-        return [...current, message].sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-        )
+        return {
+          ...current,
+          pages: appendMessageToNewestPage(current.pages, message),
+        }
       })
 
       queryClient.setQueryData<Array<ConversationWithRelations>>(

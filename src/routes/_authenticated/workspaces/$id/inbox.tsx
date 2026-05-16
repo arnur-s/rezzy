@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox')({
 function RouteComponent() {
   const { id: workspaceId } = Route.useParams()
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex flex-1 h-full min-h-0 flex-col">
       <InboxPage workspaceId={workspaceId} />
     </div>
   )

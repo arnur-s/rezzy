@@ -6,11 +6,11 @@ product
 
 ## Users
 
-Sales teams and account managers who manage customer relationships across multiple communication channels (Telegram and others). Their day-to-day context: they open birhq to see what's new, triage messages from leads and customers, and stay on top of contact history. They're busy, context-switching frequently, and expect the tool to surface what matters without requiring them to hunt for it.
+Sales teams and account managers who manage customer relationships across multiple communication channels (Telegram and others). Their day-to-day context: they open Rezzy to see what's new, triage messages from leads and customers, and stay on top of contact history. They're busy, context-switching frequently, and expect the tool to surface what matters without requiring them to hunt for it.
 
 ## Product Purpose
 
-birhq is a multi-workspace customer inbox and CRM for sales and account management teams. It consolidates inbound conversations from channels like Telegram into a unified inbox, while providing contact management tools (history, notes, status) alongside it. A successful session looks like: open inbox, see new messages at a glance, reply or route them, check a contact's history, add a note, close the tab. The tool earns its place by removing friction from that loop.
+Rezzy is a multi-workspace customer inbox and CRM for sales and account management teams. It consolidates inbound conversations from channels like Telegram into a unified inbox, while providing contact management tools (history, notes, status) alongside it. A successful session looks like: open inbox, see new messages at a glance, reply or route them, check a contact's history, add a note, close the tab. The tool earns its place by removing friction from that loop.
 
 ## Brand Personality
 
@@ -23,7 +23,7 @@ Warm, human, practical. The product should feel like a reliable colleague — no
 
 ## Anti-references
 
-- **Generic SaaS admin dashboard** — grey tables, blue primary buttons, interchangeable design language. birhq should feel distinctive.
+- **Generic SaaS admin dashboard** — grey tables, blue primary buttons, interchangeable design language. Rezzy should feel distinctive.
 - **Enterprise CRM bloat (Salesforce, HubSpot)** — cluttered, overwhelming, designed by committee. Every screen should have a clear primary action.
 - **Startup landing-page-as-app** — gradient heroes, metric showcases, more style than substance. Design serves the workflow, not the screenshot.
 

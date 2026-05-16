@@ -1,5 +1,5 @@
-import type { ChannelType } from '@/entities/channel'
-import { useChannels } from '@/features/channels/hooks/use-channels'
+import { useRecordWorkspaceVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
+import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
 import { useMemo, useState } from 'react'
@@ -21,21 +21,24 @@ export function InboxPage({ workspaceId }: Props) {
   const senderId = session?.user.id ?? null
 
   const conversationsQuery = useConversations(workspaceId)
-  const channelsQuery = useChannels(workspaceId)
+  // const channelsQuery = useChannels(workspaceId)
   useConversationsRealtime(workspaceId)
+
+  const workspacesQuery = useWorkspaces(senderId ?? undefined)
+  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
+  useRecordWorkspaceVisit(workspaceId, workspace?.name)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
-  const [channelTypeFilter, setChannelTypeFilter] =
-    useState<ChannelType | null>(null)
-  const [channelIdFilter, setChannelIdFilter] = useState<string | null>(null)
+  // const [channelTypeFilter, setChannelTypeFilter] =
+  //   useState<ChannelType | null>(null)
+  // const [channelIdFilter, setChannelIdFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isContactPanelOpen, setIsContactPanelOpen] = useState(false)
   const [mobilePane, setMobilePane] = useState<MobilePane>('list')
 
   const selectedConversation = useMemo(
-    () =>
-      conversationsQuery.data?.find((row) => row.id === selectedId) ?? null,
+    () => conversationsQuery.data?.find((row) => row.id === selectedId) ?? null,
     [conversationsQuery.data, selectedId],
   )
 
@@ -95,17 +98,17 @@ export function InboxPage({ workspaceId }: Props) {
           onSelect={handleSelect}
           primaryFilter={primaryFilter}
           onPrimaryFilterChange={setPrimaryFilter}
-          channelTypeFilter={channelTypeFilter}
-          onChannelTypeFilterChange={(type) => {
-            setChannelTypeFilter(type)
-            setChannelIdFilter(null)
-          }}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          channels={channelsQuery.data ?? []}
-          channelIdFilter={channelIdFilter}
-          onChannelIdFilterChange={setChannelIdFilter}
           userId={senderId}
+          // channelTypeFilter={channelTypeFilter}
+          // channelIdFilter={channelIdFilter}
+          // onChannelTypeFilterChange={(type) => {
+          //   setChannelTypeFilter(type)
+          //   setChannelIdFilter(null)
+          // }}
+          // channels={channelsQuery.data ?? []}
+          // onChannelIdFilterChange={setChannelIdFilter}
         />
       </div>
 

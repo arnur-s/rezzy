@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-05-16T00:00:00Z",
-  "title": "Design System: BirHQ",
+  "title": "Design System: Rezzy",
   "extensions": {
     "colorMeta": {
       "signal-blue": {
@@ -96,10 +96,22 @@
       }
     },
     "typographyMeta": {
-      "title": { "displayName": "Title", "purpose": "Section headings, card titles, panel headers. Weight-only distinction." },
-      "body": { "displayName": "Body", "purpose": "Conversation previews, contact names, form content. The workhorse." },
-      "label": { "displayName": "Label", "purpose": "Timestamps, metadata, filter labels. Always supporting, never leading." },
-      "small": { "displayName": "Small", "purpose": "Unread counts, compact badges. Tabular figures mandatory." }
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings, card titles, panel headers. Weight-only distinction."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Conversation previews, contact names, form content. The workhorse."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Timestamps, metadata, filter labels. Always supporting, never leading."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Unread counts, compact badges. Tabular figures mandatory."
+      }
     },
     "shadows": [
       {
@@ -141,8 +153,16 @@
       }
     ],
     "breakpoints": [
-      { "name": "md", "value": "768px", "purpose": "Two-column inbox layout (list + thread)" },
-      { "name": "lg", "value": "1024px", "purpose": "Three-column inbox layout (list + thread + contact panel)" }
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Two-column inbox layout (list + thread)"
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Three-column inbox layout (list + thread + contact panel)"
+      }
     ]
   },
   "components": [
@@ -197,7 +217,7 @@
   ],
   "narrative": {
     "northStar": "The Calm Operator",
-    "overview": "BirHQ is designed for the rhythm of sustained professional work. Sales reps and account managers open this tool to scan new messages, reply to leads, check contact history, and move on. The interface should feel like a well-organized desk: everything findable, nothing asserting itself. The UI does not perform — it performs for you.\n\nThe system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with ambient shadow giving depth to cards and panels. In dark mode, everything flattens: midnight ink backgrounds, tonal steps replacing shadows, the same Signal Blue accent unchanged between both. Both modes share the same restraint.\n\nColor is rationed. Signal Blue is the only expressive color in the system. It marks where to act — active navigation, unread counts, primary buttons. Every other pixel is neutral infrastructure.",
+    "overview": "Rezzy is designed for the rhythm of sustained professional work. Sales reps and account managers open this tool to scan new messages, reply to leads, check contact history, and move on. The interface should feel like a well-organized desk: everything findable, nothing asserting itself. The UI does not perform — it performs for you.\n\nThe system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with ambient shadow giving depth to cards and panels. In dark mode, everything flattens: midnight ink backgrounds, tonal steps replacing shadows, the same Signal Blue accent unchanged between both. Both modes share the same restraint.\n\nColor is rationed. Signal Blue is the only expressive color in the system. It marks where to act — active navigation, unread counts, primary buttons. Every other pixel is neutral infrastructure.",
     "keyCharacteristics": [
       "System-adaptive theming: full light and dark support with shared token vocabulary",
       "Restrained accent: Signal Blue occupies at most 10% of any given surface",

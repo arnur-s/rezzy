@@ -120,6 +120,9 @@ describe('VirtualizedMessageList unread behavior', () => {
         unreadDividerMessageId="message-4"
         hasUnreadInboundMessages
         onReadAnchorVisible={vi.fn()}
+        hasMoreOlder={false}
+        isFetchingOlder={false}
+        onLoadOlder={vi.fn()}
       />,
     )
 

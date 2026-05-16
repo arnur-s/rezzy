@@ -1,10 +1,6 @@
 import { NumericUnreadChip } from '@/components/numeric-unread-chip'
-import {
-  CHANNEL_TYPES,
-  PlatformIcon,
-  isChannelType,
-} from '@/entities/channel'
 import type { Channel, ChannelType } from '@/entities/channel'
+import { CHANNEL_TYPES, PlatformIcon, isChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Disclosure } from '@heroui/react'
 import { cn } from '@heroui/styles'
@@ -108,7 +104,7 @@ export function ChannelFilters({
                     type="button"
                     onClick={() => handleTypeClick(type)}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors',
+                      'cursor-pointer flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors',
                       'focus-visible:ring-2 focus-visible:ring-ring',
                       isTypeActive
                         ? 'bg-foreground/10 text-foreground'

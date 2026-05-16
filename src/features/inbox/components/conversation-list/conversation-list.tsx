@@ -1,11 +1,9 @@
-import type { Channel, ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
-import { Alert, ListBox, ScrollShadow, Text } from '@heroui/react'
 import type { Selection } from '@heroui/react'
+import { Alert, ListBox, ScrollShadow, Text } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { useMemo } from 'react'
-import { ChannelFilters } from './channel-filters'
 import { ConversationListItem } from './conversation-list-item'
 import { ConversationListSkeleton } from './conversation-list-skeleton'
 import { ConversationSearch } from './conversation-search'
@@ -20,14 +18,14 @@ type Props = {
   onSelect: (conversationId: string) => void
   primaryFilter: InboxPrimaryFilter
   onPrimaryFilterChange: (filter: InboxPrimaryFilter) => void
-  channelTypeFilter: ChannelType | null
-  onChannelTypeFilterChange: (type: ChannelType | null) => void
   searchQuery: string
   onSearchChange: (value: string) => void
-  channels: Array<Channel>
-  channelIdFilter: string | null
-  onChannelIdFilterChange: (id: string | null) => void
   userId: string | null
+  // channelIdFilter: string | null
+  // channelTypeFilter: ChannelType | null
+  // onChannelTypeFilterChange: (type: ChannelType | null) => void
+  // channels: Array<Channel>
+  // onChannelIdFilterChange: (id: string | null) => void
 }
 
 function selectionToConversationId(keys: Selection): string | undefined {
@@ -45,13 +43,13 @@ export function ConversationList({
   onSelect,
   primaryFilter,
   onPrimaryFilterChange,
-  channelTypeFilter,
-  onChannelTypeFilterChange,
-  searchQuery,
   onSearchChange,
-  channels,
-  channelIdFilter,
-  onChannelIdFilterChange,
+  searchQuery,
+  // channelTypeFilter,
+  // channelIdFilter,
+  // onChannelTypeFilterChange,
+  // channels,
+  // onChannelIdFilterChange,
   userId,
 }: Props) {
   const primaryUnreadCounts = useMemo(() => {
@@ -70,16 +68,16 @@ export function ConversationList({
     return counts
   }, [conversations, selectedConversationId, userId])
 
-  const channelUnreadCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const row of conversations ?? []) {
-      const count =
-        row.id === selectedConversationId ? 0 : row.unread_count || 0
-      if (count > 0)
-        counts[row.channel.id] = (counts[row.channel.id] ?? 0) + count
-    }
-    return counts
-  }, [conversations, selectedConversationId])
+  // const channelUnreadCounts = useMemo(() => {
+  //   const counts: Record<string, number> = {}
+  //   for (const row of conversations ?? []) {
+  //     const count =
+  //       row.id === selectedConversationId ? 0 : row.unread_count || 0
+  //     if (count > 0)
+  //       counts[row.channel.id] = (counts[row.channel.id] ?? 0) + count
+  //   }
+  //   return counts
+  // }, [conversations, selectedConversationId])
 
   const filtered = useMemo(() => {
     const rows = conversations ?? []
@@ -90,32 +88,25 @@ export function ConversationList({
       }
       if (primaryFilter === 'unassigned' && row.assigned_to !== null)
         return false
-      if (channelTypeFilter !== null && row.channel.type !== channelTypeFilter)
-        return false
-      if (channelIdFilter && row.channel.id !== channelIdFilter) return false
+      // if (channelTypeFilter !== null && row.channel.type !== channelTypeFilter)
+      //   return false
+      // if (channelIdFilter && row.channel.id !== channelIdFilter) return false
       if (!needle) return true
       const name = row.contact.name?.toLowerCase() ?? ''
       const preview = row.last_message_preview?.toLowerCase() ?? ''
       return name.includes(needle) || preview.includes(needle)
     })
-  }, [
-    conversations,
-    primaryFilter,
-    channelTypeFilter,
-    channelIdFilter,
-    searchQuery,
-    userId,
-  ])
+  }, [conversations, primaryFilter, searchQuery, userId])
 
   const hasActiveFilter =
-    searchQuery.trim().length > 0 ||
-    primaryFilter !== 'all' ||
-    channelTypeFilter !== null ||
-    channelIdFilter !== null
+    searchQuery.trim().length > 0 || primaryFilter !== 'all'
+  //  ||
+  // channelTypeFilter !== null ||
+  // channelIdFilter !== null
 
   return (
     <div className="flex h-full min-h-0 flex-col border-r border-border/60">
-      <div className="shrink-0 border-b border-border/60">
+      <div className="h-[64px] shrink-0 border-b border-border/60 flex items-center justify-center">
         <ConversationSearch value={searchQuery} onChange={onSearchChange} />
       </div>
       <div className="shrink-0 border-b border-border/60">
@@ -157,15 +148,14 @@ export function ConversationList({
           >
             {filtered.map((conversation) => {
               const isActive = conversation.id === selectedConversationId
-              const contactName =
-                conversation.contact.name?.trim() || '—'
+              const contactName = conversation.contact.name?.trim() || '—'
               return (
                 <ListBox.Item
                   key={conversation.id}
                   id={conversation.id}
                   textValue={contactName}
                   className={cn(
-                    'flex w-full cursor-default items-start gap-3 rounded-xl px-3 py-2.5 text-left outline-none transition-colors',
+                    'cursor-pointer flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left outline-none transition-colors',
                     'data-[selected=true]:bg-accent/10',
                     'data-[selected=false]:hover:bg-foreground/5',
                     'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring',
@@ -182,7 +172,7 @@ export function ConversationList({
         )}
       </ScrollShadow>
 
-      <div className="shrink-0 border-t border-border/60">
+      {/* <div className="shrink-0 border-t border-border/60">
         <ChannelFilters
           channelTypeFilter={channelTypeFilter}
           channelIdFilter={channelIdFilter}
@@ -191,7 +181,7 @@ export function ConversationList({
           onChannelTypeFilterChange={onChannelTypeFilterChange}
           onChannelIdFilterChange={onChannelIdFilterChange}
         />
-      </div>
+      </div> */}
     </div>
   )
 }
@@ -208,9 +198,7 @@ function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   }
   return (
     <div className="px-6 py-12 text-center">
-      <Text className="text-sm font-medium">
-        {m.inbox_list_empty_title()}
-      </Text>
+      <Text className="text-sm font-medium">{m.inbox_list_empty_title()}</Text>
       <Text className="mt-1 text-xs text-muted-foreground">
         {m.inbox_list_empty_description()}
       </Text>

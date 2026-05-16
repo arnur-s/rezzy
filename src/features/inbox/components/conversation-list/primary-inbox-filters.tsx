@@ -1,7 +1,7 @@
 import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import { m } from '@/paraglide/messages'
-import { ListBox } from '@heroui/react'
 import type { Selection } from '@heroui/react'
+import { ListBox } from '@heroui/react'
 import { cn } from '@heroui/styles'
 
 export type InboxPrimaryFilter = 'all' | 'mine' | 'unassigned'
@@ -59,7 +59,7 @@ export function PrimaryInboxFilters({
               id={key}
               textValue={label()}
               className={cn(
-                'flex w-full cursor-default items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors',
+                'cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium outline-none transition-colors',
                 'text-foreground/60 data-[selected=true]:bg-foreground/10 data-[selected=true]:text-foreground',
                 'data-[selected=false]:hover:bg-foreground/5 data-[selected=false]:hover:text-foreground',
                 'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring',

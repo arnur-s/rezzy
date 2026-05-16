@@ -20,6 +20,7 @@ import { MessageThreadEmpty } from './message-thread-empty'
 import { MessageThreadHeader } from './message-thread-header'
 
 const MARK_READ_DEBOUNCE_MS = 280
+const MAX_UNREAD_PREFETCH_PAGES = 5
 
 type Props = {
   workspaceId: string
@@ -51,13 +52,53 @@ export function MessageThread({
     conversationId,
     workspaceId,
   })
-  const messages = messagesQuery.data ?? []
+  const messages = messagesQuery.messages
   const isReadCursorLoading = !!senderId && readCursorQuery.isPending
+  const unreadPrefetchPagesRef = useRef(0)
+
+  useEffect(() => {
+    unreadPrefetchPagesRef.current = 0
+  }, [conversationId])
+
+  const readCursor = readCursorQuery.data ?? null
+
+  useEffect(() => {
+    if (messagesQuery.isPending || readCursorQuery.isPending) return
+    if (unreadCount <= 0) return
+
+    const readId = readCursor?.last_read_message_id
+    if (!readId) return
+    if (messages.some((m) => m.id === readId)) return
+    if (!messagesQuery.hasNextPage) return
+    if (messagesQuery.isFetchingNextPage) return
+    if (unreadPrefetchPagesRef.current >= MAX_UNREAD_PREFETCH_PAGES) return
+
+    unreadPrefetchPagesRef.current += 1
+    void messagesQuery.fetchNextPage()
+  }, [
+    messages,
+    messagesQuery.fetchNextPage,
+    messagesQuery.hasNextPage,
+    messagesQuery.isFetchingNextPage,
+    messagesQuery.isPending,
+    readCursor?.last_read_message_id,
+    readCursorQuery.isPending,
+    unreadCount,
+  ])
+
+  const handleLoadOlder = useCallback(() => {
+    if (!messagesQuery.hasNextPage || messagesQuery.isFetchingNextPage) return
+    void messagesQuery.fetchNextPage()
+  }, [
+    messagesQuery.fetchNextPage,
+    messagesQuery.hasNextPage,
+    messagesQuery.isFetchingNextPage,
+  ])
+
   const initialScrollTarget = useMemo<InitialScrollTarget>(
     () => getConversationInitialScrollTarget({ messages }),
     [messages],
   )
-  const readCursor = readCursorQuery.data ?? null
   const liveUnreadDividerMessageId = useMemo(
     () =>
       getFirstUnreadInboundMessageId({
@@ -156,7 +197,7 @@ export function MessageThread({
       />
       <MessageList
         conversationId={conversation.id}
-        messages={messagesQuery.data}
+        messages={messages}
         isLoading={messagesQuery.isPending || isReadCursorLoading}
         isError={messagesQuery.isError || readCursorQuery.isError}
         contactName={contactName}
@@ -165,6 +206,9 @@ export function MessageThread({
         unreadDividerMessageId={unreadDividerMessageId}
         hasUnreadInboundMessages={hasUnreadInboundMessages}
         onReadAnchorVisible={handleReadAnchorVisible}
+        hasMoreOlder={messagesQuery.hasNextPage}
+        isFetchingOlder={messagesQuery.isFetchingNextPage}
+        onLoadOlder={handleLoadOlder}
       />
       <MessageComposer
         workspaceId={workspaceId}
@@ -176,3 +220,4 @@ export function MessageThread({
     </div>
   )
 }
+

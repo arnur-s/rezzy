@@ -6,6 +6,7 @@ import {
 import { isConversationStatus } from '@/entities/conversation'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { getUserInitials } from '@/entities/user'
+import { useRecordContactVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { m } from '@/paraglide/messages'
 import { Avatar, Button, ScrollShadow, Skeleton } from '@heroui/react'
 import { XIcon } from 'lucide-react'
@@ -39,6 +40,12 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
   const status = isConversationStatus(conversation.status)
     ? conversation.status
     : 'open'
+
+  useRecordContactVisit(
+    conversation.contact.id,
+    contactName !== '—' ? contactName : undefined,
+    workspaceId,
+  )
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col border-l border-border/60">

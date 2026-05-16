@@ -1,8 +1,4 @@
-import {
-  PLATFORM_META,
-  PlatformIcon,
-  isChannelType,
-} from '@/entities/channel'
+import { PLATFORM_META, PlatformIcon, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { getUserInitials } from '@/entities/user'
 import { m } from '@/paraglide/messages'
@@ -31,7 +27,7 @@ export function MessageThreadHeader({
     : conversation.channel.name?.trim() || ''
 
   return (
-    <header className="flex items-center gap-3 border-b border-border/60 px-3 py-3 sm:px-6">
+    <header className="h-[64px] flex items-center gap-3 border-b border-border/60 px-3 py-3 sm:px-6">
       {onBack ? (
         <Button
           variant="ghost"

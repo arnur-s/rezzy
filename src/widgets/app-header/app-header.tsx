@@ -1,7 +1,4 @@
-import {
-  getUserDisplayName,
-  getUserInitials,
-} from '@/entities/user'
+import { getUserDisplayName, getUserInitials } from '@/entities/user'
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
@@ -61,7 +58,7 @@ export function AppHeader({ className, onToggleSidebar }: AppHeaderProps) {
   return (
     <header
       className={cn(
-        'border-border/60 border-b flex h-[64px] shrink-0 items-center gap-2 px-4 backdrop-blur z-1',
+        'flex h-[64px] shrink-0 items-center gap-2 px-3 z-1 border-b border-border/60',
         className,
       )}
     >

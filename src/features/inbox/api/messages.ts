@@ -23,20 +23,56 @@ const MESSAGE_SELECT = `
   created_at
 ` as const
 
-export async function getConversationMessages(
-  conversationId: string,
-): Promise<Array<MessageRow>> {
-  const { data, error } = await supabase
+export const MESSAGE_PAGE_SIZE = 50
+
+export type MessagePageCursor = {
+  createdAt: string
+  id: string
+}
+
+export type MessagesPageResult = {
+  messages: Array<MessageRow>
+  hasMore: boolean
+}
+
+/**
+ * Fetches one page of messages, newest first in the query then reversed to ascending.
+ * `pages[0]` from infinite query = latest batch; pass cursor to load older rows.
+ */
+export async function getConversationMessagesPage({
+  conversationId,
+  cursor = null,
+}: {
+  conversationId: string
+  cursor?: MessagePageCursor | null
+}): Promise<MessagesPageResult> {
+  let query = supabase
     .from('messages')
     .select(MESSAGE_SELECT)
     .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+
+  if (cursor) {
+    query = query.or(
+      `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`,
+    )
+  }
+
+  const { data, error } = await query.limit(MESSAGE_PAGE_SIZE + 1)
 
   if (error) {
     throw error
   }
 
-  return data
+  const rows = data ?? []
+  const hasMore = rows.length > MESSAGE_PAGE_SIZE
+  const page = hasMore ? rows.slice(0, MESSAGE_PAGE_SIZE) : rows
+
+  return {
+    messages: [...page].reverse(),
+    hasMore,
+  }
 }
 
 async function markMessageFailed(messageId: string): Promise<void> {
@@ -188,34 +224,3 @@ export async function sendOutboundMessage({
   return fresh
 }
 
-const MESSAGE_PAGE_SIZE = 50
-
-export async function getMessagesPage(conversationId: string) {
-  const { data, error } = await supabase
-    .from('messages')
-    .select(
-      `
-      id,
-      workspace_id,
-      conversation_id,
-      direction,
-      type,
-      content,
-      media_url,
-      media_mime_type,
-      media_filename,
-      media_size,
-      sender_id,
-      status,
-      created_at,
-      metadata
-    `,
-    )
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: false })
-    .limit(MESSAGE_PAGE_SIZE)
-
-  if (error) throw error
-
-  return data.reverse()
-}

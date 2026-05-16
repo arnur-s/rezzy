@@ -6,6 +6,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { inboxQueryKeys } from '../api/query-keys'
 import { listPreviewFromMessage } from '../schemas/message-metadata'
+import {
+  appendMessageToNewestPage,
+  patchInfiniteMessagesCache,
+  updateMessageInPages,
+} from '../utils/message-pages'
 
 /**
  * Subscribes to INSERT and UPDATE on messages for the open thread, and keeps
@@ -62,18 +67,19 @@ export function useMessagesRealtime({
         (payload) => {
           const message = payload.new as MessageRow
 
-          queryClient.setQueryData<Array<MessageRow>>(
-            messagesKey,
-            (current) => {
-              if (!current) return [message]
-              if (current.some((row) => row.id === message.id)) return current
-              return [...current, message].sort(
-                (a, b) =>
-                  new Date(a.created_at).getTime() -
-                  new Date(b.created_at).getTime(),
-              )
-            },
-          )
+          patchInfiniteMessagesCache(queryClient, messagesKey, (current) => {
+            if (!current) {
+              return {
+                pages: [{ messages: [message], hasMore: false }],
+                pageParams: [null],
+              }
+            }
+
+            return {
+              ...current,
+              pages: appendMessageToNewestPage(current.pages, message),
+            }
+          })
 
           patchConversationList(message)
         },
@@ -89,15 +95,19 @@ export function useMessagesRealtime({
         (payload) => {
           const message = payload.new as MessageRow
 
-          queryClient.setQueryData<Array<MessageRow>>(
-            messagesKey,
-            (current) => {
-              if (!current) return [message]
-              return current.map((row) =>
-                row.id === message.id ? { ...row, ...message } : row,
-              )
-            },
-          )
+          patchInfiniteMessagesCache(queryClient, messagesKey, (current) => {
+            if (!current) {
+              return {
+                pages: [{ messages: [message], hasMore: false }],
+                pageParams: [null],
+              }
+            }
+
+            return {
+              ...current,
+              pages: updateMessageInPages(current.pages, message),
+            }
+          })
         },
       )
       .subscribe()

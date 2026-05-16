@@ -17,6 +17,8 @@ import {
   runAfterScrollLayout,
 } from '../../utils/message-scroll'
 import type { InitialScrollTarget } from '../../utils/read-cursor'
+import { useLoadOlderMessagesSentinel } from '../../hooks/use-load-older-messages-sentinel'
+import { LoadOlderMessagesRegion } from './load-older-messages-region'
 import { MessageBubble } from './message-bubble'
 import { NewMessagesButton } from './new-messages-button'
 import { UnreadDivider } from './unread-divider'
@@ -65,6 +67,9 @@ type Props = {
   unreadDividerMessageId: string | null
   hasUnreadInboundMessages: boolean
   onReadAnchorVisible: (lastReadMessageId: string) => void
+  hasMoreOlder?: boolean
+  isFetchingOlder?: boolean
+  onLoadOlder?: () => void
 }
 
 export function MessageList({
@@ -78,6 +83,9 @@ export function MessageList({
   unreadDividerMessageId,
   hasUnreadInboundMessages,
   onReadAnchorVisible,
+  hasMoreOlder = false,
+  isFetchingOlder = false,
+  onLoadOlder = () => {},
 }: Props) {
   if (isLoading) {
     return (
@@ -108,6 +116,9 @@ export function MessageList({
         unreadDividerMessageId={unreadDividerMessageId}
         hasUnreadInboundMessages={hasUnreadInboundMessages}
         onReadAnchorVisible={onReadAnchorVisible}
+        hasMoreOlder={hasMoreOlder}
+        isFetchingOlder={isFetchingOlder}
+        onLoadOlder={onLoadOlder}
       />
     )
   }
@@ -122,6 +133,9 @@ export function MessageList({
       unreadDividerMessageId={unreadDividerMessageId}
       hasUnreadInboundMessages={hasUnreadInboundMessages}
       onReadAnchorVisible={onReadAnchorVisible}
+      hasMoreOlder={hasMoreOlder}
+      isFetchingOlder={isFetchingOlder}
+      onLoadOlder={onLoadOlder}
     />
   )
 }
@@ -134,6 +148,9 @@ type ViewProps = {
   unreadDividerMessageId: string | null
   hasUnreadInboundMessages: boolean
   onReadAnchorVisible: (lastReadMessageId: string) => void
+  hasMoreOlder: boolean
+  isFetchingOlder: boolean
+  onLoadOlder: () => void
 }
 
 function MessageListView({
@@ -144,8 +161,17 @@ function MessageListView({
   unreadDividerMessageId,
   hasUnreadInboundMessages,
   onReadAnchorVisible,
+  hasMoreOlder,
+  isFetchingOlder,
+  onLoadOlder,
 }: ViewProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const loadOlderSentinelRef = useLoadOlderMessagesSentinel({
+    rootRef: scrollRef,
+    hasMoreOlder,
+    isFetchingOlder,
+    onLoadOlder,
+  })
   const stickToBottomRef = useRef(true)
   const initialScrollDoneRef = useRef(false)
   const lastLenRef = useRef(0)
@@ -382,6 +408,11 @@ function MessageListView({
         className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
       >
         <div className="flex flex-col gap-6 px-4 py-6 sm:px-6">
+          <LoadOlderMessagesRegion
+            sentinelRef={loadOlderSentinelRef}
+            isFetchingOlder={isFetchingOlder}
+            hasMoreOlder={hasMoreOlder}
+          />
           {groups.map((group) => (
             <section key={group.key} className="flex flex-col gap-3">
               <div className="flex justify-center sticky top-0">

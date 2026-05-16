@@ -1,3 +1,4 @@
+import { m } from '@/paraglide/messages'
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { Button, Popover, TextArea } from '@heroui/react'
@@ -10,7 +11,6 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { m } from '@/paraglide/messages'
 
 const MAX_HEIGHT = 24 * 5 // 5 lines × 24px line-height
 
@@ -194,10 +194,7 @@ export function ChatInput({
             onPaste={handlePaste}
           />
 
-          <Popover
-            isOpen={emojiPickerOpen}
-            onOpenChange={setEmojiPickerOpen}
-          >
+          <Popover isOpen={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
             <Popover.Trigger>
               <Button
                 size="sm"
@@ -213,7 +210,7 @@ export function ChatInput({
               className="max-w-none border-0 bg-transparent p-0 shadow-none"
               placement="top"
             >
-              <Popover.Dialog className="max-h-[min(24rem,70vh)] overflow-auto border-0 p-0 shadow-lg">
+              <Popover.Dialog className="border-0 p-0 shadow-lg">
                 <Picker
                   data={data}
                   onEmojiSelect={handleEmojiSelect}

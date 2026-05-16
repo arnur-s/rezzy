@@ -10,12 +10,12 @@ export function ConversationSearch({ value, onChange }: Props) {
   return (
     <SearchField
       aria-label={m.inbox_search_aria_label()}
-      className="p-3"
       value={value}
       onChange={onChange}
       variant="secondary"
+      className="px-3 w-full"
     >
-      <SearchField.Group>
+      <SearchField.Group className="rounded-lg!">
         <SearchField.SearchIcon />
         <SearchField.Input placeholder={m.inbox_search_placeholder()} />
         <SearchField.ClearButton />

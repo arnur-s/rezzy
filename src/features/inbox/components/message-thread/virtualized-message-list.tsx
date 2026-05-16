@@ -18,7 +18,9 @@ import {
   preserveScrollTopAfterContentGrowth,
   runAfterScrollLayout,
 } from '../../utils/message-scroll'
+import { useLoadOlderMessagesSentinel } from '../../hooks/use-load-older-messages-sentinel'
 import type { InitialScrollTarget } from '../../utils/read-cursor'
+import { LoadOlderMessagesRegion } from './load-older-messages-region'
 import { MessageBubble } from './message-bubble'
 import { NewMessagesButton } from './new-messages-button'
 import { UnreadDivider } from './unread-divider'
@@ -49,6 +51,9 @@ type Props = {
   unreadDividerMessageId: string | null
   hasUnreadInboundMessages: boolean
   onReadAnchorVisible: (lastReadMessageId: string) => void
+  hasMoreOlder: boolean
+  isFetchingOlder: boolean
+  onLoadOlder: () => void
 }
 
 export function VirtualizedMessageList({
@@ -59,8 +64,17 @@ export function VirtualizedMessageList({
   unreadDividerMessageId,
   hasUnreadInboundMessages,
   onReadAnchorVisible,
+  hasMoreOlder,
+  isFetchingOlder,
+  onLoadOlder,
 }: Props) {
   const parentRef = useRef<HTMLDivElement | null>(null)
+  const loadOlderSentinelRef = useLoadOlderMessagesSentinel({
+    rootRef: parentRef,
+    hasMoreOlder,
+    isFetchingOlder,
+    onLoadOlder,
+  })
   const stickToBottomRef = useRef(true)
   const initialScrollDoneRef = useRef(false)
   const initialScrollScheduledRef = useRef(false)
@@ -355,6 +369,11 @@ export function VirtualizedMessageList({
         ref={parentRef}
         className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
       >
+        <LoadOlderMessagesRegion
+          sentinelRef={loadOlderSentinelRef}
+          isFetchingOlder={isFetchingOlder}
+          hasMoreOlder={hasMoreOlder}
+        />
         <div
           style={{
             height: virtualizer.getTotalSize(),
