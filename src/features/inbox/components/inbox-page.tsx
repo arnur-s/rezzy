@@ -14,55 +14,52 @@ type MobilePane = 'list' | 'thread' | 'contact'
 
 type Props = {
   workspaceId: string
+  selectedConversationId: string | null
+  onSelectConversation: (id: string) => void
+  onBackToList: () => void
 }
 
-export function InboxPage({ workspaceId }: Props) {
+export function InboxPage({
+  workspaceId,
+  selectedConversationId,
+  onSelectConversation,
+  onBackToList,
+}: Props) {
   const { session } = useAuth()
   const senderId = session?.user.id ?? null
 
   const conversationsQuery = useConversations(workspaceId)
-  // const channelsQuery = useChannels(workspaceId)
   useConversationsRealtime(workspaceId)
 
   const workspacesQuery = useWorkspaces(senderId ?? undefined)
   const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
   useRecordWorkspaceVisit(workspaceId, workspace?.name)
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
-  // const [channelTypeFilter, setChannelTypeFilter] =
-  //   useState<ChannelType | null>(null)
-  // const [channelIdFilter, setChannelIdFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isContactPanelOpen, setIsContactPanelOpen] = useState(false)
-  const [mobilePane, setMobilePane] = useState<MobilePane>('list')
 
   const selectedConversation = useMemo(
-    () => conversationsQuery.data?.find((row) => row.id === selectedId) ?? null,
-    [conversationsQuery.data, selectedId],
+    () =>
+      conversationsQuery.data?.find((row) => row.id === selectedConversationId) ??
+      null,
+    [conversationsQuery.data, selectedConversationId],
   )
 
-  function handleSelect(conversationId: string) {
-    setSelectedId(conversationId)
-    setMobilePane('thread')
-  }
-
-  function handleBackToList() {
-    setMobilePane('list')
-  }
+  const mobilePane: MobilePane =
+    isContactPanelOpen && selectedConversation !== null
+      ? 'contact'
+      : selectedConversationId !== null
+        ? 'thread'
+        : 'list'
 
   function handleToggleContactPanel() {
     if (!selectedConversation) return
-    setIsContactPanelOpen((open) => {
-      const next = !open
-      setMobilePane(next ? 'contact' : 'thread')
-      return next
-    })
+    setIsContactPanelOpen((open) => !open)
   }
 
   function handleCloseContactPanel() {
     setIsContactPanelOpen(false)
-    setMobilePane('thread')
   }
 
   const showContact = isContactPanelOpen && selectedConversation !== null
@@ -94,21 +91,13 @@ export function InboxPage({ workspaceId }: Props) {
           conversations={conversationsQuery.data}
           isLoading={conversationsQuery.isPending}
           isError={conversationsQuery.isError}
-          selectedConversationId={selectedId}
-          onSelect={handleSelect}
+          selectedConversationId={selectedConversationId}
+          onSelect={onSelectConversation}
           primaryFilter={primaryFilter}
           onPrimaryFilterChange={setPrimaryFilter}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           userId={senderId}
-          // channelTypeFilter={channelTypeFilter}
-          // channelIdFilter={channelIdFilter}
-          // onChannelTypeFilterChange={(type) => {
-          //   setChannelTypeFilter(type)
-          //   setChannelIdFilter(null)
-          // }}
-          // channels={channelsQuery.data ?? []}
-          // onChannelIdFilterChange={setChannelIdFilter}
         />
       </div>
 
@@ -128,7 +117,7 @@ export function InboxPage({ workspaceId }: Props) {
           conversation={selectedConversation}
           senderId={senderId}
           onToggleContactPanel={handleToggleContactPanel}
-          onBack={handleBackToList}
+          onBack={onBackToList}
         />
       </div>
 
