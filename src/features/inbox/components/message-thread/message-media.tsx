@@ -1,7 +1,7 @@
+import { Image } from '@/components/image'
 import type { MessageType } from '@/entities/message'
 import { formatFileSize, getMediaPlaceholder } from '@/entities/message'
 import { m } from '@/paraglide/messages'
-import { AppImage } from '@/components/app-image'
 import { Button, Skeleton, Surface } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { FileTextIcon, SparklesIcon } from 'lucide-react'
@@ -116,7 +116,7 @@ export function MessageMediaAttachment({
 
   if (messageType === 'image') {
     return (
-      <AppImage
+      <Image
         src={url}
         alt={displayName}
         className="mt-1 max-w-xs w-full rounded-xl"
@@ -150,13 +150,8 @@ export function MessageMediaAttachment({
 
   if (messageType === 'audio' || messageType === 'voice') {
     return (
-      <div className="mt-1 w-full max-w-md">
-        <audio
-          controls
-          preload="metadata"
-          className="w-full min-w-[220px]"
-          src={url}
-        >
+      <div className="mt-1 flex flex-1 md:min-w-[400px]">
+        <audio controls preload="metadata" className="flex-1" src={url}>
           {m.inbox_media_audio_unsupported()}
         </audio>
       </div>

@@ -1,11 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-} from 'react'
-import { AppImagePreview } from './app-image-preview'
+import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { ImagePreview } from './image-preview'
 
 export type RegisteredImage = {
   src: string
@@ -13,7 +7,7 @@ export type RegisteredImage = {
   downloadable?: boolean
 }
 
-export type AppImageGroupContextValue = {
+export type ImageGroupContextValue = {
   register: (id: string, image: RegisteredImage) => void
   unregister: (id: string) => void
   openPreview: (
@@ -22,11 +16,12 @@ export type AppImageGroupContextValue = {
   ) => void
 }
 
-export const AppImageGroupContext =
-  createContext<AppImageGroupContextValue | null>(null)
+export const ImageGroupContext = createContext<ImageGroupContextValue | null>(
+  null,
+)
 
-export function useAppImageGroup() {
-  return useContext(AppImageGroupContext)
+export function useImageGroup() {
+  return useContext(ImageGroupContext)
 }
 
 type Props = {
@@ -34,7 +29,7 @@ type Props = {
   downloadable?: boolean
 }
 
-export function AppImagePreviewGroup({ children, downloadable = true }: Props) {
+export function ImagePreviewGroup({ children, downloadable = true }: Props) {
   const [images, setImages] = useState<Map<string, RegisteredImage>>(new Map())
   const [previewState, setPreviewState] = useState({
     isOpen: false,
@@ -81,9 +76,9 @@ export function AppImagePreviewGroup({ children, downloadable = true }: Props) {
       : downloadable
 
   return (
-    <AppImageGroupContext.Provider value={{ register, unregister, openPreview }}>
+    <ImageGroupContext.Provider value={{ register, unregister, openPreview }}>
       {children}
-      <AppImagePreview
+      <ImagePreview
         images={imageArray}
         activeIndex={previewState.activeIndex}
         isOpen={previewState.isOpen}
@@ -91,6 +86,6 @@ export function AppImagePreviewGroup({ children, downloadable = true }: Props) {
         onNavigate={handleNavigate}
         downloadable={effectiveDownloadable}
       />
-    </AppImageGroupContext.Provider>
+    </ImageGroupContext.Provider>
   )
 }

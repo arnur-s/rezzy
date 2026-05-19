@@ -1,5 +1,5 @@
-import { ChannelTypeIcon } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
+import { ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Button, Chip } from '@heroui/react'
 
@@ -10,7 +10,7 @@ type Props = {
 
 const CONNECT_LABEL_KEYS = {
   instagram: 'channels_instagram_connect_cta',
-  whatsapp: 'channels_whatsapp_connect_cta',
+  whatsapp: 'channels_whatsconnect_cta',
   email: 'channels_email_connect_cta',
 } as const
 

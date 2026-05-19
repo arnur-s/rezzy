@@ -1,8 +1,8 @@
+import type { Session } from '@supabase/supabase-js'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider, useAuth } from './auth-provider'
-import type { ReactNode } from 'react'
-import type { Session } from '@supabase/supabase-js'
 
 const supabaseMock = vi.hoisted(() => ({
   auth: {
@@ -23,7 +23,7 @@ const session = {
   refresh_token: 'refresh-token',
   token_type: 'bearer',
   user: {
-    app_metadata: {},
+    metadata: {},
     aud: 'authenticated',
     created_at: '2026-05-08T00:00:00.000Z',
     email: 'alex@example.com',

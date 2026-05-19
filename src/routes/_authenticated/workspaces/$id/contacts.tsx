@@ -8,7 +8,7 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/contacts')(
     staticData: {
       crumb: (ctx) => [
         ...workspaceCrumbs(ctx),
-        { label: m.app_breadcrumbs_contacts() },
+        { label: m.breadcrumbs_contacts() },
       ],
     },
   },

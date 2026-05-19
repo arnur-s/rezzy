@@ -1,6 +1,6 @@
 import type { ChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { Text, toast } from '@heroui/react'
+import { Typography, toast } from '@heroui/react'
 
 import { useSendMessage } from '../../hooks/use-messages'
 import { ChatInput } from './chat-input'
@@ -41,9 +41,9 @@ export function MessageComposer({
 
   return (
     <div className="border-t border-border/60 px-4 py-3 sm:px-6">
-      <Text className="mb-2 text-[11px] text-muted-foreground">
+      <Typography.Paragraph className="mb-2 text-muted-foreground">
         {m.inbox_composer_reply_via({ channel: channelLabel })}
-      </Text>
+      </Typography.Paragraph>
       <ChatInput
         onSend={handleSend}
         disabled={isDisabled || sendMessage.isPending}

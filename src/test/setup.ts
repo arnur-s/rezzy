@@ -5,6 +5,12 @@ vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost:54321')
 vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-publishable-key')
 
 vi.stubGlobal('PointerEvent', MouseEvent)
+
+if (typeof Element !== 'undefined') {
+  Element.prototype.setPointerCapture = () => {}
+  Element.prototype.releasePointerCapture = () => {}
+  Element.prototype.hasPointerCapture = () => false
+}
 vi.stubGlobal(
   'ResizeObserver',
   class ResizeObserver {

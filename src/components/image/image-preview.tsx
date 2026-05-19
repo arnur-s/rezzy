@@ -1,3 +1,4 @@
+import { m } from '@/paraglide/messages'
 import { Button, Spinner, Tooltip } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import {
@@ -14,8 +15,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { m } from '@/paraglide/messages'
-import type { RegisteredImage } from './app-image-group'
+import type { RegisteredImage } from './image-group'
 
 const ZOOM_MIN = 0.5
 const ZOOM_MAX = 4
@@ -33,7 +33,7 @@ type Props = {
 
 type Position = { x: number; y: number }
 
-export function AppImagePreview({
+export function ImagePreview({
   images,
   activeIndex,
   isOpen,
@@ -98,7 +98,10 @@ export function AppImagePreview({
   }, [isOpen])
 
   const clamp = (s: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, s))
-  const zoom = useCallback((delta: number) => setScale((s) => clamp(s + delta)), [])
+  const zoom = useCallback(
+    (delta: number) => setScale((s) => clamp(s + delta)),
+    [],
+  )
   const reset = useCallback(() => {
     setScale(1)
     setRotation(0)
@@ -189,7 +192,7 @@ export function AppImagePreview({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={m.app_image_preview_label()}
+      aria-label={m.image_preview_label()}
       className={cn(
         'fixed inset-0 z-50 transition-opacity duration-200',
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none',
@@ -217,7 +220,7 @@ export function AppImagePreview({
         {hasError && (
           <div className="absolute flex flex-col items-center gap-2 text-white/50 select-none">
             <ImageOff className="size-10" />
-            <span className="text-sm">{m.app_image_preview_load_error()}</span>
+            <span className="text-sm">{m.image_preview_load_error()}</span>
           </div>
         )}
 
@@ -249,13 +252,13 @@ export function AppImagePreview({
             variant="ghost"
             size="sm"
             onPress={onClose}
-            aria-label={m.app_image_preview_close()}
+            aria-label={m.image_preview_close()}
             className="text-white/70 hover:text-white hover:bg-white/10"
           >
             <X className="size-4" />
           </Button>
           <Tooltip.Content>
-            <p>{m.app_image_preview_close()}</p>
+            <p>{m.image_preview_close()}</p>
           </Tooltip.Content>
         </Tooltip>
       </div>
@@ -275,7 +278,7 @@ export function AppImagePreview({
               isIconOnly
               variant="ghost"
               size="sm"
-              aria-label={m.app_image_preview_prev()}
+              aria-label={m.image_preview_prev()}
               aria-disabled={activeIndex === 0}
               onPress={() => activeIndex > 0 && onNavigate(activeIndex - 1)}
               className="text-white/70 hover:text-white hover:bg-white/10 aria-disabled:opacity-30"
@@ -283,7 +286,7 @@ export function AppImagePreview({
               <ChevronLeft className="size-5" />
             </Button>
             <Tooltip.Content>
-              <p>{m.app_image_preview_prev()}</p>
+              <p>{m.image_preview_prev()}</p>
             </Tooltip.Content>
           </Tooltip>
         </div>
@@ -297,7 +300,7 @@ export function AppImagePreview({
               isIconOnly
               variant="ghost"
               size="sm"
-              aria-label={m.app_image_preview_next()}
+              aria-label={m.image_preview_next()}
               aria-disabled={activeIndex === images.length - 1}
               onPress={() =>
                 activeIndex < images.length - 1 && onNavigate(activeIndex + 1)
@@ -307,7 +310,7 @@ export function AppImagePreview({
               <ChevronRight className="size-5" />
             </Button>
             <Tooltip.Content>
-              <p>{m.app_image_preview_next()}</p>
+              <p>{m.image_preview_next()}</p>
             </Tooltip.Content>
           </Tooltip>
         </div>
@@ -317,12 +320,12 @@ export function AppImagePreview({
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1.5">
         <ToolbarButton
           icon={RotateCcw}
-          label={m.app_image_preview_rotate_left()}
+          label={m.image_preview_rotate_left()}
           onPress={() => setRotation((r) => r - 90)}
         />
         <ToolbarButton
           icon={RotateCw}
-          label={m.app_image_preview_rotate_right()}
+          label={m.image_preview_rotate_right()}
           onPress={() => setRotation((r) => r + 90)}
         />
 
@@ -330,7 +333,7 @@ export function AppImagePreview({
 
         <ToolbarButton
           icon={ZoomOut}
-          label={m.app_image_preview_zoom_out()}
+          label={m.image_preview_zoom_out()}
           onPress={() => zoom(-ZOOM_STEP)}
           isDisabled={scale <= ZOOM_MIN}
         />
@@ -339,7 +342,7 @@ export function AppImagePreview({
         </span>
         <ToolbarButton
           icon={ZoomIn}
-          label={m.app_image_preview_zoom_in()}
+          label={m.image_preview_zoom_in()}
           onPress={() => zoom(ZOOM_STEP)}
           isDisabled={scale >= ZOOM_MAX}
         />
@@ -348,14 +351,14 @@ export function AppImagePreview({
 
         <ToolbarButton
           icon={Maximize2}
-          label={m.app_image_preview_reset()}
+          label={m.image_preview_reset()}
           onPress={reset}
         />
 
         {downloadable && (
           <ToolbarButton
             icon={Download}
-            label={m.app_image_preview_download()}
+            label={m.image_preview_download()}
             onPress={handleDownload}
           />
         )}
@@ -372,7 +375,12 @@ type ToolbarButtonProps = {
   isDisabled?: boolean
 }
 
-function ToolbarButton({ icon: Icon, label, onPress, isDisabled }: ToolbarButtonProps) {
+function ToolbarButton({
+  icon: Icon,
+  label,
+  onPress,
+  isDisabled,
+}: ToolbarButtonProps) {
   return (
     <Tooltip>
       <Button
@@ -394,5 +402,7 @@ function ToolbarButton({ icon: Icon, label, onPress, isDisabled }: ToolbarButton
 }
 
 function Divider() {
-  return <span className="w-px h-4 bg-white/15 mx-1 shrink-0" aria-hidden="true" />
+  return (
+    <span className="w-px h-4 bg-white/15 mx-1 shrink-0" aria-hidden="true" />
+  )
 }

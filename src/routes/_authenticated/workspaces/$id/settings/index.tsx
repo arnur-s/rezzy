@@ -1,4 +1,4 @@
-import { AppButton } from '@/components/app-button'
+import { Button } from '@/components/button'
 import { WorkspaceIconPicker } from '@/entities/workspace'
 import {
   useUpdateWorkspace,
@@ -208,13 +208,13 @@ function RouteComponent() {
           />
 
           <div className="flex justify-end">
-            <AppButton
+            <Button
               isDisabled={!isDirty}
               isLoading={updateWorkspaceMutation.isPending}
               type="submit"
             >
               {m.common_save_changes()}
-            </AppButton>
+            </Button>
           </div>
         </form>
       </Surface>

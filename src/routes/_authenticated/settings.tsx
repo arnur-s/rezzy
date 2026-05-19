@@ -4,7 +4,7 @@ import { createFileRoute } from '@tanstack/react-router'
 export const Route = createFileRoute('/_authenticated/settings')({
   component: RouteComponent,
   staticData: {
-    crumb: () => ({ label: m.app_breadcrumbs_app_settings() }),
+    crumb: () => ({ label: m.breadcrumbs_settings() }),
   },
 })
 

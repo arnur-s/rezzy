@@ -41,6 +41,8 @@ export function PrimaryInboxFilters({
   return (
     <div className="px-2 py-2">
       <ListBox
+        className="p-0 flex flex-row flex-wrap gap-0.5 outline-none"
+        orientation="horizontal"
         aria-label={navLabel}
         selectionMode="single"
         selectedKeys={new Set<InboxPrimaryFilter>([primaryFilter])}
@@ -48,7 +50,6 @@ export function PrimaryInboxFilters({
           const next = selectionToFilter(keys)
           if (next) onPrimaryFilterChange(next)
         }}
-        className="flex flex-col gap-0.5 outline-none"
       >
         {FILTERS.map(({ key, label }) => {
           const isActive = primaryFilter === key
@@ -59,13 +60,13 @@ export function PrimaryInboxFilters({
               id={key}
               textValue={label()}
               className={cn(
-                'cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium outline-none transition-colors',
+                'w-fit cursor-pointer flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium outline-none transition-colors',
                 'text-foreground/60 data-[selected=true]:bg-foreground/10 data-[selected=true]:text-foreground',
                 'data-[selected=false]:hover:bg-foreground/5 data-[selected=false]:hover:text-foreground',
                 'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring',
               )}
             >
-              <span className="flex-1 truncate text-left">{label()}</span>
+              <span className="truncate text-left">{label()}</span>
               {count > 0 ? (
                 <NumericUnreadChip
                   count={count}

@@ -1,10 +1,10 @@
+import type { ChannelType } from '@/entities/channel'
+import { isChannelType } from '@/entities/channel'
 import {
   ConnectChannelComingSoon,
   ConnectChannelPicker,
   ConnectTelegramForm,
 } from '@/features/channels/components'
-import { isChannelType } from '@/entities/channel'
-import type { ChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Button, Surface } from '@heroui/react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -21,13 +21,13 @@ export const Route = createFileRoute(
   staticData: {
     crumb: (ctx) => [
       {
-        label: m.app_breadcrumbs_channels(),
+        label: m.breadcrumbs_channels(),
         link: {
           to: '/workspaces/$id/settings/channels',
           params: { id: ctx.params.id },
         },
       },
-      { label: m.app_breadcrumbs_connect_channel() },
+      { label: m.breadcrumbs_connect_channel() },
     ],
   },
   validateSearch: (search: Record<string, unknown>): ChannelsNewSearch => {

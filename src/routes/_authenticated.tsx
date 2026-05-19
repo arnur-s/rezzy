@@ -1,6 +1,6 @@
 import { useAuth } from '@/providers/auth-provider'
-import { AppHeader } from '@/widgets/app-header'
-import { AppSidebar } from '@/widgets/app-sidebar'
+import { Header } from '@/widgets/header'
+import { Sidebar } from '@/widgets/sidebar'
 import { Spinner } from '@heroui/react'
 import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -40,13 +40,13 @@ function RouteComponent() {
         </div>
       ) : session ? (
         <div className="flex h-screen overflow-hidden">
-          <AppSidebar
+          <Sidebar
             isCollapsed={isCollapsed}
             isMobileOpen={isMobileSidebarOpen}
             onMobileOpenChange={setIsMobileSidebarOpen}
           />
           <div className="ambient flex min-w-0 flex-1 flex-col overflow-hidden">
-            <AppHeader onToggleSidebar={handleToggleSidebar} />
+            <Header onToggleSidebar={handleToggleSidebar} />
             <main className="flex flex-1 overflow-auto z-1">
               <Outlet />
             </main>

@@ -1,22 +1,26 @@
+import { useVoiceInput } from '@/hooks/use-voice-input'
 import { m } from '@/paraglide/messages'
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
-import { Button, Popover, TextArea } from '@heroui/react'
+import { Button, Popover, TextArea, Tooltip, toast } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import {
   FileTextIcon,
+  MicIcon,
   PaperclipIcon,
   SendIcon,
   SmileIcon,
   XIcon,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const MAX_HEIGHT = 24 * 5 // 5 lines × 24px line-height
 
 function resize(el: HTMLTextAreaElement) {
   el.style.height = 'auto'
-  el.style.height = Math.min(el.scrollHeight, MAX_HEIGHT) + 'px'
+  const scrollH = el.scrollHeight
+  el.style.height = Math.min(scrollH, MAX_HEIGHT) + 'px'
+  el.style.overflowY = scrollH > MAX_HEIGHT ? 'auto' : 'hidden'
 }
 
 interface AttachmentChipProps {
@@ -85,12 +89,71 @@ export function ChatInput({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const appendTranscript = useCallback((transcript: string) => {
+    if (!transcript) return
+    setText((prev) => {
+      const next = prev.trimEnd()
+      const separator = next.length > 0 ? ' ' : ''
+      return next + separator + transcript
+    })
+  }, [])
+
+  const {
+    isRecording,
+    interimText,
+    startRecording,
+    stopRecording,
+    isSupported: isVoiceSupported,
+  } = useVoiceInput({
+    lang: 'ru-RU',
+    onResult: appendTranscript,
+    onError: (code) => {
+      if (code === 'aborted') return
+      if (code === 'no-speech') {
+        toast.info(m.inbox_composer_voice_no_speech())
+        return
+      }
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        toast.danger(m.inbox_composer_voice_permission_denied())
+        return
+      }
+      toast.danger(m.inbox_composer_voice_error())
+    },
+  })
 
   useEffect(() => {
     textareaRef.current?.focus()
   }, [])
 
+  useEffect(() => {
+    const el = textareaRef.current
+    if (el) resize(el)
+  }, [text])
+
+  const showInterimOverlay = isRecording && interimText.length > 0
+
   const canSend = (text.trim().length > 0 || attachment !== null) && !disabled
+  const showMicButton = isVoiceSupported && !canSend && !disabled
+  const showListeningHint =
+    isRecording && interimText.length === 0 && text.length === 0
+  const effectivePlaceholder = showListeningHint
+    ? m.inbox_composer_voice_listening()
+    : placeholder
+
+  function handleMicPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.button !== 0 || disabled) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    startRecording()
+  }
+
+  function handleMicPointerEnd(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+    stopRecording()
+    textareaRef.current?.focus()
+  }
 
   function handleSend() {
     if (!canSend) return
@@ -177,22 +240,34 @@ export function ChatInput({
             onChange={handleFileInputChange}
           />
 
-          <TextArea
-            ref={textareaRef}
-            variant="secondary"
-            className={cn(
-              'flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-1 shadow-none ring-0',
-              'text-sm leading-6 outline-none placeholder:text-foreground/40',
+          <div className="relative flex min-w-0 flex-1 items-center">
+            {showInterimOverlay && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm leading-6 wrap-break-word whitespace-pre-wrap"
+              >
+                <span>{text}</span>
+                <span className="text-foreground/40">{interimText}</span>
+              </div>
             )}
-            style={{ height: '36px', minHeight: '36px' }}
-            rows={1}
-            value={text}
-            placeholder={placeholder}
-            disabled={disabled}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-          />
+            <TextArea
+              ref={textareaRef}
+              variant="secondary"
+              className={cn(
+                'w-full resize-none overflow-y-hidden border-0 bg-transparent px-2 py-1 shadow-none ring-0',
+                'text-sm leading-6 outline-none placeholder:text-foreground/40',
+                showInterimOverlay && 'text-transparent caret-foreground',
+              )}
+              style={{ height: '36px', minHeight: '36px' }}
+              rows={1}
+              value={text}
+              placeholder={effectivePlaceholder}
+              disabled={disabled}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+            />
+          </div>
 
           <Popover isOpen={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
             <Popover.Trigger>
@@ -220,16 +295,50 @@ export function ChatInput({
             </Popover.Content>
           </Popover>
 
-          <Button
-            size="sm"
-            variant="primary"
-            isIconOnly
-            isDisabled={!canSend}
-            onPress={handleSend}
-            aria-label={m.inbox_composer_send_label()}
-          >
-            <SendIcon className="size-4" />
-          </Button>
+          {showMicButton ? (
+            <Tooltip>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                isIconOnly
+                isDisabled={disabled}
+                aria-label={m.inbox_composer_voice_label()}
+                aria-pressed={isRecording}
+                onPointerDown={handleMicPointerDown}
+                onPointerUp={handleMicPointerEnd}
+                onPointerCancel={handleMicPointerEnd}
+                onPointerLeave={handleMicPointerEnd}
+                onContextMenu={(e) => e.preventDefault()}
+                className={cn(
+                  'relative',
+                  isRecording && 'text-danger ring-2 ring-danger/40',
+                )}
+              >
+                {isRecording && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 rounded-full bg-danger/15 animate-ping motion-reduce:animate-none"
+                  />
+                )}
+                <MicIcon className="relative size-4" />
+              </Button>
+              <Tooltip.Content>
+                <p>{m.inbox_composer_voice_hold_to_record()}</p>
+              </Tooltip.Content>
+            </Tooltip>
+          ) : (
+            <Button
+              size="sm"
+              variant="primary"
+              isIconOnly
+              isDisabled={!canSend}
+              onPress={handleSend}
+              aria-label={m.inbox_composer_send_label()}
+            >
+              <SendIcon className="size-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

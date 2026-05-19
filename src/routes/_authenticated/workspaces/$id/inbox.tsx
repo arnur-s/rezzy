@@ -6,10 +6,7 @@ import { createFileRoute } from '@tanstack/react-router'
 export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox')({
   component: RouteComponent,
   staticData: {
-    crumb: (ctx) => [
-      ...workspaceCrumbs(ctx),
-      { label: m.app_breadcrumbs_inbox() },
-    ],
+    crumb: (ctx) => [...workspaceCrumbs(ctx), { label: m.breadcrumbs_inbox() }],
   },
 })
 

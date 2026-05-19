@@ -26,9 +26,9 @@ export type CrumbFn = (
 export function workspaceCrumbs(ctx: CrumbContext): Array<CrumbDescriptor> {
   const id = ctx.params.id
   return [
-    { label: m.app_breadcrumbs_workspaces(), link: { to: '/workspaces' } },
+    { label: m.breadcrumbs_workspaces(), link: { to: '/workspaces' } },
     {
-      label: ctx.workspaceName ?? m.app_breadcrumbs_workspace_fallback(),
+      label: ctx.workspaceName ?? m.breadcrumbs_workspace_fallback(),
       link: id ? { to: '/workspaces/$id', params: { id } } : undefined,
     },
   ]

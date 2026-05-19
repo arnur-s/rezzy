@@ -7,7 +7,7 @@ export const Route = createFileRoute(
 )({
   component: RouteComponent,
   staticData: {
-    crumb: () => ({ label: m.app_breadcrumbs_channels() }),
+    crumb: () => ({ label: m.breadcrumbs_channels() }),
   },
 })
 

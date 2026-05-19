@@ -1,3 +1,4 @@
+import { Surface } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import type { ReactNode } from 'react'
 
@@ -8,14 +9,11 @@ type Props = {
 
 export function HomePageSurface({ children, className }: Props) {
   return (
-    <div
-      className={cn(
-        'flex-1 border-border bg-card text-card-foreground shadow-surface rounded-xl border p-5 md:p-8',
-        'space-y-8',
-        className,
-      )}
+    <Surface
+      variant="transparent"
+      className={cn('container flex-1 md:p-8', 'space-y-8', className)}
     >
       {children}
-    </div>
+    </Surface>
   )
 }

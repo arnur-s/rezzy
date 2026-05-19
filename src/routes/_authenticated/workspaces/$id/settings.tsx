@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
       crumb: (ctx) => [
         ...workspaceCrumbs(ctx),
         {
-          label: m.app_breadcrumbs_workspace_settings(),
+          label: m.breadcrumbs_workspace_settings(),
           link: {
             to: '/workspaces/$id/settings',
             params: { id: ctx.params.id },

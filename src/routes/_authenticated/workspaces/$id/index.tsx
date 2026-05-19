@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/')({
   staticData: {
     crumb: (ctx) => [
       ...workspaceCrumbs(ctx),
-      { label: m.app_breadcrumbs_dashboard() },
+      { label: m.breadcrumbs_dashboard() },
     ],
   },
 })

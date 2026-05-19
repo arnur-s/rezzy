@@ -44,17 +44,17 @@ const navItemActive = 'bg-sidebar-accent text-sidebar-accent-foreground'
 const navLabel = 'min-w-0 truncate transition-opacity duration-150 ease-out'
 const navLabelHidden = 'pointer-events-none opacity-0'
 
-export interface AppSidebarProps {
+export interface SidebarProps {
   isCollapsed: boolean
   isMobileOpen: boolean
   onMobileOpenChange: (open: boolean) => void
 }
 
-export function AppSidebar({
+export function Sidebar({
   isCollapsed,
   isMobileOpen,
   onMobileOpenChange,
-}: AppSidebarProps) {
+}: SidebarProps) {
   const { user } = useAuth()
   if (!user) return null
 
@@ -76,7 +76,7 @@ export function AppSidebar({
         <Drawer.Content placement="left">
           <Drawer.Dialog
             className="bg-sidebar h-full w-[260px] rounded-none p-0"
-            aria-label={m.app_sidebar_workspace_nav_aria_label()}
+            aria-label={m.sidebar_workspace_nav_aria_label()}
           >
             <Drawer.Body>
               <SidebarBody
@@ -129,7 +129,7 @@ function SidebarBody({
       await navigate({ to: '/sign-in' })
     } catch (error) {
       setIsSigningOut(false)
-      toast.danger(m.app_sidebar_logout_error(), {
+      toast.danger(m.sidebar_logout_error(), {
         description: getErrorMessage(error),
       })
     }
@@ -142,13 +142,13 @@ function SidebarBody({
         <div className="flex h-[64px] shrink-0 items-center px-4 border-b border-border/60">
           <Link
             to="/"
-            aria-label={m.app_sidebar_home_label()}
+            aria-label={m.sidebar_home_label()}
             className="flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             onClick={onNavigate}
           >
             <span className="bg-accent flex size-8 shrink-0 items-center justify-center rounded-lg">
               <span className="text-lg font-bold text-white">
-                {m.app_sidebar_brand_label().charAt(0)}
+                {m.sidebar_brand_label().charAt(0)}
               </span>
             </span>
             <span
@@ -158,7 +158,7 @@ function SidebarBody({
               )}
               aria-hidden={isCollapsed || undefined}
             >
-              {m.app_sidebar_brand_label()}
+              {m.sidebar_brand_label()}
             </span>
           </Link>
         </div>
@@ -166,7 +166,7 @@ function SidebarBody({
         {/* Workspace switcher (workspace-scoped routes only) */}
         {!isHomeRoute && (
           <>
-            <div className="h-[64px] flex items-center px-3">
+            <div className="h-[64px] flex items-center px-3 border-b border-border/60">
               <WorkspaceSwitcher
                 isCollapsed={isCollapsed}
                 currentWorkspace={currentWorkspace}
@@ -208,14 +208,14 @@ function SidebarBody({
         <div className="space-y-0.5 px-3 py-3">
           <CollapsibleNavTooltip
             isCollapsed={isCollapsed}
-            label={m.app_sidebar_logout()}
+            label={m.sidebar_logout()}
           >
             <Button
               type="button"
               variant="ghost"
               isDisabled={isSigningOut}
               onPress={() => void handleSignOut()}
-              aria-label={m.app_sidebar_logout()}
+              aria-label={m.sidebar_logout()}
               aria-busy={isSigningOut || undefined}
               className={cn(
                 navItemBase,
@@ -235,7 +235,7 @@ function SidebarBody({
                 className={cn(navLabel, isCollapsed && navLabelHidden)}
                 aria-hidden={isCollapsed || undefined}
               >
-                {m.app_sidebar_logout()}
+                {m.sidebar_logout()}
               </span>
             </Button>
           </CollapsibleNavTooltip>
@@ -271,17 +271,17 @@ function HomeNav({
 
   return (
     <nav
-      aria-label={m.app_sidebar_workspace_nav_aria_label()}
+      aria-label={m.sidebar_workspace_nav_aria_label()}
       className="space-y-0.5"
     >
       {/* Home */}
       <CollapsibleNavTooltip
         isCollapsed={isCollapsed}
-        label={m.app_sidebar_home_nav_label()}
+        label={m.sidebar_home_nav_label()}
       >
         <Link
           to="/"
-          aria-label={m.app_sidebar_home_nav_label()}
+          aria-label={m.sidebar_home_nav_label()}
           aria-current="page"
           className={cn(navItemBase, navItemActive)}
           onClick={onNavigate}
@@ -291,7 +291,7 @@ function HomeNav({
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
           >
-            {m.app_sidebar_home_nav_label()}
+            {m.sidebar_home_nav_label()}
           </span>
         </Link>
       </CollapsibleNavTooltip>
@@ -301,7 +301,7 @@ function HomeNav({
         <>
           {!isCollapsed && (
             <p className="text-foreground/45 px-3 pb-1 pt-3 text-xs font-medium">
-              {m.app_sidebar_workspaces_section_label()}
+              {m.sidebar_workspaces_section_label()}
             </p>
           )}
           {isCollapsed && (
@@ -348,7 +348,7 @@ function HomeNav({
                       count={unread}
                       tone="primary"
                       capAt99
-                      aria-label={m.app_sidebar_workspace_unread_dot_aria({
+                      aria-label={m.sidebar_workspace_unread_dot_aria({
                         count: unread,
                       })}
                     />
@@ -364,11 +364,11 @@ function HomeNav({
       <div className="pt-2">
         <CollapsibleNavTooltip
           isCollapsed={isCollapsed}
-          label={m.app_sidebar_settings_label()}
+          label={m.sidebar_settings_label()}
         >
           <Link
             to="/settings"
-            aria-label={m.app_sidebar_settings_label()}
+            aria-label={m.sidebar_settings_label()}
             className={cn(navItemBase, navItemInactive)}
             onClick={onNavigate}
           >
@@ -377,7 +377,7 @@ function HomeNav({
               className={cn(navLabel, isCollapsed && navLabelHidden)}
               aria-hidden={isCollapsed || undefined}
             >
-              {m.app_sidebar_settings_label()}
+              {m.sidebar_settings_label()}
             </span>
           </Link>
         </CollapsibleNavTooltip>
@@ -408,18 +408,18 @@ function WorkspaceNav({
 
   return (
     <nav
-      aria-label={m.app_sidebar_workspace_nav_aria_label()}
+      aria-label={m.sidebar_workspace_nav_aria_label()}
       className="space-y-0.5"
     >
       {/* Dashboard */}
       <CollapsibleNavTooltip
         isCollapsed={isCollapsed}
-        label={m.app_sidebar_dashboard_label()}
+        label={m.sidebar_dashboard_label()}
       >
         <Link
           to="/workspaces/$id"
           params={{ id: workspaceId }}
-          aria-label={m.app_sidebar_dashboard_label()}
+          aria-label={m.sidebar_dashboard_label()}
           aria-current={isDashboardActive ? 'page' : undefined}
           className={cn(
             navItemBase,
@@ -432,19 +432,19 @@ function WorkspaceNav({
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
           >
-            {m.app_sidebar_dashboard_label()}
+            {m.sidebar_dashboard_label()}
           </span>
         </Link>
       </CollapsibleNavTooltip>
 
       <CollapsibleNavTooltip
         isCollapsed={isCollapsed}
-        label={m.app_sidebar_inbox_label()}
+        label={m.sidebar_inbox_label()}
       >
         <Link
           to="/workspaces/$id/inbox"
           params={{ id: workspaceId }}
-          aria-label={m.app_sidebar_inbox_label()}
+          aria-label={m.sidebar_inbox_label()}
           aria-current={isInboxActive ? 'page' : undefined}
           className={cn(
             navItemBase,
@@ -457,7 +457,7 @@ function WorkspaceNav({
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
           >
-            {m.app_sidebar_inbox_label()}
+            {m.sidebar_inbox_label()}
           </span>
         </Link>
       </CollapsibleNavTooltip>
@@ -535,7 +535,7 @@ function WorkspaceSwitcher({
   }
 
   const tooltipLabel =
-    currentWorkspace?.name ?? m.app_sidebar_select_workspace_label()
+    currentWorkspace?.name ?? m.sidebar_select_workspace_label()
 
   function handleSelectionChange(key: unknown) {
     if (key === 'create') {
@@ -549,12 +549,12 @@ function WorkspaceSwitcher({
   return (
     <CollapsibleNavTooltip isCollapsed={isCollapsed} label={tooltipLabel}>
       <Select
-        aria-label={m.app_sidebar_select_workspace_label()}
+        aria-label={m.sidebar_select_workspace_label()}
         value={currentWorkspace?.id}
         onChange={handleSelectionChange}
         variant="secondary"
         className={cn('w-full', isCollapsed && 'mx-auto w-auto')}
-        placeholder={m.app_sidebar_select_workspace_label()}
+        placeholder={m.sidebar_select_workspace_label()}
       >
         <Select.Trigger
           className={cn(

@@ -1,17 +1,17 @@
 import { m } from '@/paraglide/messages'
-import { Link as HeroLink, Text } from '@heroui/react'
+import { Link as HeroLink, Typography } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { Link as RouterLink } from '@tanstack/react-router'
 
 export function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center gap-2">
-      <Text className="text-center text-4xl font-bold">
+    <div className="flex flex-col items-center justify-center gap-2 w-full h-full">
+      <Typography className="text-center text-4xl font-bold">
         {m.not_found_title()}
-      </Text>
-      <Text className="text-center text-lg text-muted-foreground">
+      </Typography>
+      <Typography className="text-center text-lg text-muted-foreground">
         {m.not_found_description()}
-      </Text>
+      </Typography>
       <HeroLink
         href="/"
         render={({ className, children }) => (

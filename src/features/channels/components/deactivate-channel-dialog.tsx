@@ -1,7 +1,7 @@
-import { AppButton } from '@/components/app-button'
+import { Button } from '@/components/button'
 import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { AlertDialog, Button, toast } from '@heroui/react'
+import { AlertDialog, toast } from '@heroui/react'
 import { TriangleAlertIcon } from 'lucide-react'
 import { useDeactivateChannel } from '../hooks/use-channels'
 
@@ -62,13 +62,13 @@ export function DeactivateChannelDialog({
             >
               {m.common_cancel()}
             </Button>
-            <AppButton
+            <Button
               variant="danger"
               isLoading={deactivateChannelMutation.isPending}
               onPress={handleConfirm}
             >
               {m.channels_disconnect_action()}
-            </AppButton>
+            </Button>
           </AlertDialog.Footer>
         </AlertDialog.Dialog>
       </AlertDialog.Container>

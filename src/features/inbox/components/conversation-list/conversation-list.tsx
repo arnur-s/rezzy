@@ -1,7 +1,7 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import type { Selection } from '@heroui/react'
-import { Alert, ListBox, ScrollShadow, Text } from '@heroui/react'
+import { Alert, ListBox, ScrollShadow, Typography } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { useMemo } from 'react'
 import { ConversationListItem } from './conversation-list-item'
@@ -190,18 +190,20 @@ function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   if (hasQuery) {
     return (
       <div className="px-6 py-12 text-center">
-        <Text className="text-sm text-muted-foreground">
+        <Typography.Paragraph className="text-sm text-muted-foreground">
           {m.inbox_list_search_empty()}
-        </Text>
+        </Typography.Paragraph>
       </div>
     )
   }
   return (
     <div className="px-6 py-12 text-center">
-      <Text className="text-sm font-medium">{m.inbox_list_empty_title()}</Text>
-      <Text className="mt-1 text-xs text-muted-foreground">
+      <Typography.Paragraph className="text-sm font-medium">
+        {m.inbox_list_empty_title()}
+      </Typography.Paragraph>
+      <Typography.Paragraph className="mt-1 text-xs text-muted-foreground">
         {m.inbox_list_empty_description()}
-      </Text>
+      </Typography.Paragraph>
     </div>
   )
 }

@@ -1,12 +1,12 @@
+import { m } from '@/paraglide/messages'
 import { Button, Skeleton } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { ImageOff, ZoomIn } from 'lucide-react'
 import { useContext, useEffect, useId, useRef, useState } from 'react'
-import { m } from '@/paraglide/messages'
-import { AppImageGroupContext } from './app-image-group'
-import { AppImagePreview } from './app-image-preview'
+import { ImageGroupContext } from './image-group'
+import { ImagePreview } from './image-preview'
 
-export type AppImageProps = {
+export type ImageProps = {
   src: string
   alt: string
   width?: number | string
@@ -18,7 +18,7 @@ export type AppImageProps = {
   downloadable?: boolean
 }
 
-export function AppImage({
+export function Image({
   src,
   alt,
   width,
@@ -28,9 +28,9 @@ export function AppImage({
   preview = true,
   fallbackSrc,
   downloadable = true,
-}: AppImageProps) {
+}: ImageProps) {
   const id = useId()
-  const groupCtx = useContext(AppImageGroupContext)
+  const groupCtx = useContext(ImageGroupContext)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
   const [isLoading, setIsLoading] = useState(true)
@@ -120,7 +120,7 @@ export function AppImage({
             ref={triggerRef}
             type="button"
             variant="ghost"
-            aria-label={m.app_image_open_preview()}
+            aria-label={m.image_open_preview()}
             onPress={handleOpen}
             className={cn(
               'absolute inset-0 size-auto min-h-0 rounded-none',
@@ -142,7 +142,7 @@ export function AppImage({
 
       {/* Standalone preview (when not inside a PreviewGroup) */}
       {!groupCtx && (
-        <AppImagePreview
+        <ImagePreview
           images={[{ src, alt, downloadable }]}
           activeIndex={0}
           isOpen={standaloneOpen}

@@ -13,7 +13,7 @@ export function ConversationSearch({ value, onChange }: Props) {
       value={value}
       onChange={onChange}
       variant="secondary"
-      className="px-3 w-full"
+      className="px-2 w-full"
     >
       <SearchField.Group className="rounded-lg!">
         <SearchField.SearchIcon />

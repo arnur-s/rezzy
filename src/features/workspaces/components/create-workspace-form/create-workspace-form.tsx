@@ -1,8 +1,8 @@
-import { AppButton } from '@/components/app-button'
+import { Button } from '@/components/button'
+import { WorkspaceIconPicker } from '@/entities/workspace'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import {
-  Button,
   FieldError,
   Input,
   Label,
@@ -19,7 +19,6 @@ import {
   createWorkspaceDefaultValues,
   createWorkspaceFormSchema,
 } from '../../schemas/workspace-form-schema'
-import { WorkspaceIconPicker } from '@/entities/workspace'
 
 type Props = {
   onSuccess: () => void
@@ -138,13 +137,13 @@ export function CreateWorkspaceForm({ onSuccess, onCancel }: Props) {
           {m.common_cancel()}
         </Button>
 
-        <AppButton
+        <Button
           isDisabled={!userId}
           isLoading={createWorkspaceMutation.isPending}
           type="submit"
         >
           {m.common_create()}
-        </AppButton>
+        </Button>
       </div>
     </form>
   )

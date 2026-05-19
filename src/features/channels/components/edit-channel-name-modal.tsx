@@ -1,8 +1,7 @@
-import { AppButton } from '@/components/app-button'
+import { Button } from '@/components/button'
 import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import {
-  Button,
   FieldError,
   Input,
   Label,
@@ -13,12 +12,9 @@ import {
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import {
-  
-  editChannelNameSchema
-} from '../schemas/channel-form-schemas'
-import type {EditChannelNameFormValues} from '../schemas/channel-form-schemas';
 import { useUpdateChannelName } from '../hooks/use-channels'
+import type { EditChannelNameFormValues } from '../schemas/channel-form-schemas'
+import { editChannelNameSchema } from '../schemas/channel-form-schemas'
 
 type Props = {
   channel: Channel
@@ -59,9 +55,7 @@ export function EditChannelNameModal({
         onError: (error) => {
           toast.danger(m.channels_update_error_title(), {
             description:
-              error instanceof Error
-                ? error.message
-                : m.common_unknown_error(),
+              error instanceof Error ? error.message : m.common_unknown_error(),
           })
         },
         onSuccess: () => {
@@ -101,19 +95,16 @@ export function EditChannelNameModal({
               </TextField>
 
               <div className="flex items-center justify-end gap-2 mt-4">
-                <Button
-                  variant="secondary"
-                  onClick={() => onOpenChange(false)}
-                >
+                <Button variant="secondary" onClick={() => onOpenChange(false)}>
                   {m.common_cancel()}
                 </Button>
 
-                <AppButton
+                <Button
                   isLoading={updateChannelMutation.isPending}
                   type="submit"
                 >
                   {m.common_save()}
-                </AppButton>
+                </Button>
               </div>
             </form>
           </Modal.Body>

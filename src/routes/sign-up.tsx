@@ -1,4 +1,4 @@
-import { AppButton } from '@/components/app-button'
+import { Button } from '@/components/button'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import {
@@ -13,7 +13,11 @@ import {
 import { cn } from '@heroui/styles'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useMutation } from '@tanstack/react-query'
-import { Link as RouterLink, createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  Link as RouterLink,
+  createFileRoute,
+  useNavigate,
+} from '@tanstack/react-router'
 import {
   EyeIcon,
   EyeOffIcon,
@@ -210,9 +214,9 @@ function RouteComponent() {
           </Card.Content>
 
           <Card.Footer className="mt-4 flex-col gap-4">
-            <AppButton fullWidth isLoading={isFormDisabled} type="submit">
+            <Button fullWidth isLoading={isFormDisabled} type="submit">
               {m.auth_sign_up_create_account_label()}
-            </AppButton>
+            </Button>
 
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">

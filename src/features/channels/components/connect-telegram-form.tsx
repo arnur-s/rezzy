@@ -1,24 +1,17 @@
-import { AppButton } from '@/components/app-button'
+import { Button } from '@/components/button'
 import { ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import {
-  Button,
-  FieldError,
-  Input,
-  Label,
-  TextField,
-  toast,
-} from '@heroui/react'
+import { FieldError, Input, Label, TextField, toast } from '@heroui/react'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
-import { useCreateTelegramChannel } from '../hooks/use-channels'
 import { ChannelConnectError } from '../api/channels'
+import { useCreateTelegramChannel } from '../hooks/use-channels'
+import type { TelegramChannelFormValues } from '../schemas/channel-form-schemas'
 import {
   telegramChannelDefaultValues,
   telegramChannelSchema,
 } from '../schemas/channel-form-schemas'
-import type { TelegramChannelFormValues } from '../schemas/channel-form-schemas'
 
 type Props = {
   workspaceId: string
@@ -87,10 +80,7 @@ export function ConnectTelegramForm({ workspaceId, onCancel }: Props) {
         </div>
       </div>
 
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <TextField
           fullWidth
           isDisabled={createChannelMutation.isPending}
@@ -130,12 +120,9 @@ export function ConnectTelegramForm({ workspaceId, onCancel }: Props) {
             {m.common_back()}
           </Button>
 
-          <AppButton
-            isLoading={createChannelMutation.isPending}
-            type="submit"
-          >
+          <Button isLoading={createChannelMutation.isPending} type="submit">
             {m.channels_telegram_submit()}
-          </AppButton>
+          </Button>
         </div>
       </form>
     </div>

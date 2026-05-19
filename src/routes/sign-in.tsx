@@ -1,4 +1,4 @@
-import { AppButton } from '@/components/app-button'
+import { Button } from '@/components/button'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import { supabase } from '@/utils/supabase'
@@ -14,7 +14,11 @@ import {
 import { cn } from '@heroui/styles'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useMutation } from '@tanstack/react-query'
-import { Link as RouterLink, createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  Link as RouterLink,
+  createFileRoute,
+  useNavigate,
+} from '@tanstack/react-router'
 import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -137,10 +141,7 @@ function RouteComponent() {
               <HeroLink
                 href="/password-reset"
                 render={({ className, children }) => (
-                  <RouterLink
-                    to="/password-reset"
-                    className={cn(className)}
-                  >
+                  <RouterLink to="/password-reset" className={cn(className)}>
                     {children}
                   </RouterLink>
                 )}
@@ -151,13 +152,13 @@ function RouteComponent() {
           </Card.Content>
 
           <Card.Footer className="mt-4 flex-col gap-4">
-            <AppButton
+            <Button
               type="submit"
               fullWidth
               isLoading={signInMutation.isPending}
             >
               {m.common_sign_in()}
-            </AppButton>
+            </Button>
 
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
