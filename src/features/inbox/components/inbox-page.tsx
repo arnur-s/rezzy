@@ -2,7 +2,7 @@ import { useRecordWorkspaceVisit } from '@/features/dashboard/hooks/use-record-r
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useConversations } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
 import { ContactPanel } from './contact-panel/contact-panel'
@@ -38,6 +38,10 @@ export function InboxPage({
   const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [isContactPanelOpen, setIsContactPanelOpen] = useState(false)
+
+  useEffect(() => {
+    setIsContactPanelOpen(false)
+  }, [selectedConversationId])
 
   const selectedConversation = useMemo(
     () =>
