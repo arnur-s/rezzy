@@ -1,3 +1,4 @@
+import { List } from '@/components/list'
 import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import type { Channel, ChannelType } from '@/entities/channel'
 import { CHANNEL_TYPES, PlatformIcon, isChannelType } from '@/entities/channel'
@@ -90,7 +91,7 @@ export function ChannelFilters({
 
       <Disclosure.Content>
         <Disclosure.Body className="mb-2 px-2 pt-0 pb-0">
-          <ul className="flex flex-col gap-0.5">
+          <List size="sm">
             {activeTypes.map((type) => {
               const typeChannels = channelsByType.get(type) ?? []
               const isTypeActive =
@@ -99,17 +100,11 @@ export function ChannelFilters({
               const count = typeUnreadCounts[type] ?? 0
 
               return (
-                <li key={type}>
+                <List.Item key={type} isActive={isTypeActive}>
                   <button
                     type="button"
                     onClick={() => handleTypeClick(type)}
-                    className={cn(
-                      'cursor-pointer flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors',
-                      'focus-visible:ring-2 focus-visible:ring-ring',
-                      isTypeActive
-                        ? 'bg-foreground/10 text-foreground'
-                        : 'text-foreground/60 hover:bg-foreground/5 hover:text-foreground',
-                    )}
+                    className="cursor-pointer font-medium px-3"
                   >
                     <PlatformIcon type={type} size="sm" />
                     <span className="flex-1 truncate text-left">
@@ -123,7 +118,6 @@ export function ChannelFilters({
                       />
                     )}
                   </button>
-
                   {isTypeExpanded && typeChannels.length >= 2 && (
                     <ul className="mt-0.5 flex flex-col gap-0.5">
                       {typeChannels.map((ch) => {
@@ -160,10 +154,10 @@ export function ChannelFilters({
                       })}
                     </ul>
                   )}
-                </li>
+                </List.Item>
               )
             })}
-          </ul>
+          </List>
         </Disclosure.Body>
       </Disclosure.Content>
     </Disclosure>

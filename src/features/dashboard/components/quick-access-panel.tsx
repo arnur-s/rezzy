@@ -1,3 +1,4 @@
+import { List } from '@/components/list'
 import {
   useRecentContacts,
   useRecentWorkspaces,
@@ -11,7 +12,7 @@ export function QuickAccessPanel() {
   const { items: contacts } = useRecentContacts()
 
   return (
-    <Card variant="secondary" className="h-full">
+    <Card className="h-full">
       <Card.Header className="space-y-0 pb-2">
         <Card.Title className="text-sm font-semibold">
           {m.home_quick_access_title()}
@@ -36,22 +37,18 @@ export function QuickAccessPanel() {
             {workspaces.length === 0 ? (
               <EmptyState message={m.home_quick_access_empty_workspaces()} />
             ) : (
-              <ul className="space-y-0.5">
+              <List size="sm" className="-mx-1">
                 {workspaces.map((entry) => (
-                  <li key={entry.id}>
-                    <Link
-                      to="/workspaces/$id"
-                      params={{ id: entry.id }}
-                      className="hover:bg-foreground/4 focus-visible:ring-sidebar-ring -mx-1 flex items-center gap-2.5 rounded-md px-2 py-1.5 outline-none transition-colors focus-visible:ring-2 motion-reduce:transition-none"
-                    >
+                  <List.Item key={entry.id}>
+                    <Link to="/workspaces/$id" params={{ id: entry.id }}>
                       <Mark name={entry.name} />
-                      <span className="text-foreground min-w-0 flex-1 truncate text-sm">
+                      <span className="text-foreground min-w-0 flex-1 truncate">
                         {entry.name}
                       </span>
                     </Link>
-                  </li>
+                  </List.Item>
                 ))}
-              </ul>
+              </List>
             )}
           </Tabs.Panel>
 
@@ -59,22 +56,21 @@ export function QuickAccessPanel() {
             {contacts.length === 0 ? (
               <EmptyState message={m.home_quick_access_empty_contacts()} />
             ) : (
-              <ul className="space-y-0.5">
+              <List size="sm" className="-mx-1">
                 {contacts.map((entry) => (
-                  <li key={entry.id}>
+                  <List.Item key={entry.id}>
                     <Link
                       to="/workspaces/$id/contacts"
                       params={{ id: entry.workspaceId ?? '' }}
-                      className="hover:bg-foreground/4 focus-visible:ring-sidebar-ring -mx-1 flex items-center gap-2.5 rounded-md px-2 py-1.5 outline-none transition-colors focus-visible:ring-2 motion-reduce:transition-none"
                     >
                       <Mark name={entry.name} />
-                      <span className="text-foreground min-w-0 flex-1 truncate text-sm">
+                      <span className="text-foreground min-w-0 flex-1 truncate">
                         {entry.name}
                       </span>
                     </Link>
-                  </li>
+                  </List.Item>
                 ))}
-              </ul>
+              </List>
             )}
           </Tabs.Panel>
         </Tabs>
@@ -96,7 +92,5 @@ function Mark({ name }: { name: string }) {
 }
 
 function EmptyState({ message }: { message: string }) {
-  return (
-    <p className="text-foreground/50 px-1 py-2 text-xs">{message}</p>
-  )
+  return <p className="text-foreground/50 px-1 py-2 text-xs">{message}</p>
 }

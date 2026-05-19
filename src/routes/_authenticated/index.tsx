@@ -49,7 +49,7 @@ function RouteComponent() {
   const isError = workspacesQuery.isError || dashboardStatsQuery.isError
 
   return (
-    <div className="flex flex-1 w-full px-3 pb-3 md:px-4 md:pb-4">
+    <div className="flex justify-center flex-1 w-full px-3 pb-3 md:px-4 md:pb-4">
       {isError ? (
         <p className="flex-1 text-danger bg-danger/5 rounded-lg px-4 py-3 text-sm">
           {m.dashboard_load_error_title()}

@@ -1,8 +1,9 @@
 import { PlatformIcon } from '@/entities/channel'
+import type { Workspace } from '@/entities/workspace'
 import type { AttentionItem } from '@/features/dashboard/api/attention-queue'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
-import type { Workspace } from '@/entities/workspace'
 import { m } from '@/paraglide/messages'
+import { List } from '@/components/list'
 import { cn } from '@heroui/styles'
 import { Link } from '@tanstack/react-router'
 import { CheckIcon } from 'lucide-react'
@@ -35,7 +36,7 @@ export function AttentionList({ items, workspaces, isLoading }: Props) {
       ) : items.length === 0 ? (
         <EmptyState />
       ) : (
-        <ul className="space-y-0.5">
+        <List size="md">
           {items.map((item) => (
             <AttentionRow
               key={item.conversationId}
@@ -43,7 +44,7 @@ export function AttentionList({ items, workspaces, isLoading }: Props) {
               workspaceName={workspaceNameById.get(item.workspaceId)}
             />
           ))}
-        </ul>
+        </List>
       )}
     </section>
   )
@@ -63,7 +64,7 @@ function AttentionRow({
       : formatRelativeTime(item.timestamp)
 
   return (
-    <li>
+    <List.Item className="-mx-2">
       <Link
         to="/workspaces/$id/inbox"
         params={{ id: item.workspaceId }}
@@ -71,7 +72,6 @@ function AttentionRow({
           contact: item.contactName,
           reason: reasonLabel,
         })}
-        className="hover:bg-foreground/3 focus-visible:ring-sidebar-ring -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 outline-none transition-colors focus-visible:ring-2 motion-reduce:transition-none"
       >
         {item.channelType ? (
           <PlatformIcon type={item.channelType} size="md" withPlate />
@@ -98,7 +98,7 @@ function AttentionRow({
 
         <ReasonChip reason={item.reason} label={reasonLabel} />
       </Link>
-    </li>
+    </List.Item>
   )
 }
 
@@ -152,10 +152,7 @@ function Skeleton() {
   return (
     <ul className="space-y-2" aria-hidden="true">
       {Array.from({ length: 3 }).map((_, i) => (
-        <li
-          key={i}
-          className="bg-foreground/5 h-12 animate-pulse rounded-lg"
-        />
+        <li key={i} className="bg-foreground/5 h-12 animate-pulse rounded-lg" />
       ))}
     </ul>
   )

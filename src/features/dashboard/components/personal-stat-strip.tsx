@@ -2,13 +2,13 @@ import type { HomeStats } from '@/features/dashboard/api/home-stats'
 import { m } from '@/paraglide/messages'
 import { Card } from '@heroui/react'
 import { cn } from '@heroui/styles'
+import type { LucideIcon } from 'lucide-react'
 import {
   AlarmClockIcon,
   ClockAlertIcon,
   InboxIcon,
   MailWarningIcon,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 
 type Props = {
   stats: HomeStats
@@ -60,7 +60,7 @@ function StatTile({
   accent?: boolean
 }) {
   return (
-    <Card variant="secondary" aria-label={ariaLabel}>
+    <Card aria-label={ariaLabel}>
       <Card.Header className="flex flex-row items-center justify-between gap-2 space-y-0">
         <Card.Description className="text-foreground/55 text-xs font-medium leading-tight">
           {label}

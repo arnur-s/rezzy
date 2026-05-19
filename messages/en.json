@@ -297,7 +297,10 @@
   "dashboard_relative_days": "{count}d ago",
 
   "home_greeting_fallback_name": "Hello",
-  "home_greeting_subtitle": "Let's get things done",
+  "home_greeting_morning": "Good morning",
+  "home_greeting_afternoon": "Good afternoon",
+  "home_greeting_evening": "Good evening",
+  "home_greeting_night": "Good night",
   "home_stat_unread_assigned": "Unread assigned",
   "home_stat_open_assigned": "Open assigned",
   "home_stat_snoozed_waking": "Snoozed waking",
@@ -323,7 +326,6 @@
   "sidebar_home_nav_label": "Home",
   "sidebar_workspaces_section_label": "Workspaces",
   "sidebar_workspace_unread_dot_aria": "{count} unread",
-  "sidebar_settings_label": "Settings",
 
   "not_found_title": "404",
   "not_found_description": "Page not found",

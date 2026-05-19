@@ -1,5 +1,6 @@
 import { m } from '@/paraglide/messages'
 import type { User } from '@supabase/supabase-js'
+import { getTimeOfDayGreeting } from '../utils/get-time-of-day-greeting'
 
 type Props = {
   user: User
@@ -32,7 +33,7 @@ export function GreetingHeader({ user }: Props) {
           {displayName}
         </p>
         <p className="text-foreground/55 truncate text-sm leading-tight">
-          {m.home_greeting_subtitle()}
+          {getTimeOfDayGreeting()}
         </p>
       </div>
     </header>
