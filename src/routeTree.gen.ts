@@ -22,7 +22,9 @@ import { Route as AuthenticatedWorkspacesIdSettingsRouteImport } from './routes/
 import { Route as AuthenticatedWorkspacesIdInboxRouteImport } from './routes/_authenticated/workspaces/$id/inbox'
 import { Route as AuthenticatedWorkspacesIdContactsRouteImport } from './routes/_authenticated/workspaces/$id/contacts'
 import { Route as AuthenticatedWorkspacesIdSettingsIndexRouteImport } from './routes/_authenticated/workspaces/$id/settings/index'
+import { Route as AuthenticatedWorkspacesIdInboxIndexRouteImport } from './routes/_authenticated/workspaces/$id/inbox/index'
 import { Route as AuthenticatedWorkspacesIdSettingsMembersRouteImport } from './routes/_authenticated/workspaces/$id/settings/members'
+import { Route as AuthenticatedWorkspacesIdInboxConversationIdRouteImport } from './routes/_authenticated/workspaces/$id/inbox/$conversationId'
 import { Route as AuthenticatedWorkspacesIdSettingsChannelsIndexRouteImport } from './routes/_authenticated/workspaces/$id/settings/channels/index'
 import { Route as AuthenticatedWorkspacesIdSettingsChannelsNewRouteImport } from './routes/_authenticated/workspaces/$id/settings/channels/new'
 
@@ -96,11 +98,23 @@ const AuthenticatedWorkspacesIdSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedWorkspacesIdSettingsRoute,
   } as any)
+const AuthenticatedWorkspacesIdInboxIndexRoute =
+  AuthenticatedWorkspacesIdInboxIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedWorkspacesIdInboxRoute,
+  } as any)
 const AuthenticatedWorkspacesIdSettingsMembersRoute =
   AuthenticatedWorkspacesIdSettingsMembersRouteImport.update({
     id: '/members',
     path: '/members',
     getParentRoute: () => AuthenticatedWorkspacesIdSettingsRoute,
+  } as any)
+const AuthenticatedWorkspacesIdInboxConversationIdRoute =
+  AuthenticatedWorkspacesIdInboxConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => AuthenticatedWorkspacesIdInboxRoute,
   } as any)
 const AuthenticatedWorkspacesIdSettingsChannelsIndexRoute =
   AuthenticatedWorkspacesIdSettingsChannelsIndexRouteImport.update({
@@ -124,10 +138,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
-  '/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRoute
+  '/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
   '/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsRouteWithChildren
   '/workspaces/$id/': typeof AuthenticatedWorkspacesIdIndexRoute
+  '/workspaces/$id/inbox/$conversationId': typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
   '/workspaces/$id/settings/members': typeof AuthenticatedWorkspacesIdSettingsMembersRoute
+  '/workspaces/$id/inbox/': typeof AuthenticatedWorkspacesIdInboxIndexRoute
   '/workspaces/$id/settings/': typeof AuthenticatedWorkspacesIdSettingsIndexRoute
   '/workspaces/$id/settings/channels/new': typeof AuthenticatedWorkspacesIdSettingsChannelsNewRoute
   '/workspaces/$id/settings/channels/': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
@@ -141,9 +157,10 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
-  '/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRoute
   '/workspaces/$id': typeof AuthenticatedWorkspacesIdIndexRoute
+  '/workspaces/$id/inbox/$conversationId': typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
   '/workspaces/$id/settings/members': typeof AuthenticatedWorkspacesIdSettingsMembersRoute
+  '/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxIndexRoute
   '/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsIndexRoute
   '/workspaces/$id/settings/channels/new': typeof AuthenticatedWorkspacesIdSettingsChannelsNewRoute
   '/workspaces/$id/settings/channels': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
@@ -159,10 +176,12 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/_authenticated/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
-  '/_authenticated/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRoute
+  '/_authenticated/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
   '/_authenticated/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsRouteWithChildren
   '/_authenticated/workspaces/$id/': typeof AuthenticatedWorkspacesIdIndexRoute
+  '/_authenticated/workspaces/$id/inbox/$conversationId': typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
   '/_authenticated/workspaces/$id/settings/members': typeof AuthenticatedWorkspacesIdSettingsMembersRoute
+  '/_authenticated/workspaces/$id/inbox/': typeof AuthenticatedWorkspacesIdInboxIndexRoute
   '/_authenticated/workspaces/$id/settings/': typeof AuthenticatedWorkspacesIdSettingsIndexRoute
   '/_authenticated/workspaces/$id/settings/channels/new': typeof AuthenticatedWorkspacesIdSettingsChannelsNewRoute
   '/_authenticated/workspaces/$id/settings/channels/': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
@@ -181,7 +200,9 @@ export interface FileRouteTypes {
     | '/workspaces/$id/inbox'
     | '/workspaces/$id/settings'
     | '/workspaces/$id/'
+    | '/workspaces/$id/inbox/$conversationId'
     | '/workspaces/$id/settings/members'
+    | '/workspaces/$id/inbox/'
     | '/workspaces/$id/settings/'
     | '/workspaces/$id/settings/channels/new'
     | '/workspaces/$id/settings/channels/'
@@ -195,9 +216,10 @@ export interface FileRouteTypes {
     | '/'
     | '/workspaces'
     | '/workspaces/$id/contacts'
-    | '/workspaces/$id/inbox'
     | '/workspaces/$id'
+    | '/workspaces/$id/inbox/$conversationId'
     | '/workspaces/$id/settings/members'
+    | '/workspaces/$id/inbox'
     | '/workspaces/$id/settings'
     | '/workspaces/$id/settings/channels/new'
     | '/workspaces/$id/settings/channels'
@@ -215,7 +237,9 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$id/inbox'
     | '/_authenticated/workspaces/$id/settings'
     | '/_authenticated/workspaces/$id/'
+    | '/_authenticated/workspaces/$id/inbox/$conversationId'
     | '/_authenticated/workspaces/$id/settings/members'
+    | '/_authenticated/workspaces/$id/inbox/'
     | '/_authenticated/workspaces/$id/settings/'
     | '/_authenticated/workspaces/$id/settings/channels/new'
     | '/_authenticated/workspaces/$id/settings/channels/'
@@ -321,12 +345,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesIdSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedWorkspacesIdSettingsRoute
     }
+    '/_authenticated/workspaces/$id/inbox/': {
+      id: '/_authenticated/workspaces/$id/inbox/'
+      path: '/'
+      fullPath: '/workspaces/$id/inbox/'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdInboxIndexRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesIdInboxRoute
+    }
     '/_authenticated/workspaces/$id/settings/members': {
       id: '/_authenticated/workspaces/$id/settings/members'
       path: '/members'
       fullPath: '/workspaces/$id/settings/members'
       preLoaderRoute: typeof AuthenticatedWorkspacesIdSettingsMembersRouteImport
       parentRoute: typeof AuthenticatedWorkspacesIdSettingsRoute
+    }
+    '/_authenticated/workspaces/$id/inbox/$conversationId': {
+      id: '/_authenticated/workspaces/$id/inbox/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/workspaces/$id/inbox/$conversationId'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdInboxConversationIdRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesIdInboxRoute
     }
     '/_authenticated/workspaces/$id/settings/channels/': {
       id: '/_authenticated/workspaces/$id/settings/channels/'
@@ -344,6 +382,24 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedWorkspacesIdInboxRouteChildren {
+  AuthenticatedWorkspacesIdInboxConversationIdRoute: typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
+  AuthenticatedWorkspacesIdInboxIndexRoute: typeof AuthenticatedWorkspacesIdInboxIndexRoute
+}
+
+const AuthenticatedWorkspacesIdInboxRouteChildren: AuthenticatedWorkspacesIdInboxRouteChildren =
+  {
+    AuthenticatedWorkspacesIdInboxConversationIdRoute:
+      AuthenticatedWorkspacesIdInboxConversationIdRoute,
+    AuthenticatedWorkspacesIdInboxIndexRoute:
+      AuthenticatedWorkspacesIdInboxIndexRoute,
+  }
+
+const AuthenticatedWorkspacesIdInboxRouteWithChildren =
+  AuthenticatedWorkspacesIdInboxRoute._addFileChildren(
+    AuthenticatedWorkspacesIdInboxRouteChildren,
+  )
 
 interface AuthenticatedWorkspacesIdSettingsRouteChildren {
   AuthenticatedWorkspacesIdSettingsMembersRoute: typeof AuthenticatedWorkspacesIdSettingsMembersRoute
@@ -375,7 +431,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedWorkspacesIndexRoute: typeof AuthenticatedWorkspacesIndexRoute
   AuthenticatedWorkspacesIdContactsRoute: typeof AuthenticatedWorkspacesIdContactsRoute
-  AuthenticatedWorkspacesIdInboxRoute: typeof AuthenticatedWorkspacesIdInboxRoute
+  AuthenticatedWorkspacesIdInboxRoute: typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
   AuthenticatedWorkspacesIdSettingsRoute: typeof AuthenticatedWorkspacesIdSettingsRouteWithChildren
   AuthenticatedWorkspacesIdIndexRoute: typeof AuthenticatedWorkspacesIdIndexRoute
 }
@@ -387,7 +443,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedWorkspacesIndexRoute: AuthenticatedWorkspacesIndexRoute,
   AuthenticatedWorkspacesIdContactsRoute:
     AuthenticatedWorkspacesIdContactsRoute,
-  AuthenticatedWorkspacesIdInboxRoute: AuthenticatedWorkspacesIdInboxRoute,
+  AuthenticatedWorkspacesIdInboxRoute:
+    AuthenticatedWorkspacesIdInboxRouteWithChildren,
   AuthenticatedWorkspacesIdSettingsRoute:
     AuthenticatedWorkspacesIdSettingsRouteWithChildren,
   AuthenticatedWorkspacesIdIndexRoute: AuthenticatedWorkspacesIdIndexRoute,
