@@ -1,3 +1,4 @@
+import { listItemStyle } from '@/components/list'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import type { Selection } from '@heroui/react'
@@ -106,10 +107,10 @@ export function ConversationList({
 
   return (
     <div className="flex h-full min-h-0 flex-col border-r border-border/60">
-      <div className="h-[64px] shrink-0 border-b border-border/60 flex items-center justify-center">
+      <div className="h-[64px] shrink-0 flex items-center justify-center">
         <ConversationSearch value={searchQuery} onChange={onSearchChange} />
       </div>
-      <div className="shrink-0 border-b border-border/60">
+      <div className="shrink-0">
         <PrimaryInboxFilters
           primaryFilter={primaryFilter}
           onPrimaryFilterChange={onPrimaryFilterChange}
@@ -155,10 +156,13 @@ export function ConversationList({
                   id={conversation.id}
                   textValue={contactName}
                   className={cn(
-                    'cursor-pointer flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left outline-none transition-colors',
-                    'data-[selected=true]:bg-accent/10',
-                    'data-[selected=false]:hover:bg-foreground/5',
-                    'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring',
+                    'cursor-pointer flex w-full items-start text-left outline-none',
+                    listItemStyle.md,
+                    'px-3 py-2.5',
+                    listItemStyle.transition,
+                    listItemStyle.data.hover,
+                    listItemStyle.data.selected,
+                    listItemStyle.data.focus,
                   )}
                 >
                   <ConversationListItem

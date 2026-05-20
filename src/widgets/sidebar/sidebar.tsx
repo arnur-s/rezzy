@@ -166,7 +166,7 @@ function SidebarBody({
         {/* Workspace switcher (workspace-scoped routes only) */}
         {!isHomeRoute && (
           <>
-            <div className="h-[64px] flex items-center px-3 border-b border-border/60">
+            <div className="h-[64px] flex items-center px-3">
               <WorkspaceSwitcher
                 isCollapsed={isCollapsed}
                 currentWorkspace={currentWorkspace}

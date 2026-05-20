@@ -22,7 +22,7 @@
   --cursor-disabled: not-allowed;
 
   /* Base */
-  --background: oklch(0.9702 0 0);
+  --background: oklch(0.995 0 0);
   --foreground: oklch(0.2101 0.0318 264.6645);
 
   /* Surface — non-overlay components (cards, accordions) */
@@ -35,7 +35,7 @@
 
   /* Muted text */
   --muted: oklch(0.551 0.0234 264.3637);
-  --scrollbar: oklch(0.9276 0.0058 264.5313);
+  --scrollbar: oklch(0.875 0.006 264);
 
   /* Default — neutral surfaces (inputs, tags, badges) */
   --default: oklch(0.967 0.0029 264.5419);
@@ -60,8 +60,8 @@
   --danger-foreground: oklch(0.9851 0 0);
 
   /* Misc */
-  --border: oklch(0.9276 0.0058 264.5313);
-  --separator: oklch(0.9276 0.0058 264.5313);
+  --border: oklch(0.875 0.006 264);
+  --separator: oklch(0.9 0.005 264);
   --focus: oklch(0.6716 0.1368 48.513);
   --link: var(--foreground);
   --backdrop: rgba(0, 0, 0, 0.5);
@@ -101,7 +101,7 @@
   --sidebar-primary-foreground: var(--accent-foreground);
   --sidebar-accent: color-mix(in oklab, var(--accent) 10%, transparent);
   --sidebar-accent-foreground: var(--accent);
-  --sidebar-border: oklch(0.9276 0.0058 264.5313);
+  --sidebar-border: oklch(0.875 0.006 264);
   --sidebar-ring: var(--focus);
 
   /* Charts */

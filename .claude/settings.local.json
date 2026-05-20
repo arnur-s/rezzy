@@ -33,7 +33,10 @@
       "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"Outlet\" src/routes/_authenticated/workspaces/\\\\$id/inbox.tsx)",
       "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"useParams\\\\|strict\" src/routes/_authenticated/workspaces/\\\\$id/inbox.tsx)",
       "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"useParams\" src/routes/_authenticated/workspaces/\\\\$id/settings.tsx)",
-      "Bash(grep -v \"inbox.tsx\\\\|inbox/\\\\$\\\\|inbox/index\")"
+      "Bash(grep -v \"inbox.tsx\\\\|inbox/\\\\$\\\\|inbox/index\")",
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:brainstorming:*)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ncase\\\\Documents\\\\cms\\\\src\\\\features\\\\inbox\\\\\" -Recurse -File | Select-Object FullName)"
     ]
   }
 }
