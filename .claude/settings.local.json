@@ -11,7 +11,29 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.items\\(\\) if 'sidebar' in k.lower\\(\\) or 'breadcrumb' in k.lower\\(\\) or '' in k.lower\\(\\)]\")",
       "Bash(pnpm typecheck *)",
       "Bash(npx tsc *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:writing-plans:*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Skill(superpowers:subagent-driven-development:*)",
+      "Bash(ls -la \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\\\\src\\\\routes\\\\_authenticated\\\\workspaces\\\\$id\" 2>&1 | head -20)",
+      "Read(//c/Users/ncase/Documents/cms/src/routes/_authenticated/**)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\\\\src\\\\routes\\\\_authenticated\\\\workspaces\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\\\\src\\\\routes\" -Filter \"*inbox*\")",
+      "Bash(git stash *)",
+      "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"useParams\" src/routes/_authenticated/workspaces/'$id'/inbox.tsx)",
+      "Read(//c/Users/ncase/Documents/cms/src/routes/_authenticated/workspaces/$id/**)",
+      "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"flex-1\\\\|h-full\\\\|min-h-0\" src/routes/_authenticated/workspaces/'$id'/inbox.tsx)",
+      "Bash(git diff *)",
+      "Bash(pnpm lint *)",
+      "Bash(git show *)",
+      "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"Outlet\" src/routes/_authenticated/workspaces/\\\\$id/inbox.tsx)",
+      "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"useParams\\\\|strict\" src/routes/_authenticated/workspaces/\\\\$id/inbox.tsx)",
+      "Bash(cd \"C:\\\\Users\\\\ncase\\\\Documents\\\\cms\" && grep -n \"useParams\" src/routes/_authenticated/workspaces/\\\\$id/settings.tsx)",
+      "Bash(grep -v \"inbox.tsx\\\\|inbox/\\\\$\\\\|inbox/index\")"
     ]
   }
 }

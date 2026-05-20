@@ -8,7 +8,7 @@ import { setLocale } from './paraglide/runtime'
 import './styles.css'
 import { getRouter } from './utils/router'
 
-setLocale('ru')
+setLocale('en')
 
 const router = getRouter()
 const rootElement = document.getElementById('app')!

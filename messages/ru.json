@@ -221,7 +221,7 @@
   "inbox_assigned_to": "Назначено: {name}",
   "inbox_empty_select_conversation_title": "Выберите диалог",
   "inbox_empty_select_conversation_description": "Откройте сообщение из списка слева, чтобы начать переписку",
-  "inbox_composer_placeholder": "Напишите ответ.",
+  "inbox_composer_placeholder": "Сообщение",
   "inbox_composer_reply_via": "Ответ через {channel}",
   "inbox_composer_send_button": "Отправить",
   "inbox_composer_send_error": "Не удалось отправить сообщение",

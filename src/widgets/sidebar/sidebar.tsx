@@ -42,7 +42,7 @@ const navItemInactive =
   'text-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
 const navItemActive = 'bg-sidebar-accent text-sidebar-accent-foreground'
 const navLabel = 'min-w-0 truncate transition-opacity duration-150 ease-out'
-const navLabelHidden = 'pointer-events-none opacity-0'
+const navLabelHidden = 'pointer-events-none opacity-0 w-0'
 
 export interface SidebarProps {
   isCollapsed: boolean
@@ -593,7 +593,7 @@ function WorkspaceSwitcher({
                 <span
                   className={cn(
                     'flex min-w-0 flex-1 items-center gap-2.5',
-                    isCollapsed && 'justify-center',
+                    isCollapsed && 'justify-center gap-0',
                   )}
                 >
                   <WorkspaceMark name={currentWorkspace.name} isActive />

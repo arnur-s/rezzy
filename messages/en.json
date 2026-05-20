@@ -221,7 +221,7 @@
   "inbox_assigned_to": "Assigned to {name}",
   "inbox_empty_select_conversation_title": "Pick a conversation",
   "inbox_empty_select_conversation_description": "Open a thread from the list on the left to start replying",
-  "inbox_composer_placeholder": "Type your reply.",
+  "inbox_composer_placeholder": "Message",
   "inbox_composer_reply_via": "Replying via {channel}",
   "inbox_composer_send_button": "Send",
   "inbox_composer_send_error": "Could not send message",

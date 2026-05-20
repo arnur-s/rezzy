@@ -1,7 +1,12 @@
 import { InboxPage } from '@/features/inbox/components/inbox-page'
 import { workspaceCrumbs } from '@/lib/breadcrumbs'
 import { m } from '@/paraglide/messages'
-import { Outlet, createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
+import {
+  Outlet,
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox')({
   component: RouteComponent,

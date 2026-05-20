@@ -92,7 +92,7 @@ components:
 
 Rezzy is designed for the rhythm of sustained professional work. Sales reps and account managers open this tool to scan new messages, reply to leads, check contact history, and move on. The interface should feel like a well-organized desk: everything findable, nothing asserting itself. The UI does not perform — it performs for you.
 
-The system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with ambient shadow giving depth to cards and panels. In dark mode, everything flattens: midnight ink backgrounds, tonal steps replacing shadows, the same Signal Blue accent unchanged between both. Both modes share the same restraint. Neither mode is the default because neither use-case is assumed.
+The system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with shadow giving depth to cards and panels. In dark mode, everything flattens: midnight ink backgrounds, tonal steps replacing shadows, the same Signal Blue accent unchanged between both. Both modes share the same restraint. Neither mode is the default because neither use-case is assumed.
 
 Color is rationed. Signal Blue is the only expressive color in the system. It marks where to act — active navigation, unread counts, primary buttons. Every other pixel is neutral infrastructure. This restraint is not minimalism for its own sake; it's operational clarity. When Signal Blue appears, it means something.
 
@@ -100,10 +100,10 @@ Color is rationed. Signal Blue is the only expressive color in the system. It ma
 
 - System-adaptive theming: full light and dark support with shared token vocabulary
 - Restrained accent: Signal Blue occupies at most 10% of any given surface
-- Tonal elevation: light mode uses ambient shadow; dark mode uses flat tonal layering
+- Tonal elevation: light mode uses shadow; dark mode uses flat tonal layering
 - Work-dense scale: 14px body, 12px labels, no display sizes — this is a tool, not a brochure
 - System typography: no loaded typeface; the interface defers to the OS font
-- Ambient effect reserved: the dot-grid radial background appears only on auth and onboarding screens
+- effect reserved: the dot-grid radial background appears only on auth and onboarding screens
 
 ## 2. Colors: The Signal Palette
 
@@ -137,7 +137,7 @@ One expressive color, carefully placed. The rest is neutral infrastructure.
 
 **The Signal Rule.** Signal Blue is used on at most 10% of any given screen. Its rarity is the point. When it appears in an unread chip or an active nav item, it draws the eye precisely. Dilute it and you lose that signal entirely.
 
-**The Mode Split Rule.** Light mode and dark mode are not the same theme inverted. Light mode uses ambient shadow for elevation; dark mode uses tonal layering. Never apply `shadow-*` unconditionally. Trust the `--surface-shadow` token to resolve to the correct value per theme.
+**The Mode Split Rule.** Light mode and dark mode are not the same theme inverted. Light mode uses shadow for elevation; dark mode uses tonal layering. Never apply `shadow-*` unconditionally. Trust the `--surface-shadow` token to resolve to the correct value per theme.
 
 ## 3. Typography
 
@@ -162,7 +162,7 @@ No typeface is loaded. This is a deliberate choice: the interface defers to the 
 
 ## 4. Elevation
 
-The elevation system is theme-split by design. Light mode relies on a three-layer ambient shadow to separate surfaces from backgrounds. Dark mode eliminates shadows entirely and expresses depth through tonal steps — Midnight Ink to Charcoal Surface creates the same spatial relationship that shadow creates in light mode.
+The elevation system is theme-split by design. Light mode relies on a three-layer shadow to separate surfaces from backgrounds. Dark mode eliminates shadows entirely and expresses depth through tonal steps — Midnight Ink to Charcoal Surface creates the same spatial relationship that shadow creates in light mode.
 
 ### Shadow Vocabulary (Light Mode Only)
 
@@ -253,11 +253,11 @@ The structural container for navigation.
 - **Workspace switcher:** Dropdown trigger with WorkspaceMark icon, workspace name, and chevron. Sits in its own section with a separator below.
 - **Footer:** Sign-out action, below a separator. Ghost button style.
 
-### Ambient Background (Auth Only)
+### Background (Auth Only)
 
 Used exclusively on sign-in and sign-up screens. Prohibited in the authenticated product shell.
 
-Two `::before` / `::after` pseudo-elements on `.ambient`:
+Two `::before` / `::after` pseudo-elements on `.`:
 
 1. Radial gradient from Signal Blue (18% opacity) at top center, fading to transparent at 34rem
 2. Dot grid (1.6rem cells, 1px dots in hairline color at 70% opacity), radially masked at 22% opacity
@@ -271,7 +271,7 @@ Two `::before` / `::after` pseudo-elements on `.ambient`:
 - **Do** express dark-mode elevation through tonal steps (Midnight Ink → Charcoal Surface), never through shadow.
 - **Do** use OKLCH for all color declarations; never hardcode hex equivalents alongside token references.
 - **Do** use HeroUI's token vocabulary (`--accent`, `--surface`, `--foreground`, `--border`) rather than custom properties that shadow them.
-- **Do** use the `ambient` class pattern only on authentication and onboarding screens.
+- **Do** use the `` class pattern only on authentication and onboarding screens.
 - **Do** keep interface text at 14px or 12px; escalate through weight, not size.
 - **Do** use tabular-nums for any numeric content in chips, counts, and timestamps.
 

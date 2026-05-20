@@ -201,7 +201,7 @@ export function VirtualizedMessageList({
     if (isPrepend) {
       node.scrollTop = preserveScrollTopAfterContentGrowth({
         previousScrollHeight: prev.scrollHeight,
-        previousScrollTop: prev.scrollTop,
+        previousScrollTop: node.scrollTop,
         newScrollHeight: node.scrollHeight,
       })
     }
@@ -367,7 +367,7 @@ export function VirtualizedMessageList({
     <div className="relative min-h-0 flex-1">
       <div
         ref={parentRef}
-        className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+        className="h-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
       >
         <LoadOlderMessagesRegion
           sentinelRef={loadOlderSentinelRef}

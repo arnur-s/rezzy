@@ -105,26 +105,8 @@ export function MessageList({
 
   const resolvedMessages = messages ?? []
 
-  if (resolvedMessages.length > MESSAGE_VIRTUALIZATION_THRESHOLD) {
-    return (
-      <VirtualizedMessageList
-        key={conversationId}
-        messages={resolvedMessages}
-        contactName={contactName}
-        currentUserId={currentUserId}
-        initialScrollTarget={initialScrollTarget}
-        unreadDividerMessageId={unreadDividerMessageId}
-        hasUnreadInboundMessages={hasUnreadInboundMessages}
-        onReadAnchorVisible={onReadAnchorVisible}
-        hasMoreOlder={hasMoreOlder}
-        isFetchingOlder={isFetchingOlder}
-        onLoadOlder={onLoadOlder}
-      />
-    )
-  }
-
   return (
-    <MessageListView
+    <StableMessageList
       key={conversationId}
       messages={resolvedMessages}
       contactName={contactName}
@@ -138,6 +120,19 @@ export function MessageList({
       onLoadOlder={onLoadOlder}
     />
   )
+}
+
+// Captures the virtualization decision once at mount so the component type never
+// switches mid-session. Without this, loading older messages can push the count
+// past the threshold, causing a remount of VirtualizedMessageList that scrolls to bottom.
+function StableMessageList(props: ViewProps) {
+  const [isVirtualized] = useState(
+    () => props.messages.length > MESSAGE_VIRTUALIZATION_THRESHOLD,
+  )
+  if (isVirtualized) {
+    return <VirtualizedMessageList {...props} />
+  }
+  return <MessageListView {...props} />
 }
 
 type ViewProps = {
@@ -261,7 +256,7 @@ function MessageListView({
     if (isPrepend) {
       node.scrollTop = preserveScrollTopAfterContentGrowth({
         previousScrollHeight: prev.scrollHeight,
-        previousScrollTop: prev.scrollTop,
+        previousScrollTop: node.scrollTop,
         newScrollHeight: node.scrollHeight,
       })
     }
@@ -405,7 +400,7 @@ function MessageListView({
     <div className="relative min-h-0 flex-1">
       <div
         ref={scrollRef}
-        className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+        className="h-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
       >
         <div className="flex flex-col gap-6 px-4 py-6 sm:px-6">
           <LoadOlderMessagesRegion

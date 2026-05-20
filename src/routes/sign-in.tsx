@@ -85,8 +85,8 @@ function RouteComponent() {
   }
 
   return (
-    <div className="ambient min-h-dvh flex items-center justify-center">
-      <Card className="w-full max-w-md border border-border bg-card text-card-foreground shadow-surface z-1">
+    <div className="min-h-dvh flex items-center justify-center">
+      <Card className="w-full max-w-md border border-border text-card-foreground shadow-surface z-1">
         <Card.Header>
           <Card.Title>{m.auth_sign_in_welcome()}</Card.Title>
           <Card.Description>{m.auth_sign_in_description()}</Card.Description>

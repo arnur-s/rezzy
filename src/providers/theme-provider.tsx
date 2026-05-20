@@ -28,7 +28,6 @@ function applyTheme(resolved: ResolvedTheme) {
   const root = document.documentElement
   root.classList.remove('dark', 'light')
   root.classList.add(resolved)
-  root.setAttribute('data-theme', resolved)
   root.style.colorScheme = resolved
 }
 

@@ -41,7 +41,7 @@ export function MessageComposer({
 
   return (
     <div className="border-t border-border/60 px-4 py-3 sm:px-6">
-      <Typography.Paragraph className="mb-2 text-muted-foreground">
+      <Typography.Paragraph size="xs" className="mb-2 text-muted-foreground">
         {m.inbox_composer_reply_via({ channel: channelLabel })}
       </Typography.Paragraph>
       <ChatInput
