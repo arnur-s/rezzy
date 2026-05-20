@@ -43,8 +43,8 @@ function RouteComponent() {
         selectedConversationId={selectedConversationId}
         onSelectConversation={handleSelectConversation}
         onBackToList={handleBackToList}
+        threadSlot={<Outlet />}
       />
-      <Outlet />
     </div>
   )
 }

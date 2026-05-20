@@ -16,7 +16,6 @@ import type { InitialScrollTarget } from '../../utils/read-cursor'
 import { getFirstUnreadInboundMessageId } from '../../utils/read-cursor'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
-import { MessageThreadEmpty } from './message-thread-empty'
 import { MessageThreadHeader } from './message-thread-header'
 
 const MARK_READ_DEBOUNCE_MS = 280
@@ -24,7 +23,7 @@ const MAX_UNREAD_PREFETCH_PAGES = 5
 
 type Props = {
   workspaceId: string
-  conversation: ConversationWithRelations | null
+  conversation: ConversationWithRelations
   senderId: string | null
   onToggleContactPanel: () => void
   onBack?: () => void
@@ -37,8 +36,8 @@ export function MessageThread({
   onToggleContactPanel,
   onBack,
 }: Props) {
-  const conversationId = conversation?.id ?? null
-  const unreadCount = conversation?.unread_count ?? 0
+  const conversationId = conversation.id
+  const unreadCount = conversation.unread_count
   const messagesQuery = useMessages(conversationId)
   const readCursorQuery = useConversationReadCursor({
     conversationId,
@@ -169,14 +168,6 @@ export function MessageThread({
     },
     [conversationId, markRead, senderId],
   )
-
-  if (!conversation) {
-    return (
-      <div className="flex h-full min-h-0 flex-col">
-        <MessageThreadEmpty />
-      </div>
-    )
-  }
 
   const channelTypeResolved: ChannelType = isChannelType(
     conversation.channel.type,

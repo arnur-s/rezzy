@@ -3,12 +3,14 @@ import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useConversations } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
 import { ContactPanel } from './contact-panel/contact-panel'
 import type { InboxPrimaryFilter } from './conversation-list/conversation-list'
 import { ConversationList } from './conversation-list/conversation-list'
-import { MessageThread } from './message-thread/message-thread'
+import { InboxThreadRouteContextProvider } from './inbox-route-context'
+import type { InboxThreadRouteContextValue } from './inbox-route-context'
 
 type MobilePane = 'list' | 'thread' | 'contact'
 
@@ -17,6 +19,7 @@ type Props = {
   selectedConversationId: string | null
   onSelectConversation: (id: string) => void
   onBackToList: () => void
+  threadSlot: ReactNode
 }
 
 export function InboxPage({
@@ -24,6 +27,7 @@ export function InboxPage({
   selectedConversationId,
   onSelectConversation,
   onBackToList,
+  threadSlot,
 }: Props) {
   const { session } = useAuth()
   const senderId = session?.user.id ?? null
@@ -67,6 +71,16 @@ export function InboxPage({
   }
 
   const showContact = isContactPanelOpen && selectedConversation !== null
+  const threadContext: InboxThreadRouteContextValue = {
+    workspaceId,
+    senderId,
+    selectedConversation,
+    selectedConversationId,
+    isConversationsPending: conversationsQuery.isPending,
+    isConversationsError: conversationsQuery.isError,
+    onBackToList,
+    onToggleContactPanel: handleToggleContactPanel,
+  }
 
   // Grid template:
   // - mobile (<md): single column; we hide the inactive panes via classes
@@ -116,13 +130,9 @@ export function InboxPage({
           showContact ? 'md:hidden lg:block' : 'md:block',
         )}
       >
-        <MessageThread
-          workspaceId={workspaceId}
-          conversation={selectedConversation}
-          senderId={senderId}
-          onToggleContactPanel={handleToggleContactPanel}
-          onBack={onBackToList}
-        />
+        <InboxThreadRouteContextProvider value={threadContext}>
+          {threadSlot}
+        </InboxThreadRouteContextProvider>
       </div>
 
       {/* Contact panel pane. */}
