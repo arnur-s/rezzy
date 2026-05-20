@@ -59,6 +59,7 @@
 
   "auth_sign_in_welcome": "Welcome back",
   "auth_sign_in_description": "Enter your email and password to sign in",
+  "auth_sign_in_brand_tagline": "Your CRM for modern customer conversations",
   "auth_sign_in_email_invalid": "Enter a valid email address",
   "auth_sign_in_password_min": "Password must be at least 8 characters",
   "auth_sign_in_forgot_password_label": "Forgot password?",

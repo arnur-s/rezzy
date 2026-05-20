@@ -59,6 +59,7 @@
 
   "auth_sign_in_welcome": "С возвращением",
   "auth_sign_in_description": "Введите email и пароль для входа",
+  "auth_sign_in_brand_tagline": "Ваша CRM для современных диалогов с клиентами",
   "auth_sign_in_email_invalid": "Введите корректный email адрес",
   "auth_sign_in_password_min": "Пароль должен содержать не менее 8 символов",
   "auth_sign_in_forgot_password_label": "Забыли пароль?",
