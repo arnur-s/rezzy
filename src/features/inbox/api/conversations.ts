@@ -45,6 +45,13 @@ export async function getWorkspaceConversations(
     ),
   )
 
+  if (assignedIds.length === 0) {
+    return conversations.map((row) => ({
+      ...row,
+      assigned_profile: null,
+    }))
+  }
+
   const profilesById = await fetchProfilesByIds(assignedIds)
 
   return conversations.map((row) => ({
@@ -79,8 +86,9 @@ async function fetchProfilesByIds(
 export async function markConversationRead(
   conversationId: string,
 ): Promise<void> {
-  const { error } = await supabase
-    .rpc('mark_conversation_read', { p_conversation_id: conversationId })
+  const { error } = await supabase.rpc('mark_conversation_read', {
+    p_conversation_id: conversationId,
+  })
 
   if (error) {
     throw error

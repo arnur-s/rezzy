@@ -1,6 +1,7 @@
+import { Button } from '@/components/button'
 import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
-import { Chip, ScrollShadow, Spinner } from '@heroui/react'
+import { Alert, Chip, ScrollShadow } from '@heroui/react'
 import {
   Fragment,
   useCallback,
@@ -20,6 +21,8 @@ import {
 import type { InitialScrollTarget } from '../../utils/read-cursor'
 import { LoadOlderMessagesRegion } from './load-older-messages-region'
 import { MessageBubble } from './message-bubble'
+import { MessageThreadEmptyConversation } from './message-thread-empty-conversation'
+import { MessageThreadSkeleton } from './message-thread-skeleton'
 import { NewMessagesButton } from './new-messages-button'
 import { UnreadDivider } from './unread-divider'
 import { VirtualizedMessageList } from './virtualized-message-list'
@@ -67,6 +70,8 @@ type Props = {
   hasMoreOlder?: boolean
   isFetchingOlder?: boolean
   onLoadOlder?: () => void
+  onRetry?: () => void
+  isRetrying?: boolean
 }
 
 export function MessageList({
@@ -83,24 +88,48 @@ export function MessageList({
   hasMoreOlder = false,
   isFetchingOlder = false,
   onLoadOlder = () => {},
+  onRetry,
+  isRetrying = false,
 }: Props) {
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <Spinner size="lg" />
+      <div className="flex min-h-0 w-full flex-1 items-start justify-center overflow-hidden">
+        <MessageThreadSkeleton />
       </div>
     )
   }
 
   if (isError) {
     return (
-      <div className="flex flex-1 items-center justify-center px-6 text-center">
-        <p className="text-sm text-danger">{m.inbox_messages_load_error()}</p>
+      <div className="flex flex-1 items-center justify-center px-6 py-8">
+        <Alert status="danger" className="w-full max-w-md">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>{m.inbox_messages_load_error()}</Alert.Title>
+          </Alert.Content>
+          {onRetry ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={onRetry}
+              isLoading={isRetrying}
+            >
+              {m.common_retry()}
+            </Button>
+          ) : null}
+        </Alert>
       </div>
     )
   }
 
   const resolvedMessages = messages ?? []
+
+  // Empty thread: only render after initial load completes AND we are not
+  // currently fetching older pages — guards against flashing the empty state
+  // mid-pagination with a transiently empty cache.
+  if (resolvedMessages.length === 0 && !isFetchingOlder) {
+    return <MessageThreadEmptyConversation contactName={contactName} />
+  }
 
   return (
     <StableMessageList

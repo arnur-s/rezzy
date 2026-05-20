@@ -1,3 +1,4 @@
+import { Button as RetryButton } from '@/components/button'
 import {
   PLATFORM_META,
   PlatformIcon,
@@ -8,7 +9,7 @@ import type { ConversationWithRelations } from '@/entities/conversation'
 import { getUserInitials } from '@/entities/user'
 import { useRecordContactVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { m } from '@/paraglide/messages'
-import { Avatar, Button, ScrollShadow, Skeleton } from '@heroui/react'
+import { Alert, Avatar, Button, ScrollShadow, Skeleton } from '@heroui/react'
 import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useContact } from '../../hooks/use-contact'
@@ -66,6 +67,25 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
 
       <ScrollShadow className="min-h-0 flex-1">
         <div className="flex flex-col gap-6 px-4 py-5">
+          {contactQuery.isError ? (
+            <Alert status="danger">
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Title>{m.inbox_contact_panel_load_error()}</Alert.Title>
+              </Alert.Content>
+              <RetryButton
+                size="sm"
+                variant="ghost"
+                onPress={() => {
+                  void contactQuery.refetch()
+                }}
+                isLoading={contactQuery.isRefetching}
+              >
+                {m.common_retry()}
+              </RetryButton>
+            </Alert>
+          ) : null}
+
           <div className="flex flex-col items-center text-center">
             <Avatar size="lg" className="size-16">
               <Avatar.Fallback className="text-base">

@@ -4,7 +4,7 @@ import { useIsLg } from '@/hooks/use-is-lg'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useConversations } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
@@ -65,14 +65,16 @@ export function InboxPage({
         ? 'thread'
         : 'list'
 
-  function handleToggleContactPanel() {
-    if (!selectedConversation) return
-    setIsContactPanelOpen((open) => !open)
-  }
+  const handleToggleContactPanel = useCallback(() => {
+    setIsContactPanelOpen((open) => {
+      if (!selectedConversation && !open) return open
+      return !open
+    })
+  }, [selectedConversation])
 
-  function handleCloseContactPanel() {
+  const handleCloseContactPanel = useCallback(() => {
     setIsContactPanelOpen(false)
-  }
+  }, [])
 
   const isMobile = useIsMobile()
   const isLg = useIsLg()
@@ -84,16 +86,28 @@ export function InboxPage({
   })
 
   const showContact = isContactPanelOpen && selectedConversation !== null
-  const threadContext: InboxThreadRouteContextValue = {
-    workspaceId,
-    senderId,
-    selectedConversation,
-    selectedConversationId,
-    isConversationsPending: conversationsQuery.isPending,
-    isConversationsError: conversationsQuery.isError,
-    onBackToList,
-    onToggleContactPanel: handleToggleContactPanel,
-  }
+  const threadContext = useMemo<InboxThreadRouteContextValue>(
+    () => ({
+      workspaceId,
+      senderId,
+      selectedConversation,
+      selectedConversationId,
+      isConversationsPending: conversationsQuery.isPending,
+      isConversationsError: conversationsQuery.isError,
+      onBackToList,
+      onToggleContactPanel: handleToggleContactPanel,
+    }),
+    [
+      workspaceId,
+      senderId,
+      selectedConversation,
+      selectedConversationId,
+      conversationsQuery.isPending,
+      conversationsQuery.isError,
+      onBackToList,
+      handleToggleContactPanel,
+    ],
+  )
 
   const gridTemplateColumns = useMemo(() => {
     if (isMobile) return undefined
@@ -125,6 +139,10 @@ export function InboxPage({
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           userId={senderId}
+          onRetry={() => {
+            void conversationsQuery.refetch()
+          }}
+          isRetrying={conversationsQuery.isRefetching}
         />
       </div>
 

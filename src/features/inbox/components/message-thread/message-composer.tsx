@@ -1,4 +1,5 @@
 import type { ChannelType } from '@/entities/channel'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { m } from '@/paraglide/messages'
 import { Typography, toast } from '@heroui/react'
 
@@ -23,6 +24,7 @@ export function MessageComposer({
   isDisabled = false,
 }: Props) {
   const sendMessage = useSendMessage({ workspaceId })
+  const isMobile = useIsMobile()
 
   function handleSend(text: string, file: File | null) {
     if (sendMessage.isPending) return
@@ -45,6 +47,7 @@ export function MessageComposer({
         onSend={handleSend}
         disabled={isDisabled || sendMessage.isPending}
         placeholder={m.inbox_composer_placeholder()}
+        autoFocusKey={isMobile ? undefined : conversationId}
       />
 
       <Typography.Paragraph size="xs" className="mb-2 text-muted-foreground">

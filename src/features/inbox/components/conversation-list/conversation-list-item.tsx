@@ -7,6 +7,7 @@ import {
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { cn } from '@heroui/styles'
+import { memo } from 'react'
 import { FormattedMessageText } from '../formatted-message-text'
 import { formatRelativeShort } from '../../utils/relative-time'
 
@@ -15,7 +16,7 @@ type Props = {
   isActive: boolean
 }
 
-export function ConversationListItem({
+function ConversationListItemImpl({
   conversation,
   isActive,
 }: Props) {
@@ -86,3 +87,5 @@ export function ConversationListItem({
     </>
   )
 }
+
+export const ConversationListItem = memo(ConversationListItemImpl)

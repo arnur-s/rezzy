@@ -1,4 +1,5 @@
 import type { MessageRow } from '@/entities/message'
+import { setLocale } from '@/paraglide/runtime'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MessageList } from './message-list'
@@ -66,6 +67,98 @@ function mockNearBottomScroll(el: HTMLElement) {
     scrollTop: { configurable: true, value: 520 },
   })
 }
+
+describe('MessageList polish states', () => {
+  beforeEach(() => {
+    setLocale('en', { reload: false })
+  })
+
+  it('renders neither error nor empty state while loading', () => {
+    render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={undefined}
+        isLoading
+        isError={false}
+        contactName="Customer"
+        currentUserId={null}
+        initialScrollTarget={{ messageId: null, reason: 'latest'}}
+        unreadDividerMessageId={null}
+        hasUnreadInboundMessages={false}
+        onReadAnchorVisible={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByText(/Could not load messages/i)).toBeNull()
+    expect(screen.queryByText(/No messages yet/i)).toBeNull()
+    expect(screen.queryByRole('button', { name: /Retry/i })).toBeNull()
+  })
+
+  it('renders an error alert with a retry button when isError is true', () => {
+    const onRetry = vi.fn()
+
+    render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={undefined}
+        isLoading={false}
+        isError
+        contactName="Customer"
+        currentUserId={null}
+        initialScrollTarget={{ messageId: null, reason: 'latest'}}
+        unreadDividerMessageId={null}
+        hasUnreadInboundMessages={false}
+        onReadAnchorVisible={vi.fn()}
+        onRetry={onRetry}
+      />,
+    )
+
+    expect(screen.getByText(/Could not load messages/i)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Retry/i }))
+    expect(onRetry).toHaveBeenCalledOnce()
+  })
+
+  it('renders the empty-thread state with the contact name when messages is empty after load', () => {
+    render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={[]}
+        isLoading={false}
+        isError={false}
+        contactName="Acme Co."
+        currentUserId={null}
+        initialScrollTarget={{ messageId: null, reason: 'latest'}}
+        unreadDividerMessageId={null}
+        hasUnreadInboundMessages={false}
+        onReadAnchorVisible={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText(/No messages yet/i)).toBeTruthy()
+    expect(screen.getByText(/Acme Co\./i)).toBeTruthy()
+  })
+
+  it('does not render the empty-thread state while older messages are being fetched', () => {
+    render(
+      <MessageList
+        conversationId="conversation-1"
+        messages={[]}
+        isLoading={false}
+        isError={false}
+        contactName="Customer"
+        currentUserId={null}
+        initialScrollTarget={{ messageId: null, reason: 'latest'}}
+        unreadDividerMessageId={null}
+        hasUnreadInboundMessages={false}
+        onReadAnchorVisible={vi.fn()}
+        hasMoreOlder
+        isFetchingOlder
+      />,
+    )
+
+    expect(screen.queryByText(/No messages yet/i)).toBeNull()
+  })
+})
 
 describe('MessageList unread behavior', () => {
   beforeEach(() => {

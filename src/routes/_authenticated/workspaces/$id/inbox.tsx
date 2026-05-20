@@ -7,6 +7,7 @@ import {
   useNavigate,
   useParams,
 } from '@tanstack/react-router'
+import { useCallback } from 'react'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox')({
   component: RouteComponent,
@@ -22,19 +23,22 @@ function RouteComponent() {
   const selectedConversationId = allParams.conversationId ?? null
   const navigate = useNavigate()
 
-  function handleSelectConversation(conversationId: string) {
-    void navigate({
-      to: '/workspaces/$id/inbox/$conversationId',
-      params: { id: workspaceId, conversationId },
-    })
-  }
+  const handleSelectConversation = useCallback(
+    (conversationId: string) => {
+      void navigate({
+        to: '/workspaces/$id/inbox/$conversationId',
+        params: { id: workspaceId, conversationId },
+      })
+    },
+    [navigate, workspaceId],
+  )
 
-  function handleBackToList() {
+  const handleBackToList = useCallback(() => {
     void navigate({
       to: '/workspaces/$id/inbox',
       params: { id: workspaceId },
     })
-  }
+  }, [navigate, workspaceId])
 
   return (
     <div className="flex flex-1 h-full min-h-0 flex-col">

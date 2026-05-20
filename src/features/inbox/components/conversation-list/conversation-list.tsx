@@ -1,3 +1,4 @@
+import { Button } from '@/components/button'
 import { listItemStyle } from '@/components/list'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
@@ -22,6 +23,8 @@ type Props = {
   searchQuery: string
   onSearchChange: (value: string) => void
   userId: string | null
+  onRetry?: () => void
+  isRetrying?: boolean
   // channelIdFilter: string | null
   // channelTypeFilter: ChannelType | null
   // onChannelTypeFilterChange: (type: ChannelType | null) => void
@@ -52,6 +55,8 @@ export function ConversationList({
   // channels,
   // onChannelIdFilterChange,
   userId,
+  onRetry,
+  isRetrying = false,
 }: Props) {
   const primaryUnreadCounts = useMemo(() => {
     const counts: Record<InboxPrimaryFilter, number> = {
@@ -128,10 +133,26 @@ export function ConversationList({
               <Alert.Content>
                 <Alert.Title>{m.inbox_list_load_error()}</Alert.Title>
               </Alert.Content>
+              {onRetry ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onPress={onRetry}
+                  isLoading={isRetrying}
+                >
+                  {m.common_retry()}
+                </Button>
+              ) : null}
             </Alert>
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState hasQuery={hasActiveFilter} />
+          <EmptyState
+            hasActiveFilter={hasActiveFilter}
+            onClearFilters={() => {
+              onPrimaryFilterChange('all')
+              onSearchChange('')
+            }}
+          />
         ) : (
           <ListBox
             aria-label={m.inbox_conversation_list_aria_label()}
@@ -190,13 +211,27 @@ export function ConversationList({
   )
 }
 
-function EmptyState({ hasQuery }: { hasQuery: boolean }) {
-  if (hasQuery) {
+function EmptyState({
+  hasActiveFilter,
+  onClearFilters,
+}: {
+  hasActiveFilter: boolean
+  onClearFilters: () => void
+}) {
+  if (hasActiveFilter) {
     return (
-      <div className="px-6 py-12 text-center">
+      <div className="flex flex-col items-center px-6 py-12 text-center">
         <Typography.Paragraph className="text-sm text-muted-foreground">
           {m.inbox_list_search_empty()}
         </Typography.Paragraph>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="mt-3"
+          onPress={onClearFilters}
+        >
+          {m.inbox_list_clear_filters()}
+        </Button>
       </div>
     )
   }

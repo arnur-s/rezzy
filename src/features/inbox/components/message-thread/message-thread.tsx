@@ -91,6 +91,13 @@ export function MessageThread({
     messagesQuery.isFetchingNextPage,
   ])
 
+  const handleRetryMessages = useCallback(() => {
+    void messagesQuery.refetch()
+    if (readCursorQuery.isError) {
+      void readCursorQuery.refetch()
+    }
+  }, [messagesQuery, readCursorQuery])
+
   const initialScrollTarget = useMemo<InitialScrollTarget>(
     () => getConversationInitialScrollTarget({ messages }),
     [messages],
@@ -198,6 +205,10 @@ export function MessageThread({
           hasMoreOlder={messagesQuery.hasNextPage}
           isFetchingOlder={messagesQuery.isFetchingNextPage}
           onLoadOlder={handleLoadOlder}
+          onRetry={handleRetryMessages}
+          isRetrying={
+            messagesQuery.isFetching && !messagesQuery.isFetchingNextPage
+          }
         />
         <MessageComposer
           workspaceId={workspaceId}

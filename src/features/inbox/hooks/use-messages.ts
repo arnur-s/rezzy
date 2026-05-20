@@ -52,9 +52,11 @@ export function useMessages(conversationId: string | null) {
     messages,
     isPending: query.isPending,
     isError: query.isError,
+    isFetching: query.isFetching,
     isFetchingNextPage: query.isFetchingNextPage,
     hasNextPage: query.hasNextPage ?? false,
     fetchNextPage: query.fetchNextPage,
+    refetch: query.refetch,
   }
 }
 

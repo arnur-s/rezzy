@@ -78,12 +78,19 @@ export interface ChatInputProps {
   onSend: (text: string, file: File | null) => void
   disabled?: boolean
   placeholder?: string
+  /**
+   * When set, the textarea will focus after the next animation frame whenever
+   * this value changes. Pass `undefined` on touch devices to avoid summoning
+   * the soft keyboard on every conversation switch.
+   */
+  autoFocusKey?: string
 }
 
 export function ChatInput({
   onSend,
   disabled = false,
   placeholder,
+  autoFocusKey,
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [attachment, setAttachment] = useState<File | null>(null)
@@ -124,8 +131,12 @@ export function ChatInput({
   })
 
   useEffect(() => {
-    textareaRef.current?.focus()
-  }, [])
+    if (autoFocusKey == null) return
+    const id = requestAnimationFrame(() => {
+      textareaRef.current?.focus({ preventScroll: true })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [autoFocusKey])
 
   useEffect(() => {
     const el = textareaRef.current

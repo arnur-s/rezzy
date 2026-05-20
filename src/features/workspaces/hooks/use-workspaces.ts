@@ -14,6 +14,7 @@ export function useWorkspaces(userId?: string) {
     queryFn: () => getUserWorkspaces(userId!),
     queryKey: workspaceQueryKeys.list(userId!),
     enabled: !!userId,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -22,6 +23,7 @@ export function useWorkspace(workspaceId: string) {
     queryFn: () => getWorkspace(workspaceId),
     queryKey: workspaceQueryKeys.detail(workspaceId),
     enabled: !!workspaceId,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -30,6 +32,7 @@ export function useWorkspaceMembers(workspaceId: string) {
     queryFn: () => getWorkspaceMembers(workspaceId),
     queryKey: workspaceQueryKeys.members(workspaceId),
     enabled: !!workspaceId,
+    refetchOnWindowFocus: false,
   })
 }
 
