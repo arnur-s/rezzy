@@ -1,3 +1,4 @@
+import { Loader } from '@/components/loader'
 import { AttentionList } from '@/features/dashboard/components/attention-list'
 import { GreetingHeader } from '@/features/dashboard/components/greeting-header'
 import { HomePageSurface } from '@/features/dashboard/components/home-page-surface'
@@ -11,7 +12,7 @@ import { CreateWorkspaceModal } from '@/features/workspaces/components/create-wo
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
-import { Button, Skeleton } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 
@@ -55,7 +56,7 @@ function RouteComponent() {
           {m.dashboard_load_error_title()}
         </p>
       ) : isLoading ? (
-        <HomeSkeleton />
+        <Loader size="xl" />
       ) : workspaces.length === 0 ? (
         <EmptyState onCreate={() => setIsCreateOpen(true)} />
       ) : user ? (
@@ -100,39 +101,9 @@ function RouteComponent() {
   )
 }
 
-function HomeSkeleton() {
-  return (
-    <div className="flex-1 border-border bg-card shadow-surface space-y-8 rounded-xl border p-5 md:p-8">
-      <div className="flex items-center gap-4">
-        <Skeleton className="size-12 rounded-full" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-3 w-56" />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-6">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:col-span-8">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-lg" />
-          ))}
-        </div>
-        <div className="lg:col-span-4">
-          <Skeleton className="h-40 rounded-lg" />
-        </div>
-      </div>
-      <Skeleton className="h-32 rounded-lg" />
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-36 rounded-lg" />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="border-foreground/10 mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl px-6 py-12 text-center">
       <h2 className="text-lg font-semibold">{m.dashboard_empty_title()}</h2>
       <p className="text-foreground/60 text-sm">
         {m.dashboard_empty_description()}

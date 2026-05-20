@@ -13,6 +13,8 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { containsEmoji } from '../../utils/emoji-text'
+import { FormattedMessageText } from '../formatted-message-text'
 
 const MAX_HEIGHT = 24 * 5 // 5 lines × 24px line-height
 
@@ -131,6 +133,7 @@ export function ChatInput({
   }, [text])
 
   const showInterimOverlay = isRecording && interimText.length > 0
+  const showStyledMirror = showInterimOverlay || containsEmoji(text)
 
   const canSend = (text.trim().length > 0 || attachment !== null) && !disabled
   const showMicButton = isVoiceSupported && !canSend && !disabled
@@ -208,8 +211,7 @@ export function ChatInput({
     <div className="relative">
       <div
         className={cn(
-          'flex flex-col gap-2 rounded-2xl border border-border/60 p-2 transition-colors',
-          'focus-within:border-ring',
+          'flex flex-col gap-2',
           disabled && 'pointer-events-none opacity-50',
         )}
       >
@@ -221,17 +223,6 @@ export function ChatInput({
         )}
 
         <div className="flex items-end gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            isIconOnly
-            isDisabled={disabled}
-            onPress={() => fileInputRef.current?.click()}
-            aria-label={m.inbox_composer_attach_file_label()}
-          >
-            <PaperclipIcon className="size-4" />
-          </Button>
-
           <input
             ref={fileInputRef}
             type="file"
@@ -241,23 +232,24 @@ export function ChatInput({
           />
 
           <div className="relative flex min-w-0 flex-1 items-center">
-            {showInterimOverlay && (
+            {showStyledMirror && (
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm leading-6 wrap-break-word whitespace-pre-wrap"
               >
-                <span>{text}</span>
-                <span className="text-foreground/40">{interimText}</span>
+                <FormattedMessageText
+                  as="span"
+                  content={text}
+                  variant="composer"
+                />
+                {showInterimOverlay ? (
+                  <span className="text-foreground/40">{interimText}</span>
+                ) : null}
               </div>
             )}
             <TextArea
               ref={textareaRef}
               variant="secondary"
-              className={cn(
-                'w-full resize-none overflow-y-hidden border-0 bg-transparent px-2 py-1 shadow-none ring-0',
-                'text-sm leading-6 outline-none placeholder:text-foreground/40',
-                showInterimOverlay && 'text-transparent caret-foreground',
-              )}
               style={{ height: '36px', minHeight: '36px' }}
               rows={1}
               value={text}
@@ -266,34 +258,12 @@ export function ChatInput({
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
+              className={cn(
+                'w-full',
+                showStyledMirror && 'text-transparent caret-foreground',
+              )}
             />
           </div>
-
-          <Popover isOpen={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
-            <Popover.Trigger>
-              <Button
-                size="sm"
-                variant="ghost"
-                isIconOnly
-                isDisabled={disabled}
-                aria-label={m.inbox_composer_emoji_label()}
-              >
-                <SmileIcon className="size-4" />
-              </Button>
-            </Popover.Trigger>
-            <Popover.Content
-              className="max-w-none border-0 bg-transparent p-0 shadow-none"
-              placement="top"
-            >
-              <Popover.Dialog className="border-0 p-0 shadow-lg">
-                <Picker
-                  data={data}
-                  onEmojiSelect={handleEmojiSelect}
-                  theme="auto"
-                />
-              </Popover.Dialog>
-            </Popover.Content>
-          </Popover>
 
           {showMicButton ? (
             <Tooltip>
@@ -339,6 +309,43 @@ export function ChatInput({
               <SendIcon className="size-4" />
             </Button>
           )}
+
+          <Button
+            size="sm"
+            variant="ghost"
+            isIconOnly
+            isDisabled={disabled}
+            onPress={() => fileInputRef.current?.click()}
+            aria-label={m.inbox_composer_attach_file_label()}
+          >
+            <PaperclipIcon className="size-4" />
+          </Button>
+
+          <Popover isOpen={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
+            <Popover.Trigger>
+              <Button
+                size="sm"
+                variant="ghost"
+                isIconOnly
+                isDisabled={disabled}
+                aria-label={m.inbox_composer_emoji_label()}
+              >
+                <SmileIcon className="size-4" />
+              </Button>
+            </Popover.Trigger>
+            <Popover.Content
+              className="max-w-none border-0 bg-transparent p-0 shadow-none"
+              placement="top"
+            >
+              <Popover.Dialog className="border-0 p-0 shadow-lg">
+                <Picker
+                  data={data}
+                  onEmojiSelect={handleEmojiSelect}
+                  theme="auto"
+                />
+              </Popover.Dialog>
+            </Popover.Content>
+          </Popover>
         </div>
       </div>
     </div>

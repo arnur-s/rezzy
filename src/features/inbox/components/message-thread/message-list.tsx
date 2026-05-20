@@ -1,6 +1,6 @@
 import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
-import { Chip, Spinner } from '@heroui/react'
+import { Chip, ScrollShadow, Spinner } from '@heroui/react'
 import {
   Fragment,
   useCallback,
@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useLoadOlderMessagesSentinel } from '../../hooks/use-load-older-messages-sentinel'
 import { buildMessageGroups } from '../../utils/message-groups'
 import {
   isNearBottom,
@@ -17,7 +18,6 @@ import {
   runAfterScrollLayout,
 } from '../../utils/message-scroll'
 import type { InitialScrollTarget } from '../../utils/read-cursor'
-import { useLoadOlderMessagesSentinel } from '../../hooks/use-load-older-messages-sentinel'
 import { LoadOlderMessagesRegion } from './load-older-messages-region'
 import { MessageBubble } from './message-bubble'
 import { NewMessagesButton } from './new-messages-button'
@@ -35,10 +35,7 @@ function scrollToBottom(node: HTMLDivElement) {
 }
 
 /** Outbound from the current user; when user id unknown, any outbound counts as own. */
-function isOwnOutbound(
-  msg: MessageRow,
-  currentUserId: string | null,
-): boolean {
+function isOwnOutbound(msg: MessageRow, currentUserId: string | null): boolean {
   if (msg.direction !== 'outbound') return false
   if (currentUserId == null) return true
   return msg.sender_id == null || msg.sender_id === currentUserId
@@ -289,21 +286,20 @@ function MessageListView({
     }
 
     if (unreadDividerMessageId) {
-      runAfterScrollLayout(
-        () => {
-          const el = root.querySelector<HTMLElement>('[data-unread-divider="true"]')
-          if (el) {
-            try {
-              el.scrollIntoView({ block: 'center' })
-            } catch {
-              /* JSDOM: scrollIntoView may throw */
-            }
-          } else if (initialScrollTarget.messageId) {
-            scrollToBottom(root)
+      runAfterScrollLayout(() => {
+        const el = root.querySelector<HTMLElement>(
+          '[data-unread-divider="true"]',
+        )
+        if (el) {
+          try {
+            el.scrollIntoView({ block: 'center' })
+          } catch {
+            /* JSDOM: scrollIntoView may throw */
           }
-        },
-        afterLayout,
-      )
+        } else if (initialScrollTarget.messageId) {
+          scrollToBottom(root)
+        }
+      }, afterLayout)
     } else {
       if (initialScrollTarget.messageId) {
         scrollToBottom(root)
@@ -397,12 +393,12 @@ function MessageListView({
   }, [])
 
   return (
-    <div className="relative min-h-0 flex-1">
-      <div
+    <div className="relative min-h-0 flex-1 w-full">
+      <ScrollShadow
         ref={scrollRef}
-        className="h-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
+        className="flex flex-col items-center h-full w-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
       >
-        <div className="flex flex-col gap-6 px-4 py-6 sm:px-6">
+        <div className="container flex flex-col gap-6 px-4 py-6 sm:px-6">
           <LoadOlderMessagesRegion
             sentinelRef={loadOlderSentinelRef}
             isFetchingOlder={isFetchingOlder}
@@ -410,7 +406,7 @@ function MessageListView({
           />
           {groups.map((group) => (
             <section key={group.key} className="flex flex-col gap-3">
-              <div className="flex justify-center sticky top-0">
+              <div className="flex justify-center sticky top-2">
                 <Chip>{group.heading}</Chip>
               </div>
               {group.items.map((message) => (
@@ -424,14 +420,14 @@ function MessageListView({
             </section>
           ))}
         </div>
-      </div>
+      </ScrollShadow>
 
-      {showNewMessagesButton ? (
+      {showNewMessagesButton && (
         <NewMessagesButton
           count={newMessageCount}
           onPress={handleNewMessagesPress}
         />
-      ) : null}
+      )}
     </div>
   )
 }

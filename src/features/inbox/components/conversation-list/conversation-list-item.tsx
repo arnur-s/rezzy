@@ -7,6 +7,7 @@ import {
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { cn } from '@heroui/styles'
+import { FormattedMessageText } from '../formatted-message-text'
 import { formatRelativeShort } from '../../utils/relative-time'
 
 type Props = {
@@ -55,15 +56,16 @@ export function ConversationListItem({
           </span>
         </div>
 
-        <div className="mt-0.5 flex items-center gap-2">
-          <span
+        <div className="mt-0.5 flex items-baseline gap-2">
+          <FormattedMessageText
+            as="span"
+            content={preview ?? ''}
+            variant="preview"
             className={cn(
-              'min-w-0 flex-1 truncate text-xs',
+              'block min-w-0 flex-1 truncate',
               isUnread ? 'text-foreground/80' : 'text-foreground/55',
             )}
-          >
-            {preview || ' '}
-          </span>
+          />
           {isUnread ? (
             <NumericUnreadChip
               count={visibleUnreadCount}

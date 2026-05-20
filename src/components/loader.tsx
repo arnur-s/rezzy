@@ -1,9 +1,12 @@
+import type { SpinnerRootProps } from '@heroui/react'
 import { Spinner } from '@heroui/react'
 
-export function Loader() {
+type Props = SpinnerRootProps
+
+export function Loader({ size }: Props) {
   return (
     <div className="flex h-full items-center justify-center">
-      <Spinner />
+      <Spinner size={size} />
     </div>
   )
 }

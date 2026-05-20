@@ -22,7 +22,8 @@ export const listItemStyle = {
   sm: 'gap-2 rounded-md px-2 py-1.5',
   md: 'gap-3 rounded-lg px-2 py-2',
   focus: 'focus-visible:ring-2 focus-visible:ring-ring',
-  transition: 'transition-colors motion-reduce:transition-none',
+  transition: 'transition motion-reduce:transition-none',
+  press: 'active:scale-[0.98]',
   hover: 'hover:bg-foreground/4',
   selected: 'bg-foreground/10 text-foreground',
   unselected: 'text-foreground/60 hover:bg-foreground/4 hover:text-foreground',
@@ -38,6 +39,7 @@ function getItemClass(size: ListSize, isActive?: boolean) {
   return cn(
     'flex w-full items-center text-sm outline-none',
     listItemStyle.transition,
+    listItemStyle.press,
     listItemStyle.focus,
     listItemStyle[size],
     isActive === true && listItemStyle.selected,

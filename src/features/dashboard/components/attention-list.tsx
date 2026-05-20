@@ -72,6 +72,7 @@ function AttentionRow({
           contact: item.contactName,
           reason: reasonLabel,
         })}
+        className="active:scale-[0.99]"
       >
         {item.channelType ? (
           <PlatformIcon type={item.channelType} size="md" withPlate />

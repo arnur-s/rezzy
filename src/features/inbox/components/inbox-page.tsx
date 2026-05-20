@@ -1,16 +1,20 @@
 import { useRecordWorkspaceVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
+import { useIsLg } from '@/hooks/use-is-lg'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useConversations } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
+import { useResizablePanel } from '../hooks/use-resizable-panel'
 import { ContactPanel } from './contact-panel/contact-panel'
 import type { InboxPrimaryFilter } from './conversation-list/conversation-list'
 import { ConversationList } from './conversation-list/conversation-list'
 import { InboxThreadRouteContextProvider } from './inbox-route-context'
 import type { InboxThreadRouteContextValue } from './inbox-route-context'
+import { ResizeHandle } from './resize-handle'
 
 type MobilePane = 'list' | 'thread' | 'contact'
 
@@ -70,6 +74,15 @@ export function InboxPage({
     setIsContactPanelOpen(false)
   }
 
+  const isMobile = useIsMobile()
+  const isLg = useIsLg()
+  const { width: listWidth, handleMouseDown: handleListResize } = useResizablePanel({
+    storageKey: 'inbox:list-width',
+    defaultWidth: 320,
+    min: 200,
+    max: 480,
+  })
+
   const showContact = isContactPanelOpen && selectedConversation !== null
   const threadContext: InboxThreadRouteContextValue = {
     workspaceId,
@@ -82,20 +95,16 @@ export function InboxPage({
     onToggleContactPanel: handleToggleContactPanel,
   }
 
-  // Grid template:
-  // - mobile (<md): single column; we hide the inactive panes via classes
-  // - md (≥768): list 20rem | thread fills rest
-  // - lg (≥1024) with contact open: list 20rem | thread fills rest | contact 20rem
-  const gridClass = showContact
-    ? 'md:grid-cols-[20rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)_20rem]'
-    : 'md:grid-cols-[20rem_minmax(0,1fr)]'
+  const gridTemplateColumns = useMemo(() => {
+    if (isMobile) return undefined
+    if (showContact && isLg) return `${listWidth}px 4px minmax(0, 1fr) 20rem`
+    return `${listWidth}px 4px minmax(0, 1fr)`
+  }, [isMobile, isLg, showContact, listWidth])
 
   return (
     <div
-      className={cn(
-        'grid h-full min-h-0 w-full grid-cols-1 grid-rows-1',
-        gridClass,
-      )}
+      className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1"
+      style={gridTemplateColumns ? { gridTemplateColumns } : undefined}
     >
       {/* List pane */}
       <div
@@ -118,6 +127,8 @@ export function InboxPage({
           userId={senderId}
         />
       </div>
+
+      <ResizeHandle onMouseDown={handleListResize} />
 
       {/* Thread pane.
           On md without contact panel: visible.

@@ -12,6 +12,7 @@ import {
   effectiveRichMediaType,
   parseMessageMediaMetadata,
 } from '../../schemas/message-metadata'
+import { FormattedMessageText } from '../formatted-message-text'
 import { formatTime } from '../../utils/relative-time'
 import { MessageMediaAttachment } from './message-media'
 
@@ -103,14 +104,14 @@ export function MessageBubble({ message, contactName }: Props) {
             </p>
           ) : null}
           {hasContent ? (
-            <p
+            <FormattedMessageText
+              content={message.content ?? ''}
+              variant="bubble"
               className={cn(
                 'whitespace-pre-wrap wrap-break-word leading-relaxed',
                 showRichAttachment && 'mt-1',
               )}
-            >
-              {message.content}
-            </p>
+            />
           ) : null}
         </div>
 

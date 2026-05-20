@@ -133,14 +133,20 @@ function RouteComponent() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center">
-      <Card className="w-full max-w-md border border-border text-card-foreground shadow-surface z-1">
+    <div className="min-h-dvh flex items-center justify-center bg-surface md:bg-background">
+      <Card
+        className={cn(
+          'z-1 flex w-full max-w-md flex-col gap-6 md:px-6 md:py-8',
+          'max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:rounded-none',
+          'md:border md:border-border md:text-card-foreground md:shadow-surface',
+        )}
+      >
         <Card.Header>
           <Card.Title>{m.auth_sign_up_welcome()}</Card.Title>
           <Card.Description>{m.auth_sign_up_description()}</Card.Description>
         </Card.Header>
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+        <form className="flex flex-col gap-8" onSubmit={handleSubmit(onSubmit)}>
           <Card.Content className="gap-4">
             <TextField
               fullWidth

@@ -37,7 +37,7 @@ import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
 const navItemBase =
-  'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring'
+  'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring active:scale-[0.98]'
 const navItemInactive =
   'text-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
 const navItemActive = 'bg-sidebar-accent text-sidebar-accent-foreground'
@@ -220,7 +220,7 @@ function SidebarBody({
               className={cn(
                 navItemBase,
                 navItemInactive,
-                'h-auto min-h-0 justify-start font-[inherit] disabled:opacity-50',
+                'h-auto min-h-0 justify-start font-[inherit] disabled:opacity-50 active:scale-100',
               )}
             >
               {isSigningOut ? (

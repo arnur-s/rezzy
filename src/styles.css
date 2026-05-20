@@ -12,7 +12,7 @@
 
   /* Layout */
   --spacing: 0.25rem;
-  --radius: 0.75rem;
+  --radius: 0.5rem;
   --field-radius: calc(var(--radius) * 1.5);
   --border-width: 1px;
   --field-border-width: 0px;
@@ -22,7 +22,7 @@
   --cursor-disabled: not-allowed;
 
   /* Base */
-  --background: oklch(0.995 0 0);
+  --background: oklch(0.9702 0 0);
   --foreground: oklch(0.2101 0.0318 264.6645);
 
   /* Surface — non-overlay components (cards, accordions) */
@@ -38,7 +38,7 @@
   --scrollbar: oklch(0.875 0.006 264);
 
   /* Default — neutral surfaces (inputs, tags, badges) */
-  --default: oklch(0.967 0.0029 264.5419);
+  --default: oklch(0.925 0.004 264);
   --default-foreground: oklch(0.2101 0.0318 264.6645);
 
   /* Accent — brand color (orange) */
@@ -146,8 +146,8 @@
   --field-foreground: var(--foreground);
   --field-placeholder: var(--muted);
 
-  --danger: oklch(0.594 0.0443 196.0233);
-  --danger-foreground: oklch(0.1797 0.0043 308.1928);
+  --danger: oklch(0.594 0.1967 24.63);
+  --danger-foreground: oklch(0.9851 0 0);
   --warning: oklch(0.8203 0.1388 76.34);
   --warning-foreground: oklch(0.2103 0.0059 285.89);
 
@@ -173,8 +173,8 @@
   --muted-foreground: var(--muted);
   --input: var(--field-background);
   --ring: var(--focus);
-  --destructive: oklch(0.594 0.0443 196.0233);
-  --destructive-foreground: oklch(0.1797 0.0043 308.1928);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--danger-foreground);
 
   /* Sidebar */
   --sidebar: oklch(0.1822 0 0);

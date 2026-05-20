@@ -1,6 +1,7 @@
 import type { MessageRow } from '@/entities/message'
-import { Chip } from '@heroui/react'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { Chip, ScrollShadow } from '@heroui/react'
+import type { Range } from '@tanstack/react-virtual'
+import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
 import {
   useCallback,
   useEffect,
@@ -9,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useLoadOlderMessagesSentinel } from '../../hooks/use-load-older-messages-sentinel'
 import {
   buildMessageGroups,
   flattenMessageGroups,
@@ -18,7 +20,6 @@ import {
   preserveScrollTopAfterContentGrowth,
   runAfterScrollLayout,
 } from '../../utils/message-scroll'
-import { useLoadOlderMessagesSentinel } from '../../hooks/use-load-older-messages-sentinel'
 import type { InitialScrollTarget } from '../../utils/read-cursor'
 import { LoadOlderMessagesRegion } from './load-older-messages-region'
 import { MessageBubble } from './message-bubble'
@@ -139,6 +140,34 @@ export function VirtualizedMessageList({
     [flatItems],
   )
 
+  const headingIndexes = useMemo(
+    () =>
+      flatItems.reduce<Array<number>>((indexes, item, index) => {
+        if (item.kind === 'heading') indexes.push(index)
+        return indexes
+      }, []),
+    [flatItems],
+  )
+
+  const activeStickyIndexRef = useRef(0)
+
+  const stickyRangeExtractor = useCallback(
+    (range: Range) => {
+      activeStickyIndexRef.current =
+        [...headingIndexes]
+          .reverse()
+          .find((index) => range.startIndex >= index) ?? 0
+
+      return [
+        ...new Set([
+          activeStickyIndexRef.current,
+          ...defaultRangeExtractor(range),
+        ]),
+      ].sort((a, b) => a - b)
+    },
+    [headingIndexes],
+  )
+
   const virtualizer = useVirtualizer({
     count: flatItems.length,
     getScrollElement: () => parentRef.current,
@@ -151,8 +180,9 @@ export function VirtualizedMessageList({
     getItemKey: (index) => flatItems[index]?.key ?? index,
     initialOffset: 0,
     overscan: 8,
-    paddingStart: 12,
-    paddingEnd: 12,
+    paddingStart: 0,
+    paddingEnd: 0,
+    rangeExtractor: stickyRangeExtractor,
   })
   const virtualItems = virtualizer.getVirtualItems()
 
@@ -364,58 +394,67 @@ export function VirtualizedMessageList({
   }, [])
 
   return (
-    <div className="relative min-h-0 flex-1">
-      <div
+    <div className="relative min-h-0 flex-1 w-full">
+      <ScrollShadow
         ref={parentRef}
-        className="h-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
+        className="flex flex-col items-center h-full w-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
       >
-        <LoadOlderMessagesRegion
-          sentinelRef={loadOlderSentinelRef}
-          isFetchingOlder={isFetchingOlder}
-          hasMoreOlder={hasMoreOlder}
-        />
-        <div
-          style={{
-            height: virtualizer.getTotalSize(),
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {virtualItems.map((virtualItem) => {
-            const item = flatItems[virtualItem.index]
+        <div className="container flex w-full flex-col px-4 py-6 sm:px-6">
+          <LoadOlderMessagesRegion
+            sentinelRef={loadOlderSentinelRef}
+            isFetchingOlder={isFetchingOlder}
+            hasMoreOlder={hasMoreOlder}
+          />
+          <div
+            style={{
+              height: virtualizer.getTotalSize(),
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualItems.map((virtualItem) => {
+              const item = flatItems[virtualItem.index]
+              const isHeading = item.kind === 'heading'
+              const isActiveSticky =
+                isHeading && activeStickyIndexRef.current === virtualItem.index
 
-            return (
-              <div
-                key={virtualItem.key}
-                data-index={virtualItem.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-              >
-                {item.kind === 'heading' ? (
-                  <div className="flex justify-center px-4 py-3 sm:px-6">
-                    <Chip>{item.heading}</Chip>
-                  </div>
-                ) : item.kind === 'divider' ? (
-                  <UnreadDivider className="px-4 sm:px-6" />
-                ) : (
-                  <div className="px-4 pb-3 sm:px-6">
-                    <MessageBubble
-                      message={item.message}
-                      contactName={contactName}
-                    />
-                  </div>
-                )}
-              </div>
-            )
-          })}
+              return (
+                <div
+                  key={virtualItem.key}
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    ...(isHeading ? { zIndex: 1 } : {}),
+                    ...(isActiveSticky
+                      ? { position: 'sticky', top: 8 }
+                      : {
+                          position: 'absolute',
+                          transform: `translateY(${virtualItem.start}px)`,
+                        }),
+                    left: 0,
+                    width: '100%',
+                  }}
+                >
+                  {isHeading ? (
+                    <div className="flex justify-center py-3">
+                      <Chip>{item.heading}</Chip>
+                    </div>
+                  ) : item.kind === 'divider' ? (
+                    <UnreadDivider />
+                  ) : (
+                    <div className="pb-3">
+                      <MessageBubble
+                        message={item.message}
+                        contactName={contactName}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      </ScrollShadow>
 
       {showNewMessagesButton && (
         <NewMessagesButton

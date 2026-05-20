@@ -1,8 +1,5 @@
-import {
-  PLATFORM_META,
-  isChannelType,
-} from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
+import { PLATFORM_META, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getConversationInitialScrollTarget } from '../../api/read-cursors'
@@ -186,29 +183,30 @@ export function MessageThread({
         onToggleContactPanel={onToggleContactPanel}
         onBack={onBack}
       />
-      <MessageList
-        conversationId={conversation.id}
-        messages={messages}
-        isLoading={messagesQuery.isPending || isReadCursorLoading}
-        isError={messagesQuery.isError || readCursorQuery.isError}
-        contactName={contactName}
-        currentUserId={senderId}
-        initialScrollTarget={initialScrollTarget}
-        unreadDividerMessageId={unreadDividerMessageId}
-        hasUnreadInboundMessages={hasUnreadInboundMessages}
-        onReadAnchorVisible={handleReadAnchorVisible}
-        hasMoreOlder={messagesQuery.hasNextPage}
-        isFetchingOlder={messagesQuery.isFetchingNextPage}
-        onLoadOlder={handleLoadOlder}
-      />
-      <MessageComposer
-        workspaceId={workspaceId}
-        conversationId={conversation.id}
-        channelType={channelTypeResolved}
-        channelLabel={channelLabel}
-        senderId={senderId}
-      />
+      <div className="flex items-center h-full min-h-0 flex-col bg-accent-soft/20 bg-[radial-gradient(circle_at_1px_1px,var(--border)_1px,transparent_0)] bg-size-[24px_24px]">
+        <MessageList
+          conversationId={conversation.id}
+          messages={messages}
+          isLoading={messagesQuery.isPending || isReadCursorLoading}
+          isError={messagesQuery.isError || readCursorQuery.isError}
+          contactName={contactName}
+          currentUserId={senderId}
+          initialScrollTarget={initialScrollTarget}
+          unreadDividerMessageId={unreadDividerMessageId}
+          hasUnreadInboundMessages={hasUnreadInboundMessages}
+          onReadAnchorVisible={handleReadAnchorVisible}
+          hasMoreOlder={messagesQuery.hasNextPage}
+          isFetchingOlder={messagesQuery.isFetchingNextPage}
+          onLoadOlder={handleLoadOlder}
+        />
+        <MessageComposer
+          workspaceId={workspaceId}
+          conversationId={conversation.id}
+          channelType={channelTypeResolved}
+          channelLabel={channelLabel}
+          senderId={senderId}
+        />
+      </div>
     </div>
   )
 }
-

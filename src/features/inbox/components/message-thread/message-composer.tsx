@@ -40,15 +40,16 @@ export function MessageComposer({
   }
 
   return (
-    <div className="border-t border-border/60 px-4 py-3 sm:px-6">
-      <Typography.Paragraph size="xs" className="mb-2 text-muted-foreground">
-        {m.inbox_composer_reply_via({ channel: channelLabel })}
-      </Typography.Paragraph>
+    <div className="container p-4 pb-0">
       <ChatInput
         onSend={handleSend}
         disabled={isDisabled || sendMessage.isPending}
         placeholder={m.inbox_composer_placeholder()}
       />
+
+      <Typography.Paragraph size="xs" className="mb-2 text-muted-foreground">
+        {m.inbox_composer_reply_via({ channel: channelLabel })}
+      </Typography.Paragraph>
     </div>
   )
 }
