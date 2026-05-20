@@ -3,7 +3,6 @@ import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import { supabase } from '@/utils/supabase'
 import {
-  Card,
   FieldError,
   Link as HeroLink,
   InputGroup,
@@ -19,7 +18,13 @@ import {
   createFileRoute,
   useNavigate,
 } from '@tanstack/react-router'
-import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from 'lucide-react'
+import {
+  EyeIcon,
+  EyeOffIcon,
+  LockIcon,
+  MailIcon,
+  MessageCircleIcon,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -85,15 +90,32 @@ function RouteComponent() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center">
-      <Card className="w-full max-w-md border border-border text-card-foreground shadow-surface z-1">
-        <Card.Header>
-          <Card.Title>{m.auth_sign_in_welcome()}</Card.Title>
-          <Card.Description>{m.auth_sign_in_description()}</Card.Description>
-        </Card.Header>
+    <div className="flex min-h-dvh flex-col bg-surface lg:flex-row">
+      {/* Brand panel — top strip on mobile, left column on desktop */}
+      <div className="flex flex-col items-center justify-center bg-accent px-8 py-12 text-accent-foreground lg:w-2/5">
+        <div className="mb-4 rounded-2xl bg-white/20 p-4">
+          <MessageCircleIcon className="size-8" />
+        </div>
+        <span className="text-2xl font-bold">{m.sidebar_brand_label()}</span>
+        <p className="mt-2 hidden max-w-xs text-center text-sm text-accent-foreground/75 lg:block">
+          {m.auth_sign_in_brand_tagline()}
+        </p>
+      </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Card.Content>
+      {/* Form panel — bottom sheet on mobile, right column on desktop */}
+      <div className="-mt-6 flex flex-1 items-start justify-center rounded-t-3xl bg-surface px-6 py-10 lg:mt-0 lg:items-center lg:rounded-none lg:px-8">
+        <div className="w-full max-w-md">
+          <h1 className="text-xl font-semibold text-foreground">
+            {m.auth_sign_in_welcome()}
+          </h1>
+          <p className="mb-6 mt-1 text-sm text-muted-foreground">
+            {m.auth_sign_in_description()}
+          </p>
+
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
             <TextField isInvalid={!!errors.email} isDisabled={isFormDisabled}>
               <Label>{m.common_email()}</Label>
               <InputGroup variant="secondary">
@@ -149,9 +171,7 @@ function RouteComponent() {
                 {m.auth_sign_in_forgot_password_label()}
               </HeroLink>
             </div>
-          </Card.Content>
 
-          <Card.Footer className="mt-4 flex-col gap-4">
             <Button
               type="submit"
               fullWidth
@@ -160,11 +180,10 @@ function RouteComponent() {
               {m.common_sign_in()}
             </Button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <span className="text-sm text-muted-foreground">
                 {m.auth_sign_in_dont_have_an_account_label()}
               </span>
-
               <HeroLink
                 href="/sign-up"
                 render={({ className, children }) => (
@@ -176,9 +195,9 @@ function RouteComponent() {
                 {m.common_sign_up()}
               </HeroLink>
             </div>
-          </Card.Footer>
-        </form>
-      </Card>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
