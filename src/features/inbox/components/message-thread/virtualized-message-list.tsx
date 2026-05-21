@@ -149,14 +149,17 @@ export function VirtualizedMessageList({
     [flatItems],
   )
 
+  const reversedHeadingIndexes = useMemo(
+    () => [...headingIndexes].reverse(),
+    [headingIndexes],
+  )
+
   const activeStickyIndexRef = useRef(0)
 
   const stickyRangeExtractor = useCallback(
     (range: Range) => {
       activeStickyIndexRef.current =
-        [...headingIndexes]
-          .reverse()
-          .find((index) => range.startIndex >= index) ?? 0
+        reversedHeadingIndexes.find((index) => range.startIndex >= index) ?? 0
 
       return [
         ...new Set([
@@ -165,7 +168,7 @@ export function VirtualizedMessageList({
         ]),
       ].sort((a, b) => a - b)
     },
-    [headingIndexes],
+    [reversedHeadingIndexes],
   )
 
   const virtualizer = useVirtualizer({

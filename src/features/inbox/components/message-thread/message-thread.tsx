@@ -96,7 +96,7 @@ export function MessageThread({
     if (readCursorQuery.isError) {
       void readCursorQuery.refetch()
     }
-  }, [messagesQuery, readCursorQuery])
+  }, [messagesQuery.refetch, readCursorQuery.refetch, readCursorQuery.isError])
 
   const initialScrollTarget = useMemo<InitialScrollTarget>(
     () => getConversationInitialScrollTarget({ messages }),

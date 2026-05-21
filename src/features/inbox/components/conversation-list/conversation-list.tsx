@@ -5,7 +5,7 @@ import { m } from '@/paraglide/messages'
 import type { Selection } from '@heroui/react'
 import { Alert, ListBox, ScrollShadow, Typography } from '@heroui/react'
 import { cn } from '@heroui/styles'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { ConversationListItem } from './conversation-list-item'
 import { ConversationListSkeleton } from './conversation-list-skeleton'
 import { ConversationSearch } from './conversation-search'
@@ -104,6 +104,22 @@ export function ConversationList({
     })
   }, [conversations, primaryFilter, searchQuery, userId])
 
+  const selectedKeys = useMemo(
+    () =>
+      selectedConversationId
+        ? new Set([selectedConversationId])
+        : new Set<string>(),
+    [selectedConversationId],
+  )
+
+  const handleSelectionChange = useCallback(
+    (keys: Selection) => {
+      const id = selectionToConversationId(keys)
+      if (id) onSelect(id)
+    },
+    [onSelect],
+  )
+
   const hasActiveFilter =
     searchQuery.trim().length > 0 || primaryFilter !== 'all'
   //  ||
@@ -157,15 +173,8 @@ export function ConversationList({
           <ListBox
             aria-label={m.inbox_conversation_list_aria_label()}
             selectionMode="single"
-            selectedKeys={
-              selectedConversationId
-                ? new Set([selectedConversationId])
-                : new Set<string>()
-            }
-            onSelectionChange={(keys) => {
-              const id = selectionToConversationId(keys)
-              if (id) onSelect(id)
-            }}
+            selectedKeys={selectedKeys}
+            onSelectionChange={handleSelectionChange}
             className="flex flex-col gap-0.5 px-2 py-2 outline-none"
           >
             {filtered.map((conversation) => {

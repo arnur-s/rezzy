@@ -76,6 +76,10 @@ export function InboxPage({
     setIsContactPanelOpen(false)
   }, [])
 
+  const handleRetryConversations = useCallback(() => {
+    void conversationsQuery.refetch()
+  }, [conversationsQuery.refetch])
+
   const isMobile = useIsMobile()
   const isLg = useIsLg()
   const { width: listWidth, handleMouseDown: handleListResize } = useResizablePanel({
@@ -139,9 +143,7 @@ export function InboxPage({
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           userId={senderId}
-          onRetry={() => {
-            void conversationsQuery.refetch()
-          }}
+          onRetry={handleRetryConversations}
           isRetrying={conversationsQuery.isRefetching}
         />
       </div>

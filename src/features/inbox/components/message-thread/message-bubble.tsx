@@ -8,6 +8,7 @@ import {
 import { getUserInitials } from '@/entities/user'
 import { Avatar } from '@heroui/react'
 import { cn } from '@heroui/styles'
+import { memo } from 'react'
 import {
   effectiveRichMediaType,
   parseMessageMediaMetadata,
@@ -30,7 +31,7 @@ type Props = {
   contactName: string
 }
 
-export function MessageBubble({ message, contactName }: Props) {
+export const MessageBubble = memo(function MessageBubble({ message, contactName }: Props) {
   const isOutbound = message.direction === 'outbound'
   const type: MessageType = isMessageType(message.type) ? message.type : 'text'
   const mediaMetadata = parseMessageMediaMetadata(message.metadata)
@@ -127,7 +128,7 @@ export function MessageBubble({ message, contactName }: Props) {
       </div>
     </div>
   )
-}
+})
 
 function DeliveryIndicator({ status }: { status: string | null }) {
   const key =
