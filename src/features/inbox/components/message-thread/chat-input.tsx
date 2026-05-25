@@ -84,6 +84,7 @@ export interface ChatInputProps {
    * the soft keyboard on every conversation switch.
    */
   autoFocusKey?: string
+  acceptedMimeTypes?: string
 }
 
 export function ChatInput({
@@ -91,6 +92,7 @@ export function ChatInput({
   disabled = false,
   placeholder,
   autoFocusKey,
+  acceptedMimeTypes = 'image/*,video/*,application/pdf',
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [attachment, setAttachment] = useState<File | null>(null)
@@ -114,7 +116,7 @@ export function ChatInput({
     stopRecording,
     isSupported: isVoiceSupported,
   } = useVoiceInput({
-    lang: 'ru-RU',
+    lang: navigator.language,
     onResult: appendTranscript,
     onError: (code) => {
       if (code === 'aborted') return
@@ -237,7 +239,7 @@ export function ChatInput({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/*,application/pdf"
+            accept={acceptedMimeTypes}
             className="hidden"
             onChange={handleFileInputChange}
           />

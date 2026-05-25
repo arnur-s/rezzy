@@ -1,12 +1,13 @@
 import { useRecordWorkspaceVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
+import { useDebounce } from '@/hooks/use-debounce'
 import { useIsLg } from '@/hooks/use-is-lg'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useConversations } from '../hooks/use-conversations'
+import { useConversations, useConversationsSearch } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
 import { useResizablePanel } from '../hooks/use-resizable-panel'
 import { ContactPanel } from './contact-panel/contact-panel'
@@ -47,6 +48,10 @@ export function InboxPage({
   const [searchQuery, setSearchQuery] = useState('')
   const [isContactPanelOpen, setIsContactPanelOpen] = useState(false)
 
+  const debouncedSearch = useDebounce(searchQuery, 300)
+  const isSearchActive = debouncedSearch.trim().length > 0
+  const searchResults = useConversationsSearch(workspaceId, debouncedSearch)
+
   useEffect(() => {
     setIsContactPanelOpen(false)
   }, [selectedConversationId])
@@ -77,8 +82,12 @@ export function InboxPage({
   }, [])
 
   const handleRetryConversations = useCallback(() => {
-    void conversationsQuery.refetch()
-  }, [conversationsQuery.refetch])
+    if (isSearchActive) {
+      void searchResults.refetch()
+    } else {
+      void conversationsQuery.refetch()
+    }
+  }, [isSearchActive, searchResults.refetch, conversationsQuery.refetch])
 
   const isMobile = useIsMobile()
   const isLg = useIsLg()
@@ -133,9 +142,9 @@ export function InboxPage({
         )}
       >
         <ConversationList
-          conversations={conversationsQuery.data}
-          isLoading={conversationsQuery.isPending}
-          isError={conversationsQuery.isError}
+          conversations={isSearchActive ? searchResults.data : conversationsQuery.data}
+          isLoading={isSearchActive ? searchResults.isPending : conversationsQuery.isPending}
+          isError={isSearchActive ? searchResults.isError : conversationsQuery.isError}
           selectedConversationId={selectedConversationId}
           onSelect={onSelectConversation}
           primaryFilter={primaryFilter}
@@ -144,7 +153,7 @@ export function InboxPage({
           onSearchChange={setSearchQuery}
           userId={senderId}
           onRetry={handleRetryConversations}
-          isRetrying={conversationsQuery.isRefetching}
+          isRetrying={isSearchActive ? searchResults.isRefetching : conversationsQuery.isRefetching}
         />
       </div>
 

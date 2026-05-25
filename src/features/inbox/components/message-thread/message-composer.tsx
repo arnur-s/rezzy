@@ -4,6 +4,7 @@ import { m } from '@/paraglide/messages'
 import { Typography, toast } from '@heroui/react'
 
 import { useSendMessage } from '../../hooks/use-messages'
+import { CHANNEL_CAPABILITIES } from '../../utils/channel-capabilities'
 import { ChatInput } from './chat-input'
 
 type Props = {
@@ -41,6 +42,8 @@ export function MessageComposer({
     )
   }
 
+  const { acceptedMimeTypes } = CHANNEL_CAPABILITIES[channelType]
+
   return (
     <div className="container p-4 pb-0">
       <ChatInput
@@ -48,6 +51,7 @@ export function MessageComposer({
         disabled={isDisabled || sendMessage.isPending}
         placeholder={m.inbox_composer_placeholder()}
         autoFocusKey={isMobile ? undefined : conversationId}
+        acceptedMimeTypes={acceptedMimeTypes}
       />
 
       <Typography.Paragraph size="xs" className="mb-2 text-muted-foreground">

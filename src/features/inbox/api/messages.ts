@@ -142,12 +142,13 @@ export async function sendOutboundMessage({
   const isTelegram = channelType === 'telegram'
 
   let insertPayload: TablesInsert<'messages'>
+  let storagePath: string | null = null
 
   if (file) {
     const msgType = detectMessageType(file.type)
     const uuid = crypto.randomUUID()
     const safeFilename = sanitizeFilename(file.name)
-    const storagePath = `${workspaceId}/${conversationId}/${uuid}/${safeFilename}`
+    storagePath = `${workspaceId}/${conversationId}/${uuid}/${safeFilename}`
     const mimeType = file.type || 'application/octet-stream'
 
     const { error: uploadError } = await supabase.storage
@@ -188,6 +189,9 @@ export async function sendOutboundMessage({
     .single()
 
   if (insertError) {
+    if (storagePath) {
+      await supabase.storage.from(CHAT_MEDIA_BUCKET).remove([storagePath])
+    }
     throw mapDatabaseError(insertError.message)
   }
 

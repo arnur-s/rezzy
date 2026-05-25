@@ -18,7 +18,6 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox')({
 
 function RouteComponent() {
   const { id: workspaceId } = Route.useParams()
-  // strict: false lets the layout read $conversationId, which belongs to the child route
   const allParams = useParams({ strict: false })
   const selectedConversationId = allParams.conversationId ?? null
   const navigate = useNavigate()

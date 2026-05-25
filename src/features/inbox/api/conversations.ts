@@ -83,6 +83,69 @@ async function fetchProfilesByIds(
   return map
 }
 
+export async function getWorkspaceConversationsBySearch(
+  workspaceId: string,
+  searchQuery: string,
+): Promise<Array<ConversationWithRelations>> {
+  const q = searchQuery.trim()
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(CONVERSATION_SELECT)
+    .eq('workspace_id', workspaceId)
+    .eq('channel.is_active', true)
+    .or(
+      `last_message_preview.ilike.%${q}%,contacts.name.ilike.%${q}%`,
+    )
+    .order('last_message_at', { ascending: false, nullsFirst: false })
+
+  if (error) {
+    throw error
+  }
+
+  const conversations = data
+  const assignedIds = Array.from(
+    new Set(
+      conversations
+        .map((row) => row.assigned_to)
+        .filter((id): id is string => !!id),
+    ),
+  )
+
+  if (assignedIds.length === 0) {
+    return conversations.map((row) => ({ ...row, assigned_profile: null }))
+  }
+
+  const profilesById = await fetchProfilesByIds(assignedIds)
+
+  return conversations.map((row) => ({
+    ...row,
+    assigned_profile: row.assigned_to
+      ? (profilesById.get(row.assigned_to) ?? null)
+      : null,
+  }))
+}
+
+export async function getConversationById(
+  conversationId: string,
+): Promise<ConversationWithRelations | null> {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(CONVERSATION_SELECT)
+    .eq('id', conversationId)
+    .eq('channel.is_active', true)
+    .single()
+
+  if (error) return null
+
+  const assignedId = data.assigned_to
+  if (!assignedId) {
+    return { ...data, assigned_profile: null }
+  }
+
+  const profilesById = await fetchProfilesByIds([assignedId])
+  return { ...data, assigned_profile: profilesById.get(assignedId) ?? null }
+}
+
 export async function markConversationRead(
   conversationId: string,
 ): Promise<void> {

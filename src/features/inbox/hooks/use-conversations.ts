@@ -5,6 +5,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getWorkspaceConversations,
+  getWorkspaceConversationsBySearch,
   markConversationRead,
   updateConversationStatus,
 } from '../api/conversations'
@@ -15,6 +16,14 @@ export function useConversations(workspaceId: string) {
     queryFn: () => getWorkspaceConversations(workspaceId),
     queryKey: inboxQueryKeys.conversations(workspaceId),
     enabled: !!workspaceId,
+  })
+}
+
+export function useConversationsSearch(workspaceId: string, searchQuery: string) {
+  return useQuery({
+    queryFn: () => getWorkspaceConversationsBySearch(workspaceId, searchQuery),
+    queryKey: inboxQueryKeys.conversationSearch(workspaceId, searchQuery),
+    enabled: !!workspaceId && searchQuery.trim().length > 0,
   })
 }
 

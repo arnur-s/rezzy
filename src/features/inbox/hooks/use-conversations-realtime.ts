@@ -5,6 +5,7 @@ import type { ConversationWithRelations } from '@/entities/conversation'
 import { supabase } from '@/utils/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { getConversationById } from '../api/conversations'
 import { inboxQueryKeys } from '../api/query-keys'
 
 /**
@@ -53,11 +54,21 @@ export function useConversationsRealtime(workspaceId: string) {
           table: 'conversations',
           filter: `workspace_id=eq.${workspaceId}`,
         },
-        () => {
-          // Embedded relations aren't on the raw payload, so refetch the list
-          // when a brand new conversation appears.
-          void queryClient.invalidateQueries({
-            queryKey: key,
+        (payload) => {
+          const inserted = payload.new as { id?: string }
+          if (!inserted.id) return
+
+          void getConversationById(inserted.id).then((conversation) => {
+            if (!conversation) return
+            queryClient.setQueryData<Array<ConversationWithRelations>>(
+              key,
+              (current) => {
+                if (!current) return [conversation]
+                if (current.some((row) => row.id === conversation.id))
+                  return current
+                return sortConversationsByActivity([conversation, ...current])
+              },
+            )
           })
         },
       )

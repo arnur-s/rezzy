@@ -83,7 +83,9 @@
       "Bash(cp -r \"c:/Users/ncase/Documents/cms/React-Claude-Skill-Package/skills/source/react-agents/react-agents-project-scaffolder\" \"c:/Users/ncase/.claude/skills/\")",
       "Bash(pnpm vitest *)",
       "Bash(pnpm test *)",
-      "Bash(findstr /c:\"problems\")"
+      "Bash(findstr /c:\"problems\")",
+      "Skill(code-review:code-review)",
+      "Skill(code-review:code-review:*)"
     ]
   }
 }

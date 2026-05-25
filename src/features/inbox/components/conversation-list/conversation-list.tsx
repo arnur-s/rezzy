@@ -25,11 +25,6 @@ type Props = {
   userId: string | null
   onRetry?: () => void
   isRetrying?: boolean
-  // channelIdFilter: string | null
-  // channelTypeFilter: ChannelType | null
-  // onChannelTypeFilterChange: (type: ChannelType | null) => void
-  // channels: Array<Channel>
-  // onChannelIdFilterChange: (id: string | null) => void
 }
 
 function selectionToConversationId(keys: Selection): string | undefined {
@@ -49,11 +44,6 @@ export function ConversationList({
   onPrimaryFilterChange,
   onSearchChange,
   searchQuery,
-  // channelTypeFilter,
-  // channelIdFilter,
-  // onChannelTypeFilterChange,
-  // channels,
-  // onChannelIdFilterChange,
   userId,
   onRetry,
   isRetrying = false,
@@ -74,35 +64,17 @@ export function ConversationList({
     return counts
   }, [conversations, selectedConversationId, userId])
 
-  // const channelUnreadCounts = useMemo(() => {
-  //   const counts: Record<string, number> = {}
-  //   for (const row of conversations ?? []) {
-  //     const count =
-  //       row.id === selectedConversationId ? 0 : row.unread_count || 0
-  //     if (count > 0)
-  //       counts[row.channel.id] = (counts[row.channel.id] ?? 0) + count
-  //   }
-  //   return counts
-  // }, [conversations, selectedConversationId])
-
   const filtered = useMemo(() => {
     const rows = conversations ?? []
-    const needle = searchQuery.trim().toLowerCase()
     return rows.filter((row) => {
       if (primaryFilter === 'mine') {
         if (userId === null || row.assigned_to !== userId) return false
       }
       if (primaryFilter === 'unassigned' && row.assigned_to !== null)
         return false
-      // if (channelTypeFilter !== null && row.channel.type !== channelTypeFilter)
-      //   return false
-      // if (channelIdFilter && row.channel.id !== channelIdFilter) return false
-      if (!needle) return true
-      const name = row.contact.name?.toLowerCase() ?? ''
-      const preview = row.last_message_preview?.toLowerCase() ?? ''
-      return name.includes(needle) || preview.includes(needle)
+      return true
     })
-  }, [conversations, primaryFilter, searchQuery, userId])
+  }, [conversations, primaryFilter, userId])
 
   const selectedKeys = useMemo(
     () =>
@@ -122,9 +94,6 @@ export function ConversationList({
 
   const hasActiveFilter =
     searchQuery.trim().length > 0 || primaryFilter !== 'all'
-  //  ||
-  // channelTypeFilter !== null ||
-  // channelIdFilter !== null
 
   return (
     <div className="flex h-full min-h-0 flex-col border-r border-border/60">
@@ -206,16 +175,6 @@ export function ConversationList({
         )}
       </ScrollShadow>
 
-      {/* <div className="shrink-0 border-t border-border/60">
-        <ChannelFilters
-          channelTypeFilter={channelTypeFilter}
-          channelIdFilter={channelIdFilter}
-          channels={channels}
-          channelUnreadCounts={channelUnreadCounts}
-          onChannelTypeFilterChange={onChannelTypeFilterChange}
-          onChannelIdFilterChange={onChannelIdFilterChange}
-        />
-      </div> */}
     </div>
   )
 }

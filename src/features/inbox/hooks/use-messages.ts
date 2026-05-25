@@ -1,6 +1,7 @@
 import type { ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { sortConversationsByActivity } from '@/entities/conversation'
+import type { MessageRow } from '@/entities/message'
 import {
   useInfiniteQuery,
   useMutation,
@@ -144,7 +145,56 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
         channelType,
       }),
 
-    onSuccess: (message) => {
+    onMutate: async ({ conversationId, content, senderId, file }) => {
+      if (file) return null
+
+      const messagesKey = inboxQueryKeys.messages(conversationId)
+      await queryClient.cancelQueries({ queryKey: messagesKey })
+
+      const snapshot = queryClient.getQueryData(messagesKey)
+      const tempId = `optimistic-${Date.now()}-${Math.random()}`
+
+      const tempMessage: MessageRow = {
+        id: tempId,
+        conversation_id: conversationId,
+        workspace_id: workspaceId,
+        sender_id: senderId,
+        direction: 'outbound',
+        type: 'text',
+        status: 'sent',
+        content: content.trim() || null,
+        media_url: null,
+        media_filename: null,
+        media_mime_type: null,
+        media_size: null,
+        metadata: {},
+        external_id: null,
+        created_at: new Date().toISOString(),
+      }
+
+      patchInfiniteMessagesCache(queryClient, messagesKey, (current) => {
+        if (!current) {
+          return {
+            pages: [{ messages: [tempMessage], hasMore: false }],
+            pageParams: [null],
+          }
+        }
+        return {
+          ...current,
+          pages: appendMessageToNewestPage(current.pages, tempMessage),
+        }
+      })
+
+      return { snapshot, tempId, messagesKey }
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.snapshot) {
+        queryClient.setQueryData(context.messagesKey, context.snapshot)
+      }
+    },
+
+    onSuccess: (message, _variables, context) => {
       const messagesKey = inboxQueryKeys.messages(message.conversation_id)
       const conversationsKey = inboxQueryKeys.conversations(workspaceId)
 
@@ -156,9 +206,16 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
           }
         }
 
+        const pages = context?.tempId
+          ? current.pages.map((page) => ({
+              ...page,
+              messages: page.messages.filter((m) => m.id !== context.tempId),
+            }))
+          : current.pages
+
         return {
           ...current,
-          pages: appendMessageToNewestPage(current.pages, message),
+          pages: appendMessageToNewestPage(pages, message),
         }
       })
 

@@ -98,10 +98,11 @@ export function MessageThread({
     }
   }, [messagesQuery.refetch, readCursorQuery.refetch, readCursorQuery.isError])
 
-  const initialScrollTarget = useMemo<InitialScrollTarget>(
-    () => getConversationInitialScrollTarget({ messages }),
-    [messages],
-  )
+  const initialScrollTargetRef = useRef<InitialScrollTarget | null>(null)
+  if (initialScrollTargetRef.current === null && messages.length > 0) {
+    initialScrollTargetRef.current = getConversationInitialScrollTarget({ messages })
+  }
+  const initialScrollTarget = initialScrollTargetRef.current ?? getConversationInitialScrollTarget({ messages })
   const liveUnreadDividerMessageId = useMemo(
     () =>
       getFirstUnreadInboundMessageId({
