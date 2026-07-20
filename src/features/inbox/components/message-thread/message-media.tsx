@@ -150,7 +150,7 @@ export function MessageMediaAttachment({
 
   if (messageType === 'audio' || messageType === 'voice') {
     return (
-      <div className="mt-1 flex flex-1 md:min-w-[400px]">
+      <div className="mt-1 flex flex-1 md:min-w-100">
         <audio controls preload="metadata" className="flex-1" src={url}>
           {m.inbox_media_audio_unsupported()}
         </audio>

@@ -547,10 +547,22 @@ async function ingestMessage(args: {
       .eq('contact_id', contactId)
       .eq('channel_type', 'whatsapp')
       .eq('external_id', waId)
+    // Backfill the phone number only when it is still empty, so a manually
+    // edited value is never overwritten.
+    await supabase
+      .from('contacts')
+      .update({ phone: `+${waId}` })
+      .eq('id', contactId)
+      .is('phone', null)
   } else {
     const { data: newContact, error: contactError } = await supabase
       .from('contacts')
-      .insert({ workspace_id: workspaceId, name: contactName, status: 'new' })
+      .insert({
+        workspace_id: workspaceId,
+        name: contactName,
+        phone: `+${waId}`,
+        status: 'new',
+      })
       .select('id')
       .single()
 

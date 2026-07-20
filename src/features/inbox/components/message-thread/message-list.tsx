@@ -187,6 +187,7 @@ function MessageListView({
   onLoadOlder,
 }: ViewProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
   const loadOlderSentinelRef = useLoadOlderMessagesSentinel({
     rootRef: scrollRef,
     hasMoreOlder,
@@ -194,6 +195,13 @@ function MessageListView({
     onLoadOlder,
   })
   const stickToBottomRef = useRef(true)
+  // Bottom-anchor intent for the media re-pin observer. Released ONLY by a real
+  // upward user scroll (see onScroll) — never by the async scroll events that a
+  // programmatic pin fires mid-cascade — so late-loading media can't cancel the
+  // pin. Kept separate from stickToBottomRef, which other code paths update.
+  const atBottomRef = useRef(true)
+  const lastScrollTopRef = useRef(0)
+  const lastScrollHeightRef = useRef(0)
   const initialScrollDoneRef = useRef(false)
   const lastLenRef = useRef(0)
   const lastFirstIdRef = useRef<string | null>(null)
@@ -315,6 +323,10 @@ function MessageListView({
     }
 
     if (unreadDividerMessageId) {
+      // Anchoring at the divider mid-thread, not the bottom — keep the re-pin
+      // observer from overriding it (a fallback-to-bottom below re-corrects via
+      // its own scroll event).
+      atBottomRef.current = false
       runAfterScrollLayout(() => {
         const el = root.querySelector<HTMLElement>(
           '[data-unread-divider="true"]',
@@ -408,17 +420,49 @@ function MessageListView({
     if (!node) return
 
     const onScroll = () => {
+      const scrollTop = node.scrollTop
+      const scrollHeight = node.scrollHeight
       const atBottom = isNearBottom(node)
+      // Only a genuine upward user scroll releases the pin. Programmatic pins and
+      // downward scrolls only increase scrollTop; a skeleton→media shrink lowers
+      // scrollTop but also lowers scrollHeight — exclude that so the media-load
+      // cascade can't cancel the pin.
+      const scrolledUp = scrollTop < lastScrollTopRef.current - 1
+      const contentShrank = scrollHeight < lastScrollHeightRef.current - 1
+      lastScrollTopRef.current = scrollTop
+      lastScrollHeightRef.current = scrollHeight
+
       stickToBottomRef.current = atBottom
       if (atBottom) {
+        atBottomRef.current = true
         setShowNewMessagesButton(false)
         setNewMessageCount(0)
         commitReadIfEligibleRef.current()
+      } else if (scrolledUp && !contentShrank) {
+        atBottomRef.current = false
       }
     }
 
     node.addEventListener('scroll', onScroll, { passive: true })
     return () => node.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Async media (images, video) finishes loading after the initial scroll and
+  // grows the content below the viewport. Native scroll anchoring is disabled
+  // ([overflow-anchor:none]), so re-pin to the bottom on any content-size change
+  // while the viewport is anchored there — otherwise the thread opens a little
+  // short of the newest message. Gated on atBottomRef (scroll-event truth) so a
+  // mid-load layout measurement can't wrongly cancel the pin.
+  useEffect(() => {
+    const node = scrollRef.current
+    const content = contentRef.current
+    if (!node || !content || typeof ResizeObserver === 'undefined') return
+
+    const observer = new ResizeObserver(() => {
+      if (atBottomRef.current) scrollToBottom(node)
+    })
+    observer.observe(content)
+    return () => observer.disconnect()
   }, [])
 
   return (
@@ -427,7 +471,10 @@ function MessageListView({
         ref={scrollRef}
         className="flex flex-col items-center h-full w-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
       >
-        <div className="container flex flex-col gap-6 px-4 py-6 sm:px-6">
+        <div
+          ref={contentRef}
+          className="container flex flex-col gap-6 px-4 py-6 sm:px-6"
+        >
           <LoadOlderMessagesRegion
             sentinelRef={loadOlderSentinelRef}
             isFetchingOlder={isFetchingOlder}

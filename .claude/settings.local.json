@@ -85,7 +85,10 @@
       "Bash(pnpm test *)",
       "Bash(findstr /c:\"problems\")",
       "Skill(code-review:code-review)",
-      "Skill(code-review:code-review:*)"
+      "Skill(code-review:code-review:*)",
+      "Bash(command -v deno)",
+      "Bash(deno --version)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

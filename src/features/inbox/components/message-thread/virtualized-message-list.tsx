@@ -30,6 +30,14 @@ const ESTIMATED_MESSAGE_ITEM_SIZE = 72
 const ESTIMATED_HEADING_ITEM_SIZE = 64
 const ESTIMATED_DIVIDER_ITEM_SIZE = 44
 
+function scrollToBottom(node: HTMLDivElement) {
+  try {
+    node.scrollTop = node.scrollHeight
+  } catch {
+    /* JSDOM: tests may define read-only scrollTop */
+  }
+}
+
 function isOwnOutbound(msg: MessageRow, currentUserId: string | null): boolean {
   if (msg.direction !== 'outbound') return false
   if (currentUserId == null) return true
@@ -70,6 +78,7 @@ export function VirtualizedMessageList({
   onLoadOlder,
 }: Props) {
   const parentRef = useRef<HTMLDivElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
   const loadOlderSentinelRef = useLoadOlderMessagesSentinel({
     rootRef: parentRef,
     hasMoreOlder,
@@ -77,6 +86,12 @@ export function VirtualizedMessageList({
     onLoadOlder,
   })
   const stickToBottomRef = useRef(true)
+  // Bottom-anchor intent for the media re-pin observer. Released ONLY by a real
+  // upward user scroll (see onScroll), never by the async scroll events a
+  // programmatic pin fires mid-cascade — see the non-virtualized list.
+  const atBottomRef = useRef(true)
+  const lastScrollTopRef = useRef(0)
+  const lastScrollHeightRef = useRef(0)
   const initialScrollDoneRef = useRef(false)
   const initialScrollScheduledRef = useRef(false)
   const lastLenRef = useRef(0)
@@ -274,6 +289,10 @@ export function VirtualizedMessageList({
       return
     }
 
+    // Anchoring at the divider mid-thread, not the bottom — keep the re-pin
+    // observer from overriding it.
+    if (dividerFlatIndex >= 0) atBottomRef.current = false
+
     const scrollToInitialTarget = () => {
       if (dividerFlatIndex >= 0) {
         virtualizer.scrollToIndex(dividerFlatIndex, { align: 'center' })
@@ -383,17 +402,44 @@ export function VirtualizedMessageList({
     if (!node) return
 
     const onScroll = () => {
+      const scrollTop = node.scrollTop
+      const scrollHeight = node.scrollHeight
       const atBottom = isNearBottom(node)
+      // Only a genuine upward user scroll releases the pin — see non-virtualized list.
+      const scrolledUp = scrollTop < lastScrollTopRef.current - 1
+      const contentShrank = scrollHeight < lastScrollHeightRef.current - 1
+      lastScrollTopRef.current = scrollTop
+      lastScrollHeightRef.current = scrollHeight
+
       stickToBottomRef.current = atBottom
       if (atBottom) {
+        atBottomRef.current = true
         setShowNewMessagesButton(false)
         setNewMessageCount(0)
         commitReadIfEligibleRef.current()
+      } else if (scrolledUp && !contentShrank) {
+        atBottomRef.current = false
       }
     }
 
     node.addEventListener('scroll', onScroll, { passive: true })
     return () => node.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Late-loading media grows measured items after the initial scroll; the
+  // virtualizer re-measures but does not keep the viewport pinned to the bottom.
+  // Re-pin on any content-size change while anchored there (see non-virtualized
+  // list for the atBottomRef rationale).
+  useEffect(() => {
+    const node = parentRef.current
+    const content = contentRef.current
+    if (!node || !content || typeof ResizeObserver === 'undefined') return
+
+    const observer = new ResizeObserver(() => {
+      if (atBottomRef.current) scrollToBottom(node)
+    })
+    observer.observe(content)
+    return () => observer.disconnect()
   }, [])
 
   return (
@@ -402,7 +448,10 @@ export function VirtualizedMessageList({
         ref={parentRef}
         className="flex flex-col items-center h-full w-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
       >
-        <div className="container flex w-full flex-col px-4 py-6 sm:px-6">
+        <div
+          ref={contentRef}
+          className="container flex w-full flex-col px-4 py-6 sm:px-6"
+        >
           <LoadOlderMessagesRegion
             sentinelRef={loadOlderSentinelRef}
             isFetchingOlder={isFetchingOlder}

@@ -123,36 +123,39 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      conversationId,
-      content,
-      file,
-      senderId,
-      channelType,
-    }: {
+    mutationFn: (variables: {
       conversationId: string
       content: string
       file?: File | null
       senderId: string | null
       channelType: ChannelType
+      clientMessageId?: string
     }) =>
       sendOutboundMessage({
-        conversationId,
+        id: variables.clientMessageId,
+        conversationId: variables.conversationId,
         workspaceId,
-        content,
-        file,
-        senderId,
-        channelType,
+        content: variables.content,
+        file: variables.file,
+        senderId: variables.senderId,
+        channelType: variables.channelType,
       }),
 
-    onMutate: async ({ conversationId, content, senderId, file }) => {
+    onMutate: async (variables) => {
+      const { conversationId, content, senderId, file } = variables
+
+      // Share one client-generated id between the optimistic row and the real
+      // DB row so the realtime INSERT dedups by id instead of showing a copy.
+      const clientMessageId = crypto.randomUUID()
+      variables.clientMessageId = clientMessageId
+
       if (file) return null
 
       const messagesKey = inboxQueryKeys.messages(conversationId)
       await queryClient.cancelQueries({ queryKey: messagesKey })
 
       const snapshot = queryClient.getQueryData(messagesKey)
-      const tempId = `optimistic-${Date.now()}-${Math.random()}`
+      const tempId = clientMessageId
 
       const tempMessage: MessageRow = {
         id: tempId,

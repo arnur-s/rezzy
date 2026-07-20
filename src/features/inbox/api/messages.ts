@@ -4,6 +4,7 @@ import type { MessageRow } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import { mapDatabaseError } from '../utils/error-message'
+import { normalizeImageOrientation } from '../utils/image-orientation'
 
 const MESSAGE_SELECT = `
   id,
@@ -131,6 +132,7 @@ const CHAT_MEDIA_BUCKET = 'chat-media'
  * UUID as path segment). Telegram delivery runs in Edge Function after insert.
  */
 export async function sendOutboundMessage({
+  id,
   conversationId,
   workspaceId,
   content,
@@ -138,6 +140,7 @@ export async function sendOutboundMessage({
   senderId,
   channelType,
 }: {
+  id?: string
   conversationId: string
   workspaceId: string
   content: string
@@ -151,33 +154,42 @@ export async function sendOutboundMessage({
   let storagePath: string | null = null
 
   if (file) {
-    const msgType = detectMessageType(file.type)
+    // Bake EXIF orientation into pixels so images don't appear rotated in
+    // WhatsApp, which may strip the metadata during its own media processing.
+    // Other channels receive the original file byte-for-byte.
+    const uploadFile =
+      channelType === 'whatsapp'
+        ? await normalizeImageOrientation(file)
+        : file
+    const msgType = detectMessageType(uploadFile.type)
     const uuid = crypto.randomUUID()
-    const safeFilename = sanitizeFilename(file.name)
+    const safeFilename = sanitizeFilename(uploadFile.name)
     storagePath = `${workspaceId}/${conversationId}/${uuid}/${safeFilename}`
-    const mimeType = file.type || 'application/octet-stream'
+    const mimeType = uploadFile.type || 'application/octet-stream'
 
     const { error: uploadError } = await supabase.storage
       .from(CHAT_MEDIA_BUCKET)
-      .upload(storagePath, file, { contentType: mimeType, upsert: false })
+      .upload(storagePath, uploadFile, { contentType: mimeType, upsert: false })
 
     if (uploadError) throw uploadError
 
     insertPayload = {
+      ...(id ? { id } : {}),
       conversation_id: conversationId,
       workspace_id: workspaceId,
       direction: 'outbound',
       type: msgType,
       content: content.trim() || null,
       media_url: storagePath,
-      media_filename: file.name,
+      media_filename: uploadFile.name,
       media_mime_type: mimeType,
-      media_size: file.size,
+      media_size: uploadFile.size,
       sender_id: senderId,
       status: 'sent',
     }
   } else {
     insertPayload = {
+      ...(id ? { id } : {}),
       conversation_id: conversationId,
       workspace_id: workspaceId,
       direction: 'outbound',

@@ -14,6 +14,9 @@ const CHAT_MEDIA_BUCKET = 'chat-media'
 // Meta error code for an expired/invalid access token.
 const WA_AUTH_ERROR_CODE = 190
 
+// Meta error code (test mode only) for a recipient not on the allowed list.
+const WA_RECIPIENT_NOT_ALLOWED_CODE = 131030
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -157,6 +160,38 @@ function previewFromRow(row: MessageRow): string {
     default:
       return ''
   }
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {}
+}
+
+/** Cached recipient override written after a successful trunk-variant retry. */
+function readDialOverride(metadata: unknown): string | null {
+  const value = asRecord(metadata).whatsapp_dial_id
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+/**
+ * Kazakhstan (+7) test-list entries carry the domestic trunk '8' after the
+ * country code. Given the canonical 11-digit wa_id (7 + 10 digits), produce the
+ * 12-digit domestic variant Meta's test allowed-list matches against. Returns
+ * null when no rule applies so the caller can skip the retry.
+ */
+function trunkVariant(to: string): string | null {
+  const m = /^7(\d{10})$/.exec(to)
+  if (m) return `78${m[1]}`
+  return null
+}
+
+interface SendResult {
+  ok: boolean
+  waMessageId?: string
+  error?: WhatsappSendResponse['error']
+  httpStatus: number
+  failureKind?: 'network' | 'parse' | 'api'
 }
 
 export default {
@@ -337,7 +372,7 @@ export default {
 
     const { data: contactChannel, error: ccError } = await admin
       .from('contact_channels')
-      .select('external_id')
+      .select('external_id, metadata')
       .eq('contact_id', conv.contact_id)
       .eq('channel_type', 'whatsapp')
       .maybeSingle()
@@ -358,11 +393,15 @@ export default {
       })
     }
 
-    const to = contactChannel.external_id.trim()
+    const canonicalTo = contactChannel.external_id.trim()
+    const cachedDialId = readDialOverride(contactChannel.metadata)
+    const to = cachedDialId ?? canonicalTo
     const caption = row.content?.trim() ?? ''
     const waMediaType = WA_MEDIA_TYPE[row.type]
 
-    let requestBody: Record<string, unknown>
+    // Recipient-independent part of the payload, built once and reused across a
+    // possible trunk-variant retry.
+    let messagePayload: Record<string, unknown>
 
     if (waMediaType && row.media_url) {
       const { data: signedData, error: signedError } = await admin.storage
@@ -391,92 +430,136 @@ export default {
         mediaPayload.filename = row.media_filename
       }
 
-      requestBody = {
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to,
-        type: waMediaType,
-        [waMediaType]: mediaPayload,
-      }
+      messagePayload = { type: waMediaType, [waMediaType]: mediaPayload }
     } else {
       const content = row.content?.trim() ?? ''
-      requestBody = {
+      messagePayload = { type: 'text', text: { body: content } }
+    }
+
+    const postToWhatsapp = async (recipient: string): Promise<SendResult> => {
+      const requestBody: Record<string, unknown> = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
-        to,
-        type: 'text',
-        text: { body: content },
+        to: recipient,
+        ...messagePayload,
       }
-    }
 
-    const serializedRequestBody = JSON.stringify(requestBody)
-    const recipientDiagnostics = {
-      request_body_keys: Object.keys(requestBody),
-      payload_to_present:
-        typeof requestBody.to === 'string' && requestBody.to.length > 0,
-      payload_to_matches_stored_recipient: requestBody.to === to,
-      serialized_payload_contains_recipient: serializedRequestBody.includes(
-        `"to":${JSON.stringify(to)}`,
-      ),
-      recipient_length: to.length,
-      recipient_digits_only: /^\d+$/.test(to),
-      recipient_starts_with_zero: to.startsWith('0'),
-      recipient_e164_shape: /^[1-9]\d{6,14}$/.test(to),
-      message_type: requestBody.type,
-      to: requestBody.to,
-    }
+      let waRes: Response
+      try {
+        waRes = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+      } catch (e) {
+        logNetworkError('send-whatsapp-message: WhatsApp network error', e)
+        return { ok: false, httpStatus: 0, failureKind: 'network' }
+      }
 
-    let waRes: Response
-    try {
-      waRes = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: serializedRequestBody,
-      })
-    } catch (e) {
-      logNetworkError('send-whatsapp-message: WhatsApp network error', e)
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
-      return jsonResponse(502, { error: 'WhatsApp request failed' })
-    }
+      let waJson: WhatsappSendResponse
+      try {
+        waJson = (await waRes.json()) as WhatsappSendResponse
+      } catch (e) {
+        const parseErrorType = e instanceof Error ? e.name : typeof e
+        console.error(
+          'send-whatsapp-message: invalid WhatsApp API response',
+          JSON.stringify({
+            message_id: row.id,
+            provider_http_status: waRes.status,
+            parse_error_type: parseErrorType,
+          }),
+        )
+        return { ok: false, httpStatus: waRes.status, failureKind: 'parse' }
+      }
 
-    let waJson: WhatsappSendResponse
-    try {
-      waJson = (await waRes.json()) as WhatsappSendResponse
-    } catch (e) {
-      const parseErrorType = e instanceof Error ? e.name : typeof e
-      console.error(
-        'send-whatsapp-message: invalid WhatsApp API response',
-        JSON.stringify({
-          message_id: row.id,
-          provider_http_status: waRes.status,
-          parse_error_type: parseErrorType,
-        }),
-      )
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
-      return jsonResponse(502, {
-        error: 'WhatsApp returned an invalid response',
-        provider_error: whatsappErrorDiagnostics(waRes.status, undefined),
-      })
-    }
+      const waMessageId = waJson.messages?.[0]?.id
+      if (waMessageId) {
+        return { ok: true, waMessageId, httpStatus: waRes.status }
+      }
 
-    const waMessageId = waJson.messages?.[0]?.id
-    if (!waMessageId) {
-      const code = waJson.error?.code
       const providerError = whatsappErrorDiagnostics(waRes.status, waJson.error)
       console.error(
         'send-whatsapp-message: WhatsApp API error',
         JSON.stringify({
           message_id: row.id,
           ...providerError,
-          ...recipientDiagnostics,
+          request_body_keys: Object.keys(requestBody),
+          recipient_length: recipient.length,
+          recipient_digits_only: /^\d+$/.test(recipient),
+          recipient_e164_shape: /^[1-9]\d{6,14}$/.test(recipient),
+          message_type: requestBody.type,
+          to: recipient,
         }),
       )
+      return {
+        ok: false,
+        httpStatus: waRes.status,
+        failureKind: 'api',
+        error: waJson.error,
+      }
+    }
+
+    let result = await postToWhatsapp(to)
+
+    // Test-mode only: if Meta rejects the canonical wa_id as "not in allowed
+    // list", retry once with the country trunk variant. Gated on no cached
+    // override so it fires at most once per contact.
+    if (
+      !result.ok &&
+      result.error?.code === WA_RECIPIENT_NOT_ALLOWED_CODE &&
+      !cachedDialId
+    ) {
+      const variant = trunkVariant(canonicalTo)
+      if (variant && variant !== to) {
+        const retry = await postToWhatsapp(variant)
+        if (retry.ok) {
+          result = retry
+          // Cache the working recipient so future sends go direct. Stored in
+          // metadata, not external_id, which is the inbound-matching key.
+          const { error: cacheError } = await admin
+            .from('contact_channels')
+            .update({
+              metadata: {
+                ...asRecord(contactChannel.metadata),
+                whatsapp_dial_id: variant,
+              },
+            })
+            .eq('contact_id', conv.contact_id)
+            .eq('channel_type', 'whatsapp')
+          if (cacheError) {
+            console.error(
+              'send-whatsapp-message: dial id cache failed',
+              cacheError,
+            )
+          }
+        }
+      }
+    }
+
+    if (!result.ok) {
       await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
 
-      if (code === WA_AUTH_ERROR_CODE) {
+      if (result.failureKind === 'network') {
+        return jsonResponse(502, { error: 'WhatsApp request failed' })
+      }
+      if (result.failureKind === 'parse') {
+        return jsonResponse(502, {
+          error: 'WhatsApp returned an invalid response',
+          provider_error: whatsappErrorDiagnostics(
+            result.httpStatus,
+            undefined,
+          ),
+        })
+      }
+
+      const providerError = whatsappErrorDiagnostics(
+        result.httpStatus,
+        result.error,
+      )
+      if (result.error?.code === WA_AUTH_ERROR_CODE) {
         return jsonResponse(401, {
           error:
             'WhatsApp authorization expired. Reconnect the channel in settings to keep sending.',
@@ -484,9 +567,15 @@ export default {
         })
       }
       return jsonResponse(502, {
-        error: waJson.error?.message ?? 'WhatsApp send failed',
+        error: result.error?.message ?? 'WhatsApp send failed',
         provider_error: providerError,
       })
+    }
+
+    const waMessageId = result.waMessageId
+    if (!waMessageId) {
+      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      return jsonResponse(502, { error: 'WhatsApp send failed' })
     }
 
     const now = new Date().toISOString()
