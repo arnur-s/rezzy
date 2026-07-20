@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       channels: {
@@ -445,6 +470,14 @@ export type Database = {
     }
     Functions: {
       get_channel_credentials: { Args: { p_channel_id: string }; Returns: Json }
+      get_whatsapp_channel_by_phone: {
+        Args: { p_phone_number_id: string }
+        Returns: {
+          channel_id: string
+          is_active: boolean
+          workspace_id: string
+        }[]
+      }
       is_workspace_member: {
         Args: { p_workspace_id: string }
         Returns: boolean
@@ -589,6 +622,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

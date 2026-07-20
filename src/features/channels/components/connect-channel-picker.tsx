@@ -1,5 +1,5 @@
-import { CHANNEL_META, ChannelTypeIcon } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
+import { CHANNEL_META, ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
 import { Chip, Surface } from '@heroui/react'
 import { ChevronRightIcon } from 'lucide-react'
@@ -18,15 +18,6 @@ const CONNECT_CHANNEL_TYPES = [
 export function ConnectChannelPicker({ onSelect }: Props) {
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold">
-          {m.channels_connect_title()}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {m.channels_connect_description()}
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {CONNECT_CHANNEL_TYPES.map((type) => (
           <ChannelTypeCard

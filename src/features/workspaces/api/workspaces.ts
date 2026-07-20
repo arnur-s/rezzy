@@ -11,11 +11,10 @@ export const workspaceQueryKeys = {
     ['workspaces', 'members', workspaceId] as const,
 }
 
-export async function getUserWorkspaces(userId: string) {
+export async function getUserWorkspaces() {
   const { data, error } = await supabase
     .from('workspaces')
     .select('*')
-    .eq('created_by', userId)
     .order('is_main', { ascending: false })
     .order('created_at', { ascending: true })
 
@@ -92,19 +91,7 @@ export async function createWorkspace({
     throw error
   }
 
-  const memberPayload: TablesInsert<'workspace_members'> = {
-    role: 'owner',
-    user_id: userId,
-    workspace_id: data.id,
-  }
-
-  const { error: memberError } = await supabase
-    .from('workspace_members')
-    .insert(memberPayload)
-
-  if (memberError) {
-    throw memberError
-  }
+  // The on_workspace_created database trigger creates the owner membership.
 
   return data
 }

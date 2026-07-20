@@ -37,7 +37,7 @@ export const CHANNEL_META: Record<ChannelType, ChannelMeta> = {
     icon: MessageCircleIcon,
     iconClassName: 'text-emerald-500',
     iconBackgroundClassName: 'bg-emerald-500/10',
-    comingSoon: true,
+    comingSoon: false,
   },
   email: {
     type: 'email',

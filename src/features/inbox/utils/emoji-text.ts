@@ -5,7 +5,7 @@ export type MessageSegment = {
   value: string
 }
 
-export function segmentGraphemes(text: string): string[] {
+export function segmentGraphemes(text: string): Array<string> {
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
     const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
     return [...segmenter.segment(text)].map((s) => s.segment)
@@ -32,10 +32,10 @@ export function countEmojiGraphemes(text: string): number {
   return segmentGraphemes(text).filter(isEmojiGrapheme).length
 }
 
-export function splitMessageSegments(text: string): MessageSegment[] {
+export function splitMessageSegments(text: string): Array<MessageSegment> {
   if (!text) return []
 
-  const segments: MessageSegment[] = []
+  const segments: Array<MessageSegment> = []
   let currentType: MessageSegment['type'] | null = null
   let currentValue = ''
 

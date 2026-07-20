@@ -31,7 +31,7 @@ type Props = {
   contactName: string
 }
 
-export const MessageBubble = memo(function MessageBubble({ message, contactName }: Props) {
+export const MessageBubble = memo(function MessageBubbleComponent({ message, contactName }: Props) {
   const isOutbound = message.direction === 'outbound'
   const type: MessageType = isMessageType(message.type) ? message.type : 'text'
   const mediaMetadata = parseMessageMediaMetadata(message.metadata)

@@ -4,6 +4,7 @@ import {
   ConnectChannelComingSoon,
   ConnectChannelPicker,
   ConnectTelegramForm,
+  ConnectWhatsapp,
 } from '@/features/channels/components'
 import { m } from '@/paraglide/messages'
 import { Button, Surface } from '@heroui/react'
@@ -86,6 +87,11 @@ function RouteComponent() {
           <ConnectChannelPicker onSelect={setType} />
         ) : type === 'telegram' ? (
           <ConnectTelegramForm workspaceId={id} onCancel={clearType} />
+        ) : type === 'whatsapp' ? (
+          <ConnectWhatsapp
+            target={{ kind: 'create', workspaceId: id }}
+            onCancel={clearType}
+          />
         ) : (
           <ConnectChannelComingSoon type={type} onCancel={clearType} />
         )}

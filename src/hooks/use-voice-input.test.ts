@@ -110,7 +110,7 @@ describe('useVoiceInput', () => {
     expect(isVoiceInputSupported).toBe(true)
   })
 
-  it('starts recording and exposes interim text', async () => {
+  it('starts recording and exposes interim text', () => {
     const onResult = vi.fn()
 
     const { result } = renderHook(() =>
@@ -162,7 +162,7 @@ describe('useVoiceInput', () => {
     })
   })
 
-  it('invokes onError and resets state on recognition error', async () => {
+  it('invokes onError and resets state on recognition error', () => {
     const onError = vi.fn()
 
     const { result } = renderHook(() =>

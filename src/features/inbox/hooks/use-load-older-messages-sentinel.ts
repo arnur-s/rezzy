@@ -1,4 +1,5 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import type { RefObject } from 'react'
+import { useEffect, useRef } from 'react'
 
 type Options = {
   rootRef: RefObject<HTMLElement | null>

@@ -65,7 +65,7 @@ export async function getConversationMessagesPage({
     throw error
   }
 
-  const rows = data ?? []
+  const rows = data
   const hasMore = rows.length > MESSAGE_PAGE_SIZE
   const page = hasMore ? rows.slice(0, MESSAGE_PAGE_SIZE) : rows
 
@@ -82,7 +82,7 @@ async function markMessageFailed(messageId: string): Promise<void> {
     .eq('id', messageId)
 }
 
-async function mapSendTelegramInvokeError(error: unknown): Promise<Error> {
+async function mapSendInvokeError(error: unknown): Promise<Error> {
   if (error instanceof FunctionsHttpError) {
     const res = error.context as Response
     let message: string | undefined
@@ -98,9 +98,15 @@ async function mapSendTelegramInvokeError(error: unknown): Promise<Error> {
   return new Error('Send failed')
 }
 
-type SendTelegramInvokeResult = {
+type SendInvokeResult = {
   ok?: boolean
   message?: { id: string; status: string; external_id: string | null }
+}
+
+/** Channel types whose outbound messages are delivered by an edge function. */
+const REMOTE_SEND_FUNCTIONS: Partial<Record<ChannelType, string>> = {
+  telegram: 'send-telegram-message',
+  whatsapp: 'send-whatsapp-message',
 }
 
 function detectMessageType(
@@ -139,7 +145,7 @@ export async function sendOutboundMessage({
   senderId: string | null
   channelType: ChannelType
 }): Promise<MessageRow> {
-  const isTelegram = channelType === 'telegram'
+  const remoteSendFunction = REMOTE_SEND_FUNCTIONS[channelType]
 
   let insertPayload: TablesInsert<'messages'>
   let storagePath: string | null = null
@@ -195,19 +201,18 @@ export async function sendOutboundMessage({
     throw mapDatabaseError(insertError.message)
   }
 
-  if (!isTelegram) {
+  if (!remoteSendFunction) {
     return inserted
   }
 
   const { data: invokeData, error: invokeError } =
-    await supabase.functions.invoke<SendTelegramInvokeResult>(
-      'send-telegram-message',
-      { body: { messageId: inserted.id } },
-    )
+    await supabase.functions.invoke<SendInvokeResult>(remoteSendFunction, {
+      body: { messageId: inserted.id },
+    })
 
   if (invokeError) {
     await markMessageFailed(inserted.id)
-    throw await mapSendTelegramInvokeError(invokeError)
+    throw await mapSendInvokeError(invokeError)
   }
 
   if (!invokeData?.ok) {

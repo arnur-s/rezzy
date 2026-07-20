@@ -20,19 +20,20 @@ select ok(
 select ok(
   exists (
     select 1
-    from pg_constraint
-    where conname = 'workspaces_slug_key'
-      and conrelid = 'public.workspaces'::regclass
-      and contype = 'u'
+    from pg_index
+    join pg_class on pg_class.oid = pg_index.indexrelid
+    where pg_class.relname = 'one_main_workspace_per_user'
+      and pg_index.indrelid = 'public.workspaces'::regclass
+      and pg_index.indisunique
   ),
-  'workspace slugs are unique'
+  'users can have at most one main workspace'
 );
 
 select ok(
   exists (
     select 1
     from pg_constraint
-    where conname = 'workspace_members_workspace_user_key'
+    where conname = 'workspace_members_workspace_id_user_id_key'
       and conrelid = 'public.workspace_members'::regclass
       and contype = 'u'
   ),
@@ -141,7 +142,7 @@ select ok(
     from pg_policies
     where schemaname = 'public'
       and tablename = 'workspaces'
-      and policyname = 'Workspace creators and members can view workspaces'
+      and policyname = 'Workspace members can view active workspaces'
   ),
   'workspaces select policy exists'
 );
@@ -174,8 +175,26 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('authenticated', 'public.workspaces', 'insert'),
-  'authenticated users can insert workspaces'
+  not has_table_privilege('authenticated', 'public.workspaces', 'insert')
+  and has_column_privilege(
+    'authenticated',
+    'public.workspaces',
+    'name',
+    'insert'
+  )
+  and has_column_privilege(
+    'authenticated',
+    'public.workspaces',
+    'created_by',
+    'insert'
+  )
+  and not has_column_privilege(
+    'authenticated',
+    'public.workspaces',
+    'deleted_at',
+    'insert'
+  ),
+  'authenticated users can insert only supported workspace fields'
 );
 
 select ok(

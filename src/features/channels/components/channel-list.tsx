@@ -1,23 +1,21 @@
 import { m } from '@/paraglide/messages'
 import { Button, Skeleton, Surface } from '@heroui/react'
-import { useNavigate } from '@tanstack/react-router'
 import { PlugIcon, PlusIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useChannels } from '../hooks/use-channels'
 import { ChannelCard } from './channel-card'
+import { ConnectChannelModal } from './connect-channel-modal'
 
 type Props = {
   workspaceId: string
 }
 
 export function ChannelList({ workspaceId }: Props) {
-  const navigate = useNavigate()
   const channelsQuery = useChannels(workspaceId)
+  const [isConnectOpen, setIsConnectOpen] = useState(false)
 
-  function goToConnect() {
-    void navigate({
-      to: '/workspaces/$id/settings/channels/new',
-      params: { id: workspaceId },
-    })
+  function openConnect() {
+    setIsConnectOpen(true)
   }
 
   return (
@@ -31,7 +29,7 @@ export function ChannelList({ workspaceId }: Props) {
             {m.channels_list_description()}
           </p>
         </div>
-        <Button onPress={goToConnect} size="sm">
+        <Button onPress={openConnect} size="sm">
           <PlusIcon className="size-4" />
           <span>{m.channels_connect_cta()}</span>
         </Button>
@@ -42,7 +40,7 @@ export function ChannelList({ workspaceId }: Props) {
       ) : channelsQuery.isError ? (
         <ChannelListError onRetry={() => channelsQuery.refetch()} />
       ) : channelsQuery.data.length === 0 ? (
-        <ChannelListEmpty onConnect={goToConnect} />
+        <ChannelListEmpty onConnect={openConnect} />
       ) : (
         <div className="flex flex-col gap-3">
           {channelsQuery.data.map((channel) => (
@@ -54,6 +52,12 @@ export function ChannelList({ workspaceId }: Props) {
           ))}
         </div>
       )}
+
+      <ConnectChannelModal
+        workspaceId={workspaceId}
+        isOpen={isConnectOpen}
+        onOpenChange={setIsConnectOpen}
+      />
     </div>
   )
 }

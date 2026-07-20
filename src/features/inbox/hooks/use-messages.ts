@@ -55,7 +55,7 @@ export function useMessages(conversationId: string | null) {
     isError: query.isError,
     isFetching: query.isFetching,
     isFetchingNextPage: query.isFetchingNextPage,
-    hasNextPage: query.hasNextPage ?? false,
+    hasNextPage: query.hasNextPage,
     fetchNextPage: query.fetchNextPage,
     refetch: query.refetch,
   }

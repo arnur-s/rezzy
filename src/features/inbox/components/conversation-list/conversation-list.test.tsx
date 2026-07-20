@@ -1,4 +1,3 @@
-import type { ConversationWithRelations } from '@/entities/conversation'
 import { setLocale } from '@/paraglide/runtime'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,33 +10,6 @@ vi.mock('@/entities/channel', async () => {
     PlatformIcon: () => <span data-testid="platform-icon" />,
   }
 })
-
-function conversation(id: string, overrides: Partial<ConversationWithRelations> = {}): ConversationWithRelations {
-  return {
-    id,
-    workspace_id: 'workspace-1',
-    channel_id: 'channel-1',
-    contact_id: `contact-${id}`,
-    assigned_to: null,
-    status: 'open',
-    unread_count: 0,
-    last_message_at: '2026-05-15T10:00:00Z',
-    last_message_preview: 'Hi there',
-    snoozed_until: null,
-    created_at: '2026-05-01T10:00:00Z',
-    updated_at: '2026-05-01T10:00:00Z',
-    channel: { id: 'channel-1', type: 'telegram', name: null },
-    contact: {
-      id: `contact-${id}`,
-      name: `Customer ${id}`,
-      phone: null,
-      avatar_url: null,
-      status: 'new',
-    },
-    assigned_profile: null,
-    ...overrides,
-  }
-}
 
 type RenderProps = Partial<React.ComponentProps<typeof ConversationList>>
 
@@ -117,7 +89,7 @@ describe('ConversationList polish states', () => {
 
   it('renders an empty state when search has no matches and clear filters resets both controls', () => {
     const { onPrimaryFilterChange, onSearchChange } = renderList({
-      conversations: [conversation('1')],
+      conversations: [],
       primaryFilter: 'all',
       searchQuery: 'zzz-no-match',
     })

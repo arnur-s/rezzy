@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 export function useWorkspaces(userId?: string) {
   return useQuery({
-    queryFn: () => getUserWorkspaces(userId!),
+    queryFn: getUserWorkspaces,
     queryKey: workspaceQueryKeys.list(userId!),
     enabled: !!userId,
     refetchOnWindowFocus: false,

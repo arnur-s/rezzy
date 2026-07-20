@@ -1,0 +1,4 @@
+-- Intentionally empty.
+-- supabase/config.toml references this file so local starts and resets remain
+-- reproducible without creating sample users, customer data, or provider data.
+-- Never add real customer data, credentials, tokens, or secrets here.

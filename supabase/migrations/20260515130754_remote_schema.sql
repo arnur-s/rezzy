@@ -397,15 +397,6 @@ grant select on table "private"."channel_secrets" to "service_role";
 
 grant update on table "private"."channel_secrets" to "service_role";
 
-grant delete on table "public"."conversation_reads" to "authenticated";
-
-grant references on table "public"."conversation_reads" to "authenticated";
-
-grant trigger on table "public"."conversation_reads" to "authenticated";
-
-grant truncate on table "public"."conversation_reads" to "authenticated";
-
-
   create policy "Workspace admins can delete contact channels"
   on "public"."contact_channels"
   as permissive
@@ -425,15 +416,6 @@ using ((EXISTS ( SELECT 1
 using ((EXISTS ( SELECT 1
    FROM public.workspace_members wm
   WHERE ((wm.workspace_id = contacts.workspace_id) AND (wm.user_id = auth.uid()) AND (wm.role = ANY (ARRAY['owner'::text, 'admin'::text]))))));
-
-
-
-  create policy "Workspace members can delete own read cursors"
-  on "public"."conversation_reads"
-  as permissive
-  for delete
-  to authenticated
-using (((user_id = auth.uid()) AND public.is_workspace_member(workspace_id)));
 
 
 

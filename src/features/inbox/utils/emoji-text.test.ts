@@ -22,7 +22,7 @@ describe('segmentGraphemes', () => {
     const family = '👨‍👩‍👧'
     const graphemes = segmentGraphemes(family)
     expect(graphemes).toHaveLength(1)
-    expect(isEmojiGrapheme(graphemes[0]!)).toBe(true)
+    expect(isEmojiGrapheme(graphemes[0])).toBe(true)
   })
 })
 

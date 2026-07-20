@@ -1,6 +1,6 @@
-import type { InfiniteData, QueryClient, QueryKey } from '@tanstack/react-query'
-import type { MessagesPageResult, MessagePageCursor } from '../api/messages'
 import type { MessageRow } from '@/entities/message'
+import type { InfiniteData, QueryClient, QueryKey } from '@tanstack/react-query'
+import type { MessagePageCursor, MessagesPageResult } from '../api/messages'
 
 export function flattenMessagePages(
   pages: Array<MessagesPageResult> | undefined,
@@ -12,7 +12,7 @@ export function flattenMessagePages(
 export function getOldestMessageCursor(
   messages: Array<MessageRow>,
 ): MessagePageCursor | null {
-  const oldest = messages[0]
+  const oldest = messages.at(0)
   if (!oldest) return null
   return { createdAt: oldest.created_at, id: oldest.id }
 }
@@ -22,7 +22,7 @@ export function getNextPageCursorFromPages(
 ): MessagePageCursor | undefined {
   const lastPage = pages.at(-1)
   if (!lastPage?.hasMore) return undefined
-  const oldest = lastPage.messages[0]
+  const oldest = lastPage.messages.at(0)
   if (!oldest) return undefined
   return { createdAt: oldest.created_at, id: oldest.id }
 }

@@ -1,6 +1,4 @@
-import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import type { Workspace } from '@/entities/workspace'
-import { useDashboardStats } from '@/features/dashboard/hooks/use-dashboard-stats'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
@@ -163,37 +161,29 @@ function SidebarBody({
           </Link>
         </div>
 
-        {/* Workspace switcher (workspace-scoped routes only) */}
-        {!isHomeRoute && (
-          <>
-            <div className="h-[64px] flex items-center px-3">
-              <WorkspaceSwitcher
-                isCollapsed={isCollapsed}
-                currentWorkspace={currentWorkspace}
-                workspaces={workspacesQuery.data ?? []}
-                isLoading={workspacesQuery.isPending}
-                isError={workspacesQuery.isError}
-                onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
-                onSelect={(workspace) => {
-                  onNavigate?.()
-                  void navigate({
-                    to: '/workspaces/$id/inbox',
-                    params: { id: workspace.id },
-                  })
-                }}
-              />
-            </div>
-          </>
-        )}
+        {/* Workspace switcher */}
+        <div className="h-[64px] flex items-center px-3">
+          <WorkspaceSwitcher
+            isCollapsed={isCollapsed}
+            currentWorkspace={currentWorkspace}
+            workspaces={workspacesQuery.data ?? []}
+            isLoading={workspacesQuery.isPending}
+            isError={workspacesQuery.isError}
+            onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
+            onSelect={(workspace) => {
+              onNavigate?.()
+              void navigate({
+                to: '/workspaces/$id/inbox',
+                params: { id: workspace.id },
+              })
+            }}
+          />
+        </div>
 
         {/* Nav */}
         <ScrollShadow className="flex-1 px-3 py-1">
           {isHomeRoute ? (
-            <HomeNav
-              workspaces={workspacesQuery.data ?? []}
-              isCollapsed={isCollapsed}
-              onNavigate={onNavigate}
-            />
+            <HomeNav isCollapsed={isCollapsed} onNavigate={onNavigate} />
           ) : currentWorkspace ? (
             <WorkspaceNav
               workspaceId={currentWorkspace.id}
@@ -251,24 +241,12 @@ function SidebarBody({
 }
 
 function HomeNav({
-  workspaces,
   isCollapsed,
   onNavigate,
 }: {
-  workspaces: Array<Workspace>
   isCollapsed: boolean
   onNavigate?: () => void
 }) {
-  const workspaceIds = useMemo(() => workspaces.map((w) => w.id), [workspaces])
-  const statsQuery = useDashboardStats(workspaceIds)
-  const unreadById = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const entry of statsQuery.data?.perWorkspace ?? []) {
-      map.set(entry.workspaceId, entry.unread)
-    }
-    return map
-  }, [statsQuery.data])
-
   return (
     <nav
       aria-label={m.sidebar_workspace_nav_aria_label()}
@@ -296,92 +274,26 @@ function HomeNav({
         </Link>
       </CollapsibleNavTooltip>
 
-      {/* Workspaces section */}
-      {workspaces.length > 0 && (
-        <>
-          {!isCollapsed && (
-            <p className="text-foreground/45 px-3 pb-1 pt-3 text-xs font-medium">
-              {m.sidebar_workspaces_section_label()}
-            </p>
-          )}
-          {isCollapsed && (
-            <div className="bg-border/60 mx-3 my-2 h-px" aria-hidden />
-          )}
-
-          {workspaces.map((workspace) => {
-            const unread = unreadById.get(workspace.id) ?? 0
-            const hasUnread = unread > 0
-            const label = hasUnread
-              ? `${workspace.name} (${unread})`
-              : workspace.name
-
-            return (
-              <CollapsibleNavTooltip
-                key={workspace.id}
-                isCollapsed={isCollapsed}
-                label={label}
-              >
-                <Link
-                  to="/workspaces/$id"
-                  params={{ id: workspace.id }}
-                  aria-label={label}
-                  className={cn(navItemBase, navItemInactive)}
-                  onClick={onNavigate}
-                >
-                  <span className="relative inline-flex shrink-0">
-                    <WorkspaceMark name={workspace.name} isActive={false} />
-                    {isCollapsed && hasUnread && (
-                      <span
-                        aria-hidden="true"
-                        className="bg-primary border-card absolute -right-0.5 -top-0.5 size-2 rounded-full border-2"
-                      />
-                    )}
-                  </span>
-                  <span
-                    className={cn(navLabel, isCollapsed && navLabelHidden)}
-                    aria-hidden={isCollapsed || undefined}
-                  >
-                    {workspace.name}
-                  </span>
-                  {!isCollapsed && hasUnread && (
-                    <NumericUnreadChip
-                      count={unread}
-                      tone="primary"
-                      capAt99
-                      aria-label={m.sidebar_workspace_unread_dot_aria({
-                        count: unread,
-                      })}
-                    />
-                  )}
-                </Link>
-              </CollapsibleNavTooltip>
-            )
-          })}
-        </>
-      )}
-
       {/* Settings */}
-      <div className="pt-2">
-        <CollapsibleNavTooltip
-          isCollapsed={isCollapsed}
-          label={m.sidebar_settings_label()}
+      <CollapsibleNavTooltip
+        isCollapsed={isCollapsed}
+        label={m.sidebar_settings_label()}
+      >
+        <Link
+          to="/settings"
+          aria-label={m.sidebar_settings_label()}
+          className={cn(navItemBase, navItemInactive)}
+          onClick={onNavigate}
         >
-          <Link
-            to="/settings"
-            aria-label={m.sidebar_settings_label()}
-            className={cn(navItemBase, navItemInactive)}
-            onClick={onNavigate}
+          <SettingsIcon className="size-4 shrink-0" />
+          <span
+            className={cn(navLabel, isCollapsed && navLabelHidden)}
+            aria-hidden={isCollapsed || undefined}
           >
-            <SettingsIcon className="size-4 shrink-0" />
-            <span
-              className={cn(navLabel, isCollapsed && navLabelHidden)}
-              aria-hidden={isCollapsed || undefined}
-            >
-              {m.sidebar_settings_label()}
-            </span>
-          </Link>
-        </CollapsibleNavTooltip>
-      </div>
+            {m.sidebar_settings_label()}
+          </span>
+        </Link>
+      </CollapsibleNavTooltip>
     </nav>
   )
 }
@@ -550,8 +462,8 @@ function WorkspaceSwitcher({
     <CollapsibleNavTooltip isCollapsed={isCollapsed} label={tooltipLabel}>
       <Select
         aria-label={m.sidebar_select_workspace_label()}
-        value={currentWorkspace?.id}
-        onChange={handleSelectionChange}
+        selectedKey={currentWorkspace?.id ?? null}
+        onSelectionChange={handleSelectionChange}
         variant="secondary"
         className={cn('w-full', isCollapsed && 'mx-auto w-auto')}
         placeholder={m.sidebar_select_workspace_label()}

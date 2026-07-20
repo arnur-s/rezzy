@@ -1,0 +1,2 @@
+[functions.whatsapp-connect-channel]
+verify_jwt = false

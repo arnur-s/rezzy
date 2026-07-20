@@ -2,11 +2,17 @@
   "name": "rezzy",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.13.0",
+  "engines": {
+    "node": ">=24.18.0",
+    "pnpm": "11.13.0"
+  },
   "imports": {
     "@/*": "./src/*"
   },
   "scripts": {
     "dev": "vite dev --port 3000 --open --host",
+    "dev:agent": "vite dev --port 3000 --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -14,13 +20,19 @@
     "test:db": "supabase test db",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "format": "eslint --fix . && prettier --write .",
     "check": "prettier --check .",
     "project-structure": "npx tree-node-cli -I \"node_modules|dist|build|.git|.next|coverage\" > project-structure.txt",
     "machine-translate": "inlang machine translate --project project.inlang",
-    "types:supabase": "npx supabase gen types typescript > ./src/api/types.ts",
-    "full-schema:supabase": "npx supabase db dump -f full-schema.sql",
-    "deploy-functions:supabase": "npx supabase functions deploy"
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset --local",
+    "types:supabase:local": "supabase gen types --local --lang typescript > ./src/api/types.ts",
+    "types:supabase:linked": "supabase gen types --linked --lang typescript > ./src/api/types.ts",
+    "full-schema:supabase:local": "supabase db dump --local -f full-schema.sql",
+    "full-schema:supabase:linked": "supabase db dump --linked -f full-schema.sql",
+    "deploy-functions:supabase": "supabase functions deploy"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -31,10 +43,10 @@
     "@sindresorhus/slugify": "^3.0.0",
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/vite": "^4.1.18",
-    "@tanstack/react-devtools": "latest",
+    "@tanstack/react-devtools": "^0.10.8",
     "@tanstack/react-query": "^5.100.9",
-    "@tanstack/react-router": "latest",
-    "@tanstack/react-router-devtools": "latest",
+    "@tanstack/react-router": "^1.170.18",
+    "@tanstack/react-router-devtools": "^1.167.0",
     "@tanstack/react-virtual": "^3.13.6",
     "@tanstack/router-plugin": "^1.132.0",
     "lottie-react": "^2.4.1",
@@ -50,28 +62,23 @@
     "@inlang/cli": "^3.0.0",
     "@inlang/paraglide-js": "^2.18.0",
     "@tailwindcss/typography": "^0.5.16",
-    "@tanstack/devtools-vite": "latest",
-    "@tanstack/eslint-config": "latest",
-    "@tanstack/router-plugin": "latest",
+    "@tanstack/devtools-vite": "^0.8.1",
+    "@tanstack/eslint-config": "^0.4.0",
+    "@tanstack/router-plugin": "^1.167.34",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
     "jsdom": "^28.1.0",
     "prettier": "^3.8.1",
+    "supabase": "2.109.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.5"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss",
-      "unrs-resolver"
-    ]
   }
 }

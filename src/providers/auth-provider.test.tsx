@@ -16,21 +16,21 @@ vi.mock('@/utils/supabase', () => ({
   supabase: supabaseMock,
 }))
 
-const session = {
+const session: Session = {
   access_token: 'access-token',
   expires_at: 1_900_000_000,
   expires_in: 3600,
   refresh_token: 'refresh-token',
   token_type: 'bearer',
   user: {
-    metadata: {},
+    app_metadata: {},
     aud: 'authenticated',
     created_at: '2026-05-08T00:00:00.000Z',
     email: 'alex@example.com',
     id: 'user-1',
     user_metadata: {},
   },
-} as Session
+}
 
 function AuthProbe() {
   const auth = useAuth()

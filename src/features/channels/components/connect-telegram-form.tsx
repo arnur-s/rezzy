@@ -4,6 +4,7 @@ import { m } from '@/paraglide/messages'
 import { FieldError, Input, Label, TextField, toast } from '@heroui/react'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { ChannelConnectError } from '../api/channels'
 import { useCreateTelegramChannel } from '../hooks/use-channels'
@@ -16,14 +17,29 @@ import {
 type Props = {
   workspaceId: string
   onCancel: () => void
+  /**
+   * Called after a channel is created successfully. When provided (e.g. inside
+   * the connect modal) it runs instead of navigating to the channels list.
+   */
+  onSuccess?: () => void
+  /**
+   * Reports whether the form holds unsaved input so a parent (e.g. the connect
+   * modal) can confirm before discarding it on close.
+   */
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
-export function ConnectTelegramForm({ workspaceId, onCancel }: Props) {
+export function ConnectTelegramForm({
+  workspaceId,
+  onCancel,
+  onSuccess,
+  onDirtyChange,
+}: Props) {
   const navigate = useNavigate()
   const createChannelMutation = useCreateTelegramChannel(workspaceId)
 
   const {
-    formState: { errors },
+    formState: { errors, isDirty },
     handleSubmit,
     register,
   } = useForm<TelegramChannelFormValues>({
@@ -31,6 +47,13 @@ export function ConnectTelegramForm({ workspaceId, onCancel }: Props) {
     disabled: createChannelMutation.isPending,
     resolver: standardSchemaResolver(telegramChannelSchema),
   })
+
+  // Keep the parent in sync with unsaved-changes state and always clear it on
+  // unmount, so closing or switching channel type resets the confirmation.
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+    return () => onDirtyChange?.(false)
+  }, [isDirty, onDirtyChange])
 
   function onSubmit(values: TelegramChannelFormValues) {
     createChannelMutation.mutate(values, {
@@ -58,6 +81,10 @@ export function ConnectTelegramForm({ workspaceId, onCancel }: Props) {
       },
       onSuccess: () => {
         toast.success(m.channels_telegram_create_success())
+        if (onSuccess) {
+          onSuccess()
+          return
+        }
         void navigate({
           to: '/workspaces/$id/settings/channels',
           params: { id: workspaceId },
@@ -74,9 +101,6 @@ export function ConnectTelegramForm({ workspaceId, onCancel }: Props) {
           <h2 className="text-lg font-semibold">
             {m.channels_telegram_form_title()}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {m.channels_telegram_form_description()}
-          </p>
         </div>
       </div>
 

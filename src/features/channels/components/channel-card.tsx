@@ -10,12 +10,14 @@ import {
   CircleCheckIcon,
   MoreHorizontalIcon,
   PencilIcon,
+  RefreshCwIcon,
   Trash2Icon,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ActivateChannelDialog } from './activate-channel-dialog'
 import { DeactivateChannelDialog } from './deactivate-channel-dialog'
 import { EditChannelNameModal } from './edit-channel-name-modal'
+import { ReconnectWhatsappModal } from './reconnect-whatsapp-modal'
 
 type Props = {
   channel: Channel
@@ -26,6 +28,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isActivateOpen, setIsActivateOpen] = useState(false)
+  const [isReconnectOpen, setIsReconnectOpen] = useState(false)
 
   const channelType = isChannelType(channel.type) ? channel.type : null
 
@@ -68,7 +71,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
         </div>
 
         <Dropdown>
-          <Dropdown.Trigger>
+          <Dropdown.Trigger aria-label={m.channels_card_actions_label()}>
             <MoreHorizontalIcon className="size-4" />
           </Dropdown.Trigger>
 
@@ -76,6 +79,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
             <Dropdown.Menu
               onAction={(key) => {
                 if (key === 'edit') setIsEditOpen(true)
+                if (key === 'reconnect') setIsReconnectOpen(true)
                 if (key === 'disconnect') setIsDeleteOpen(true)
                 if (key === 'activate') setIsActivateOpen(true)
               }}
@@ -87,6 +91,15 @@ export function ChannelCard({ channel, workspaceId }: Props) {
                 <PencilIcon className="size-4" />
                 <Label>{m.channels_card_action_edit()}</Label>
               </Dropdown.Item>
+              {channelType === 'whatsapp' && (
+                <Dropdown.Item
+                  id="reconnect"
+                  textValue={m.channels_card_action_reconnect()}
+                >
+                  <RefreshCwIcon className="size-4" />
+                  <Label>{m.channels_card_action_reconnect()}</Label>
+                </Dropdown.Item>
+              )}
               {channel.is_active ? (
                 <Dropdown.Item
                   id="disconnect"
@@ -116,6 +129,15 @@ export function ChannelCard({ channel, workspaceId }: Props) {
         onOpenChange={setIsEditOpen}
         workspaceId={workspaceId}
       />
+
+      {channelType === 'whatsapp' && (
+        <ReconnectWhatsappModal
+          channel={channel}
+          isOpen={isReconnectOpen}
+          onOpenChange={setIsReconnectOpen}
+          workspaceId={workspaceId}
+        />
+      )}
 
       <DeactivateChannelDialog
         channel={channel}
