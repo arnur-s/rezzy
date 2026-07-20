@@ -41,9 +41,9 @@
   --default: oklch(0.925 0.004 264);
   --default-foreground: oklch(0.2101 0.0318 264.6645);
 
-  /* Accent — brand color (orange) */
-  --accent: oklch(0.6716 0.1368 48.513);
-  --accent-foreground: oklch(1 0 0);
+  /* Accent — monochrome, inspired by Threads */
+  --accent: oklch(0.2103 0.0059 285.89);
+  --accent-foreground: oklch(0.9851 0.002 285.82);
 
   /* Form fields */
   --field-background: oklch(1 0 0);
@@ -62,7 +62,7 @@
   /* Misc */
   --border: oklch(0.875 0.006 264);
   --separator: oklch(0.9 0.005 264);
-  --focus: oklch(0.6716 0.1368 48.513);
+  --focus: oklch(0.2103 0.0059 285.89);
   --link: var(--foreground);
   --backdrop: rgba(0, 0, 0, 0.5);
   --segment: oklch(1 0 0);
@@ -139,7 +139,7 @@
   --default: oklch(0.252 0 0);
   --default-foreground: oklch(0.8109 0 0);
 
-  --accent: oklch(0.7214 0.1337 49.9802);
+  --accent: oklch(0.9851 0.002 285.82);
   --accent-foreground: oklch(0.1797 0.0043 308.1928);
 
   --field-background: oklch(0.252 0 0);
@@ -153,7 +153,7 @@
 
   --border: oklch(0.252 0 0);
   --separator: oklch(0.252 0 0);
-  --focus: oklch(0.7214 0.1337 49.9802);
+  --focus: oklch(0.9851 0.002 285.82);
   --segment: oklch(0.252 0 0);
   --segment-foreground: var(--foreground);
 
@@ -258,4 +258,27 @@ body {
 
 #app {
   height: 100vh;
+}
+
+@keyframes unread-count-emphasis {
+  from {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.unread-count-emphasis {
+  transform-origin: left center;
+  animation: unread-count-emphasis 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unread-count-emphasis {
+    animation: none;
+  }
 }

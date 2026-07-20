@@ -1,4 +1,5 @@
 export {
+  resolveWorkspaceIcon,
   WORKSPACE_CURATED_ICONS,
   WORKSPACE_DEFAULT_ICON,
 } from './lib/workspace-icons'

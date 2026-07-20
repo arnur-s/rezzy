@@ -9,8 +9,6 @@ import {
   useParams,
   useRouterState,
 } from '@tanstack/react-router'
-import type { LucideIcon } from 'lucide-react'
-import { MailIcon, PlugIcon, UsersIcon } from 'lucide-react'
 
 type SettingsNavItem = {
   key: 'general' | 'channels' | 'members'
@@ -18,9 +16,11 @@ type SettingsNavItem = {
     | '/workspaces/$id/settings'
     | '/workspaces/$id/settings/channels'
     | '/workspaces/$id/settings/members'
-  icon: LucideIcon
   label: string
 }
+
+const settingsTabIndicatorClassName =
+  'dark:bg-foreground/15 dark:ring-1 dark:ring-foreground/10'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
   {
@@ -57,27 +57,24 @@ function RouteComponent() {
     {
       key: 'general',
       to: '/workspaces/$id/settings',
-      icon: MailIcon,
       label: m.workspace_settings_general_label(),
     },
     {
       key: 'channels',
       to: '/workspaces/$id/settings/channels',
-      icon: PlugIcon,
       label: m.workspace_settings_channels_label(),
     },
     {
       key: 'members',
       to: '/workspaces/$id/settings/members',
-      icon: UsersIcon,
       label: m.workspace_settings_members_label(),
     },
   ]
 
   let selectedKey: SettingsNavItem['key'] = 'general'
-  for (const item of navItems) {
+  for (const item of [...navItems].reverse()) {
     const fullPath = item.to.replace('$id', workspaceId).replace(/\/$/, '')
-    if (pathname === fullPath || pathname === `${fullPath}/`) {
+    if (pathname === fullPath || pathname.startsWith(`${fullPath}/`)) {
       selectedKey = item.key
       break
     }
@@ -94,84 +91,49 @@ function RouteComponent() {
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto">
-      <header className="border-b border-border/60 px-4 py-6 sm:px-8">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {m.workspace_settings_kicker()}
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {m.workspace_settings_description()}
-        </p>
+      <header className="border-b border-border/60 py-6">
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
+          <p className="text-xs font-medium text-muted-foreground">
+            {m.workspace_settings_kicker()}
+          </p>
+          <h1 className="mt-1 text-lg font-semibold">
+            {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            {m.workspace_settings_description()}
+          </p>
+        </div>
       </header>
 
-      <div className="container px-4 py-6 sm:px-8 md:flex-row md:gap-10 md:py-10">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
         <Tabs
-          variant="secondary"
+          className="w-full"
           selectedKey={selectedKey}
           onSelectionChange={(key) => handleSectionChange(key as string)}
         >
           <Tabs.ListContainer>
-            <Tabs.List aria-label="Options">
-              <Tabs.Tab id="general">
-                {m.workspace_settings_general_label()}
-                <Tabs.Indicator />
-              </Tabs.Tab>
-              <Tabs.Tab id="channels">
-                {m.workspace_settings_channels_label()}
-                <Tabs.Indicator />
-              </Tabs.Tab>
-              <Tabs.Tab id="members">
-                {m.workspace_settings_members_label()}
-                <Tabs.Indicator />
-              </Tabs.Tab>
+            <Tabs.List
+              aria-label={m.workspace_settings_sections_nav_aria_label()}
+            >
+              {navItems.map((item) => (
+                <Tabs.Tab key={item.key} id={item.key}>
+                  {item.label}
+                  <Tabs.Indicator className={settingsTabIndicatorClassName} />
+                </Tabs.Tab>
+              ))}
             </Tabs.List>
           </Tabs.ListContainer>
-          <Tabs.Panel id="general">
+          <Tabs.Panel className="pt-8" id="general">
             <Outlet />
           </Tabs.Panel>
-          <Tabs.Panel id="channels">
+          <Tabs.Panel className="pt-8" id="channels">
             <Outlet />
           </Tabs.Panel>
-          <Tabs.Panel id="members">
+          <Tabs.Panel className="pt-8" id="members">
             <Outlet />
           </Tabs.Panel>
         </Tabs>
       </div>
-
-      {/* <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8 md:flex-row md:gap-10 md:py-10">
-        <nav className="md:w-56 md:shrink-0">
-          <ListBox
-            aria-label={m.workspace_settings_sections_nav_aria_label()}
-            selectionMode="single"
-            disallowEmptySelection
-            selectedKeys={new Set([selectedKey])}
-            onSelectionChange={handleSectionChange}
-            className="flex gap-1 overflow-x-auto md:flex-col md:gap-0.5"
-          >
-            {navItems.map((item) => {
-              const Icon = item.icon
-
-              return (
-                <ListBox.Item
-                  key={item.key}
-                  id={item.key}
-                  textValue={item.label}
-                  className="aria-selected:bg-primary/10 aria-selected:text-primary"
-                >
-                  <Icon className="size-4 shrink-0" />
-                  <span>{item.label}</span>
-                </ListBox.Item>
-              )
-            })}
-          </ListBox>
-        </nav>
-
-        <div className="min-w-0 flex-1">
-          <Outlet />
-        </div>
-      </div> */}
     </div>
   )
 }

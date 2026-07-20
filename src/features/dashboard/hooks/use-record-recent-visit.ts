@@ -11,13 +11,14 @@ import { useEffect } from 'react'
 export function useRecordWorkspaceVisit(
   workspaceId: string | undefined,
   workspaceName: string | undefined,
+  workspaceIcon: string | null | undefined,
 ) {
   const { record } = useRecentWorkspaces()
 
   useEffect(() => {
     if (!workspaceId || !workspaceName) return
-    record({ id: workspaceId, name: workspaceName })
-  }, [workspaceId, workspaceName, record])
+    record({ icon: workspaceIcon, id: workspaceId, name: workspaceName })
+  }, [workspaceId, workspaceName, workspaceIcon, record])
 }
 
 /**

@@ -13,7 +13,6 @@ import {
   Input,
   Label,
   Skeleton,
-  Surface,
   TextArea,
   TextField,
   toast,
@@ -110,12 +109,9 @@ function RouteComponent() {
 
   if (workspaceQuery.isError) {
     return (
-      <Surface
-        className="rounded-2xl p-6 text-sm text-danger"
-        variant="tertiary"
-      >
+      <div className="text-sm text-danger">
         {m.workspace_settings_load_error()}
-      </Surface>
+      </div>
     )
   }
 
@@ -134,90 +130,88 @@ function RouteComponent() {
         </p>
       </div>
 
-      <Surface className="rounded-2xl p-6" variant="tertiary">
-        <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
-          <Controller
-            control={control}
-            name="name"
-            render={({ field, fieldState }) => (
-              <TextField
-                fullWidth
-                isDisabled={isFormDisabled}
-                isInvalid={fieldState.invalid}
-              >
-                <Label>{m.workspaces_name_label()}</Label>
-                <Input
-                  autoComplete="organization"
-                  placeholder={m.workspaces_name_placeholder()}
-                  name={field.name}
-                  ref={field.ref}
-                  value={field.value}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                />
-                <FieldError>{fieldState.error?.message}</FieldError>
-              </TextField>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="description"
-            render={({ field, fieldState }) => (
-              <TextField
-                fullWidth
-                isDisabled={isFormDisabled}
-                isInvalid={fieldState.invalid}
-              >
-                <Label>{m.workspaces_description_label()}</Label>
-                <TextArea
-                  className="min-h-24 w-full resize-y"
-                  placeholder={m.workspaces_description_placeholder()}
-                  rows={3}
-                  name={field.name}
-                  ref={field.ref}
-                  value={field.value ?? ''}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                />
-                <FieldError>{fieldState.error?.message}</FieldError>
-              </TextField>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="icon"
-            render={({ field, fieldState }) => (
-              <div className="flex flex-col gap-2">
-                <Label className="text-sm font-medium">
-                  {m.workspaces_icon_label()}
-                </Label>
-                <WorkspaceIconPicker
-                  isDisabled={isFormDisabled}
-                  onChange={field.onChange}
-                  value={field.value}
-                />
-                {fieldState.error?.message ? (
-                  <p className="text-xs text-destructive">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </div>
-            )}
-          />
-
-          <div className="flex justify-end">
-            <Button
-              isDisabled={!isDirty}
-              isLoading={updateWorkspaceMutation.isPending}
-              type="submit"
+      <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
+        <Controller
+          control={control}
+          name="name"
+          render={({ field, fieldState }) => (
+            <TextField
+              fullWidth
+              isDisabled={isFormDisabled}
+              isInvalid={fieldState.invalid}
             >
-              {m.common_save_changes()}
-            </Button>
-          </div>
-        </form>
-      </Surface>
+              <Label>{m.workspaces_name_label()}</Label>
+              <Input
+                autoComplete="organization"
+                placeholder={m.workspaces_name_placeholder()}
+                name={field.name}
+                ref={field.ref}
+                value={field.value}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+              />
+              <FieldError>{fieldState.error?.message}</FieldError>
+            </TextField>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="description"
+          render={({ field, fieldState }) => (
+            <TextField
+              fullWidth
+              isDisabled={isFormDisabled}
+              isInvalid={fieldState.invalid}
+            >
+              <Label>{m.workspaces_description_label()}</Label>
+              <TextArea
+                className="min-h-24 w-full resize-y"
+                placeholder={m.workspaces_description_placeholder()}
+                rows={3}
+                name={field.name}
+                ref={field.ref}
+                value={field.value ?? ''}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+              />
+              <FieldError>{fieldState.error?.message}</FieldError>
+            </TextField>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="icon"
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-2">
+              <Label className="text-sm font-medium">
+                {m.workspaces_icon_label()}
+              </Label>
+              <WorkspaceIconPicker
+                isDisabled={isFormDisabled}
+                onChange={field.onChange}
+                value={field.value}
+              />
+              {fieldState.error?.message ? (
+                <p className="text-xs text-destructive">
+                  {fieldState.error.message}
+                </p>
+              ) : null}
+            </div>
+          )}
+        />
+
+        <div className="flex justify-end border-t border-border/60 pt-5">
+          <Button
+            isDisabled={!isDirty}
+            isLoading={updateWorkspaceMutation.isPending}
+            type="submit"
+          >
+            {m.common_save_changes()}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }
@@ -229,11 +223,11 @@ function GeneralSettingsSkeleton() {
         <Skeleton className="h-7 w-48 rounded" />
         <Skeleton className="mt-2 h-4 w-full max-w-md rounded" />
       </div>
-      <Surface className="space-y-4 rounded-2xl p-6" variant="tertiary">
+      <div className="space-y-5">
         <Skeleton className="h-24 w-full rounded-xl" />
         <Skeleton className="h-10 w-full rounded-md" />
         <Skeleton className="h-24 w-full rounded-md" />
-      </Surface>
+      </div>
     </div>
   )
 }

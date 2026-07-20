@@ -1,13 +1,13 @@
+import type { RecentlyViewedEntry } from '@/features/dashboard/utils/recently-viewed-store'
 import {
   RECENT_CONTACTS_KEY,
   RECENT_WORKSPACES_KEY,
   readRecent,
   writeRecent,
 } from '@/features/dashboard/utils/recently-viewed-store'
-import type { RecentlyViewedEntry } from '@/features/dashboard/utils/recently-viewed-store'
 import { useCallback, useEffect, useState } from 'react'
 
-type WorkspaceEntry = { id: string; name: string }
+type WorkspaceEntry = { icon?: string | null; id: string; name: string }
 type ContactEntry = { id: string; name: string; workspaceId: string }
 
 function useRecentList(key: string) {
@@ -31,13 +31,17 @@ function useRecentList(key: string) {
 export function useRecentWorkspaces() {
   const [items, setItems] = useRecentList(RECENT_WORKSPACES_KEY)
 
-  const record = useCallback((entry: WorkspaceEntry) => {
-    const next = writeRecent(RECENT_WORKSPACES_KEY, {
-      id: entry.id,
-      name: entry.name,
-    })
-    setItems(next)
-  }, [setItems])
+  const record = useCallback(
+    (entry: WorkspaceEntry) => {
+      const next = writeRecent(RECENT_WORKSPACES_KEY, {
+        id: entry.id,
+        icon: entry.icon ?? undefined,
+        name: entry.name,
+      })
+      setItems(next)
+    },
+    [setItems],
+  )
 
   return { items, record }
 }
@@ -45,14 +49,17 @@ export function useRecentWorkspaces() {
 export function useRecentContacts() {
   const [items, setItems] = useRecentList(RECENT_CONTACTS_KEY)
 
-  const record = useCallback((entry: ContactEntry) => {
-    const next = writeRecent(RECENT_CONTACTS_KEY, {
-      id: entry.id,
-      name: entry.name,
-      workspaceId: entry.workspaceId,
-    })
-    setItems(next)
-  }, [setItems])
+  const record = useCallback(
+    (entry: ContactEntry) => {
+      const next = writeRecent(RECENT_CONTACTS_KEY, {
+        id: entry.id,
+        name: entry.name,
+        workspaceId: entry.workspaceId,
+      })
+      setItems(next)
+    },
+    [setItems],
+  )
 
   return { items, record }
 }

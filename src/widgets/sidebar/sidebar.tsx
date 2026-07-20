@@ -1,4 +1,5 @@
 import type { Workspace } from '@/entities/workspace'
+import { resolveWorkspaceIcon } from '@/entities/workspace'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
@@ -31,6 +32,7 @@ import {
   PlusIcon,
   SettingsIcon,
 } from 'lucide-react'
+import { DynamicIcon } from 'lucide-react/dynamic'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -73,7 +75,7 @@ export function Sidebar({
       >
         <Drawer.Content placement="left">
           <Drawer.Dialog
-            className="bg-sidebar h-full w-[260px] rounded-none p-0"
+            className="bg-sidebar h-full w-65 rounded-none p-0"
             aria-label={m.sidebar_workspace_nav_aria_label()}
           >
             <Drawer.Body>
@@ -108,12 +110,13 @@ function SidebarBody({
   const params = useParams({ strict: false })
   const currentWorkspaceId = params.id
   const isHomeRoute = pathname === '/'
+  const isSettingsRoute = pathname === '/settings'
 
   const workspacesQuery = useWorkspaces(user.id)
 
   const currentWorkspace = useMemo(
     () =>
-      isHomeRoute
+      isHomeRoute || isSettingsRoute
         ? undefined
         : (workspacesQuery.data?.find((w) => w.id === currentWorkspaceId) ??
           workspacesQuery.data?.[0]),
@@ -137,7 +140,7 @@ function SidebarBody({
     <>
       <div className="flex h-full flex-col">
         {/* Brand */}
-        <div className="flex h-[64px] shrink-0 items-center px-4 border-b border-border/60">
+        <div className="flex h-16 shrink-0 items-center px-4 border-b border-border/60">
           <Link
             to="/"
             aria-label={m.sidebar_home_label()}
@@ -145,7 +148,7 @@ function SidebarBody({
             onClick={onNavigate}
           >
             <span className="bg-accent flex size-8 shrink-0 items-center justify-center rounded-lg">
-              <span className="text-lg font-bold text-white">
+              <span className="text-accent-foreground text-lg font-bold">
                 {m.sidebar_brand_label().charAt(0)}
               </span>
             </span>
@@ -162,7 +165,7 @@ function SidebarBody({
         </div>
 
         {/* Workspace switcher */}
-        <div className="h-[64px] flex items-center px-3">
+        <div className="h-16 flex items-center px-3">
           <WorkspaceSwitcher
             isCollapsed={isCollapsed}
             currentWorkspace={currentWorkspace}
@@ -182,7 +185,7 @@ function SidebarBody({
 
         {/* Nav */}
         <ScrollShadow className="flex-1 px-3 py-1">
-          {isHomeRoute ? (
+          {isHomeRoute || isSettingsRoute ? (
             <HomeNav isCollapsed={isCollapsed} onNavigate={onNavigate} />
           ) : currentWorkspace ? (
             <WorkspaceNav
@@ -247,6 +250,10 @@ function HomeNav({
   isCollapsed: boolean
   onNavigate?: () => void
 }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const isHomeActive = pathname === '/'
+  const isSettingsActive = pathname === '/settings'
+
   return (
     <nav
       aria-label={m.sidebar_workspace_nav_aria_label()}
@@ -260,8 +267,11 @@ function HomeNav({
         <Link
           to="/"
           aria-label={m.sidebar_home_nav_label()}
-          aria-current="page"
-          className={cn(navItemBase, navItemActive)}
+          aria-current={isHomeActive ? 'page' : undefined}
+          className={cn(
+            navItemBase,
+            isHomeActive ? navItemActive : navItemInactive,
+          )}
           onClick={onNavigate}
         >
           <HomeIcon className="size-4 shrink-0" />
@@ -282,7 +292,11 @@ function HomeNav({
         <Link
           to="/settings"
           aria-label={m.sidebar_settings_label()}
-          className={cn(navItemBase, navItemInactive)}
+          aria-current={isSettingsActive ? 'page' : undefined}
+          className={cn(
+            navItemBase,
+            isSettingsActive ? navItemActive : navItemInactive,
+          )}
           onClick={onNavigate}
         >
           <SettingsIcon className="size-4 shrink-0" />
@@ -465,7 +479,7 @@ function WorkspaceSwitcher({
         selectedKey={currentWorkspace?.id ?? null}
         onSelectionChange={handleSelectionChange}
         variant="secondary"
-        className={cn('w-full', isCollapsed && 'mx-auto w-auto')}
+        className="w-full"
         placeholder={m.sidebar_select_workspace_label()}
       >
         <Select.Trigger
@@ -473,7 +487,7 @@ function WorkspaceSwitcher({
             navItemBase,
             navItemInactive,
             'h-auto min-h-0 w-full border-none shadow-none',
-            isCollapsed && 'mx-auto size-9 w-9 justify-center p-0',
+            isCollapsed && 'h-9 justify-center p-0',
           )}
         >
           <Select.Value>
@@ -486,7 +500,6 @@ function WorkspaceSwitcher({
                       isCollapsed && 'justify-center',
                     )}
                   >
-                    <span aria-hidden className="size-5 shrink-0 rounded-md" />
                     <span
                       className={cn(
                         navLabel,
@@ -508,7 +521,7 @@ function WorkspaceSwitcher({
                     isCollapsed && 'justify-center gap-0',
                   )}
                 >
-                  <WorkspaceMark name={currentWorkspace.name} isActive />
+                  <WorkspaceMark icon={currentWorkspace.icon} isActive />
                   <span
                     className={cn(
                       navLabel,
@@ -539,7 +552,7 @@ function WorkspaceSwitcher({
                 textValue={workspace.name}
               >
                 <WorkspaceMark
-                  name={workspace.name}
+                  icon={workspace.icon}
                   isActive={workspace.id === currentWorkspace?.id}
                 />
                 <Label className="flex-1">{workspace.name}</Label>
@@ -564,10 +577,10 @@ function WorkspaceSwitcher({
 }
 
 function WorkspaceMark({
-  name,
+  icon,
   isActive,
 }: {
-  name: string
+  icon: Workspace['icon']
   isActive: boolean
 }) {
   return (
@@ -579,7 +592,11 @@ function WorkspaceMark({
           : 'bg-primary/10 text-primary',
       )}
     >
-      {name.trim().charAt(0).toUpperCase() || 'W'}
+      <DynamicIcon
+        name={resolveWorkspaceIcon(icon)}
+        className="size-3.5"
+        aria-hidden
+      />
     </span>
   )
 }

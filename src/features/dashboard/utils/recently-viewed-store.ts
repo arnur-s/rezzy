@@ -1,6 +1,8 @@
 export type RecentlyViewedEntry = {
   id: string
   name: string
+  /** Lucide icon name for workspace entries. */
+  icon?: string
   /** Workspace id for contact entries; same as id for workspace entries. */
   workspaceId?: string
   /** Timestamp of last view. */
@@ -57,6 +59,7 @@ function isEntry(value: unknown): value is RecentlyViewedEntry {
     typeof v.id === 'string' &&
     typeof v.name === 'string' &&
     typeof v.at === 'number' &&
+    (v.icon === undefined || typeof v.icon === 'string') &&
     (v.workspaceId === undefined || typeof v.workspaceId === 'string')
   )
 }

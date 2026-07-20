@@ -1,4 +1,6 @@
 import { List } from '@/components/list'
+import { resolveWorkspaceIcon } from '@/entities/workspace'
+import type { Workspace } from '@/entities/workspace'
 import {
   useRecentContacts,
   useRecentWorkspaces,
@@ -6,10 +8,20 @@ import {
 import { m } from '@/paraglide/messages'
 import { Card, Tabs } from '@heroui/react'
 import { Link } from '@tanstack/react-router'
+import { DynamicIcon } from 'lucide-react/dynamic'
+import { useMemo } from 'react'
 
-export function QuickAccessPanel() {
-  const { items: workspaces } = useRecentWorkspaces()
+type Props = {
+  workspaces: Array<Workspace>
+}
+
+export function QuickAccessPanel({ workspaces }: Props) {
+  const { items: recentWorkspaces } = useRecentWorkspaces()
   const { items: contacts } = useRecentContacts()
+  const workspaceById = useMemo(
+    () => new Map(workspaces.map((workspace) => [workspace.id, workspace])),
+    [workspaces],
+  )
 
   return (
     <Card className="h-full">
@@ -34,14 +46,16 @@ export function QuickAccessPanel() {
           </Tabs.ListContainer>
 
           <Tabs.Panel id="workspaces" className="pt-3">
-            {workspaces.length === 0 ? (
+            {recentWorkspaces.length === 0 ? (
               <EmptyState message={m.home_quick_access_empty_workspaces()} />
             ) : (
               <List size="sm" className="-mx-1">
-                {workspaces.map((entry) => (
+                {recentWorkspaces.map((entry) => (
                   <List.Item key={entry.id}>
                     <Link to="/workspaces/$id" params={{ id: entry.id }}>
-                      <Mark name={entry.name} />
+                      <WorkspaceMark
+                        icon={workspaceById.get(entry.id)?.icon ?? entry.icon}
+                      />
                       <span className="text-foreground min-w-0 flex-1 truncate">
                         {entry.name}
                       </span>
@@ -87,6 +101,17 @@ function Mark({ name }: { name: string }) {
       className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold"
     >
       {initial}
+    </span>
+  )
+}
+
+function WorkspaceMark({ icon }: { icon: string | undefined }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md"
+    >
+      <DynamicIcon name={resolveWorkspaceIcon(icon)} className="size-3.5" />
     </span>
   )
 }

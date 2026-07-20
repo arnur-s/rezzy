@@ -42,7 +42,7 @@ export function InboxPage({
 
   const workspacesQuery = useWorkspaces(senderId ?? undefined)
   const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
-  useRecordWorkspaceVisit(workspaceId, workspace?.name)
+  useRecordWorkspaceVisit(workspaceId, workspace?.name, workspace?.icon)
 
   const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')

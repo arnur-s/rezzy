@@ -68,7 +68,7 @@ function RouteComponent() {
               <PersonalStatStrip stats={homeStats} />
             </div>
             <div className="lg:col-span-4">
-              <QuickAccessPanel />
+              <QuickAccessPanel workspaces={workspaces} />
             </div>
           </div>
 

@@ -21,6 +21,6 @@ function RouteComponent() {
   const { user } = useAuth()
   const workspacesQuery = useWorkspaces(user?.id)
   const workspace = workspacesQuery.data?.find((w) => w.id === id)
-  useRecordWorkspaceVisit(id, workspace?.name)
+  useRecordWorkspaceVisit(id, workspace?.name, workspace?.icon)
   return <WorkspaceOverviewPage />
 }

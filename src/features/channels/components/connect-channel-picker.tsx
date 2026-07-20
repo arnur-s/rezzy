@@ -1,7 +1,7 @@
 import type { ChannelType } from '@/entities/channel'
 import { CHANNEL_META, ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { Chip, Surface } from '@heroui/react'
+import { Chip } from '@heroui/react'
 import { ChevronRightIcon } from 'lucide-react'
 
 type Props = {
@@ -17,16 +17,14 @@ const CONNECT_CHANNEL_TYPES = [
 
 export function ConnectChannelPicker({ onSelect }: Props) {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {CONNECT_CHANNEL_TYPES.map((type) => (
-          <ChannelTypeCard
-            key={type}
-            type={type}
-            onSelect={() => onSelect(type)}
-          />
-        ))}
-      </div>
+    <div className="divide-y divide-border/60 border-y border-border/60">
+      {CONNECT_CHANNEL_TYPES.map((type) => (
+        <ChannelTypeCard
+          key={type}
+          type={type}
+          onSelect={() => onSelect(type)}
+        />
+      ))}
     </div>
   )
 }
@@ -41,18 +39,10 @@ function ChannelTypeCard({
   const meta = CHANNEL_META[type]
 
   return (
-    <Surface
-      className="group flex cursor-pointer items-center gap-4 rounded-2xl p-5 transition hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-primary"
-      variant="tertiary"
-      role="button"
-      tabIndex={0}
+    <button
+      className="group flex w-full items-center gap-4 px-1 py-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      type="button"
       onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onSelect()
-        }
-      }}
     >
       <ChannelTypeIcon type={type} size="lg" />
 
@@ -73,6 +63,6 @@ function ChannelTypeCard({
       </div>
 
       <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
-    </Surface>
+    </button>
   )
 }

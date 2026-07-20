@@ -60,17 +60,36 @@ function StatTile({
   accent?: boolean
 }) {
   return (
-    <Card aria-label={ariaLabel}>
+    <Card
+      aria-label={ariaLabel}
+      className={cn(
+        'transition-colors duration-200 ease-out',
+        accent && 'border-primary/30 bg-primary/[0.06]',
+      )}
+    >
       <Card.Header className="flex flex-row items-center justify-between gap-2 space-y-0">
-        <Card.Description className="text-foreground/55 text-xs font-medium leading-tight">
-          {label}
-        </Card.Description>
+        <div className="flex min-w-0 items-center gap-2">
+          {accent ? (
+            <span
+              aria-hidden="true"
+              className="bg-primary size-1.5 shrink-0 rounded-full"
+            />
+          ) : null}
+          <Card.Description
+            className={cn(
+              'text-foreground/55 text-xs font-medium leading-tight',
+              accent && 'text-primary/80',
+            )}
+          >
+            {label}
+          </Card.Description>
+        </div>
         <span
           aria-hidden="true"
           className={cn(
             'flex size-7 items-center justify-center rounded-md',
             accent
-              ? 'bg-primary/10 text-primary'
+              ? 'bg-primary text-primary-foreground'
               : 'bg-foreground/5 text-foreground/55',
           )}
         >
@@ -79,9 +98,11 @@ function StatTile({
       </Card.Header>
       <Card.Content>
         <span
+          key={value}
           className={cn(
-            'text-3xl font-semibold tabular-nums leading-none',
+            'inline-block text-3xl font-semibold tabular-nums leading-none',
             accent ? 'text-primary' : 'text-foreground',
+            accent && 'unread-count-emphasis',
           )}
         >
           {value.toLocaleString()}

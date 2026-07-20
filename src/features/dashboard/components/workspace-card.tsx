@@ -1,12 +1,14 @@
 import { CHANNEL_META } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
+import { resolveWorkspaceIcon } from '@/entities/workspace'
 import type { Workspace } from '@/entities/workspace'
 import { m } from '@/paraglide/messages'
 import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import { Card } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { Link } from '@tanstack/react-router'
+import { DynamicIcon } from 'lucide-react/dynamic'
 
 type Props = {
   workspace: Workspace
@@ -27,7 +29,6 @@ export function WorkspaceCard({
   channelTypes,
   lastMessageAt,
 }: Props) {
-  const initial = workspace.name.trim().charAt(0).toUpperCase() || 'W'
   const hasUnread = unread > 0
 
   return (
@@ -50,7 +51,10 @@ export function WorkspaceCard({
               aria-hidden="true"
               className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-semibold"
             >
-              {initial}
+              <DynamicIcon
+                name={resolveWorkspaceIcon(workspace.icon)}
+                className="size-4"
+              />
             </span>
             <div className="min-w-0 flex-1">
               <Card.Title className="truncate text-base">

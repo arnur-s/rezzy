@@ -5,7 +5,7 @@ import {
   isChannelType,
 } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { Dropdown, Label, Surface } from '@heroui/react'
+import { Dropdown, Label } from '@heroui/react'
 import {
   CircleCheckIcon,
   MoreHorizontalIcon,
@@ -43,10 +43,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
 
   return (
     <>
-      <Surface
-        className="flex items-center gap-4 rounded-2xl p-4 sm:p-5"
-        variant="tertiary"
-      >
+      <div className="flex min-h-20 items-center gap-4 py-4">
         {channelType ? (
           <ChannelTypeIcon type={channelType} size="lg" />
         ) : (
@@ -121,7 +118,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
             </Dropdown.Menu>
           </Dropdown.Popover>
         </Dropdown>
-      </Surface>
+      </div>
 
       <EditChannelNameModal
         channel={channel}

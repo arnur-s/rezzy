@@ -1,5 +1,5 @@
 import { m } from '@/paraglide/messages'
-import { Button, Skeleton, Surface } from '@heroui/react'
+import { Button, Skeleton } from '@heroui/react'
 import { PlugIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useChannels } from '../hooks/use-channels'
@@ -22,9 +22,7 @@ export function ChannelList({ workspaceId }: Props) {
     <div className="flex flex-col gap-6">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">
-            {m.channels_list_title()}
-          </h2>
+          <h2 className="text-lg font-semibold">{m.channels_list_title()}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {m.channels_list_description()}
           </p>
@@ -42,7 +40,7 @@ export function ChannelList({ workspaceId }: Props) {
       ) : channelsQuery.data.length === 0 ? (
         <ChannelListEmpty onConnect={openConnect} />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="divide-y divide-border/60 border-y border-border/60">
           {channelsQuery.data.map((channel) => (
             <ChannelCard
               key={channel.id}
@@ -64,20 +62,16 @@ export function ChannelList({ workspaceId }: Props) {
 
 function ChannelListSkeleton() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="divide-y divide-border/60 border-y border-border/60">
       {[0, 1, 2].map((i) => (
-        <Surface
-          key={i}
-          variant="tertiary"
-          className="flex items-center gap-4 rounded-2xl p-5"
-        >
+        <div key={i} className="flex items-center gap-4 py-4">
           <Skeleton className="size-12 rounded-xl" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-1/3 rounded" />
             <Skeleton className="h-3 w-1/4 rounded" />
           </div>
           <Skeleton className="size-8 rounded-md" />
-        </Surface>
+        </div>
       ))}
     </div>
   )
@@ -85,17 +79,12 @@ function ChannelListSkeleton() {
 
 function ChannelListEmpty({ onConnect }: { onConnect: () => void }) {
   return (
-    <Surface
-      className="flex flex-col items-center gap-4 rounded-3xl px-6 py-14 text-center"
-      variant="tertiary"
-    >
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+    <div className="flex flex-col items-center gap-4 border-y border-border/60 px-6 py-12 text-center">
+      <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
         <PlugIcon className="size-6" />
       </span>
       <div className="max-w-md space-y-1.5">
-        <h3 className="text-base font-semibold">
-          {m.channels_empty_title()}
-        </h3>
+        <h3 className="text-base font-semibold">{m.channels_empty_title()}</h3>
         <p className="text-sm text-muted-foreground">
           {m.channels_empty_description()}
         </p>
@@ -104,22 +93,17 @@ function ChannelListEmpty({ onConnect }: { onConnect: () => void }) {
         <PlusIcon className="size-4" />
         <span>{m.channels_empty_cta()}</span>
       </Button>
-    </Surface>
+    </div>
   )
 }
 
 function ChannelListError({ onRetry }: { onRetry: () => void }) {
   return (
-    <Surface
-      className="flex flex-col items-center gap-3 rounded-2xl p-8 text-center"
-      variant="tertiary"
-    >
-      <p className="text-sm text-danger">
-        {m.channels_load_error_title()}
-      </p>
+    <div className="flex flex-col items-center gap-3 border-y border-border/60 px-6 py-10 text-center">
+      <p className="text-sm text-danger">{m.channels_load_error_title()}</p>
       <Button size="sm" variant="secondary" onPress={onRetry}>
         {m.common_retry()}
       </Button>
-    </Surface>
+    </div>
   )
 }

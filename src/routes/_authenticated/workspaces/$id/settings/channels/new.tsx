@@ -7,7 +7,7 @@ import {
   ConnectWhatsapp,
 } from '@/features/channels/components'
 import { m } from '@/paraglide/messages'
-import { Button, Surface } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 
@@ -82,7 +82,7 @@ function RouteComponent() {
         </Button>
       </div>
 
-      <Surface className="rounded-2xl p-6 sm:p-8" variant="tertiary">
+      <div>
         {!type ? (
           <ConnectChannelPicker onSelect={setType} />
         ) : type === 'telegram' ? (
@@ -95,7 +95,7 @@ function RouteComponent() {
         ) : (
           <ConnectChannelComingSoon type={type} onCancel={clearType} />
         )}
-      </Surface>
+      </div>
     </div>
   )
 }

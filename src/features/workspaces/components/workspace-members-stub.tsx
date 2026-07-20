@@ -8,7 +8,6 @@ import {
   Input,
   Label,
   Skeleton,
-  Surface,
   TextField,
 } from '@heroui/react'
 import { MailPlusIcon } from 'lucide-react'
@@ -58,21 +57,15 @@ export function WorkspaceMembersStub({ workspaceId }: Props) {
         {membersQuery.isPending ? (
           <MembersSkeleton />
         ) : membersQuery.isError ? (
-          <Surface
-            className="rounded-2xl p-6 text-sm text-danger"
-            variant="tertiary"
-          >
+          <div className="border-y border-border/60 py-6 text-sm text-danger">
             {m.workspace_settings_members_load_error()}
-          </Surface>
+          </div>
         ) : membersQuery.data.length === 0 ? (
-          <Surface
-            className="rounded-2xl p-8 text-center text-sm text-muted-foreground"
-            variant="tertiary"
-          >
+          <div className="border-y border-border/60 py-10 text-center text-sm text-muted-foreground">
             {m.workspace_settings_members_empty()}
-          </Surface>
+          </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="divide-y divide-border/60 border-y border-border/60">
             {membersQuery.data.map((member) => (
               <MemberRow
                 key={member.id}
@@ -89,10 +82,7 @@ export function WorkspaceMembersStub({ workspaceId }: Props) {
 
 function InviteByEmailStub() {
   return (
-    <Surface
-      className="flex flex-col gap-3 rounded-2xl p-5"
-      variant="tertiary"
-    >
+    <section className="flex flex-col gap-3 border-y border-border/60 py-5">
       <div className="flex items-center gap-2">
         <MailPlusIcon className="size-4 text-muted-foreground" />
         <h3 className="text-sm font-medium">
@@ -115,7 +105,6 @@ function InviteByEmailStub() {
           <Input
             placeholder={m.workspace_settings_members_invite_email_placeholder()}
             type="email"
-            variant="secondary"
           />
           <FieldError />
         </TextField>
@@ -123,7 +112,7 @@ function InviteByEmailStub() {
           {m.workspace_settings_members_invite_action()}
         </Button>
       </div>
-    </Surface>
+    </section>
   )
 }
 
@@ -134,13 +123,7 @@ type ProfileLite = {
   avatar_url?: string | null
 } | null
 
-function MemberRow({
-  profile,
-  role,
-}: {
-  profile: ProfileLite
-  role: string
-}) {
+function MemberRow({ profile, role }: { profile: ProfileLite; role: string }) {
   const displayName = useMemo(() => {
     if (profile?.full_name?.trim()) return profile.full_name.trim()
     if (profile?.email?.trim()) return profile.email.trim()
@@ -151,10 +134,7 @@ function MemberRow({
   const roleLabel = getRoleLabel(role)
 
   return (
-    <Surface
-      className="flex items-center gap-3 rounded-xl p-3"
-      variant="tertiary"
-    >
+    <div className="flex min-h-16 items-center gap-3 py-3">
       <Avatar size="sm" variant="soft">
         <Avatar.Fallback>{getUserInitials(displayName)}</Avatar.Fallback>
       </Avatar>
@@ -167,26 +147,22 @@ function MemberRow({
       <Chip color="default" size="sm" variant="soft">
         <Chip.Label>{roleLabel}</Chip.Label>
       </Chip>
-    </Surface>
+    </div>
   )
 }
 
 function MembersSkeleton() {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="divide-y divide-border/60 border-y border-border/60">
       {[0, 1, 2].map((i) => (
-        <Surface
-          key={i}
-          className="flex items-center gap-3 rounded-xl p-3"
-          variant="tertiary"
-        >
+        <div key={i} className="flex min-h-16 items-center gap-3 py-3">
           <Skeleton className="size-8 rounded-full" />
           <div className="flex-1 space-y-1.5">
             <Skeleton className="h-3 w-1/3 rounded" />
             <Skeleton className="h-3 w-1/4 rounded" />
           </div>
           <Skeleton className="h-5 w-12 rounded-full" />
-        </Surface>
+        </div>
       ))}
     </div>
   )
