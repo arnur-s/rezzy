@@ -44,6 +44,11 @@ export function useConversationsRealtime(workspaceId: string) {
               return mapped ? sortConversationsByActivity(mapped) : mapped
             },
           )
+          // A new inbound message bumps the conversation row; refresh the
+          // caller's per-agent unread counts.
+          void queryClient.invalidateQueries({
+            queryKey: inboxQueryKeys.unreadCountsForWorkspace(workspaceId),
+          })
         },
       )
       .on(
@@ -69,6 +74,9 @@ export function useConversationsRealtime(workspaceId: string) {
                 return sortConversationsByActivity([conversation, ...current])
               },
             )
+          })
+          void queryClient.invalidateQueries({
+            queryKey: inboxQueryKeys.unreadCountsForWorkspace(workspaceId),
           })
         },
       )

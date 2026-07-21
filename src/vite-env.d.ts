@@ -10,6 +10,9 @@ interface ImportMetaEnv {
   // Mirrors WHATSAPP_GRAPH_VERSION on the edge functions. Confirm the current
   // stable Graph API version at deploy time rather than relying on the default.
   readonly VITE_WHATSAPP_GRAPH_VERSION?: string
+  // VAPID public key for Web Push (optional — desktop notifications degrade
+  // gracefully when unset). The matching private key is an edge function secret.
+  readonly VITE_VAPID_PUBLIC_KEY?: string
 }
 
 interface ImportMeta {

@@ -103,12 +103,12 @@ describe('VirtualizedMessageList unread behavior', () => {
     virtualizerMock.scrollToIndex.mockClear()
   })
 
-  it('scrolls a long thread to the unread divider on open while still rendering it', async () => {
+  it('scrolls a long thread to the bottom on open while still rendering the unread divider', async () => {
     const messages = longThreadMessages()
     const lastMsg = messages.at(-1)
     if (!lastMsg) throw new Error('expected messages')
 
-    render(
+    const { container } = render(
       <VirtualizedMessageList
         messages={messages}
         contactName="Customer"
@@ -123,15 +123,33 @@ describe('VirtualizedMessageList unread behavior', () => {
         hasMoreOlder={false}
         isFetchingOlder={false}
         onLoadOlder={vi.fn()}
+        scrollToLatestNonce={0}
       />,
     )
 
-    await waitFor(() => expect(virtualizerMock.scrollToIndex).toHaveBeenCalled())
+    const scrollNode = container.querySelector('.overflow-y-auto')
+    if (!(scrollNode instanceof HTMLElement)) {
+      throw new Error('Scroll container was not rendered')
+    }
+
+    // Pin must use scrollTop = scrollHeight (exact), not index scrolling based
+    // on estimated item sizes (lands mid-thread when real heights differ).
+    let scrollTopVal = 0
+    Object.defineProperties(scrollNode, {
+      scrollHeight: { configurable: true, value: 6000 },
+      clientHeight: { configurable: true, value: 600 },
+      scrollTop: {
+        configurable: true,
+        get: () => scrollTopVal,
+        set: (value: number) => {
+          scrollTopVal = value
+        },
+      },
+    })
+
+    await waitFor(() => expect(scrollTopVal).toBe(6000))
 
     expect(document.querySelector('[data-unread-divider]')).toBeTruthy()
-    const dividerIndex = 5
-    expect(virtualizerMock.scrollToIndex).toHaveBeenCalledWith(dividerIndex, {
-      align: 'center',
-    })
+    expect(virtualizerMock.scrollToIndex).not.toHaveBeenCalled()
   })
 })

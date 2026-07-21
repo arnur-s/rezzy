@@ -29,29 +29,31 @@ export function useConversationsSearch(workspaceId: string, searchQuery: string)
 
 export function useMarkConversationRead(workspaceId: string) {
   const queryClient = useQueryClient()
-  const key = inboxQueryKeys.conversations(workspaceId)
+  const unreadKey = inboxQueryKeys.unreadCountsForWorkspace(workspaceId)
 
   return useMutation({
     mutationFn: (conversationId: string) =>
       markConversationRead(conversationId),
     onMutate: async (conversationId) => {
-      await queryClient.cancelQueries({ queryKey: key })
-      const snapshot =
-        queryClient.getQueryData<Array<ConversationWithRelations>>(key)
+      // Unread is per-agent now: optimistically zero this conversation's count
+      // for the current user (the shared conversations.unread_count is no longer
+      // used for the inbox badge).
+      await queryClient.cancelQueries({ queryKey: unreadKey })
+      const unreadSnapshots = queryClient.getQueriesData<
+        Record<string, number>
+      >({ queryKey: unreadKey })
 
-      queryClient.setQueryData<Array<ConversationWithRelations>>(
-        key,
+      queryClient.setQueriesData<Record<string, number>>(
+        { queryKey: unreadKey },
         (current) =>
-          current?.map((row) =>
-            row.id === conversationId ? { ...row, unread_count: 0 } : row,
-          ),
+          current ? { ...current, [conversationId]: 0 } : current,
       )
 
-      return { snapshot }
+      return { unreadSnapshots }
     },
     onError: (_error, _conversationId, context) => {
-      if (context?.snapshot) {
-        queryClient.setQueryData(key, context.snapshot)
+      for (const [key, data] of context?.unreadSnapshots ?? []) {
+        queryClient.setQueryData(key, data)
       }
     },
   })

@@ -20,6 +20,7 @@ export default [
       'src/paraglide/**',
       'src/routeTree.gen.ts',
       'supabase/functions/**',
+      'public/**',
       '.heroui-docs/**',
     ],
   },

@@ -165,7 +165,7 @@ describe('MessageList unread behavior', () => {
     Element.prototype.scrollIntoView = vi.fn()
   })
 
-  it('renders the unread divider and marks read only after scroll reports near bottom with unreads', async () => {
+  it('opens at the bottom even when an unread divider is present, then marks read', async () => {
     const onReadAnchorVisible = vi.fn()
 
     const { container } = render(
@@ -192,10 +192,52 @@ describe('MessageList unread behavior', () => {
       ),
     ).toBeTruthy()
 
+    const scrollNode = container.querySelector('.overflow-y-auto')
+    if (!(scrollNode instanceof HTMLElement)) {
+      throw new Error('Scroll container was not rendered')
+    }
+
+    let scrollTopVal = 0
+    Object.defineProperties(scrollNode, {
+      scrollHeight: { configurable: true, value: 1000 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: {
+        configurable: true,
+        get: () => scrollTopVal,
+        set: (value: number) => {
+          scrollTopVal = value
+        },
+      },
+    })
+
+    await waitFor(() => expect(scrollTopVal).toBe(1000))
+    expect(Element.prototype.scrollIntoView).not.toHaveBeenCalledWith({
+      block: 'center',
+    })
+
     await waitFor(() =>
-      expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({
-        block: 'center',
-      }),
+      expect(onReadAnchorVisible).toHaveBeenCalledWith('latest'),
+    )
+  })
+
+  it('scrolls back to the bottom when scrollToLatestNonce changes (re-selecting the open conversation)', async () => {
+    const onReadAnchorVisible = vi.fn()
+
+    const props = {
+      conversationId: 'conversation-1',
+      messages: baseMessages,
+      isLoading: false,
+      isError: false,
+      contactName: 'Customer',
+      currentUserId: null,
+      initialScrollTarget: { messageId: 'latest', reason: 'latest' } as const,
+      unreadDividerMessageId: null,
+      hasUnreadInboundMessages: false,
+      onReadAnchorVisible,
+    }
+
+    const { container, rerender } = render(
+      <MessageList {...props} scrollToLatestNonce={0} />,
     )
 
     const scrollNode = container.querySelector('.overflow-y-auto')
@@ -203,12 +245,27 @@ describe('MessageList unread behavior', () => {
       throw new Error('Scroll container was not rendered')
     }
 
-    mockNearBottomScroll(scrollNode)
+    // Let the mount-time scroll cascade (rAF chain) finish first.
+    await new Promise((resolve) => setTimeout(resolve, 80))
+
+    // Simulate the user having scrolled up into history.
+    let scrollTopVal = 100
+    Object.defineProperties(scrollNode, {
+      scrollHeight: { configurable: true, value: 1200 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: {
+        configurable: true,
+        get: () => scrollTopVal,
+        set: (value: number) => {
+          scrollTopVal = value
+        },
+      },
+    })
     fireEvent.scroll(scrollNode)
 
-    await waitFor(() =>
-      expect(onReadAnchorVisible).toHaveBeenCalledWith('latest'),
-    )
+    rerender(<MessageList {...props} scrollToLatestNonce={1} />)
+
+    await waitFor(() => expect(scrollTopVal).toBe(1200))
   })
 
   it('does not call onReadAnchorVisible twice for the same latest id at bottom', async () => {

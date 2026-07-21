@@ -933,6 +933,20 @@ export default {
       )
     }
 
+    // Fan out desktop/push notifications to the recipients created by the
+    // create_message_notifications trigger. Fire-and-forget — push failures
+    // must never break message ingestion.
+    try {
+      await supabase.functions.invoke('send-message-push', {
+        body: { messageId },
+        headers: {
+          Authorization: `Bearer ${Deno.env.get('PUSH_DISPATCH_SECRET') ?? ''}`,
+        },
+      })
+    } catch (pushError) {
+      console.error('telegram-webhook: push dispatch failed', pushError)
+    }
+
     console.info(
       `Message stored — workspace: ${workspaceId}, contact: ${contactId}, conversation: ${conversationId}`,
     )

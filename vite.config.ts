@@ -1,7 +1,6 @@
 import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 import viteReact from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
@@ -11,7 +10,7 @@ const config = defineConfig({
     // Serves the dev server over https. The Facebook SDK refuses FB.login on
     // http pages (localhost included), so WhatsApp Embedded Signup cannot be
     // exercised without it. Self-signed: the browser warns once per cert.
-    basicSsl(),
+    // basicSsl(),
     paraglideVitePlugin({
       project: './project.inlang',
       outdir: './src/paraglide',

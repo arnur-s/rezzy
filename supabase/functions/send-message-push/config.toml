@@ -1,0 +1,4 @@
+[functions.send-message-push]
+# Invoked server-to-server by the channel webhooks; authenticated by the
+# service-role key inside the function rather than a user JWT.
+verify_jwt = false

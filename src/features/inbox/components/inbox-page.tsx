@@ -7,9 +7,11 @@ import { useAuth } from '@/providers/auth-provider'
 import { cn } from '@heroui/styles'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { ConversationWithRelations } from '@/entities/conversation'
 import { useConversations, useConversationsSearch } from '../hooks/use-conversations'
 import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
 import { useResizablePanel } from '../hooks/use-resizable-panel'
+import { useWorkspaceUnreadCounts } from '../hooks/use-unread-counts'
 import { ContactPanel } from './contact-panel/contact-panel'
 import type { InboxPrimaryFilter } from './conversation-list/conversation-list'
 import { ConversationList } from './conversation-list/conversation-list'
@@ -39,6 +41,7 @@ export function InboxPage({
 
   const conversationsQuery = useConversations(workspaceId)
   useConversationsRealtime(workspaceId)
+  const unreadCountsQuery = useWorkspaceUnreadCounts(workspaceId, senderId)
 
   const workspacesQuery = useWorkspaces(senderId ?? undefined)
   const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
@@ -47,6 +50,21 @@ export function InboxPage({
   const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [isContactPanelOpen, setIsContactPanelOpen] = useState(false)
+  const [scrollToLatestNonce, setScrollToLatestNonce] = useState(0)
+
+  // Clicking the already-open conversation navigates nowhere (same URL), so the
+  // thread would silently stay wherever the user scrolled. Treat re-selecting
+  // it as "jump back to the latest message" instead.
+  const handleSelectConversation = useCallback(
+    (conversationId: string) => {
+      if (conversationId === selectedConversationId) {
+        setScrollToLatestNonce((nonce) => nonce + 1)
+        return
+      }
+      onSelectConversation(conversationId)
+    },
+    [selectedConversationId, onSelectConversation],
+  )
 
   const debouncedSearch = useDebounce(searchQuery, 300)
   const isSearchActive = debouncedSearch.trim().length > 0
@@ -61,6 +79,27 @@ export function InboxPage({
       conversationsQuery.data?.find((row) => row.id === selectedConversationId) ??
       null,
     [conversationsQuery.data, selectedConversationId],
+  )
+
+  // Overlay per-agent unread counts (from the read cursor) onto the shared
+  // conversation rows so the badge reflects this agent's unread, not a shared
+  // workspace counter.
+  const unreadCounts = unreadCountsQuery.data
+  const withUnreadCounts = useCallback(
+    (list: Array<ConversationWithRelations> | undefined) =>
+      list?.map((row) => ({
+        ...row,
+        unread_count: unreadCounts?.[row.id] ?? 0,
+      })),
+    [unreadCounts],
+  )
+  const conversationsWithUnread = useMemo(
+    () => withUnreadCounts(conversationsQuery.data),
+    [withUnreadCounts, conversationsQuery.data],
+  )
+  const searchResultsWithUnread = useMemo(
+    () => withUnreadCounts(searchResults.data),
+    [withUnreadCounts, searchResults.data],
   )
 
   const mobilePane: MobilePane =
@@ -109,6 +148,7 @@ export function InboxPage({
       isConversationsError: conversationsQuery.isError,
       onBackToList,
       onToggleContactPanel: handleToggleContactPanel,
+      scrollToLatestNonce,
     }),
     [
       workspaceId,
@@ -119,6 +159,7 @@ export function InboxPage({
       conversationsQuery.isError,
       onBackToList,
       handleToggleContactPanel,
+      scrollToLatestNonce,
     ],
   )
 
@@ -142,11 +183,13 @@ export function InboxPage({
         )}
       >
         <ConversationList
-          conversations={isSearchActive ? searchResults.data : conversationsQuery.data}
+          conversations={
+            isSearchActive ? searchResultsWithUnread : conversationsWithUnread
+          }
           isLoading={isSearchActive ? searchResults.isPending : conversationsQuery.isPending}
           isError={isSearchActive ? searchResults.isError : conversationsQuery.isError}
           selectedConversationId={selectedConversationId}
-          onSelect={onSelectConversation}
+          onSelect={handleSelectConversation}
           primaryFilter={primaryFilter}
           onPrimaryFilterChange={setPrimaryFilter}
           searchQuery={searchQuery}

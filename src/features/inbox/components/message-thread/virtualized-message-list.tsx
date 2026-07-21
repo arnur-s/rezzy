@@ -63,6 +63,7 @@ type Props = {
   hasMoreOlder: boolean
   isFetchingOlder: boolean
   onLoadOlder: () => void
+  scrollToLatestNonce: number
 }
 
 export function VirtualizedMessageList({
@@ -76,6 +77,7 @@ export function VirtualizedMessageList({
   hasMoreOlder,
   isFetchingOlder,
   onLoadOlder,
+  scrollToLatestNonce,
 }: Props) {
   const parentRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -146,13 +148,6 @@ export function VirtualizedMessageList({
   const flatItems = useMemo(
     () => flattenMessageGroups(groups, unreadDividerMessageId),
     [groups, unreadDividerMessageId],
-  )
-
-  const lastFlatIndex = flatItems.length > 0 ? flatItems.length - 1 : -1
-
-  const dividerFlatIndex = useMemo(
-    () => flatItems.findIndex((item) => item.kind === 'divider'),
-    [flatItems],
   )
 
   const headingIndexes = useMemo(
@@ -234,6 +229,27 @@ export function VirtualizedMessageList({
     )
   }, [virtualizer, flatItems.length, syncBottomUi])
 
+  // Re-selecting the open conversation in the list jumps back to the latest
+  // message. Exact pin (scrollTop = scrollHeight), not estimate-based index
+  // scrolling. Initialized to the mount-time value so only later bumps trigger.
+  const lastHandledScrollNonceRef = useRef(scrollToLatestNonce)
+  useEffect(() => {
+    if (scrollToLatestNonce === lastHandledScrollNonceRef.current) return
+    lastHandledScrollNonceRef.current = scrollToLatestNonce
+    const node = parentRef.current
+    if (!node) return
+    atBottomRef.current = true
+    runAfterScrollLayout(
+      () => scrollToBottom(node),
+      () => {
+        scrollToBottom(node)
+        const atBottom = isNearBottom(node)
+        syncBottomUi(atBottom)
+        commitReadIfEligibleRef.current()
+      },
+    )
+  }, [scrollToLatestNonce, syncBottomUi])
+
   useLayoutEffect(() => {
     const node = parentRef.current
     if (!node) return
@@ -263,7 +279,8 @@ export function VirtualizedMessageList({
     }
   }, [len, firstId, lastId])
 
-  // Initial open: scroll to unread divider when present (WhatsApp-style), else bottom; then gated mark-read.
+  // Initial open: always land at the bottom (latest message); the unread divider
+  // stays as a visual marker only. Then gated mark-read.
   useEffect(() => {
     if (
       initialScrollDoneRef.current ||
@@ -274,7 +291,7 @@ export function VirtualizedMessageList({
 
     initialScrollScheduledRef.current = true
 
-    if (!initialScrollTarget.messageId && dividerFlatIndex < 0) {
+    if (!initialScrollTarget.messageId) {
       initialScrollDoneRef.current = true
       const node = parentRef.current
       if (node) {
@@ -289,16 +306,13 @@ export function VirtualizedMessageList({
       return
     }
 
-    // Anchoring at the divider mid-thread, not the bottom — keep the re-pin
-    // observer from overriding it.
-    if (dividerFlatIndex >= 0) atBottomRef.current = false
-
+    // Pin via scrollTop = scrollHeight, not scrollToIndex: index scrolling
+    // computes the offset from estimated item sizes and lands mid-thread when
+    // real bubble heights differ. scrollHeight is always the current true
+    // bottom; as items measure, the ResizeObserver below re-pins until stable.
     const scrollToInitialTarget = () => {
-      if (dividerFlatIndex >= 0) {
-        virtualizer.scrollToIndex(dividerFlatIndex, { align: 'center' })
-      } else if (initialScrollTarget.messageId && lastFlatIndex >= 0) {
-        virtualizer.scrollToIndex(lastFlatIndex, { align: 'end' })
-      }
+      const node = parentRef.current
+      if (node) scrollToBottom(node)
     }
 
     runAfterScrollLayout(scrollToInitialTarget, () => {
@@ -315,13 +329,7 @@ export function VirtualizedMessageList({
         commitReadIfEligibleRef.current()
       }
     })
-  }, [
-    dividerFlatIndex,
-    flatItems.length,
-    initialScrollTarget.messageId,
-    lastFlatIndex,
-    virtualizer,
-  ])
+  }, [flatItems.length, initialScrollTarget.messageId])
 
   useEffect(() => {
     const count = len

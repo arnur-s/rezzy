@@ -6,19 +6,21 @@ import { PLATFORM_META } from '../lib/platform'
 
 type Props = {
   type: ChannelType
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   /** Show a tinted background plate around the glyph. */
   withPlate?: boolean
   className?: string
 }
 
 const PLATE_SIZE: Record<NonNullable<Props['size']>, string> = {
+  xs: 'size-[18px] [&>svg]:size-3',
   sm: 'size-7 [&>svg]:size-4',
   md: 'size-9 [&>svg]:size-5',
   lg: 'size-11 [&>svg]:size-6',
 }
 
 const GLYPH_SIZE: Record<NonNullable<Props['size']>, string> = {
+  xs: 'size-3',
   sm: 'size-4',
   md: 'size-5',
   lg: 'size-6',

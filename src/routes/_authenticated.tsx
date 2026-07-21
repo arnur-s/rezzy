@@ -1,4 +1,5 @@
 import { useAuth } from '@/providers/auth-provider'
+import { NotificationsProvider } from '@/providers/notifications-provider'
 import { Header } from '@/widgets/header'
 import { Sidebar } from '@/widgets/sidebar'
 import { Spinner } from '@heroui/react'
@@ -39,19 +40,21 @@ function RouteComponent() {
           <Spinner size="xl" />
         </div>
       ) : session ? (
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar
-            isCollapsed={isCollapsed}
-            isMobileOpen={isMobileSidebarOpen}
-            onMobileOpenChange={setIsMobileSidebarOpen}
-          />
-          <div className=" flex min-w-0 flex-1 flex-col overflow-hidden">
-            <Header onToggleSidebar={handleToggleSidebar} />
-            <main className="flex flex-1 overflow-auto z-1">
-              <Outlet />
-            </main>
+        <NotificationsProvider>
+          <div className="flex h-screen overflow-hidden">
+            <Sidebar
+              isCollapsed={isCollapsed}
+              isMobileOpen={isMobileSidebarOpen}
+              onMobileOpenChange={setIsMobileSidebarOpen}
+            />
+            <div className=" flex min-w-0 flex-1 flex-col overflow-hidden">
+              <Header onToggleSidebar={handleToggleSidebar} />
+              <main className="flex flex-1 overflow-auto z-1">
+                <Outlet />
+              </main>
+            </div>
           </div>
-        </div>
+        </NotificationsProvider>
       ) : (
         <Navigate to="/sign-in" />
       )}

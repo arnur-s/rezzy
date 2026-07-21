@@ -88,7 +88,44 @@
       "Skill(code-review:code-review:*)",
       "Bash(command -v deno)",
       "Bash(deno --version)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Read(//Users/arnurkupanov/.nvm/versions/node/**)",
+      "Bash(command -v fnm)",
+      "Read(//opt/homebrew/opt/**)",
+      "Read(//usr/local/**)",
+      "Bash(grep -E \"^\\(tsc|eslint|vitest|supabase\\)$\")",
+      "Bash(./node_modules/.bin/supabase --version)",
+      "Bash(node -e \"console.log\\('en', Object.keys\\(require\\('./messages/en.json'\\)\\).length\\); console.log\\('ru', Object.keys\\(require\\('./messages/ru.json'\\)\\).length\\)\")",
+      "Bash(node -e \"const e=require\\('./messages/en.json'\\); Object.keys\\(e\\).filter\\(k=>/settings|notif/i.test\\(k\\)\\).forEach\\(k=>console.log\\(k,'=',e[k]\\)\\)\")",
+      "Bash(node /private/tmp/claude-501/-Users-arnurkupanov-cms/a967c27e-416d-42ec-b873-6dd812afe00c/scratchpad/add-i18n-keys.mjs)",
+      "Bash(node -e \"console.log\\('en', Object.keys\\(require\\('./messages/en.json'\\)\\).length, '| ru', Object.keys\\(require\\('./messages/ru.json'\\)\\).length\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/@heroui/react/package.json'\\).version\\)\")",
+      "Bash(node -e \"const h=require\\('./node_modules/@heroui/react'\\); console.log\\('toast:', typeof h.toast, h.toast && Object.keys\\(h.toast\\)\\); console.log\\('Switch:', typeof h.Switch\\); console.log\\('RadioGroup:', typeof h.RadioGroup\\); console.log\\('Radio:', typeof h.Radio\\); console.log\\('ToastRegion/Provider:', typeof h.Toast\\)\")",
+      "Bash(node -e \"console.log\\(require\\('path'\\).dirname\\(require.resolve\\('@heroui/react/package.json'\\)\\)\\)\")",
+      "Bash(sed -n 1,120p __TRACKED_VAR__/dist/components/switch/switch.js)",
+      "Bash(xargs -I{} sh -c 'grep -n \"Avatar\" {} | head; echo \"---file: {}\"')",
+      "Bash(sed -n 1,40p __TRACKED_VAR__/dist/components/avatar/index.d.ts)",
+      "Bash(grep -rn variant __TRACKED_VAR__/dist/components/button/button.d.ts)",
+      "Bash(node -e \"const {buttonVariants}=require\\('@heroui/styles'\\); try{console.log\\('button variants keys:', Object.keys\\(buttonVariants.variants||{}\\)\\)}catch\\(e\\){console.log\\('n/a'\\)}\")",
+      "Bash(node -e \"const {buttonVariants}=require\\('@heroui/styles'\\); console.log\\('button variant options:', Object.keys\\(buttonVariants.variants?.variant||{}\\)\\)\")",
+      "Bash(node -e \"const {selectVariants,chipVariants}=require\\('@heroui/styles'\\); console.log\\('select variant:', Object.keys\\(\\(selectVariants?.variants||{}\\).variant||{}\\)\\); console.log\\('chip variant:', Object.keys\\(\\(chipVariants?.variants||{}\\).variant||{}\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\).filter\\(d=>/testing-library|vitest|jsdom|user-event/.test\\(d\\)\\)\\)\")"
     ]
-  }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/arnurkupanov/.claude/skills/impeccable/scripts/hook.mjs\"",
+            "timeout": 5,
+            "statusMessage": "Checking UI changes"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Impeccable design detector: runs after Edit/Write/MultiEdit on UI files and surfaces findings as system reminders."
 }

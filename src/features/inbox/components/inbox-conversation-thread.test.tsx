@@ -79,6 +79,7 @@ function renderThread({
         isConversationsError,
         onBackToList,
         onToggleContactPanel,
+        scrollToLatestNonce: 0,
       }}
     >
       <InboxConversationThread conversationId={conversationId} />

@@ -282,3 +282,11 @@ body {
     animation: none;
   }
 }
+
+/* HeroUI stacks toast content with `align-items: flex-start`, so the title slot
+   shrink-wraps its children. Our rich message notification is rendered into that
+   slot and needs the full toast width; stretch it so `w-full` resolves correctly.
+   Harmless for plain string toasts (their text stays left-aligned). */
+.toast__title {
+  align-self: stretch;
+}

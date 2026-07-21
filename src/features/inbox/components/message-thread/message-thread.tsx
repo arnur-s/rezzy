@@ -24,6 +24,7 @@ type Props = {
   senderId: string | null
   onToggleContactPanel: () => void
   onBack?: () => void
+  scrollToLatestNonce?: number
 }
 
 export function MessageThread({
@@ -32,6 +33,7 @@ export function MessageThread({
   senderId,
   onToggleContactPanel,
   onBack,
+  scrollToLatestNonce = 0,
 }: Props) {
   const conversationId = conversation.id
   const unreadCount = conversation.unread_count
@@ -206,6 +208,7 @@ export function MessageThread({
           hasMoreOlder={messagesQuery.hasNextPage}
           isFetchingOlder={messagesQuery.isFetchingNextPage}
           onLoadOlder={handleLoadOlder}
+          scrollToLatestNonce={scrollToLatestNonce}
           onRetry={handleRetryMessages}
           isRetrying={
             messagesQuery.isFetching && !messagesQuery.isFetchingNextPage

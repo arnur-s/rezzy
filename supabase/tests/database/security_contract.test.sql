@@ -1,6 +1,6 @@
 begin;
 
-select plan(34);
+select plan(35);
 
 -- Caller-facing helpers must rely on RLS instead of bypassing it.
 select ok(
@@ -598,13 +598,22 @@ select ok(
       )
       and cr.user_id = '00000000-0000-4000-8000-000000000101'
       and cr.last_read_message_id is null
-  )
-  and (
+  ),
+  'mark_conversation_read stores the caller''s read cursor'
+);
+
+-- Unread is per-agent (see notifications_contract.test.sql for the full
+-- multi-agent contract): mark_conversation_read must no longer clear the
+-- shared conversations.unread_count, since that would incorrectly clear
+-- unread state for every other agent in the workspace.
+select is(
+  (
     select c.unread_count
     from public.conversations c
     where c.id = '00000000-0000-4000-8000-000000000501'
-  ) = 0,
-  'mark_conversation_read stores the cursor and clears unread state'
+  ),
+  3,
+  'mark_conversation_read does not clear the shared conversations.unread_count'
 );
 
 reset role;

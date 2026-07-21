@@ -1,3 +1,4 @@
+import { registerNotificationServiceWorker } from '@/features/notifications'
 import { AuthProvider, useAuth } from '@/providers/auth-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { queryClient } from '@/utils/query-client'
@@ -9,6 +10,10 @@ import './styles.css'
 import { getRouter } from './utils/router'
 
 setLocale('en')
+
+// Register the notification service worker (enables Web Push handling and
+// notification clicks). This does not request notification permission.
+registerNotificationServiceWorker()
 
 const router = getRouter()
 const rootElement = document.getElementById('app')!

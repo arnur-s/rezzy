@@ -142,6 +142,7 @@ export function ConversationList({
           <ListBox
             aria-label={m.inbox_conversation_list_aria_label()}
             selectionMode="single"
+            disallowEmptySelection
             selectedKeys={selectedKeys}
             onSelectionChange={handleSelectionChange}
             className="flex flex-col gap-0.5 px-2 py-2 outline-none"
@@ -154,6 +155,11 @@ export function ConversationList({
                   key={conversation.id}
                   id={conversation.id}
                   textValue={contactName}
+                  // Plain DOM click, not onAction: with selection enabled,
+                  // react-aria never fires onAction for a single click on the
+                  // already-selected row, but this must re-trigger onSelect so
+                  // the open thread can jump back to the latest message.
+                  onClick={() => onSelect(conversation.id)}
                   className={cn(
                     'cursor-pointer flex w-full items-start text-left outline-none',
                     listItemStyle.md,

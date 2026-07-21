@@ -687,6 +687,20 @@ async function ingestMessage(args: {
   if (convUpdateError) {
     console.error('whatsapp-webhook: conversation update failed', convUpdateError)
   }
+
+  // Fan out desktop/push notifications to the recipients created by the
+  // create_message_notifications trigger. Fire-and-forget: push failures must
+  // never break message ingestion.
+  try {
+    await supabase.functions.invoke('send-message-push', {
+      body: { messageId },
+      headers: {
+        Authorization: `Bearer ${Deno.env.get('PUSH_DISPATCH_SECRET') ?? ''}`,
+      },
+    })
+  } catch (pushError) {
+    console.error('whatsapp-webhook: push dispatch failed', pushError)
+  }
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────

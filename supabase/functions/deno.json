@@ -1,6 +1,7 @@
 {
   "imports": {
     "@supabase/supabase-js": "jsr:@supabase/supabase-js@2",
-    "@supabase/functions-js": "jsr:@supabase/functions-js"
+    "@supabase/functions-js": "jsr:@supabase/functions-js",
+    "web-push": "npm:web-push@3"
   }
 }

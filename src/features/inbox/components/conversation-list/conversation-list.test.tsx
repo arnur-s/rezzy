@@ -1,3 +1,4 @@
+import type { ConversationWithRelations } from '@/entities/conversation'
 import { setLocale } from '@/paraglide/runtime'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -40,6 +41,52 @@ function renderList(overrides: RenderProps = {}) {
 
   return { ...utils, onSelect, onPrimaryFilterChange, onSearchChange, onRetry }
 }
+
+function conversationFixture(
+  id: string,
+  contactName: string,
+): ConversationWithRelations {
+  return {
+    id,
+    workspace_id: 'w',
+    channel_id: 'c',
+    contact_id: 'p',
+    assigned_to: null,
+    status: 'open',
+    unread_count: 0,
+    last_message_at: '2026-05-15T10:00:00Z',
+    last_message_preview: 'Hi there',
+    snoozed_until: null,
+    created_at: '2020-01-01',
+    updated_at: '2020-01-01',
+    channel: { id: 'c', type: 'telegram', name: null },
+    contact: {
+      id: 'p',
+      name: contactName,
+      phone: null,
+      avatar_url: null,
+      status: 'new',
+    },
+    assigned_profile: null,
+  }
+}
+
+describe('ConversationList selection', () => {
+  beforeEach(() => {
+    setLocale('en', { reload: false })
+  })
+
+  it('calls onSelect when re-clicking the already-selected conversation row', () => {
+    const { onSelect } = renderList({
+      conversations: [conversationFixture('conv-1', 'Alice')],
+      selectedConversationId: 'conv-1',
+    })
+
+    fireEvent.click(screen.getByText('Alice'))
+
+    expect(onSelect).toHaveBeenCalledWith('conv-1')
+  })
+})
 
 describe('ConversationList polish states', () => {
   beforeEach(() => {

@@ -18,6 +18,7 @@ export function InboxConversationThread({ conversationId }: Props) {
     isConversationsError,
     onBackToList,
     onToggleContactPanel,
+    scrollToLatestNonce,
   } = useInboxThreadRouteContext()
 
   if (isConversationsPending) {
@@ -48,6 +49,7 @@ export function InboxConversationThread({ conversationId }: Props) {
       senderId={senderId}
       onToggleContactPanel={onToggleContactPanel}
       onBack={onBackToList}
+      scrollToLatestNonce={scrollToLatestNonce}
     />
   )
 }

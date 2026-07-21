@@ -10,6 +10,8 @@ type InboxThreadRouteContextValue = {
   isConversationsError: boolean
   onBackToList: () => void
   onToggleContactPanel: () => void
+  /** Bumped when the user re-selects the already-open conversation. */
+  scrollToLatestNonce: number
 }
 
 const InboxThreadRouteContext =

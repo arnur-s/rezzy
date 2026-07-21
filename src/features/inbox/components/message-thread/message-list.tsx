@@ -72,6 +72,8 @@ type Props = {
   onLoadOlder?: () => void
   onRetry?: () => void
   isRetrying?: boolean
+  /** Bumped when the user re-selects the open conversation: jump to latest. */
+  scrollToLatestNonce?: number
 }
 
 export function MessageList({
@@ -90,6 +92,7 @@ export function MessageList({
   onLoadOlder = () => {},
   onRetry,
   isRetrying = false,
+  scrollToLatestNonce = 0,
 }: Props) {
   if (isLoading) {
     return (
@@ -144,6 +147,7 @@ export function MessageList({
       hasMoreOlder={hasMoreOlder}
       isFetchingOlder={isFetchingOlder}
       onLoadOlder={onLoadOlder}
+      scrollToLatestNonce={scrollToLatestNonce}
     />
   )
 }
@@ -172,6 +176,7 @@ type ViewProps = {
   hasMoreOlder: boolean
   isFetchingOlder: boolean
   onLoadOlder: () => void
+  scrollToLatestNonce: number
 }
 
 function MessageListView({
@@ -185,6 +190,7 @@ function MessageListView({
   hasMoreOlder,
   isFetchingOlder,
   onLoadOlder,
+  scrollToLatestNonce,
 }: ViewProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -264,6 +270,7 @@ function MessageListView({
   const handleNewMessagesPress = useCallback(() => {
     const node = scrollRef.current
     if (!node) return
+    atBottomRef.current = true
     runAfterScrollLayout(
       () => scrollToBottom(node),
       () => {
@@ -273,6 +280,15 @@ function MessageListView({
       },
     )
   }, [syncBottomUi])
+
+  // Re-selecting the open conversation in the list jumps back to the latest
+  // message. Initialized to the mount-time value so only later bumps trigger.
+  const lastHandledScrollNonceRef = useRef(scrollToLatestNonce)
+  useEffect(() => {
+    if (scrollToLatestNonce === lastHandledScrollNonceRef.current) return
+    lastHandledScrollNonceRef.current = scrollToLatestNonce
+    handleNewMessagesPress()
+  }, [scrollToLatestNonce, handleNewMessagesPress])
 
   // Restore scroll after older messages are prepended (same last id, new first id).
   useLayoutEffect(() => {
@@ -304,7 +320,8 @@ function MessageListView({
     }
   }, [len, firstId, lastId])
 
-  // Initial open: scroll to unread divider when present (WhatsApp-style), else bottom; then gated mark-read.
+  // Initial open: always land at the bottom (latest message); the unread divider
+  // stays as a visual marker only. Then gated mark-read.
   useEffect(() => {
     if (initialScrollDoneRef.current) return
     const root = scrollRef.current
@@ -322,37 +339,16 @@ function MessageListView({
       commitReadIfEligibleRef.current()
     }
 
-    if (unreadDividerMessageId) {
-      // Anchoring at the divider mid-thread, not the bottom — keep the re-pin
-      // observer from overriding it (a fallback-to-bottom below re-corrects via
-      // its own scroll event).
-      atBottomRef.current = false
-      runAfterScrollLayout(() => {
-        const el = root.querySelector<HTMLElement>(
-          '[data-unread-divider="true"]',
-        )
-        if (el) {
-          try {
-            el.scrollIntoView({ block: 'center' })
-          } catch {
-            /* JSDOM: scrollIntoView may throw */
-          }
-        } else if (initialScrollTarget.messageId) {
-          scrollToBottom(root)
-        }
-      }, afterLayout)
-    } else {
+    if (initialScrollTarget.messageId) {
+      scrollToBottom(root)
+    }
+    requestAnimationFrame(() => {
       if (initialScrollTarget.messageId) {
         scrollToBottom(root)
       }
-      requestAnimationFrame(() => {
-        if (initialScrollTarget.messageId) {
-          scrollToBottom(root)
-        }
-        afterLayout()
-      })
-    }
-  }, [initialScrollTarget.messageId, unreadDividerMessageId])
+      afterLayout()
+    })
+  }, [initialScrollTarget.messageId])
 
   // Appended messages: own outbound → bottom; inbound / other outbound when away from bottom → button.
   useEffect(() => {
