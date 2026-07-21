@@ -54,7 +54,7 @@ export function MessageComposer({
         acceptedMimeTypes={acceptedMimeTypes}
       />
 
-      <Typography.Paragraph size="xs" className="mb-2 text-muted-foreground">
+      <Typography.Paragraph size="xs" className="mb-2 text-muted">
         {m.inbox_composer_reply_via({ channel: channelLabel })}
       </Typography.Paragraph>
     </div>

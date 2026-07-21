@@ -98,7 +98,7 @@ function Mark({ name }: { name: string }) {
   return (
     <span
       aria-hidden="true"
-      className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold"
+      className="bg-accent/10 text-accent flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold"
     >
       {initial}
     </span>
@@ -109,7 +109,7 @@ function WorkspaceMark({ icon }: { icon: string | undefined }) {
   return (
     <span
       aria-hidden="true"
-      className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md"
+      className="bg-accent/10 text-accent flex size-6 shrink-0 items-center justify-center rounded-md"
     >
       <DynamicIcon name={resolveWorkspaceIcon(icon)} className="size-3.5" />
     </span>

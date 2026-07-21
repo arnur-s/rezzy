@@ -45,7 +45,7 @@ function SettingRow({ label, description, control }: SettingRowProps) {
     <div className="flex items-start justify-between gap-4 border-t border-border/60 py-4 first:border-t-0">
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+        <p className="mt-0.5 text-sm text-muted">{description}</p>
       </div>
       <div className="shrink-0">{control}</div>
     </div>
@@ -156,7 +156,7 @@ export function NotificationSettings() {
         <h3 className="text-base font-semibold text-foreground">
           {m.settings_notifications_title()}
         </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-muted">
           {m.settings_notifications_description()}
         </p>
       </div>
@@ -188,7 +188,7 @@ export function NotificationSettings() {
         />
 
         <div className="flex items-center justify-between gap-4 pl-0 text-sm">
-          <span className="text-muted-foreground">
+          <span className="text-muted">
             {m.settings_notifications_permission_label()}
           </span>
           <span
@@ -206,12 +206,12 @@ export function NotificationSettings() {
         </div>
 
         {push.permission === 'denied' ? (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-muted">
             {m.settings_notifications_permission_denied_help()}
           </p>
         ) : null}
         {push.permission === 'unsupported' ? (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-muted">
             {m.settings_notifications_permission_unsupported_help()}
           </p>
         ) : null}
@@ -233,7 +233,7 @@ export function NotificationSettings() {
             <p className="text-sm font-medium text-foreground">
               {m.settings_notifications_preview_label()}
             </p>
-            <p className="mt-0.5 text-sm text-muted-foreground">
+            <p className="mt-0.5 text-sm text-muted">
               {m.settings_notifications_preview_description()}
             </p>
           </div>

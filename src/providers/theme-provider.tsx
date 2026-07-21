@@ -21,13 +21,18 @@ function readStoredTheme(): Theme {
 function resolveTheme(theme: Theme): ResolvedTheme {
   if (theme !== 'system') return theme
   if (typeof window === 'undefined') return 'dark'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light'
 }
 
 function applyTheme(resolved: ResolvedTheme) {
   const root = document.documentElement
   root.classList.remove('dark', 'light')
   root.classList.add(resolved)
+  // HeroUI selectors match both the class and [data-theme]; keep them in sync
+  // with the boot script in index.html or a stale value wins after switching.
+  root.setAttribute('data-theme', resolved)
   root.style.colorScheme = resolved
 }
 

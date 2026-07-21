@@ -113,7 +113,7 @@ function ReasonChip({
   const classes: Record<AttentionItem['reason'], string> = {
     snoozed:
       'bg-warning/10 text-warning-foreground border-warning/20 dark:text-warning',
-    unread: 'bg-primary/10 text-primary border-primary/20',
+    unread: 'bg-accent/10 text-accent border-accent/20',
     stale: 'bg-foreground/[0.05] text-foreground/70 border-foreground/10',
   }
   return (

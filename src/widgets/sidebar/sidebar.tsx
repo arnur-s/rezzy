@@ -12,6 +12,7 @@ import {
   ScrollShadow,
   Select,
   Separator,
+  Skeleton,
   Tooltip,
   toast,
 } from '@heroui/react'
@@ -37,11 +38,12 @@ import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
 const navItemBase =
-  'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring active:scale-[0.98]'
+  'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition outline-none focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] motion-reduce:transition-none'
 const navItemInactive =
-  'text-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-const navItemActive = 'bg-sidebar-accent text-sidebar-accent-foreground'
-const navLabel = 'min-w-0 truncate transition-opacity duration-150 ease-out'
+  'text-foreground/60 hover:bg-accent/10 dark:hover:bg-accent/15 hover:text-accent'
+const navItemActive = 'bg-accent/10 dark:bg-accent/15 text-accent'
+const navLabel =
+  'min-w-0 truncate transition-opacity duration-150 ease-out motion-reduce:transition-none'
 const navLabelHidden = 'pointer-events-none opacity-0 w-0'
 
 export interface SidebarProps {
@@ -61,8 +63,7 @@ export function Sidebar({
   return (
     <>
       <aside
-        className="hidden shrink-0 flex-col overflow-hidden transition-[width] duration-200 ease-out md:flex border-r border-border/60"
-        style={{ width: isCollapsed ? '64px' : '260px' }}
+        className="hidden w-65 shrink-0 flex-col overflow-hidden border-r border-border/60 transition-[width] duration-200 ease-out data-collapsed:w-16 motion-reduce:transition-none md:flex"
         data-collapsed={isCollapsed || undefined}
       >
         <SidebarBody user={user} isCollapsed={isCollapsed} />
@@ -75,7 +76,7 @@ export function Sidebar({
       >
         <Drawer.Content placement="left">
           <Drawer.Dialog
-            className="bg-sidebar h-full w-65 rounded-none p-0"
+            className="bg-surface-secondary h-full w-65 rounded-none p-0"
             aria-label={m.sidebar_workspace_nav_aria_label()}
           >
             <Drawer.Body>
@@ -120,7 +121,7 @@ function SidebarBody({
         ? undefined
         : (workspacesQuery.data?.find((w) => w.id === currentWorkspaceId) ??
           workspacesQuery.data?.[0]),
-    [workspacesQuery.data, currentWorkspaceId, isHomeRoute],
+    [workspacesQuery.data, currentWorkspaceId, isHomeRoute, isSettingsRoute],
   )
 
   async function handleSignOut() {
@@ -144,7 +145,7 @@ function SidebarBody({
           <Link
             to="/"
             aria-label={m.sidebar_home_label()}
-            className="flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            className="flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-focus"
             onClick={onNavigate}
           >
             <span className="bg-accent flex size-8 shrink-0 items-center justify-center rounded-lg">
@@ -154,7 +155,7 @@ function SidebarBody({
             </span>
             <span
               className={cn(
-                'text-foreground truncate text-sm font-semibold transition-opacity duration-150 ease-out',
+                'text-foreground truncate text-sm font-semibold transition-opacity duration-150 ease-out motion-reduce:transition-none',
                 isCollapsed && 'pointer-events-none opacity-0',
               )}
               aria-hidden={isCollapsed || undefined}
@@ -213,7 +214,7 @@ function SidebarBody({
               className={cn(
                 navItemBase,
                 navItemInactive,
-                'h-auto min-h-0 justify-start font-[inherit] disabled:opacity-50 active:scale-100',
+                'h-auto min-h-0 justify-start font-[inherit] active:scale-100',
               )}
             >
               {isSigningOut ? (
@@ -274,7 +275,7 @@ function HomeNav({
           )}
           onClick={onNavigate}
         >
-          <HomeIcon className="size-4 shrink-0" />
+          <HomeIcon className="size-4 shrink-0" aria-hidden />
           <span
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
@@ -299,7 +300,7 @@ function HomeNav({
           )}
           onClick={onNavigate}
         >
-          <SettingsIcon className="size-4 shrink-0" />
+          <SettingsIcon className="size-4 shrink-0" aria-hidden />
           <span
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
@@ -353,7 +354,7 @@ function WorkspaceNav({
           )}
           onClick={onNavigate}
         >
-          <LayoutDashboard className="size-4 shrink-0" />
+          <LayoutDashboard className="size-4 shrink-0" aria-hidden />
           <span
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
@@ -378,7 +379,7 @@ function WorkspaceNav({
           )}
           onClick={onNavigate}
         >
-          <MessageCircleIcon className="size-4 shrink-0" />
+          <MessageCircleIcon className="size-4 shrink-0" aria-hidden />
           <span
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
@@ -404,7 +405,7 @@ function WorkspaceNav({
           )}
           onClick={onNavigate}
         >
-          <SettingsIcon className="size-4 shrink-0" />
+          <SettingsIcon className="size-4 shrink-0" aria-hidden />
           <span
             className={cn(navLabel, isCollapsed && navLabelHidden)}
             aria-hidden={isCollapsed || undefined}
@@ -436,11 +437,8 @@ function WorkspaceSwitcher({
 }) {
   if (isLoading) {
     return (
-      <div
-        className={cn(
-          'bg-sidebar-accent/50 animate-pulse rounded-lg',
-          isCollapsed ? 'mx-auto h-9 w-9' : 'h-9 w-full',
-        )}
+      <Skeleton
+        className={cn('h-9 rounded-lg', isCollapsed ? 'mx-auto w-9' : 'w-full')}
       />
     )
   }
@@ -503,7 +501,7 @@ function WorkspaceSwitcher({
                     <span
                       className={cn(
                         navLabel,
-                        'text-muted-foreground text-left',
+                        'text-muted text-left',
                         isCollapsed && navLabelHidden,
                       )}
                       aria-hidden={isCollapsed || undefined}
@@ -538,7 +536,7 @@ function WorkspaceSwitcher({
           </Select.Value>
           <Select.Indicator
             className={cn(
-              'text-foreground/40 size-3.5 shrink-0 transition-opacity duration-150 ease-out',
+              'text-foreground/40 size-3.5 shrink-0 transition-opacity duration-150 ease-out motion-reduce:transition-none',
               isCollapsed && 'pointer-events-none opacity-0',
             )}
           />
@@ -588,8 +586,8 @@ function WorkspaceMark({
       className={cn(
         'flex size-5 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold',
         isActive
-          ? 'bg-primary text-primary-foreground'
-          : 'bg-primary/10 text-primary',
+          ? 'bg-accent text-accent-foreground'
+          : 'bg-accent/10 text-accent',
       )}
     >
       <DynamicIcon

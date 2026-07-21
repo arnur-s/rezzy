@@ -42,7 +42,7 @@ export function WorkspaceMembersStub({ workspaceId }: Props) {
         <h2 className="text-lg font-semibold">
           {m.workspace_settings_members_title()}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-muted">
           {m.workspace_settings_members_description()}
         </p>
       </div>
@@ -50,7 +50,7 @@ export function WorkspaceMembersStub({ workspaceId }: Props) {
       <InviteByEmailStub />
 
       <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-medium text-muted-foreground">
+        <h3 className="text-sm font-medium text-muted">
           {m.workspace_settings_members_list_title()}
         </h3>
 
@@ -61,7 +61,7 @@ export function WorkspaceMembersStub({ workspaceId }: Props) {
             {m.workspace_settings_members_load_error()}
           </div>
         ) : membersQuery.data.length === 0 ? (
-          <div className="border-y border-border/60 py-10 text-center text-sm text-muted-foreground">
+          <div className="border-y border-border/60 py-10 text-center text-sm text-muted">
             {m.workspace_settings_members_empty()}
           </div>
         ) : (
@@ -84,7 +84,7 @@ function InviteByEmailStub() {
   return (
     <section className="flex flex-col gap-3 border-y border-border/60 py-5">
       <div className="flex items-center gap-2">
-        <MailPlusIcon className="size-4 text-muted-foreground" />
+        <MailPlusIcon className="size-4 text-muted" />
         <h3 className="text-sm font-medium">
           {m.workspace_settings_members_invite_title()}
         </h3>
@@ -94,7 +94,7 @@ function InviteByEmailStub() {
           </Chip.Label>
         </Chip>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted">
         {m.workspace_settings_members_invite_description()}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -141,7 +141,7 @@ function MemberRow({ profile, role }: { profile: ProfileLite; role: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{displayName}</p>
         {email && (
-          <p className="truncate text-xs text-muted-foreground">{email}</p>
+          <p className="truncate text-xs text-muted">{email}</p>
         )}
       </div>
       <Chip color="default" size="sm" variant="soft">

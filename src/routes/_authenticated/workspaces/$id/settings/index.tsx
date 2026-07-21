@@ -125,7 +125,7 @@ function RouteComponent() {
         <h2 className="text-lg font-semibold">
           {m.workspace_settings_general_title()}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-muted">
           {m.workspace_settings_general_description()}
         </p>
       </div>
@@ -194,7 +194,7 @@ function RouteComponent() {
                 value={field.value}
               />
               {fieldState.error?.message ? (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-danger">
                   {fieldState.error.message}
                 </p>
               ) : null}

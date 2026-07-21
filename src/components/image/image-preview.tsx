@@ -21,6 +21,8 @@ const ZOOM_MIN = 0.5
 const ZOOM_MAX = 4
 const ZOOM_STEP = 0.25
 
+const clampScale = (s: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, s))
+
 type Props = {
   images: Array<RegisteredImage>
   activeIndex: number
@@ -53,6 +55,13 @@ export function ImagePreview({
   const [isVisible, setIsVisible] = useState(false)
 
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const scaleRef = useRef(scale)
+  const pinchStartScaleRef = useRef(1)
+
+  useEffect(() => {
+    scaleRef.current = scale
+  }, [scale])
 
   // Mount/unmount with fade animation
   useEffect(() => {
@@ -97,9 +106,8 @@ export function ImagePreview({
     }
   }, [isOpen])
 
-  const clamp = (s: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, s))
   const zoom = useCallback(
-    (delta: number) => setScale((s) => clamp(s + delta)),
+    (delta: number) => setScale((s) => clampScale(s + delta)),
     [],
   )
   const reset = useCallback(() => {
@@ -144,14 +152,44 @@ export function ImagePreview({
     return () => document.removeEventListener('keydown', handler)
   }, [isOpen, activeIndex, images.length, onClose, onNavigate, zoom, reset])
 
-  // Wheel zoom
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
+  // Wheel + trackpad-pinch zoom. Trackpad pinch arrives as ctrl+wheel (Chrome/
+  // Firefox) or gesture* events (Safari); both default to zooming the whole
+  // page. React's onWheel can't stop that here: the portal mounts on
+  // document.body, where browsers force wheel listeners to be passive and
+  // ignore preventDefault — so attach native non-passive listeners, and on the
+  // whole overlay so the toolbar and close button are covered too.
+  useEffect(() => {
+    const el = overlayRef.current
+    if (!el || !isMounted) return
+
+    const onWheel = (e: WheelEvent) => {
       e.preventDefault()
-      zoom(-e.deltaY * 0.001)
-    },
-    [zoom],
-  )
+      zoom(-e.deltaY * (e.ctrlKey ? 0.01 : 0.001))
+    }
+    const onGestureStart = (e: Event) => {
+      e.preventDefault()
+      pinchStartScaleRef.current = scaleRef.current
+    }
+    const onGestureChange = (e: Event) => {
+      e.preventDefault()
+      const gestureScale = (e as Event & { scale?: number }).scale
+      if (typeof gestureScale === 'number') {
+        setScale(clampScale(pinchStartScaleRef.current * gestureScale))
+      }
+    }
+    const onGestureEnd = (e: Event) => e.preventDefault()
+
+    el.addEventListener('wheel', onWheel, { passive: false })
+    el.addEventListener('gesturestart', onGestureStart)
+    el.addEventListener('gesturechange', onGestureChange)
+    el.addEventListener('gestureend', onGestureEnd)
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('gesturestart', onGestureStart)
+      el.removeEventListener('gesturechange', onGestureChange)
+      el.removeEventListener('gestureend', onGestureEnd)
+    }
+  }, [isMounted, zoom])
 
   // Drag / pan
   const handlePointerDown = useCallback(
@@ -190,11 +228,12 @@ export function ImagePreview({
 
   return createPortal(
     <div
+      ref={overlayRef}
       role="dialog"
       aria-modal="true"
       aria-label={m.image_preview_label()}
       className={cn(
-        'fixed inset-0 z-50 transition-opacity duration-200',
+        'fixed inset-0 z-50 transition-opacity duration-200 ease-out-quart motion-reduce:transition-none',
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none',
       )}
     >
@@ -205,13 +244,14 @@ export function ImagePreview({
       <div
         className={cn(
           'absolute inset-0 flex items-center justify-center overflow-hidden',
+          'transition duration-200 ease-out-quart motion-reduce:transition-none',
+          isVisible ? 'scale-100' : 'scale-[0.97]',
           isDragging ? 'cursor-grabbing' : 'cursor-grab',
         )}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        onWheel={handleWheel}
       >
         {isLoading && !hasError && (
           <Spinner className="absolute text-white/60" />
@@ -230,11 +270,15 @@ export function ImagePreview({
           alt={currentImage.alt}
           draggable={false}
           className={cn(
-            'max-w-[90vw] max-h-[90vh] object-contain select-none',
-            'transition-opacity duration-150 will-change-transform',
+            'max-w-[90vw] max-h-[90vh] object-contain select-none will-change-transform',
+            // pan must track the pointer 1:1; zoom/rotate steps ease into place
+            isDragging
+              ? 'transition-opacity duration-150'
+              : 'transition-[opacity,transform] duration-150 ease-out-quart',
+            'motion-reduce:transition-none',
             isLoading || hasError ? 'opacity-0' : 'opacity-100',
           )}
-          style={{ transform, transitionProperty: 'opacity' }}
+          style={{ transform }}
           onLoad={() => setIsLoading(false)}
           onError={() => {
             setIsLoading(false)
@@ -317,7 +361,13 @@ export function ImagePreview({
       )}
 
       {/* Bottom pill toolbar */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1.5">
+      <div
+        className={cn(
+          'absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1.5',
+          'transition duration-200 ease-out-quart motion-reduce:transition-none',
+          isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
+        )}
+      >
         <ToolbarButton
           icon={RotateCcw}
           label={m.image_preview_rotate_left()}

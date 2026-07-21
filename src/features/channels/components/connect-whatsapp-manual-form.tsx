@@ -129,7 +129,7 @@ export function ConnectWhatsappManualForm({
               ? m.channels_whatsapp_reconnect_manual_title()
               : m.channels_whatsapp_manual_title()}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted">
             {target.kind === 'reconnect'
               ? m.channels_whatsapp_reconnect_manual_subtitle()
               : m.channels_whatsapp_manual_subtitle()}
@@ -152,7 +152,7 @@ export function ConnectWhatsappManualForm({
             variant="secondary"
             {...register('phoneNumberId')}
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted">
             {m.channels_whatsapp_phone_number_id_helper()}
           </p>
           <FieldError>{errors.phoneNumberId?.message}</FieldError>
@@ -172,7 +172,7 @@ export function ConnectWhatsappManualForm({
             variant="secondary"
             {...register('accessToken')}
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted">
             {m.channels_whatsapp_access_token_helper()}
           </p>
           <FieldError>{errors.accessToken?.message}</FieldError>
@@ -187,7 +187,7 @@ export function ConnectWhatsappManualForm({
             variant="secondary"
             {...register('wabaId')}
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted">
             {m.channels_whatsapp_waba_id_helper()}
           </p>
           <FieldError>{errors.wabaId?.message}</FieldError>

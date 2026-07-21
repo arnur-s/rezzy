@@ -64,7 +64,7 @@ function StatTile({
       aria-label={ariaLabel}
       className={cn(
         'transition-colors duration-200 ease-out',
-        accent && 'border-primary/30 bg-primary/[0.06]',
+        accent && 'border-accent/30 bg-accent/[0.06]',
       )}
     >
       <Card.Header className="flex flex-row items-center justify-between gap-2 space-y-0">
@@ -72,13 +72,13 @@ function StatTile({
           {accent ? (
             <span
               aria-hidden="true"
-              className="bg-primary size-1.5 shrink-0 rounded-full"
+              className="bg-accent size-1.5 shrink-0 rounded-full"
             />
           ) : null}
           <Card.Description
             className={cn(
               'text-foreground/55 text-xs font-medium leading-tight',
-              accent && 'text-primary/80',
+              accent && 'text-accent/80',
             )}
           >
             {label}
@@ -89,7 +89,7 @@ function StatTile({
           className={cn(
             'flex size-7 items-center justify-center rounded-md',
             accent
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-accent text-accent-foreground'
               : 'bg-foreground/5 text-foreground/55',
           )}
         >
@@ -101,7 +101,7 @@ function StatTile({
           key={value}
           className={cn(
             'inline-block text-3xl font-semibold tabular-nums leading-none',
-            accent ? 'text-primary' : 'text-foreground',
+            accent ? 'text-accent' : 'text-foreground',
             accent && 'unread-count-emphasis',
           )}
         >

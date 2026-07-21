@@ -17,7 +17,7 @@ export function UnreadDivider({ className }: Props) {
     >
       <div className="h-px min-w-0 flex-1 bg-border/40" aria-hidden />
       <span
-        className="shrink-0 text-center text-xs font-medium text-muted-foreground"
+        className="shrink-0 text-center text-xs font-medium text-muted"
         aria-hidden
       >
         {label}

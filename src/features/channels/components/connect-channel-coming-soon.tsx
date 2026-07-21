@@ -29,13 +29,13 @@ export function ConnectChannelComingSoon({ onCancel, type }: Props) {
               <Chip.Label>{m.channels_coming_soon()}</Chip.Label>
             </Chip>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted">
             {m[`channels_type_${type}_description`]()}
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-muted-foreground/30 bg-muted/30 p-6 text-sm text-muted-foreground">
+      <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-muted/30 bg-muted/30 p-6 text-sm text-muted">
         <p>{m.channels_coming_soon_body()}</p>
         <Button isDisabled className="self-start">
           {m[ctaKey]()}

@@ -77,7 +77,7 @@ export function ChannelFilters({
           className={cn(
             'flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider outline-none transition-colors',
             'text-foreground/40 hover:text-foreground/70',
-            'focus-visible:ring-2 focus-visible:ring-ring',
+            'focus-visible:ring-2 focus-visible:ring-focus',
           )}
         >
           <span className="flex-1 text-left">
@@ -130,7 +130,7 @@ export function ChannelFilters({
                               onClick={() => handleChannelClick(ch)}
                               className={cn(
                                 'flex w-full items-center gap-1.5 rounded-md py-1 pl-7 pr-3 text-xs font-medium outline-none transition-colors',
-                                'focus-visible:ring-2 focus-visible:ring-ring',
+                                'focus-visible:ring-2 focus-visible:ring-focus',
                                 isChActive
                                   ? 'bg-foreground/10 text-foreground'
                                   : 'text-foreground/50 hover:bg-foreground/5 hover:text-foreground',

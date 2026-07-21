@@ -40,7 +40,7 @@ function ChannelTypeCard({
 
   return (
     <button
-      className="group flex w-full items-center gap-4 px-1 py-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="group flex w-full items-center gap-4 px-1 py-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       type="button"
       onClick={onSelect}
     >
@@ -57,12 +57,12 @@ function ChannelTypeCard({
             </Chip>
           )}
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-muted">
           {m[`channels_type_${type}_description`]()}
         </p>
       </div>
 
-      <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+      <ChevronRightIcon className="size-4 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-foreground" />
     </button>
   )
 }

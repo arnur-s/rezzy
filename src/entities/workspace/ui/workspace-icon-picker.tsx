@@ -129,7 +129,7 @@ function BrowseAllIconsPopover({
           </SearchField>
 
           {results.length === 0 ? (
-            <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+            <p className="px-2 py-6 text-center text-sm text-muted">
               {m.workspaces_icon_empty()}
             </p>
           ) : (

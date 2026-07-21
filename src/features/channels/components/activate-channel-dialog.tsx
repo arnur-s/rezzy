@@ -48,7 +48,7 @@ export function ActivateChannelDialog({
             </AlertDialog.Heading>
           </AlertDialog.Header>
           <AlertDialog.Body>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted">
               {m.channels_activate_confirm_description({
                 name: channel.name ?? channel.type,
               })}

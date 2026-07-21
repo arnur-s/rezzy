@@ -37,7 +37,7 @@ export function WorkspaceCard({
       params={{ id: workspace.id }}
       aria-label={workspace.name}
       className={cn(
-        'group rounded-lg outline-none transition focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+        'group rounded-lg outline-none transition focus-visible:ring-2 focus-visible:ring-focus',
         'hover:-translate-y-0.5',
       )}
     >
@@ -49,7 +49,7 @@ export function WorkspaceCard({
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <span
               aria-hidden="true"
-              className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-semibold"
+              className="bg-accent/10 text-accent flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-semibold"
             >
               <DynamicIcon
                 name={resolveWorkspaceIcon(workspace.icon)}

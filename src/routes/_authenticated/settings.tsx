@@ -16,7 +16,7 @@ function RouteComponent() {
         <h1 className="text-xl font-semibold text-foreground">
           {m.settings_page_title()}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-muted">
           {m.settings_page_description()}
         </p>
       </header>

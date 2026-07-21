@@ -15,7 +15,7 @@ export function GreetingHeader({ user }: Props) {
     <header className="flex items-center gap-4">
       <span
         aria-hidden="true"
-        className="bg-primary/10 text-primary flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-semibold"
+        className="bg-accent/10 text-accent flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-semibold"
       >
         {avatarUrl ? (
           <img

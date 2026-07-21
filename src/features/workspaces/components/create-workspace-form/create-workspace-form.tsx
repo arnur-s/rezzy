@@ -124,7 +124,7 @@ export function CreateWorkspaceForm({ onSuccess, onCancel }: Props) {
               value={field.value}
             />
             {fieldState.error?.message && (
-              <p className="text-xs text-destructive">
+              <p className="text-xs text-danger">
                 {fieldState.error.message}
               </p>
             )}

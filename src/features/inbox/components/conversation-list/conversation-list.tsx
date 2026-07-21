@@ -195,7 +195,7 @@ function EmptyState({
   if (hasActiveFilter) {
     return (
       <div className="flex flex-col items-center px-6 py-12 text-center">
-        <Typography.Paragraph className="text-sm text-muted-foreground">
+        <Typography.Paragraph className="text-sm text-muted">
           {m.inbox_list_search_empty()}
         </Typography.Paragraph>
         <Button
@@ -214,7 +214,7 @@ function EmptyState({
       <Typography.Paragraph className="text-sm font-medium">
         {m.inbox_list_empty_title()}
       </Typography.Paragraph>
-      <Typography.Paragraph className="mt-1 text-xs text-muted-foreground">
+      <Typography.Paragraph className="mt-1 text-xs text-muted">
         {m.inbox_list_empty_description()}
       </Typography.Paragraph>
     </div>

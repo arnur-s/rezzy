@@ -1,11 +1,9 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
 
-@custom-variant dark (&:is(.dark *));
-
 /* ================================================================
    Light Theme
-   HeroUI semantic variables + custom tokens for shadcn/ui compat
+   HeroUI semantic variables + app-specific aliases
    ================================================================ */
 :root {
   color-scheme: light;
@@ -35,7 +33,6 @@
 
   /* Muted text */
   --muted: oklch(0.551 0.0234 264.3637);
-  --scrollbar: oklch(0.875 0.006 264);
 
   /* Default — neutral surfaces (inputs, tags, badges) */
   --default: oklch(0.925 0.004 264);
@@ -79,43 +76,9 @@
     0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
     0 0 1px 0 rgba(0, 0, 0, 0.06);
 
-  /* shadcn/ui compat aliases */
-  --primary: var(--accent);
-  --primary-foreground: var(--accent-foreground);
-  --secondary: oklch(0.536 0.0398 196.028);
-  --secondary-foreground: oklch(1 0 0);
-  --card: var(--surface);
-  --card-foreground: var(--surface-foreground);
-  --popover: var(--overlay);
-  --popover-foreground: var(--overlay-foreground);
-  --muted-foreground: var(--muted);
-  --input: var(--field-background);
-  --ring: var(--focus);
-  --destructive: var(--danger);
-  --destructive-foreground: var(--danger-foreground);
-
-  /* Sidebar */
-  --sidebar: oklch(0.9524 0.002 264);
-  --sidebar-foreground: oklch(0.2101 0.0318 264.6645);
-  --sidebar-primary: var(--accent);
-  --sidebar-primary-foreground: var(--accent-foreground);
-  --sidebar-accent: color-mix(in oklab, var(--accent) 10%, transparent);
-  --sidebar-accent-foreground: var(--accent);
-  --sidebar-border: oklch(0.875 0.006 264);
-  --sidebar-ring: var(--focus);
-
-  /* Charts */
-  --chart-1: oklch(0.594 0.0443 196.0233);
-  --chart-2: oklch(0.7214 0.1337 49.9802);
-  --chart-3: oklch(0.8721 0.0864 68.5474);
-  --chart-4: oklch(0.6268 0 0);
-  --chart-5: oklch(0.683 0 0);
-
-  /* Typography */
-  --font-sans: 'Golos Text', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --tracking-normal: 0rem;
+  /* Typography — system stack, no loaded typeface */
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* ================================================================
@@ -134,7 +97,6 @@
   --overlay-foreground: var(--foreground);
 
   --muted: oklch(0.6268 0 0);
-  --scrollbar: oklch(0.6268 0 0);
 
   --default: oklch(0.252 0 0);
   --default-foreground: oklch(0.8109 0 0);
@@ -160,31 +122,6 @@
   --surface-shadow: 0 0 0 0 transparent inset;
   --overlay-shadow: 0 0 0 0 transparent inset;
   --field-shadow: 0 0 0 0 transparent inset;
-
-  /* shadcn/ui compat aliases */
-  --primary: var(--accent);
-  --primary-foreground: var(--accent-foreground);
-  --secondary: oklch(0.594 0.0443 196.0233);
-  --secondary-foreground: oklch(0.1797 0.0043 308.1928);
-  --card: var(--surface);
-  --card-foreground: var(--surface-foreground);
-  --popover: var(--overlay);
-  --popover-foreground: var(--overlay-foreground);
-  --muted-foreground: var(--muted);
-  --input: var(--field-background);
-  --ring: var(--focus);
-  --destructive: var(--danger);
-  --destructive-foreground: var(--danger-foreground);
-
-  /* Sidebar */
-  --sidebar: oklch(0.1822 0 0);
-  --sidebar-foreground: oklch(0.8109 0 0);
-  --sidebar-primary: var(--accent);
-  --sidebar-primary-foreground: var(--accent-foreground);
-  --sidebar-accent: color-mix(in oklab, var(--accent) 15%, transparent);
-  --sidebar-accent-foreground: var(--accent);
-  --sidebar-border: oklch(0.252 0 0);
-  --sidebar-ring: var(--focus);
 }
 
 /* ================================================================
@@ -192,62 +129,15 @@
    Only tokens NOT already defined by HeroUI's shared/theme.css
    ================================================================ */
 @theme inline {
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-
-  --color-muted-foreground: var(--muted-foreground);
-
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
-
-  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
-  --tracking-normal: var(--tracking-normal);
-  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
-    box-sizing: border-box;
+    @apply border-border outline-focus/50;
   }
   body {
     @apply bg-background text-foreground;
-    margin: 0;
-    letter-spacing: var(--tracking-normal);
   }
 }
 
@@ -258,6 +148,7 @@ body {
 
 #app {
   height: 100vh;
+  height: 100dvh;
 }
 
 @keyframes unread-count-emphasis {
@@ -287,6 +178,8 @@ body {
    shrink-wraps its children. Our rich message notification is rendered into that
    slot and needs the full toast width; stretch it so `w-full` resolves correctly.
    Harmless for plain string toasts (their text stays left-aligned). */
-.toast__title {
-  align-self: stretch;
+@layer components {
+  .toast__title {
+    align-self: stretch;
+  }
 }

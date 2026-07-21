@@ -93,13 +93,13 @@ function RouteComponent() {
     <div className="flex h-full w-full flex-col overflow-y-auto">
       <header className="border-b border-border/60 py-6">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
-          <p className="text-xs font-medium text-muted-foreground">
+          <p className="text-xs font-medium text-muted">
             {m.workspace_settings_kicker()}
           </p>
           <h1 className="mt-1 text-lg font-semibold">
             {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          <p className="mt-1 max-w-2xl text-sm text-muted">
             {m.workspace_settings_description()}
           </p>
         </div>

@@ -63,7 +63,7 @@ export function PrimaryInboxFilters({
                 'w-fit cursor-pointer flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium outline-none transition-colors',
                 'text-foreground/60 data-[selected=true]:bg-foreground/10 data-[selected=true]:text-foreground',
                 'data-[selected=false]:hover:bg-foreground/5 data-[selected=false]:hover:text-foreground',
-                'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring',
+                'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-focus',
               )}
             >
               <span className="truncate text-left">{label()}</span>

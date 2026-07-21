@@ -200,7 +200,7 @@ export function ConnectWhatsappForm({
               ? m.channels_whatsapp_reconnect_form_title()
               : m.channels_whatsapp_form_title()}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted">
             {target.kind === 'reconnect'
               ? m.channels_whatsapp_reconnect_form_subtitle()
               : m.channels_whatsapp_form_subtitle()}
@@ -222,7 +222,7 @@ export function ConnectWhatsappForm({
               variant="secondary"
               {...register('name')}
             />
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="mt-1.5 text-xs text-muted">
               {m.channels_whatsapp_name_helper()}
             </p>
             <FieldError>{errors.name?.message}</FieldError>
@@ -230,13 +230,13 @@ export function ConnectWhatsappForm({
         )}
 
         {!isConfigured && (
-          <p className="rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-4 text-xs text-muted-foreground">
+          <p className="rounded-xl border border-dashed border-muted/30 bg-muted/30 p-4 text-xs text-muted">
             {m.channels_whatsapp_not_configured()}
           </p>
         )}
 
         {isConfigured && !isSecure && (
-          <p className="rounded-xl border border-dashed border-warning/40 bg-warning/10 p-4 text-xs text-muted-foreground">
+          <p className="rounded-xl border border-dashed border-warning/40 bg-warning/10 p-4 text-xs text-muted">
             {m.channels_whatsapp_requires_https()}
           </p>
         )}

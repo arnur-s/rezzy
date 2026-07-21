@@ -9,7 +9,7 @@ export function NotFound() {
       <Typography className="text-center text-4xl font-bold">
         {m.not_found_title()}
       </Typography>
-      <Typography className="text-center text-lg text-muted-foreground">
+      <Typography className="text-center text-lg text-muted">
         {m.not_found_description()}
       </Typography>
       <HeroLink

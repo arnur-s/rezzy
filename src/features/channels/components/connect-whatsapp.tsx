@@ -45,9 +45,9 @@ export function ConnectWhatsapp({
         onSuccess={onSuccess}
       />
 
-      <div className="border-t border-muted-foreground/15 pt-4">
+      <div className="border-t border-muted/15 pt-4">
         <button
-          className="text-xs text-muted-foreground underline underline-offset-4 transition hover:text-foreground"
+          className="text-xs text-muted underline underline-offset-4 transition hover:text-foreground"
           type="button"
           onClick={() => setIsManual(true)}
         >

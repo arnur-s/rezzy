@@ -73,7 +73,7 @@ export function Header({ className, onToggleSidebar }: HeaderProps) {
       </Button>
       <nav
         aria-label={m.breadcrumbs_aria_label()}
-        className="text-muted-foreground flex min-w-0 flex-1 items-center text-sm"
+        className="text-muted flex min-w-0 flex-1 items-center text-sm"
       >
         <ol className="flex min-w-0 flex-wrap items-center gap-1">
           {items.map((item, index) => {
@@ -137,7 +137,7 @@ export function Header({ className, onToggleSidebar }: HeaderProps) {
             <Dropdown>
               <Dropdown.Trigger
                 aria-label={m.sidebar_user_menu_label()}
-                className="ring-offset-background focus-visible:ring-ring shrink-0 rounded-full outline-none focus-visible:ring-2"
+                className="ring-offset-background focus-visible:ring-focus shrink-0 rounded-full outline-none focus-visible:ring-2"
               >
                 <Avatar color="accent" size="sm" variant="soft">
                   <Avatar.Fallback>
@@ -182,7 +182,7 @@ function ThemeSwitcher() {
     <Dropdown>
       <Dropdown.Trigger
         aria-label={m.header_theme_label()}
-        className="text-foreground hover:bg-sidebar-accent inline-flex size-8 shrink-0 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        className="text-foreground hover:bg-accent/10 dark:hover:bg-accent/15 inline-flex size-8 shrink-0 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-focus"
       >
         <TriggerIcon className="size-4" />
       </Dropdown.Trigger>
@@ -192,21 +192,21 @@ function ThemeSwitcher() {
             <MonitorIcon className="size-4" />
             <Label className="flex-1">{m.header_theme_system()}</Label>
             {theme === 'system' && (
-              <CheckIcon className="text-primary ml-auto size-3.5" />
+              <CheckIcon className="text-accent ml-auto size-3.5" />
             )}
           </Dropdown.Item>
           <Dropdown.Item id="light" textValue={m.header_theme_light()}>
             <SunIcon className="size-4" />
             <Label className="flex-1">{m.header_theme_light()}</Label>
             {theme === 'light' && (
-              <CheckIcon className="text-primary ml-auto size-3.5" />
+              <CheckIcon className="text-accent ml-auto size-3.5" />
             )}
           </Dropdown.Item>
           <Dropdown.Item id="dark" textValue={m.header_theme_dark()}>
             <MoonIcon className="size-4" />
             <Label className="flex-1">{m.header_theme_dark()}</Label>
             {theme === 'dark' && (
-              <CheckIcon className="text-primary ml-auto size-3.5" />
+              <CheckIcon className="text-accent ml-auto size-3.5" />
             )}
           </Dropdown.Item>
         </Dropdown.Menu>

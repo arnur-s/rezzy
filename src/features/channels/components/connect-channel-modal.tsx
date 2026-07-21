@@ -111,7 +111,7 @@ export function ConnectChannelModal({
               </AlertDialog.Heading>
             </AlertDialog.Header>
             <AlertDialog.Body>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted">
                 {m.channels_connect_discard_description()}
               </p>
             </AlertDialog.Body>

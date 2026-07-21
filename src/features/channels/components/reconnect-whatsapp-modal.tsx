@@ -89,7 +89,7 @@ export function ReconnectWhatsappModal({
               </AlertDialog.Heading>
             </AlertDialog.Header>
             <AlertDialog.Body>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted">
                 {m.channels_whatsapp_reconnect_discard_description()}
               </p>
             </AlertDialog.Body>

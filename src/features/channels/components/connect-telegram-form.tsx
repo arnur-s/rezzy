@@ -133,7 +133,7 @@ export function ConnectTelegramForm({
             variant="secondary"
             {...register('botToken')}
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted">
             {m.channels_telegram_token_helper()}
           </p>
           <FieldError>{errors.botToken?.message}</FieldError>

@@ -90,7 +90,7 @@ function RouteComponent() {
         className={cn(
           'z-1 flex w-full max-w-md flex-col gap-6 md:px-6 md:py-8',
           'max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:rounded-none',
-          'md:border md:border-border md:text-card-foreground md:shadow-surface',
+          'md:border md:border-border md:text-surface-foreground md:shadow-surface',
         )}
       >
         <Card.Header>
@@ -167,7 +167,7 @@ function RouteComponent() {
             </Button>
 
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted">
                 {m.auth_sign_in_dont_have_an_account_label()}
               </span>
 

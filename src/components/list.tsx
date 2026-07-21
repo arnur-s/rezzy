@@ -21,7 +21,7 @@ interface ListItemProps {
 export const listItemStyle = {
   sm: 'gap-2 rounded-md px-2 py-1.5',
   md: 'gap-3 rounded-lg px-2 py-2',
-  focus: 'focus-visible:ring-2 focus-visible:ring-ring',
+  focus: 'focus-visible:ring-2 focus-visible:ring-focus',
   transition: 'transition motion-reduce:transition-none',
   press: 'active:scale-[0.98]',
   hover: 'hover:bg-foreground/4',
@@ -31,7 +31,7 @@ export const listItemStyle = {
   data: {
     hover: 'data-[selected=false]:hover:bg-foreground/4',
     selected: 'data-[selected=true]:bg-foreground/10',
-    focus: 'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring',
+    focus: 'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-focus',
   },
 } as const
 

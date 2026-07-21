@@ -65,7 +65,7 @@ function StatCard({
           className={cn(
             'flex size-7 items-center justify-center rounded-md',
             accent
-              ? 'bg-primary/10 text-primary'
+              ? 'bg-accent/10 text-accent'
               : 'bg-foreground/5 text-foreground/60',
           )}
         >
@@ -76,7 +76,7 @@ function StatCard({
         <span
           className={cn(
             'text-3xl font-semibold tabular-nums',
-            accent && 'text-primary',
+            accent && 'text-accent',
           )}
         >
           {value.toLocaleString()}

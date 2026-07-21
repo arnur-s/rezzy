@@ -23,7 +23,7 @@ export function ChannelList({ workspaceId }: Props) {
       <header className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">{m.channels_list_title()}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted">
             {m.channels_list_description()}
           </p>
         </div>
@@ -80,12 +80,12 @@ function ChannelListSkeleton() {
 function ChannelListEmpty({ onConnect }: { onConnect: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4 border-y border-border/60 px-6 py-12 text-center">
-      <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <span className="flex size-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
         <PlugIcon className="size-6" />
       </span>
       <div className="max-w-md space-y-1.5">
         <h3 className="text-base font-semibold">{m.channels_empty_title()}</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted">
           {m.channels_empty_description()}
         </p>
       </div>
