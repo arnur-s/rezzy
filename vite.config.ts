@@ -19,6 +19,21 @@ const config = defineConfig({
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     viteReact(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep all of lucide-react (its `createLucideIcon` factory and every
+        // icon) in a single chunk. Otherwise Rollup splits the factory into the
+        // entry chunk while icons get their own chunks that import it back,
+        // creating a circular dependency: the entry chunk evaluates an icon
+        // module before `createLucideIcon` is initialized, throwing
+        // "t is not a function" at runtime.
+        manualChunks(id) {
+          if (id.includes('node_modules/lucide-react')) return 'lucide-react'
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
