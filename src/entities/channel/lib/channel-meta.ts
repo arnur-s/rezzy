@@ -1,15 +1,15 @@
-import {
-  AtSignIcon,
-  InstagramIcon,
-  MessageCircleIcon,
-  SendIcon,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { AtSignIcon } from 'lucide-react'
+import type { ComponentType, SVGProps } from 'react'
 import type { ChannelType } from '../model/types'
+import {
+  InstagramGlyph,
+  TelegramGlyph,
+  WhatsappGlyph,
+} from '../ui/brand-glyphs'
 
 type ChannelMeta = {
   type: ChannelType
-  icon: LucideIcon
+  icon: ComponentType<SVGProps<SVGSVGElement>>
 
   iconClassName: string
   iconBackgroundClassName: string
@@ -20,21 +20,21 @@ type ChannelMeta = {
 export const CHANNEL_META: Record<ChannelType, ChannelMeta> = {
   telegram: {
     type: 'telegram',
-    icon: SendIcon,
+    icon: TelegramGlyph,
     iconClassName: 'text-sky-500',
     iconBackgroundClassName: 'bg-sky-500/10',
     comingSoon: false,
   },
   instagram: {
     type: 'instagram',
-    icon: InstagramIcon,
+    icon: InstagramGlyph,
     iconClassName: 'text-pink-500',
     iconBackgroundClassName: 'bg-pink-500/10',
     comingSoon: true,
   },
   whatsapp: {
     type: 'whatsapp',
-    icon: MessageCircleIcon,
+    icon: WhatsappGlyph,
     iconClassName: 'text-emerald-500',
     iconBackgroundClassName: 'bg-emerald-500/10',
     comingSoon: false,
