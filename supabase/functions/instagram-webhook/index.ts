@@ -367,6 +367,10 @@ async function ingestMessage(args: {
     return
   }
 
+  console.log(
+    `instagram-webhook: ingested mid=${mid} conv=${conversationId} type=${dbType}`,
+  )
+
   // Fan out desktop/push notifications (fire-and-forget; never break ingestion).
   try {
     await supabase.functions.invoke('send-message-push', {
@@ -432,6 +436,12 @@ export default {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    console.log(
+      `instagram-webhook: object=${payload.object} entries=${(payload.entry ?? [])
+        .map((e) => `${e.id ?? '?'}#${(e.messaging ?? []).length}`)
+        .join(',')}`,
+    )
+
     for (const entry of payload.entry ?? []) {
       const igAccountId = entry.id?.trim()
       if (!igAccountId) continue
@@ -447,7 +457,12 @@ export default {
         console.error('instagram-webhook: channel lookup failed', lookupError)
         continue
       }
-      if (!channel) continue
+      if (!channel) {
+        console.log(
+          `instagram-webhook: no channel for entry.id=${igAccountId}`,
+        )
+        continue
+      }
 
       const channelId = channel.id as string
       const workspaceId = channel.workspace_id as string
@@ -476,8 +491,15 @@ export default {
         if (event.reaction) continue
 
         const message = event.message
-        if (!message || message.is_echo || message.is_deleted) continue
-        if (!channel.is_active) continue
+        if (!message) continue
+        if (message.is_echo || message.is_deleted) {
+          console.log('instagram-webhook: skipping echo/deleted message')
+          continue
+        }
+        if (!channel.is_active) {
+          console.log('instagram-webhook: channel inactive, skipping')
+          continue
+        }
 
         const senderId = event.sender?.id?.trim()
         if (!senderId) continue
