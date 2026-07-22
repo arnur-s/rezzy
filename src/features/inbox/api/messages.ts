@@ -108,6 +108,7 @@ type SendInvokeResult = {
 const REMOTE_SEND_FUNCTIONS: Partial<Record<ChannelType, string>> = {
   telegram: 'send-telegram-message',
   whatsapp: 'send-whatsapp-message',
+  instagram: 'send-instagram-message',
 }
 
 function detectMessageType(

@@ -30,7 +30,7 @@ export const CHANNEL_META: Record<ChannelType, ChannelMeta> = {
     icon: InstagramGlyph,
     iconClassName: 'text-pink-500',
     iconBackgroundClassName: 'bg-pink-500/10',
-    comingSoon: true,
+    comingSoon: false,
   },
   whatsapp: {
     type: 'whatsapp',

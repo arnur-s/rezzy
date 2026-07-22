@@ -9,7 +9,7 @@ export const CHANNEL_CAPABILITIES: Record<ChannelType, ChannelCapabilities> = {
     acceptedMimeTypes: 'image/*,video/*,audio/*,application/pdf',
   },
   instagram: {
-    acceptedMimeTypes: 'image/*,video/*',
+    acceptedMimeTypes: 'image/*,video/*,audio/*',
   },
   whatsapp: {
     acceptedMimeTypes: 'image/*,video/*,audio/*,application/pdf',

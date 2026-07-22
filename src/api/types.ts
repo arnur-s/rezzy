@@ -45,6 +45,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string | null
+          provider_account_id: string | null
           type: string
           updated_at: string
           workspace_id: string
@@ -54,6 +55,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string | null
+          provider_account_id?: string | null
           type: string
           updated_at?: string
           workspace_id: string
@@ -63,6 +65,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string | null
+          provider_account_id?: string | null
           type?: string
           updated_at?: string
           workspace_id?: string
@@ -79,6 +82,7 @@ export type Database = {
       }
       contact_channels: {
         Row: {
+          channel_id: string | null
           channel_type: string
           contact_id: string
           created_at: string
@@ -89,6 +93,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          channel_id?: string | null
           channel_type: string
           contact_id: string
           created_at?: string
@@ -99,6 +104,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          channel_id?: string | null
           channel_type?: string
           contact_id?: string
           created_at?: string
@@ -109,6 +115,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contact_channels_channel_ws_type_fk"
+            columns: ["channel_id", "workspace_id", "channel_type"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id", "workspace_id", "type"]
+          },
           {
             foreignKeyName: "contact_channels_contact_id_fkey"
             columns: ["contact_id"]
@@ -584,6 +597,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      begin_instagram_oauth: {
+        Args: { p_channel_id?: string; p_workspace_id: string }
+        Returns: string
+      }
+      consume_oauth_state: {
+        Args: { p_provider: string; p_state: string }
+        Returns: {
+          channel_id: string
+          user_id: string
+          workspace_id: string
+        }[]
+      }
+      finalize_instagram_channel_connection: {
+        Args: {
+          p_channel_id: string
+          p_credentials: Json
+          p_name: string
+          p_provider_account_id: string
+        }
+        Returns: undefined
+      }
       get_channel_credentials: { Args: { p_channel_id: string }; Returns: Json }
       get_unread_counts_for_workspaces: {
         Args: { p_workspace_ids: string[] }
@@ -614,6 +648,28 @@ export type Database = {
       mark_conversation_read: {
         Args: { p_conversation_id: string; p_last_read_message_id?: string }
         Returns: undefined
+      }
+      mark_outbound_message_read: {
+        Args: {
+          p_channel_id: string
+          p_external_id: string
+          p_workspace_id: string
+        }
+        Returns: undefined
+      }
+      resolve_instagram_conversation: {
+        Args: {
+          p_avatar_url?: string
+          p_channel_id: string
+          p_external_id: string
+          p_external_name?: string
+          p_name?: string
+        }
+        Returns: {
+          contact_channel_id: string
+          contact_id: string
+          conversation_id: string
+        }[]
       }
       soft_delete_workspace: {
         Args: { p_workspace_id: string }

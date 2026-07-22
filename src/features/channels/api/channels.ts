@@ -10,7 +10,7 @@ export const channelQueryKeys = {
 }
 
 const CHANNEL_PUBLIC_COLUMNS =
-  'id, workspace_id, type, name, is_active, created_at, updated_at' as const
+  'id, workspace_id, type, name, provider_account_id, is_active, created_at, updated_at' as const
 
 type ConnectChannelSuccess = { channel: Channel }
 
@@ -21,6 +21,10 @@ export type ChannelConnectErrorCode =
   | 'unauthorized'
   | 'forbidden'
   | 'duplicate'
+  | 'state_mismatch'
+  | 'invalid_code'
+  | 'not_professional'
+  | 'account_mismatch'
   | 'unknown'
 
 export class ChannelConnectError extends Error {
@@ -54,6 +58,10 @@ async function mapFunctionInvokeError(
         body.code === 'unauthorized' ||
         body.code === 'forbidden' ||
         body.code === 'duplicate' ||
+        body.code === 'state_mismatch' ||
+        body.code === 'invalid_code' ||
+        body.code === 'not_professional' ||
+        body.code === 'account_mismatch' ||
         body.code === 'unknown'
       ) {
         return new ChannelConnectError(body.code, message)
@@ -324,6 +332,119 @@ export async function reconnectWhatsappChannelManual({
     await supabase.functions.invoke<ConnectChannelSuccess>(
       'whatsapp-connect-channel',
       { body },
+    )
+
+  if (error) {
+    throw await mapFunctionInvokeError(error)
+  }
+
+  if (!data?.channel) {
+    throw new ChannelConnectError('unknown')
+  }
+
+  return data.channel
+}
+
+/**
+ * Issues a one-time, workspace-bound OAuth state for the Instagram Login flow.
+ * Server-generated (see begin_instagram_oauth) so it can be validated and
+ * single-used server-side during the code exchange.
+ */
+export async function beginInstagramOAuth({
+  workspaceId,
+  channelId,
+}: {
+  workspaceId: string
+  channelId?: string
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('begin_instagram_oauth', {
+    p_workspace_id: workspaceId,
+    ...(channelId ? { p_channel_id: channelId } : {}),
+  })
+
+  if (error) {
+    throw error
+  }
+
+  if (typeof data !== 'string' || data.length === 0) {
+    throw new ChannelConnectError('unknown')
+  }
+
+  return data
+}
+
+export async function createInstagramChannel({
+  code,
+  state,
+  name,
+  workspaceId,
+}: {
+  code: string
+  state: string
+  name: string
+  workspaceId: string
+}) {
+  const trimmedName = name.trim()
+
+  const body: {
+    workspace_id: string
+    code: string
+    state: string
+    name?: string
+  } = {
+    workspace_id: workspaceId,
+    code,
+    state,
+  }
+
+  if (trimmedName.length > 0) {
+    body.name = trimmedName
+  }
+
+  const { data, error } =
+    await supabase.functions.invoke<ConnectChannelSuccess>(
+      'instagram-connect-channel',
+      { body },
+    )
+
+  if (error) {
+    throw await mapFunctionInvokeError(error)
+  }
+
+  if (!data?.channel) {
+    throw new ChannelConnectError('unknown')
+  }
+
+  return data.channel
+}
+
+/**
+ * Rotates an existing Instagram channel's credentials after re-authorizing.
+ * The Edge Function keeps the public channel row and its conversation history,
+ * and rejects a different Instagram account (account_mismatch).
+ */
+export async function reconnectInstagramChannel({
+  channelId,
+  code,
+  state,
+  workspaceId,
+}: {
+  channelId: string
+  code: string
+  state: string
+  workspaceId: string
+}) {
+  const { data, error } =
+    await supabase.functions.invoke<ConnectChannelSuccess>(
+      'instagram-connect-channel',
+      {
+        body: {
+          workspace_id: workspaceId,
+          channel_id: channelId,
+          code,
+          state,
+        },
+      },
     )
 
   if (error) {

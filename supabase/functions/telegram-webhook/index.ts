@@ -793,6 +793,7 @@ export default {
       await supabase.from('contact_channels').insert({
         workspace_id: workspaceId,
         contact_id: contactId,
+        channel_id: channelId,
         channel_type: 'telegram',
         external_id: externalChatId,
         external_name: externalName,

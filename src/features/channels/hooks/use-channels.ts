@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   activateChannel,
   channelQueryKeys,
+  createInstagramChannel,
   createTelegramChannel,
   createWhatsappChannel,
   createWhatsappChannelManual,
   deactivateChannel,
   getWorkspaceChannels,
+  reconnectInstagramChannel,
   reconnectWhatsappChannel,
   reconnectWhatsappChannelManual,
   updateChannelName,
@@ -117,6 +119,42 @@ export function useReconnectWhatsappChannelManual(
         channelId,
         workspaceId,
       }),
+    onSuccess: async (channel) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: channelQueryKeys.list(workspaceId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: channelQueryKeys.detail(channel.id),
+        }),
+      ])
+    },
+  })
+}
+
+export function useCreateInstagramChannel(workspaceId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (values: { code: string; state: string; name: string }) =>
+      createInstagramChannel({ ...values, workspaceId }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: channelQueryKeys.list(workspaceId),
+      })
+    },
+  })
+}
+
+export function useReconnectInstagramChannel(
+  workspaceId: string,
+  channelId: string,
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (values: { code: string; state: string }) =>
+      reconnectInstagramChannel({ ...values, channelId, workspaceId }),
     onSuccess: async (channel) => {
       await Promise.all([
         queryClient.invalidateQueries({

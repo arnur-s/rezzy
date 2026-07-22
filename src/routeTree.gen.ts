@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PasswordResetRouteImport } from './routes/password-reset'
+import { Route as InstagramCallbackRouteImport } from './routes/instagram-callback'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -41,6 +42,11 @@ const SignInRoute = SignInRouteImport.update({
 const PasswordResetRoute = PasswordResetRouteImport.update({
   id: '/password-reset',
   path: '/password-reset',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstagramCallbackRoute = InstagramCallbackRouteImport.update({
+  id: '/instagram-callback',
+  path: '/instagram-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -131,6 +137,7 @@ const AuthenticatedWorkspacesIdSettingsChannelsNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/instagram-callback': typeof InstagramCallbackRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$id/settings/channels/': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/instagram-callback': typeof InstagramCallbackRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -168,6 +176,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/instagram-callback': typeof InstagramCallbackRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/instagram-callback'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/workspaces/$id/settings/channels/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/instagram-callback'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/instagram-callback'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
@@ -247,6 +259,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  InstagramCallbackRoute: typeof InstagramCallbackRoute
   PasswordResetRoute: typeof PasswordResetRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/password-reset'
       fullPath: '/password-reset'
       preLoaderRoute: typeof PasswordResetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/instagram-callback': {
+      id: '/instagram-callback'
+      path: '/instagram-callback'
+      fullPath: '/instagram-callback'
+      preLoaderRoute: typeof InstagramCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -456,6 +476,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  InstagramCallbackRoute: InstagramCallbackRoute,
   PasswordResetRoute: PasswordResetRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,

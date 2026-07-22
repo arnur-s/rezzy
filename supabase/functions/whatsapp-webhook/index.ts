@@ -576,6 +576,7 @@ async function ingestMessage(args: {
     await supabase.from('contact_channels').insert({
       workspace_id: workspaceId,
       contact_id: contactId,
+      channel_id: channelId,
       channel_type: 'whatsapp',
       external_id: waId,
       external_name: contactName,

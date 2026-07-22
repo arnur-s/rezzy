@@ -3,6 +3,7 @@ import { isChannelType } from '@/entities/channel'
 import {
   ConnectChannelComingSoon,
   ConnectChannelPicker,
+  ConnectInstagramForm,
   ConnectTelegramForm,
   ConnectWhatsapp,
 } from '@/features/channels/components'
@@ -89,6 +90,11 @@ function RouteComponent() {
           <ConnectTelegramForm workspaceId={id} onCancel={clearType} />
         ) : type === 'whatsapp' ? (
           <ConnectWhatsapp
+            target={{ kind: 'create', workspaceId: id }}
+            onCancel={clearType}
+          />
+        ) : type === 'instagram' ? (
+          <ConnectInstagramForm
             target={{ kind: 'create', workspaceId: id }}
             onCancel={clearType}
           />

@@ -17,6 +17,7 @@ import { useMemo, useState } from 'react'
 import { ActivateChannelDialog } from './activate-channel-dialog'
 import { DeactivateChannelDialog } from './deactivate-channel-dialog'
 import { EditChannelNameModal } from './edit-channel-name-modal'
+import { ReconnectInstagramModal } from './reconnect-instagram-modal'
 import { ReconnectWhatsappModal } from './reconnect-whatsapp-modal'
 
 type Props = {
@@ -88,7 +89,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
                 <PencilIcon className="size-4" />
                 <Label>{m.channels_card_action_edit()}</Label>
               </Dropdown.Item>
-              {channelType === 'whatsapp' && (
+              {(channelType === 'whatsapp' || channelType === 'instagram') && (
                 <Dropdown.Item
                   id="reconnect"
                   textValue={m.channels_card_action_reconnect()}
@@ -129,6 +130,15 @@ export function ChannelCard({ channel, workspaceId }: Props) {
 
       {channelType === 'whatsapp' && (
         <ReconnectWhatsappModal
+          channel={channel}
+          isOpen={isReconnectOpen}
+          onOpenChange={setIsReconnectOpen}
+          workspaceId={workspaceId}
+        />
+      )}
+
+      {channelType === 'instagram' && (
+        <ReconnectInstagramModal
           channel={channel}
           isOpen={isReconnectOpen}
           onOpenChange={setIsReconnectOpen}

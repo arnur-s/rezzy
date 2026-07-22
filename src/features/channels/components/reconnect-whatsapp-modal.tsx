@@ -48,7 +48,7 @@ export function ReconnectWhatsappModal({
         <Modal.Container>
           <Modal.Dialog
             aria-label={m.channels_whatsapp_reconnect_title()}
-            className="sm:max-w-[560px]"
+            className="sm:max-w-140"
           >
             <Modal.CloseTrigger />
             <Modal.Header>

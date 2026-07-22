@@ -416,3 +416,8 @@ verify_jwt = false
 # GET hub.verify_token handshake and the POST X-Hub-Signature-256 itself.
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+# Instagram: Meta calls this without a Supabase JWT — the function verifies the
+# GET hub.verify_token handshake and the POST X-Hub-Signature-256 itself.
+[functions.instagram-webhook]
+verify_jwt = false

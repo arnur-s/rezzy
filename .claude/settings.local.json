@@ -109,7 +109,11 @@
       "Bash(node -e \"const {buttonVariants}=require\\('@heroui/styles'\\); try{console.log\\('button variants keys:', Object.keys\\(buttonVariants.variants||{}\\)\\)}catch\\(e\\){console.log\\('n/a'\\)}\")",
       "Bash(node -e \"const {buttonVariants}=require\\('@heroui/styles'\\); console.log\\('button variant options:', Object.keys\\(buttonVariants.variants?.variant||{}\\)\\)\")",
       "Bash(node -e \"const {selectVariants,chipVariants}=require\\('@heroui/styles'\\); console.log\\('select variant:', Object.keys\\(\\(selectVariants?.variants||{}\\).variant||{}\\)\\); console.log\\('chip variant:', Object.keys\\(\\(chipVariants?.variants||{}\\).variant||{}\\)\\)\")",
-      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\).filter\\(d=>/testing-library|vitest|jsdom|user-event/.test\\(d\\)\\)\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\).filter\\(d=>/testing-library|vitest|jsdom|user-event/.test\\(d\\)\\)\\)\")",
+      "Bash(awk '/channels: \\\\{/{f=1} f&&/Row: \\\\{/{p=1} p{print NR\": \"$0} p&&/\\\\}/{c++} c==1&&p{exit}' /Users/arnurkupanov/cms/src/api/types.ts)",
+      "Bash(git -C /Users/arnurkupanov/cms check-ignore src/paraglide/messages.js)",
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; Object.keys\\(s\\).forEach\\(k=>console.log\\(k+' = '+s[k]\\)\\)\")",
+      "Bash(grep -nA15 \"test:\")"
     ]
   },
   "hooks": {

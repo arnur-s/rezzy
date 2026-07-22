@@ -106,6 +106,15 @@ export function useMarkConversationReadToMessage({
           ),
       )
 
+      // The conversation-list badge is driven by the per-agent unread-counts
+      // map (overlaid onto rows in inbox-page), not conversations.unread_count.
+      // Clear this conversation's entry so the badge reflects the read cursor we
+      // just advanced; otherwise the count lingers until the map is refetched.
+      queryClient.setQueriesData<Record<string, number>>(
+        { queryKey: inboxQueryKeys.unreadCountsForWorkspace(workspaceId) },
+        (current) => (current ? { ...current, [conversationId]: 0 } : current),
+      )
+
       if (!userId) return
 
       queryClient.setQueryData<ConversationReadCursor | null>(

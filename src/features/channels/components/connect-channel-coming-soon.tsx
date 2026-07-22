@@ -4,12 +4,11 @@ import { m } from '@/paraglide/messages'
 import { Button, Chip } from '@heroui/react'
 
 type Props = {
-  type: Exclude<ChannelType, 'telegram' | 'whatsapp'>
+  type: Exclude<ChannelType, 'telegram' | 'whatsapp' | 'instagram'>
   onCancel: () => void
 }
 
 const CONNECT_LABEL_KEYS = {
-  instagram: 'channels_instagram_connect_cta',
   email: 'channels_email_connect_cta',
 } as const
 
