@@ -1,312 +1,224 @@
-# AGENTS.md
+# Repository Instructions
 
-## Product Philosophy
+## Source of Truth
 
-This project is a real-world CRM and business management system.
+Treat the repository itself as the source of truth.
 
-The goal is to build software with production-quality architecture, workflows, UX, and UI standards comparable to modern business applications used by real companies.
+Before changing code, inspect the relevant files, nearby patterns, `package.json`, and current generated types. If an instruction conflicts with the implementation, do not force the code to match stale documentation; preserve the working architecture and update documentation when appropriate.
 
-This is not a CRUD showcase or tutorial project.
+`AGENTS.md` is the canonical shared instruction file for coding agents in this repository.
 
-Every feature, interaction, workflow, and UI decision should be treated as part of a real production product.
+## Product
 
-Prioritize:
+The repository contains **Rezzy**, a production-oriented, multi-workspace CRM and shared customer inbox for sales and account-management teams.
 
-- workflow-oriented UX
-- polished interactions
-- realistic business processes
-- premium visual quality
-- responsiveness
-- accessibility
-- loading, empty, and error states
-- maintainable architecture
-- fast and intuitive user experience
+Build real workflows, not tutorial CRUD screens. Prioritize:
+
 - clear information hierarchy
+- fast inbox and contact workflows
+- realistic business states and failure handling
+- responsive and accessible interactions
+- polished loading, empty, error, optimistic, and disabled states
+- maintainable architecture over shortcuts
 
-The application must be:
+Avoid placeholder content, generic admin-dashboard patterns, decorative complexity, and speculative abstractions.
 
-- production-ready
-- reliable
-- scalable
-- maintainable
-- efficient
-- realistic
-- business-oriented
+For product decisions, consult `PRODUCT.md`. For visual-system work, consult `DESIGN.md` and the existing implementation.
 
-Avoid:
+## Stack and Tooling
 
-- generic admin dashboards
-- tutorial-style CRUD implementations
-- placeholder or lorem ipsum content
-- unrealistic workflows
-- overcrowded interfaces
-- excessive complexity
-- over-engineering
-- fake demo patterns
+Use the versions and scripts declared in `package.json` as the authoritative source.
 
-## Project Overview
+Core stack:
 
-This project is a CMS built with React 19, TypeScript, Vite, TanStack Router, TanStack Query, HeroUI, Tailwind CSS v4, React Hook Form, Zod, Supabase, and Paraglide/Inlang.
+- React and TypeScript
+- Vite
+- TanStack Router and TanStack Query
+- HeroUI React v3 and Tailwind CSS v4
+- React Hook Form and Zod
+- Supabase
+- Paraglide/Inlang
+- Vitest and Testing Library
 
-Package manager: pnpm.
+Use **pnpm** only. Do not introduce a new dependency unless the user explicitly approves it.
 
-Always preserve existing architecture and conventions.
-
-## Core Principles
-
-- Keep solutions simple.
-- Prefer readability over clever abstractions.
-- Follow strict typing.
-- Preserve architectural consistency.
-- Avoid unnecessary rewrites.
-- Minimize scope of changes.
-- Reuse existing patterns before introducing new ones.
+The `@/*` import alias maps to `src/*`.
 
 ## Architecture
 
-This project follows Feature-Sliced Design.
+The project follows a pragmatic Feature-Sliced Design structure.
 
-### Folder Responsibilities
+### Dependency direction
 
-#### `src/api`
+Prefer this import direction:
 
-Contains global API setup, Supabase client setup, API utilities, and generated Supabase types.
+`routes -> widgets -> features -> entities -> shared infrastructure`
 
-Do not place feature-specific business logic here.
+A lower layer must not import a higher layer:
 
-#### `src/features`
+- `entities` must not import from `features`, `widgets`, or `routes`
+- `features` must not import from `widgets` or `routes`
+- `widgets` must not import from `routes`
+- shared infrastructure must not depend on product features
 
-Contains business features.
+Do not reorganize files merely to make the structure look more theoretical. Preserve established boundaries unless the task requires an architectural change.
 
-Each feature should encapsulate its own API calls, components, hooks, schemas, types, utilities, and forms.
-
-Example structure:
-
-    src/features/users/
-      api/
-      components/
-      hooks/
-      schemas/
-      types/
-      utils/
-
-#### `src/components`
-
-Shared reusable UI components only.
-
-Do not place feature-specific business logic here.
+### Folder responsibilities
 
 #### `src/routes`
 
-File-based TanStack Router routes.
+TanStack Router file-based routes.
 
-Route files should remain lightweight. Move business logic into `src/features`.
-
-#### `src/providers`
-
-Application providers and global setup.
-
-#### `src/utils`
-
-Pure shared utility functions only.
-
-No feature-specific logic.
-
-## Routing Rules
-
-- Use TanStack Router file-based routing.
 - Keep route files thin.
-- Prefer loaders, hooks, and components from features.
-- Avoid large route components.
+- Parse route params and search state here.
+- Compose page-level UI from widgets or features.
+- Move business logic, server-state logic, and substantial UI into the appropriate layer.
+
+#### `src/widgets`
+
+Large application-shell or page-composition units, such as the app header and sidebar.
+
+Widgets may compose features and entities, but should not own reusable domain logic.
+
+#### `src/features`
+
+User-facing capabilities and business workflows.
+
+A feature may contain its API functions, query hooks, schemas, components, and feature-specific utilities. Keep logic close to the feature that owns it.
+
+#### `src/entities`
+
+Reusable domain models and domain UI for concepts such as channels, contacts, conversations, messages, users, and workspaces.
+
+Entities may depend on shared infrastructure, but never on features.
+
+Prefer explicit named exports from entity `index.ts` files.
+
+#### Shared infrastructure
+
+The following folders are shared or application infrastructure:
+
+- `src/components`: generic reusable UI components without feature-specific business logic
+- `src/hooks`: reusable application hooks
+- `src/lib`: shared application helpers
+- `src/utils`: shared utilities and infrastructure, including the Supabase client
+- `src/providers`: application-wide providers
+- `src/api`: generated Supabase database types and truly global API types/setup
+
+Do not move feature-specific code into shared folders merely because it is reused once.
+
+## React and TypeScript
+
+- Keep TypeScript strict.
+- Do not use `any` unless an external boundary makes it unavoidable and the reason is documented.
+- Prefer narrow types, discriminated unions, and explicit public API types.
+- Handle `null` and `undefined` deliberately.
+- Infer form and payload types from Zod schemas when practical.
+- Avoid unsafe casts and non-null assertions.
+- Prefer small, composable components with clear ownership.
+- Do not create abstractions before meaningful duplication exists.
+
+Preserve existing behavior and styling unless the task explicitly requests a redesign or behavior change.
 
 ## Data Fetching
 
 Use TanStack Query for server state.
 
-Rules:
-
-- Query logic belongs inside feature folders.
-- Avoid inline fetch logic inside components.
-- Reuse query options and hooks when possible.
-- Use stable query keys.
-- Handle loading and error states explicitly.
+- Put feature query logic in the owning feature.
+- Reuse query-key factories, query options, and existing hooks.
+- Avoid inline Supabase queries inside presentation components.
+- Handle loading, empty, error, refetching, and optimistic states explicitly.
+- Keep realtime cache updates consistent with existing inbox patterns.
 
 ## Forms
 
 Use React Hook Form with Zod validation.
 
-Rules:
+- Define validation in schemas.
+- Prefer `z.infer<typeof schema>` for form values.
+- Keep submission and mutation behavior in the owning feature.
+- Reuse form fields when reuse improves consistency rather than hiding simple code.
 
-- Forms must use schema validation.
-- Infer form values from Zod schemas.
-- Prefer reusable form fields when appropriate.
-- Avoid duplicated form logic.
+## UI and HeroUI
 
-Preferred type style:
+Use HeroUI components when they fit the interaction, and Tailwind CSS for layout, spacing, responsive behavior, and focused visual adjustments.
 
-    type FormValues = z.infer<typeof schema>
+HeroUI v3 differs from earlier HeroUI/NextUI APIs. For component work:
 
-## UI Rules
+1. Inspect current usage in this repository.
+2. Check the installed package types.
+3. Consult the official HeroUI v3 documentation or `https://heroui.com/llms-patterns.txt` when external documentation is available.
 
-Preferred UI order:
+Do not rely on remembered v2 APIs. Do not run a documentation generator that overwrites this file, and do not paste a generated component index into `AGENTS.md`.
 
-1. HeroUI
-2. Tailwind CSS when HeroUI has no suitable solution
+Follow the design tokens and visual rules already implemented in `src/styles.css` and described in `DESIGN.md`. Avoid one-off colors, spacing scales, and component variants without a clear need.
 
-Rules:
+## Internationalization
 
-- Prefer HeroUI components first.
-- Use Tailwind for layout, spacing, and small visual adjustments.
-- Avoid unnecessary custom styling.
-- Avoid inline styles unless unavoidable.
-- Keep UI consistent with existing components.
+All user-facing text must use Paraglide/Inlang.
 
-## TypeScript Rules
+- Edit source messages in `messages/en.json` and `messages/ru.json`.
+- Keep keys readable and grouped by feature.
+- Do not manually edit generated files under `src/paraglide`.
+- Run the existing compile/typecheck scripts after message changes.
 
-Strict typing is required.
+## Supabase
 
-Rules:
+- Treat files in `supabase/migrations` as the database history and source of truth.
+- Keep browser-side access constrained by RLS.
+- Keep service-role access and secrets inside trusted Supabase Edge Functions.
+- Never expose channel credentials to the client.
+- Access `private.channel_secrets` only through the existing RPC helpers; do not query the private table directly from application code.
+- Do not manually edit `src/api/types.ts`.
+- Regenerate local types with `pnpm types:supabase:local` or linked-project types with `pnpm types:supabase:linked`, depending on the task.
+- Preserve workspace scoping in queries, mutations, policies, RPCs, and realtime subscriptions.
 
-- Avoid `any`.
-- Prefer explicit types for public APIs.
-- Infer types from Zod schemas when possible.
-- Avoid unsafe casts.
-- Prefer narrow types.
-- Handle `null` and `undefined` explicitly.
+For database changes, add a migration and update relevant database tests. Do not rewrite old migrations that may already be applied.
 
-## Supabase Rules
+## Generated Files
 
-Supabase types are generated by:
+Do not manually edit:
 
-    pnpm types:supabase
+- `src/routeTree.gen.ts`
+- `src/paraglide/**`
+- `src/api/types.ts`
 
-Generated types are located at:
+Change their source inputs and regenerate them with the repository scripts.
 
-    src/api/types.ts
+## Testing and Validation
 
-Rules:
+Add or update tests for critical business logic, regressions, complex hooks, reusable utilities, and important user interactions. Prefer meaningful tests over coverage-only tests.
 
-- Never manually edit generated Supabase types.
-- Feature API logic should live inside feature folders.
-- Keep shared Supabase setup in `src/api`.
-- Do not use .schema('private').from('channel_secrets') anymore. Use only the RPC helpers.
+For code changes, run the smallest relevant validation set, with `pnpm typecheck` as the minimum expected check.
 
-## i18n Rules
+Useful commands:
 
-Use Paraglide/Inlang for all user-facing text.
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+pnpm verify
+pnpm test:db
+```
 
-Rules:
+Use `pnpm verify` for broad or release-sensitive changes when practical. For documentation-only changes, review the diff and verify referenced paths and commands; a full application build is not required.
 
-- Do not hardcode visible UI text.
-- Add translation keys when introducing new user-facing text.
-- Keep translation keys readable and structured.
+If a command cannot run because required services, credentials, or local tooling are unavailable, report that clearly instead of claiming success.
 
-## Component Rules
+## Change Discipline
 
-Prefer:
-
-- Small components
-- Composable components
-- Single responsibility
-- Clear names
-
-Avoid:
-
-- Giant components
-- Deeply nested conditionals
-- Duplicated UI logic
-- Premature abstractions
-
-Extract reusable logic only when it clearly improves readability or removes meaningful duplication.
-
-## Code Style
-
-Prefer:
-
-- Straightforward code
-- Predictable patterns
-- Explicit naming
-- KISS
-
-Avoid:
-
-- Over-engineering
-- Magic helpers
-- Unnecessary generics
-- Unrelated refactors
-
-## Dependency Rules
-
-Do not introduce new dependencies unless explicitly requested.
-
-Always prefer the existing stack first.
-
-## Testing
-
-Use Vitest and Testing Library.
-
-Add or update tests for:
-
-- Critical business logic
-- Reusable utilities
-- Complex hooks
-- Important UI interactions
-- Bug fixes where regression is likely
-
-Do not write excessive low-value tests.
-
-Prefer meaningful tests over chasing coverage numbers.
-
-## Before Finishing
-
-Run relevant validation commands:
-
-    pnpm typecheck
-    pnpm lint
-    pnpm test
-
-At minimum, run `pnpm typecheck` after code changes.
-
-Verify:
-
-- No TypeScript errors
-- No unused imports
-- No broken routes
-- No duplicated logic
-- No architectural violations
-- No unrelated formatting changes
-
-## Change Scope Rules
-
-Do not:
-
-- Rewrite unrelated files
-- Reformat unrelated code
-- Rename files unnecessarily
-- Introduce architectural changes without reason
-- Add new dependencies without explicit approval
-
-Keep diffs focused.
-
-## Preferred Workflow
+- Keep diffs focused on the requested task.
+- Do not reformat or rename unrelated files.
+- Reuse nearby patterns before introducing a new pattern.
+- Do not silently change public behavior.
+- Do not add dependencies, change architecture, or modify database contracts without a concrete reason.
+- Never discard user changes.
 
 For medium or large tasks:
 
-1. Inspect existing architecture and nearby patterns.
-2. Propose a short implementation plan.
+1. Inspect the relevant architecture and nearby examples.
+2. State a concise implementation plan.
 3. Implement incrementally.
-4. Validate with typecheck, lint, and tests where relevant.
-5. Summarize changed files and important decisions.
-
-## Communication Rules
-
-When completing tasks:
-
-- Explain important architectural decisions briefly.
-- Mention tradeoffs when relevant.
-- Keep explanations concise.
-- Do not be verbose unless the task requires it.
-
-<!-- HEROUI-REACT-AGENTS-MD-START -->
-[HeroUI React v3 Docs Index]|root: ./.heroui-docs/react|STOP. What you remember about HeroUI React v3 is WRONG for this project. Always search docs and read before any task.|If docs missing, run this command first: heroui agents-md --react --output AGENTS.md|components/(buttons):{button-group.mdx,button.mdx,close-button.mdx,toggle-button-group.mdx,toggle-button.mdx}|components/(collections):{dropdown.mdx,list-box.mdx,tag-group.mdx}|components/(colors):{color-area.mdx,color-field.mdx,color-picker.mdx,color-slider.mdx,color-swatch-picker.mdx,color-swatch.mdx}|components/(controls):{slider.mdx,switch.mdx}|components/(data-display):{badge.mdx,chip.mdx,table.mdx}|components/(date-and-time):{calendar.mdx,date-field.mdx,date-picker.mdx,date-range-picker.mdx,range-calendar.mdx,time-field.mdx}|components/(feedback):{alert.mdx,meter.mdx,progress-bar.mdx,progress-circle.mdx,skeleton.mdx,spinner.mdx}|components/(forms):{checkbox-group.mdx,checkbox.mdx,description.mdx,error-message.mdx,field-error.mdx,fieldset.mdx,form.mdx,input-group.mdx,input-otp.mdx,input.mdx,label.mdx,number-field.mdx,radio-group.mdx,search-field.mdx,text-area.mdx,text-field.mdx}|components/(layout):{card.mdx,separator.mdx,surface.mdx,toolbar.mdx}|components/(media):{avatar.mdx}|components/(navigation):{accordion.mdx,breadcrumbs.mdx,disclosure-group.mdx,disclosure.mdx,link.mdx,pagination.mdx,tabs.mdx}|components/(overlays):{alert-dialog.mdx,drawer.mdx,modal.mdx,popover.mdx,toast.mdx,tooltip.mdx}|components/(pickers):{autocomplete.mdx,combo-box.mdx,select.mdx}|components/(typography):{kbd.mdx,typography.mdx}|components/(utilities):{scroll-shadow.mdx}|getting-started/(handbook):{animation.mdx,colors.mdx,composition.mdx,dark-mode.mdx,styling.mdx,theming.mdx}|getting-started/(overview):{cli.mdx,design-principles.mdx,frameworks.mdx,quick-start.mdx}|getting-started/(ui-for-agents):{agent-skills.mdx,agents-md.mdx,llms-txt.mdx,mcp-server.mdx}|releases:{v3-0-0-alpha-32.mdx,v3-0-0-alpha-33.mdx,v3-0-0-alpha-34.mdx,v3-0-0-alpha-35.mdx,v3-0-0-beta-1.mdx,v3-0-0-beta-2.mdx,v3-0-0-beta-3.mdx,v3-0-0-beta-4.mdx,v3-0-0-beta-6.mdx,v3-0-0-beta-7.mdx,v3-0-0-beta-8.mdx,v3-0-0-rc-1.mdx,v3-0-0.mdx,v3-0-2.mdx,v3-0-3.mdx,v3-0-4.mdx,v3-0-5.mdx,v3-1-0.mdx,v3-2-0.mdx,v3-2-1.mdx,v3-2-2.mdx}|demos/cn/accordion:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-styles.tsx,disabled.tsx,faq.tsx,multiple.tsx,surface.tsx,without-separator.tsx}|demos/cn/alert-dialog:{backdrop-variants.tsx,close-methods.tsx,controlled.tsx,custom-animations.tsx,custom-backdrop.tsx,custom-icon.tsx,custom-portal.tsx,custom-trigger.tsx,default.tsx,dismiss-behavior.tsx,placements.tsx,sizes.tsx,statuses.tsx,with-close-button.tsx}|demos/cn/alert:{basic.tsx}|demos/cn/autocomplete:{allows-empty-collection.tsx,asynchronous-filtering.tsx,controlled-open-state.tsx,controlled.tsx,custom-indicator.tsx,default.tsx,disabled.tsx,email-recipients.tsx,full-width.tsx,location-search.tsx,multiple-select.tsx,required.tsx,single-select.tsx,tag-group-selection.tsx,user-selection-multiple.tsx,user-selection.tsx,variants.tsx,virtualization.tsx,with-description.tsx,with-disabled-options.tsx,with-sections.tsx}|demos/cn/avatar:{basic.tsx,colors.tsx,custom-image-component.tsx,custom-styles.tsx,fallback.tsx,group.tsx,sizes.tsx,variants.tsx}|demos/cn/badge:{basic.tsx,colors.tsx,dot.tsx,placements.tsx,sizes.tsx,variants.tsx,with-content.tsx}|demos/cn/breadcrumbs:{basic.tsx,custom-render-function.tsx,custom-separator.tsx,disabled.tsx,level-2.tsx,level-3.tsx}|demos/cn/button-group:{basic.tsx,disabled.tsx,full-width.tsx,orientation.tsx,sizes.tsx,variants.tsx,with-icons.tsx,without-separator.tsx}|demos/cn/button:{basic.tsx,custom-render-function.tsx,custom-variants.tsx,disabled.tsx,full-width.tsx,icon-only.tsx,loading-state.tsx,loading.tsx,outline-variant.tsx,ripple-effect.tsx,sizes.tsx,social.tsx,variants.tsx,with-icons.tsx}|demos/cn/calendar:{basic.tsx,booking-calendar.tsx,controlled.tsx,custom-icons.tsx,custom-styles.tsx,day-view.tsx,default-value.tsx,disabled.tsx,focused-value.tsx,international-calendar.tsx,min-max-dates.tsx,multiple-months.tsx,multiple-selection.tsx,read-only.tsx,unavailable-dates.tsx,week-view.tsx,weeks-in-month.tsx,with-indicators.tsx,year-picker.tsx}|demos/cn/card:{default.tsx,horizontal.tsx,variants.tsx,with-avatar.tsx,with-form.tsx,with-images.tsx}|demos/cn/checkbox-group:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,features-and-addons.tsx,indeterminate.tsx,on-surface.tsx,validation.tsx,with-custom-indicator.tsx}|demos/cn/checkbox:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-styles.tsx,default-selected.tsx,disabled.tsx,external-label.tsx,form.tsx,full-rounded.tsx,indeterminate.tsx,invalid.tsx,render-props.tsx,variants.tsx,with-description.tsx}|demos/cn/chip:{basic.tsx,statuses.tsx,variants.tsx,vibrant-palette.tsx,with-icon.tsx}|demos/cn/close-button:{default.tsx,interactive.tsx,variants.tsx,with-custom-icon.tsx}|demos/cn/color-area:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,space-and-channels.tsx,with-dots.tsx}|demos/cn/color-field:{basic.tsx,channel-editing.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,invalid.tsx,on-surface.tsx,required.tsx,variants.tsx,with-description.tsx}|demos/cn/color-picker:{basic.tsx,controlled.tsx,with-fields.tsx,with-sliders.tsx,with-swatches.tsx}|demos/cn/color-slider:{alpha-channel.tsx,basic.tsx,channels.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,rgb-channels.tsx,vertical.tsx}|demos/cn/color-swatch-picker:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,default-value.tsx,disabled.tsx,sizes.tsx,stack-layout.tsx,variants.tsx}|demos/cn/color-swatch:{accessibility.tsx,basic.tsx,custom-render-function.tsx,custom-styles.tsx,shapes.tsx,sizes.tsx,transparency.tsx}|demos/cn/combo-box:{allows-custom-value.tsx,asynchronous-loading.tsx,controlled-input-value.tsx,controlled.tsx,custom-filtering.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-value.tsx,default-selected-key.tsx,default.tsx,disabled.tsx,full-width.tsx,menu-trigger.tsx,on-surface.tsx,required.tsx,with-description.tsx,with-disabled-options.tsx,with-sections.tsx}|demos/cn/date-field:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,granularity.tsx,invalid.tsx,on-surface.tsx,required.tsx,variants.tsx,with-description.tsx,with-prefix-and-suffix.tsx,with-prefix-icon.tsx,with-suffix-icon.tsx,with-validation.tsx}|demos/cn/date-picker:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,format-options-no-ssr.tsx,format-options.tsx,international-calendar.tsx,with-custom-indicator.tsx,with-validation.tsx}|demos/cn/date-range-picker:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,format-options-no-ssr.tsx,format-options.tsx,input-container.tsx,international-calendar.tsx,with-custom-indicator.tsx,with-validation.tsx}|demos/cn/description:{basic.tsx}|demos/cn/disclosure-group:{basic.tsx,controlled.tsx}|demos/cn/disclosure:{basic.tsx,custom-render-function.tsx}|demos/cn/drawer:{backdrop-variants.tsx,basic.tsx,controlled.tsx,navigation.tsx,non-dismissable.tsx,placements.tsx,scrollable-content.tsx,with-form.tsx}|demos/cn/dropdown:{controlled-open-state.tsx,controlled.tsx,custom-trigger.tsx,default.tsx,long-press-trigger.tsx,single-with-custom-indicator.tsx,with-custom-submenu-indicator.tsx,with-descriptions.tsx,with-disabled-items.tsx,with-icons.tsx,with-keyboard-shortcuts.tsx,with-multiple-selection.tsx,with-section-level-selection.tsx,with-sections.tsx,with-single-selection.tsx,with-submenus.tsx}|demos/cn/error-message:{basic.tsx,with-tag-group.tsx}|demos/cn/field-error:{basic.tsx}|demos/cn/fieldset:{basic.tsx,on-surface.tsx}|demos/cn/form:{basic.tsx,custom-render-function.tsx}|demos/cn/input-group:{default.tsx,disabled.tsx,full-width.tsx,invalid.tsx,on-surface.tsx,password-with-toggle.tsx,required.tsx,variants.tsx,with-badge-suffix.tsx,with-copy-suffix.tsx,with-icon-prefix-and-copy-suffix.tsx,with-icon-prefix-and-text-suffix.tsx,with-keyboard-shortcut.tsx,with-loading-suffix.tsx,with-prefix-and-suffix.tsx,with-prefix-icon.tsx,with-suffix-icon.tsx,with-text-prefix.tsx,with-text-suffix.tsx,with-textarea.tsx}|demos/cn/input-otp:{basic.tsx,controlled.tsx,disabled.tsx,form-example.tsx,four-digits.tsx,on-complete.tsx,on-surface.tsx,variants.tsx,with-pattern.tsx,with-validation.tsx}|demos/cn/input:{basic.tsx,controlled.tsx,full-width.tsx,on-surface.tsx,types.tsx,variants.tsx}|demos/cn/kbd:{basic.tsx,inline.tsx,instructional.tsx,navigation.tsx,special.tsx,variants.tsx}|demos/cn/label:{basic.tsx}|demos/cn/link:{basic.tsx,custom-icon.tsx,custom-render-function.tsx,icon-placement.tsx,underline-and-offset.tsx,underline-offset.tsx,underline-variants.tsx}|demos/cn/list-box:{controlled.tsx,custom-check-icon.tsx,custom-render-function.tsx,default.tsx,multi-select.tsx,scrollbar-modes.tsx,virtualization.tsx,with-disabled-items.tsx,with-sections.tsx}|demos/cn/meter:{basic.tsx,colors.tsx,custom-value.tsx,sizes.tsx,without-label.tsx}|demos/cn/modal:{backdrop-variants.tsx,close-methods.tsx,controlled.tsx,custom-animations.tsx,custom-backdrop.tsx,custom-portal.tsx,custom-trigger.tsx,default.tsx,dismiss-behavior.tsx,placements.tsx,scroll-comparison.tsx,sizes.tsx,with-form.tsx}|demos/cn/number-field:{basic.tsx,controlled.tsx,custom-icons.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,on-surface.tsx,required.tsx,validation.tsx,variants.tsx,with-chevrons.tsx,with-description.tsx,with-format-options.tsx,with-step.tsx,with-validation.tsx}|demos/cn/pagination:{basic.tsx,controlled.tsx,custom-icons.tsx,disabled.tsx,simple-prev-next.tsx,sizes.tsx,with-ellipsis.tsx,with-summary.tsx}|demos/cn/popover:{basic.tsx,custom-render-function.tsx,interactive.tsx,placement.tsx,with-arrow.tsx}|demos/cn/progress-bar:{basic.tsx,colors.tsx,custom-value.tsx,indeterminate.tsx,sizes.tsx,without-label.tsx}|demos/cn/progress-circle:{basic.tsx,colors.tsx,custom-svg.tsx,indeterminate.tsx,sizes.tsx,with-label.tsx}|demos/cn/radio-group:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,delivery-and-payment.tsx,disabled.tsx,horizontal.tsx,on-surface.tsx,uncontrolled.tsx,validation.tsx,variants.tsx}|demos/cn/range-calendar:{allows-non-contiguous-ranges.tsx,anchor-unavailable-dates.tsx,basic.tsx,booking-calendar.tsx,controlled.tsx,day-view.tsx,default-value.tsx,disabled.tsx,focused-value.tsx,international-calendar.tsx,invalid.tsx,min-max-dates.tsx,multiple-months.tsx,read-only.tsx,three-months.tsx,unavailable-dates.tsx,week-view.tsx,weeks-in-month.tsx,with-indicators.tsx,year-picker.tsx}|demos/cn/scroll-shadow:{custom-size.tsx,default.tsx,hide-scroll-bar.tsx,orientation.tsx,visibility-change.tsx,with-card.tsx}|demos/cn/search-field:{basic.tsx,controlled.tsx,custom-icons.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,on-surface.tsx,required.tsx,validation.tsx,variants.tsx,with-description.tsx,with-keyboard-shortcut.tsx,with-validation.tsx}|demos/cn/select:{asynchronous-loading.tsx,controlled-multiple.tsx,controlled-open-state.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-value-multiple.tsx,custom-value.tsx,default.tsx,disabled.tsx,full-width.tsx,multiple-select.tsx,on-surface.tsx,required.tsx,variants.tsx,with-description.tsx,with-disabled-options.tsx,with-sections.tsx}|demos/cn/separator:{basic.tsx,custom-render-function.tsx,manual-variant-override.tsx,variants.tsx,vertical.tsx,with-content.tsx,with-surface.tsx}|demos/cn/skeleton:{animation-types.tsx,basic.tsx,card.tsx,grid.tsx,list.tsx,single-shimmer.tsx,text-content.tsx,user-profile.tsx}|demos/cn/slider:{custom-render-function.tsx,default.tsx,disabled.tsx,range.tsx,vertical.tsx}|demos/cn/spinner:{basic.tsx,colors.tsx,sizes.tsx}|demos/cn/surface:{variants.tsx}|demos/cn/switch:{basic.tsx,controlled.tsx,custom-render-function.tsx,custom-styles.tsx,default-selected.tsx,disabled.tsx,form.tsx,group-horizontal.tsx,group.tsx,label-position.tsx,render-props.tsx,sizes.tsx,with-description.tsx,with-icons.tsx,without-label.tsx}|demos/cn/table:{async-loading.tsx,basic.tsx,column-resizing.tsx,custom-cells.tsx,empty-state.tsx,expandable-rows.tsx,pagination.tsx,secondary-variant.tsx,selection.tsx,sorting.tsx,tanstack-table.tsx,virtualization.tsx}|demos/cn/tabs:{basic.tsx,custom-render-function.tsx,custom-styles.tsx,disabled.tsx,overflow.tsx,secondary-vertical.tsx,secondary.tsx,vertical.tsx,with-separator.tsx}|demos/cn/tag-group:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,selection-modes.tsx,sizes.tsx,variants.tsx,with-error-message.tsx,with-list-data.tsx,with-prefix.tsx,with-remove-button.tsx}|demos/cn/textarea:{basic.tsx,controlled.tsx,full-width.tsx,on-surface.tsx,rows.tsx,variants.tsx}|demos/cn/textfield:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,full-width.tsx,input-types.tsx,on-surface.tsx,required.tsx,textarea.tsx,validation.tsx,with-description.tsx,with-error.tsx}|demos/cn/time-field:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,invalid.tsx,on-surface.tsx,required.tsx,with-description.tsx,with-prefix-and-suffix.tsx,with-prefix-icon.tsx,with-suffix-icon.tsx,with-validation.tsx}|demos/cn/toast:{callbacks.tsx,custom-indicator.tsx,custom-queue.tsx,custom-toast.tsx,default.tsx,placements.tsx,promise.tsx,simple.tsx,variants.tsx}|demos/cn/toggle-button-group:{attached.tsx,basic.tsx,controlled.tsx,disabled.tsx,full-width.tsx,orientation.tsx,selection-mode.tsx,sizes.tsx,without-separator.tsx}|demos/cn/toggle-button:{basic.tsx,controlled.tsx,disabled.tsx,icon-only.tsx,sizes.tsx,variants.tsx}|demos/cn/toolbar:{basic.tsx,custom-styles.tsx,vertical.tsx,with-button-group.tsx}|demos/cn/tooltip:{basic.tsx,custom-render-function.tsx,custom-trigger.tsx,placement.tsx,with-arrow.tsx}|demos/cn/typography:{default.tsx,primitives.tsx,prose.tsx,render-props.tsx,typography-scale.tsx}|demos/en/accordion:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-styles.tsx,disabled.tsx,faq.tsx,multiple.tsx,surface.tsx,without-separator.tsx}|demos/en/alert-dialog:{backdrop-variants.tsx,close-methods.tsx,controlled.tsx,custom-animations.tsx,custom-backdrop.tsx,custom-icon.tsx,custom-portal.tsx,custom-trigger.tsx,default.tsx,dismiss-behavior.tsx,placements.tsx,sizes.tsx,statuses.tsx,with-close-button.tsx}|demos/en/alert:{basic.tsx}|demos/en/autocomplete:{allows-empty-collection.tsx,asynchronous-filtering.tsx,controlled-open-state.tsx,controlled.tsx,custom-indicator.tsx,default.tsx,disabled.tsx,email-recipients.tsx,full-width.tsx,location-search.tsx,multiple-select.tsx,required.tsx,single-select.tsx,tag-group-selection.tsx,user-selection-multiple.tsx,user-selection.tsx,variants.tsx,virtualization.tsx,with-description.tsx,with-disabled-options.tsx,with-sections.tsx}|demos/en/avatar:{basic.tsx,colors.tsx,custom-image-component.tsx,custom-styles.tsx,fallback.tsx,group.tsx,sizes.tsx,variants.tsx}|demos/en/badge:{basic.tsx,colors.tsx,dot.tsx,placements.tsx,sizes.tsx,variants.tsx,with-content.tsx}|demos/en/breadcrumbs:{basic.tsx,custom-render-function.tsx,custom-separator.tsx,disabled.tsx,level-2.tsx,level-3.tsx}|demos/en/button-group:{basic.tsx,disabled.tsx,full-width.tsx,orientation.tsx,sizes.tsx,variants.tsx,with-icons.tsx,without-separator.tsx}|demos/en/button:{basic.tsx,custom-render-function.tsx,custom-variants.tsx,disabled.tsx,full-width.tsx,icon-only.tsx,loading-state.tsx,loading.tsx,outline-variant.tsx,ripple-effect.tsx,sizes.tsx,social.tsx,variants.tsx,with-icons.tsx}|demos/en/calendar:{basic.tsx,booking-calendar.tsx,controlled.tsx,custom-icons.tsx,custom-styles.tsx,day-view.tsx,default-value.tsx,disabled.tsx,focused-value.tsx,international-calendar.tsx,min-max-dates.tsx,multiple-months.tsx,multiple-selection.tsx,read-only.tsx,unavailable-dates.tsx,week-view.tsx,weeks-in-month.tsx,with-indicators.tsx,year-picker.tsx}|demos/en/card:{default.tsx,horizontal.tsx,variants.tsx,with-avatar.tsx,with-form.tsx,with-images.tsx}|demos/en/checkbox-group:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,features-and-addons.tsx,indeterminate.tsx,on-surface.tsx,validation.tsx,with-custom-indicator.tsx}|demos/en/checkbox:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-styles.tsx,default-selected.tsx,disabled.tsx,external-label.tsx,form.tsx,full-rounded.tsx,indeterminate.tsx,invalid.tsx,render-props.tsx,variants.tsx,with-description.tsx}|demos/en/chip:{basic.tsx,statuses.tsx,variants.tsx,vibrant-palette.tsx,with-icon.tsx}|demos/en/close-button:{default.tsx,interactive.tsx,variants.tsx,with-custom-icon.tsx}|demos/en/color-area:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,space-and-channels.tsx,with-dots.tsx}|demos/en/color-field:{basic.tsx,channel-editing.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,invalid.tsx,on-surface.tsx,required.tsx,variants.tsx,with-description.tsx}|demos/en/color-picker:{basic.tsx,controlled.tsx,with-fields.tsx,with-sliders.tsx,with-swatches.tsx}|demos/en/color-slider:{alpha-channel.tsx,basic.tsx,channels.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,rgb-channels.tsx,vertical.tsx}|demos/en/color-swatch-picker:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,default-value.tsx,disabled.tsx,sizes.tsx,stack-layout.tsx,variants.tsx}|demos/en/color-swatch:{accessibility.tsx,basic.tsx,custom-render-function.tsx,custom-styles.tsx,shapes.tsx,sizes.tsx,transparency.tsx}|demos/en/combo-box:{allows-custom-value.tsx,asynchronous-loading.tsx,controlled-input-value.tsx,controlled.tsx,custom-filtering.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-value.tsx,default-selected-key.tsx,default.tsx,disabled.tsx,full-width.tsx,menu-trigger.tsx,on-surface.tsx,required.tsx,with-description.tsx,with-disabled-options.tsx,with-sections.tsx}|demos/en/date-field:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,granularity.tsx,invalid.tsx,on-surface.tsx,required.tsx,variants.tsx,with-description.tsx,with-prefix-and-suffix.tsx,with-prefix-icon.tsx,with-suffix-icon.tsx,with-validation.tsx}|demos/en/date-picker:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,format-options-no-ssr.tsx,format-options.tsx,international-calendar.tsx,with-custom-indicator.tsx,with-validation.tsx}|demos/en/date-range-picker:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,format-options-no-ssr.tsx,format-options.tsx,input-container.tsx,international-calendar.tsx,with-custom-indicator.tsx,with-validation.tsx}|demos/en/description:{basic.tsx}|demos/en/disclosure-group:{basic.tsx,controlled.tsx}|demos/en/disclosure:{basic.tsx,custom-render-function.tsx}|demos/en/drawer:{backdrop-variants.tsx,basic.tsx,controlled.tsx,navigation.tsx,non-dismissable.tsx,placements.tsx,scrollable-content.tsx,with-form.tsx}|demos/en/dropdown:{controlled-open-state.tsx,controlled.tsx,custom-trigger.tsx,default.tsx,long-press-trigger.tsx,single-with-custom-indicator.tsx,with-custom-submenu-indicator.tsx,with-descriptions.tsx,with-disabled-items.tsx,with-icons.tsx,with-keyboard-shortcuts.tsx,with-multiple-selection.tsx,with-section-level-selection.tsx,with-sections.tsx,with-single-selection.tsx,with-submenus.tsx}|demos/en/error-message:{basic.tsx,with-tag-group.tsx}|demos/en/field-error:{basic.tsx}|demos/en/fieldset:{basic.tsx,on-surface.tsx}|demos/en/form:{basic.tsx,custom-render-function.tsx}|demos/en/input-group:{default.tsx,disabled.tsx,full-width.tsx,invalid.tsx,on-surface.tsx,password-with-toggle.tsx,required.tsx,variants.tsx,with-badge-suffix.tsx,with-copy-suffix.tsx,with-icon-prefix-and-copy-suffix.tsx,with-icon-prefix-and-text-suffix.tsx,with-keyboard-shortcut.tsx,with-loading-suffix.tsx,with-prefix-and-suffix.tsx,with-prefix-icon.tsx,with-suffix-icon.tsx,with-text-prefix.tsx,with-text-suffix.tsx,with-textarea.tsx}|demos/en/input-otp:{basic.tsx,controlled.tsx,disabled.tsx,form-example.tsx,four-digits.tsx,on-complete.tsx,on-surface.tsx,variants.tsx,with-pattern.tsx,with-validation.tsx}|demos/en/input:{basic.tsx,controlled.tsx,full-width.tsx,on-surface.tsx,types.tsx,variants.tsx}|demos/en/kbd:{basic.tsx,inline.tsx,instructional.tsx,navigation.tsx,special.tsx,variants.tsx}|demos/en/label:{basic.tsx}|demos/en/link:{basic.tsx,custom-icon.tsx,custom-render-function.tsx,icon-placement.tsx,underline-and-offset.tsx,underline-offset.tsx,underline-variants.tsx}|demos/en/list-box:{controlled.tsx,custom-check-icon.tsx,custom-render-function.tsx,default.tsx,multi-select.tsx,scrollbar-modes.tsx,virtualization.tsx,with-disabled-items.tsx,with-sections.tsx}|demos/en/meter:{basic.tsx,colors.tsx,custom-value.tsx,sizes.tsx,without-label.tsx}|demos/en/modal:{backdrop-variants.tsx,close-methods.tsx,controlled.tsx,custom-animations.tsx,custom-backdrop.tsx,custom-portal.tsx,custom-trigger.tsx,default.tsx,dismiss-behavior.tsx,placements.tsx,scroll-comparison.tsx,sizes.tsx,with-form.tsx}|demos/en/number-field:{basic.tsx,controlled.tsx,custom-icons.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,on-surface.tsx,required.tsx,validation.tsx,variants.tsx,with-chevrons.tsx,with-description.tsx,with-format-options.tsx,with-step.tsx,with-validation.tsx}|demos/en/pagination:{basic.tsx,controlled.tsx,custom-icons.tsx,disabled.tsx,simple-prev-next.tsx,sizes.tsx,with-ellipsis.tsx,with-summary.tsx}|demos/en/popover:{basic.tsx,custom-render-function.tsx,interactive.tsx,placement.tsx,with-arrow.tsx}|demos/en/progress-bar:{basic.tsx,colors.tsx,custom-value.tsx,indeterminate.tsx,sizes.tsx,without-label.tsx}|demos/en/progress-circle:{basic.tsx,colors.tsx,custom-svg.tsx,indeterminate.tsx,sizes.tsx,with-label.tsx}|demos/en/radio-group:{basic.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,delivery-and-payment.tsx,disabled.tsx,horizontal.tsx,on-surface.tsx,uncontrolled.tsx,validation.tsx,variants.tsx}|demos/en/range-calendar:{allows-non-contiguous-ranges.tsx,anchor-unavailable-dates.tsx,basic.tsx,booking-calendar.tsx,controlled.tsx,day-view.tsx,default-value.tsx,disabled.tsx,focused-value.tsx,international-calendar.tsx,invalid.tsx,min-max-dates.tsx,multiple-months.tsx,read-only.tsx,three-months.tsx,unavailable-dates.tsx,week-view.tsx,weeks-in-month.tsx,with-indicators.tsx,year-picker.tsx}|demos/en/scroll-shadow:{custom-size.tsx,default.tsx,hide-scroll-bar.tsx,orientation.tsx,visibility-change.tsx,with-card.tsx}|demos/en/search-field:{basic.tsx,controlled.tsx,custom-icons.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,on-surface.tsx,required.tsx,validation.tsx,variants.tsx,with-description.tsx,with-keyboard-shortcut.tsx,with-validation.tsx}|demos/en/select:{asynchronous-loading.tsx,controlled-multiple.tsx,controlled-open-state.tsx,controlled.tsx,custom-indicator.tsx,custom-render-function.tsx,custom-value-multiple.tsx,custom-value.tsx,default.tsx,disabled.tsx,full-width.tsx,multiple-select.tsx,on-surface.tsx,required.tsx,variants.tsx,with-description.tsx,with-disabled-options.tsx,with-sections.tsx}|demos/en/separator:{basic.tsx,custom-render-function.tsx,manual-variant-override.tsx,variants.tsx,vertical.tsx,with-content.tsx,with-surface.tsx}|demos/en/skeleton:{animation-types.tsx,basic.tsx,card.tsx,grid.tsx,list.tsx,single-shimmer.tsx,text-content.tsx,user-profile.tsx}|demos/en/slider:{custom-render-function.tsx,default.tsx,disabled.tsx,range.tsx,vertical.tsx}|demos/en/spinner:{basic.tsx,colors.tsx,sizes.tsx}|demos/en/surface:{variants.tsx}|demos/en/switch:{basic.tsx,controlled.tsx,custom-render-function.tsx,custom-styles.tsx,default-selected.tsx,disabled.tsx,form.tsx,group-horizontal.tsx,group.tsx,label-position.tsx,render-props.tsx,sizes.tsx,with-description.tsx,with-icons.tsx,without-label.tsx}|demos/en/table:{async-loading.tsx,basic.tsx,column-resizing.tsx,custom-cells.tsx,empty-state.tsx,expandable-rows.tsx,pagination.tsx,secondary-variant.tsx,selection.tsx,sorting.tsx,tanstack-table.tsx,virtualization.tsx}|demos/en/tabs:{basic.tsx,custom-render-function.tsx,custom-styles.tsx,disabled.tsx,overflow.tsx,secondary-vertical.tsx,secondary.tsx,vertical.tsx,with-separator.tsx}|demos/en/tag-group:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,selection-modes.tsx,sizes.tsx,variants.tsx,with-error-message.tsx,with-list-data.tsx,with-prefix.tsx,with-remove-button.tsx}|demos/en/textarea:{basic.tsx,controlled.tsx,full-width.tsx,on-surface.tsx,rows.tsx,variants.tsx}|demos/en/textfield:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,full-width.tsx,input-types.tsx,on-surface.tsx,required.tsx,textarea.tsx,validation.tsx,with-description.tsx,with-error.tsx}|demos/en/time-field:{basic.tsx,controlled.tsx,custom-render-function.tsx,disabled.tsx,form-example.tsx,full-width.tsx,invalid.tsx,on-surface.tsx,required.tsx,with-description.tsx,with-prefix-and-suffix.tsx,with-prefix-icon.tsx,with-suffix-icon.tsx,with-validation.tsx}|demos/en/toast:{callbacks.tsx,custom-indicator.tsx,custom-queue.tsx,custom-toast.tsx,default.tsx,placements.tsx,promise.tsx,simple.tsx,variants.tsx}|demos/en/toggle-button-group:{attached.tsx,basic.tsx,controlled.tsx,disabled.tsx,full-width.tsx,orientation.tsx,selection-mode.tsx,sizes.tsx,without-separator.tsx}|demos/en/toggle-button:{basic.tsx,controlled.tsx,disabled.tsx,icon-only.tsx,sizes.tsx,variants.tsx}|demos/en/toolbar:{basic.tsx,custom-styles.tsx,vertical.tsx,with-button-group.tsx}|demos/en/tooltip:{basic.tsx,custom-render-function.tsx,custom-trigger.tsx,placement.tsx,with-arrow.tsx}|demos/en/typography:{default.tsx,primitives.tsx,prose.tsx,render-props.tsx,typography-scale.tsx}
-<!-- HEROUI-REACT-AGENTS-MD-END -->
+4. Run relevant validation.
+5. Summarize changed files, decisions, and any remaining risks.
