@@ -2,206 +2,87 @@
 
 Last updated: 2026-07-23
 
-This is the handoff for unfinished work. The linked Supabase project is the
-development environment; Rezzy has not been deployed to production.
+This file tracks unfinished product and integration work. The repository and its current implementation remain the source of truth; verify provider behavior against the deployed development environment before treating any integration as complete.
 
 ## Current baseline
 
-- Telegram is considered working, based on the owner's latest verification.
-- WhatsApp receives inbound messages. Outbound messages/replies are implemented
-  locally but are not yet proven end to end. The latest hosted attempt was
-  rejected by Meta with HTTP 400, code 100, subcode 33
-  (`GraphMethodException`): the configured sender object was not accessible to
-  the supplied token/app.
-- The supported interface languages are English and Russian only.
-- Node.js is pinned to `24.18.0`, pnpm to `11.13.0`, and the Supabase CLI to
-  `2.109.1`.
-- The equivalent of `pnpm verify` passed on 2026-07-20: typecheck, lint, 110
-  frontend tests, and the production build.
-- A clean local migration replay and `pnpm test:db` passed on 2026-07-20: three
-  pgTAP files with 58 assertions.
-- The hosted development project has migrations
-  `20260720090850_harden_function_privileges_and_data_api_grants.sql` and
-  `20260720093622_optimize_rls_and_foreign_key_indexes.sql` applied.
-- 2026-07-23: the omnichannel provider-data expansion landed locally (see
-  `docs/provider-data-model.md`): sanitized `provider_events` archive with an
-  atomic claim RPC, `message_status_events` + advance-only status projection,
-  `message_reactions`, `message_attachments`, reply/edit/delete columns on
-  messages, identity `profile` JSONB, and reworked
-  Telegram/WhatsApp/Instagram webhooks with per-provider `lib.ts` normalizers
-  and `_shared` helpers. Migrations `20260723090000`–`20260723090600` are
-  applied locally only — the hosted dev project still needs `supabase db push`
-  plus redeploy of all webhook and send functions together (the Telegram
-  `external_id` semantics changed from update_id to message_id in the same
-  release).
-- Deferred from that expansion (each still lands safely as an
-  `ignored`/`unsupported` provider event): Telegram business messages, polls
-  (stored as unsupported with question preview), callback/inline queries,
-  media-group visual merging (stored per message with `media_group_id`),
-  reaction notifications/unread impact, a `provider_events` purge job
-  (retention anchor is in place), outbound reactions/edits, and WhatsApp
-  template sending.
+- Telegram connection, inbound webhook ingestion, media handling, outbound sending, realtime inbox updates, and message-thread behavior are implemented.
+- WhatsApp connection, inbound webhook ingestion, media handling, outbound sending, reconnect behavior, and delivery-status handling are implemented in the repository. Hosted end-to-end outbound verification is still required because the latest documented Meta attempt failed with HTTP 400, code 100, subcode 33 (`GraphMethodException`).
+- Instagram professional-account OAuth connection/reconnection, webhook verification and ingestion, sender-profile lookup, media ingestion, outbound text/media sending, read-state updates, and channel UI are implemented in the repository. Hosted end-to-end verification and broader event coverage are still required.
+- Conversation unread state is per agent rather than a shared `conversations.unread_count` value.
+- The inbox includes optimistic/realtime deduplication work, virtualized message lists, browser-driven transcript regression tests, and desktop/push notification infrastructure.
+- The supported interface languages are English and Russian.
+- Use the versions and commands declared in `package.json`; do not copy version numbers from this handoff into task prompts.
 
-The current working tree contains uncommitted setup, WhatsApp, test, and
-Supabase changes. Several core WhatsApp files are still untracked. Preserve the
-worktree: inspect and commit intentionally rather than resetting or discarding
-files. Unrelated user changes may also be present. In particular, review the
-existing deletion of `React-Claude-Skill-Package` separately instead of
-restoring or including it automatically.
+## P0: preserve all useful provider data
 
-## P0: finish WhatsApp replies
+The next cross-channel milestone is to retain the maximum useful data delivered by official Telegram, WhatsApp, and Instagram APIs while keeping the normalized inbox model reliable.
 
-The next product milestone is a reliable WhatsApp outbound reply flow. Do not
-assume the Meta restriction is understood until the exact Graph API response is
-captured.
+Required work:
 
-1. The local `send-whatsapp-message` diagnostics were deployed and captured a
-   failed hosted request on 2026-07-20: provider HTTP 400, code 100, subcode 33,
-   type `GraphMethodException`. Continue to record the sanitized
-   `provider_error` fields and trace ID when retesting. Never record access
-   tokens, app secrets, customer message bodies, or phone numbers.
-2. Confirm that the deployed `send-whatsapp-message` function matches the local
-   implementation. Also verify the hosted function secrets, phone-number ID,
-   WABA ID, token validity, and configured Graph API version. Local files alone
-   do not prove what is deployed.
-3. Resolve the specific Meta-side prerequisite reported by the API. Possible
-   areas to verify include app/business verification, Tech Provider access,
-   app permissions, number registration/status, and token ownership. Meta's
-   requirements change, so use current official documentation instead of this
-   file as the authority.
-4. Test a free-form reply inside the active customer-service window. Decide the
-   product behavior outside that window: implement approved template messages,
-   or disable the composer with a clear explanation. Template sending is not
-   implemented today.
-5. The local send function now includes safe structured diagnostics for parsed
-   Meta failures and invalid provider responses. After deployment, use the
-   function's Logs view (not only Invocations) to capture them. Error code 190
-   still produces the dedicated reconnect response; other Meta failures remain
-   failed/502 responses and now include sanitized `provider_error` fields.
-6. In-place reconnect is implemented locally and awaits hosted deployment and
-   testing. It preserves the channel ID, name, conversations, and history;
-   validates the replacement token/app/permissions, phone number, and WABA;
-   keeps old credentials on provider validation failure; and reactivates the
-   channel after a successful credential rotation. Token-expiry warnings and a
-   reconnect action directly on failed messages are still pending.
-7. Decide how to display WhatsApp contacts, interactive messages, buttons, and
-   reactions. The webhook ingests common text/media/location types, but those
-   interaction types currently degrade to an empty text message.
-8. Add focused tests for signature verification, connect/code exchange,
-   duplicate webhooks, media failures, delivery status, the send contract, and
-   frontend channel dispatch. Mock Meta responses; automated tests must not
-   send real messages. Add an Edge Function typecheck/test step to CI because
-   `pnpm verify` does not currently validate Deno functions.
+1. Store sanitized raw provider events before normalization, with database-enforced idempotency and processing status.
+2. Expand provider identity metadata without automatically merging contacts by display name or username.
+3. Preserve reply context, edits, deletions, reactions, interactive payloads, locations, contact cards, story/post/reel shares, provider timestamps, delivery errors, and unknown event types.
+4. Add structured attachment, reaction, and message-status history where those records improve queryability and auditability.
+5. Keep credentials, authorization headers, signatures, webhook secrets, tokens, cookies, and service-role values out of raw-event storage and logs.
+6. Keep customer media private in Supabase Storage and serve it through signed URLs.
+7. Ensure duplicate or out-of-order provider callbacks do not duplicate messages, increment unread state twice, or regress delivery status.
+8. Add focused database, Edge Function, and frontend tests for normalization, sanitization, idempotency, unsupported events, media failures, reactions, replies, edits/deletions, and status progression.
 
-WhatsApp is complete when hosted-development testing confirms:
+## P0: provider verification
 
-- Embedded Signup or the manual credential fallback creates a usable channel.
-- Incoming text and supported media create the correct contact, conversation,
-  and message records without duplicates.
-- Outgoing text and supported media reach the customer.
-- Delivery status progresses from accepted/sent to delivered/read, and failures
-  remain failed rather than appearing successful.
-- Expired credentials produce a clear reconnect path.
-- Duplicate webhook events and repeated send requests are idempotent.
-- Supported interactive payloads have a deliberate UI representation or an
-  explicit documented fallback.
-- Loading, error, and success text is correct in both English and Russian.
+### Telegram
 
-Relevant entry points:
+- Re-run the full connect → inbound webhook → contact/conversation/message creation → realtime UI flow against the hosted development project.
+- Verify text and all currently supported media types, duplicate webhook delivery, outbound retry/failure behavior, and inactive-channel handling.
+- Extend Telegram update coverage deliberately rather than treating every update as a normal message.
 
-- `src/features/channels/components/connect-whatsapp.tsx`
-- `src/features/channels/components/reconnect-whatsapp-modal.tsx`
-- `src/features/channels/lib/whatsapp-embedded-signup.ts`
-- `src/features/inbox/api/messages.ts`
-- `supabase/functions/whatsapp-connect-channel/`
-- `supabase/functions/send-whatsapp-message/`
-- `supabase/functions/whatsapp-webhook/`
+### WhatsApp
 
-Reconnect deployment smoke test:
+- Confirm the deployed `send-whatsapp-message` function and hosted secrets match the repository.
+- Resolve the Meta sender-object/token ownership failure and capture only sanitized provider diagnostics.
+- Verify free-form replies inside the customer-service window and define product behavior outside it.
+- Add deliberate handling for contacts, interactive replies, buttons, reactions, referral data, reply context, and unsupported payloads instead of degrading them to empty text rows.
+- Verify duplicate webhook events, media failures, delivery/read callbacks, reconnect behavior, and expired credentials.
 
-1. Deploy the frontend and `whatsapp-connect-channel` Edge Function. No database
-   migration is required for this reconnect implementation.
-2. Confirm `WHATSAPP_APP_ID` and `WHATSAPP_APP_SECRET` are set on the Edge
-   Function deployment so token ownership and permissions can be verified.
-3. From the WhatsApp channel action menu, choose **Reconnect WhatsApp**. Use the
-   same phone-number ID and matching WABA with a permanent system-user token
-   carrying `whatsapp_business_messaging` and
-   `whatsapp_business_management`.
-4. Confirm the same channel ID remains active, then test an outbound free-form
-   reply inside an active customer-service window and verify inbound delivery
-   still reaches the existing conversation history.
+### Instagram
 
-## P1: production deployment
+- Verify OAuth connect and reconnect against a hosted professional account.
+- Verify inbound text/media, sender-profile synchronization, outbound text/media, read events, duplicate callbacks, expired tokens, and the 24-hour messaging window.
+- Add deliberate handling for reactions, message deletion/unsupported flags, story mentions/replies, shares, reels, multiple attachments, and any provider events currently ignored by the MVP parser.
+- Keep temporary profile/media URLs out of long-term UI assumptions.
 
-- Choose the frontend host and create a production Supabase project separate
-  from the current hosted development project.
-- Configure production Auth redirect URLs, browser-safe environment variables,
-  Edge Function secrets, Meta allowed origins, and public webhook URLs.
-- Apply reviewed migrations, regenerate linked TypeScript types, and deploy the
-  exact Edge Function versions intended for production.
-- Configure Meta and Telegram callbacks for production without disturbing the
-  development callbacks.
-- Define a repeatable deployment/rollback process and protect production
-  secrets. Do not introduce a new deployment dependency without approval.
-- Add operational visibility for failed functions, webhook rejection, expired
-  provider credentials, and message-delivery failures.
-- Run production smoke tests for authentication, workspace access, Telegram,
-  WhatsApp inbound/outbound, file uploads, and English/Russian switching.
+## P1: production readiness
 
-## P2: deferred product work
+- Choose the frontend host and create a production Supabase project separate from development.
+- Configure production Auth redirects, browser-safe environment variables, Edge Function secrets, provider origins, webhook URLs, and callback subscriptions.
+- Apply reviewed migrations, regenerate linked types, and deploy the exact Edge Function versions intended for production.
+- Define repeatable deployment, rollback, secret rotation, and provider reconnect procedures.
+- Add operational visibility for failed functions, rejected webhooks, media ingestion failures, expired credentials, push failures, and message-delivery failures.
+- Run production smoke tests for authentication, workspace isolation, all enabled channels, uploads, notifications, and English/Russian switching.
 
-- Replace the current workspace-member invitation stub with a designed,
-  email-based invitation flow, including roles, expiry, acceptance, revocation,
-  and empty/error states.
-- Instagram and email channels are intentionally shown as coming soon. Design
-  their provider, credential, webhook, and message-capability workflows before
-  enabling them.
-- Seed/test personas and a formal branch/PR workflow were explicitly deferred
-  and can be designed later.
+## P2: product work
 
-## P3: deferred hardening and operations
+- Replace the workspace-member invitation stub with a complete email invitation workflow, including roles, expiry, acceptance, revocation, loading, empty, and error states.
+- Build the full contacts workspace using the existing contact data and inbox contact panel patterns.
+- Define and implement manual contact merge/link workflows across provider identities.
+- Design email-channel connection, threading, sending, and credential workflows before enabling it.
+- Continue inbox UX hardening for channel capabilities, unsupported message fallbacks, retry actions, mobile behavior, and accessibility.
 
-- Perform the optional column-level grant audit for authenticated mutations on
-  `channels`, `contacts`, `contact_channels`, `conversations`, `messages`, and
-  `profiles`. If grants are narrowed, use a new migration and extend the pgTAP
-  security contract; do not rewrite already-applied migrations.
-- Workspace deletion is deliberately not exposed. If it becomes a product
-  requirement, design the owner/admin workflow and tests before exposing
-  `soft_delete_workspace`.
-- The remaining `private.channel_secrets` advisor notice is intentional: the
-  private schema is revoked from browser roles and credentials are accessed
-  through service-only RPC helpers. Do not add a broad browser RLS policy merely
-  to silence the notice.
-- Revisit leaked-password protection when it is available for the project's
-  Supabase plan and deployment requirements.
-- Re-evaluate unused-index advisor notices only after production-like traffic
-  exists. Do not remove indexes based on an empty development workload.
-- Investigate the non-blocking build warnings for chunks larger than 500 kB and
-  `lottie-web` direct `eval`; optimize only with measured impact.
+## P3: hardening and operations
 
-For every future user-facing change, update both `messages/en.json` and
-`messages/ru.json`. Additional languages are out of scope until requested.
-
-## Local machine safety note
-
-On 2026-07-20 Windows crashed with bugcheck `0xD1`
-(`DRIVER_IRQL_NOT_LESS_OR_EQUAL`) while Docker Desktop had been used for local
-Supabase. Windows reported `ks.sys` as possibly related and emitted Bluetooth
-driver errors after reboot. This does not prove Docker caused the crash, but the
-cause has not been established.
-
-Do not automatically start Docker or local Supabase until the owner confirms
-the machine is stable. Provider work can use the hosted development project.
-The diagnostic dump is `C:\Windows\Minidump\072026-23468-01.dmp`; analyze it
-with WinDbg before treating the incident as resolved.
+- Add an Edge Function typecheck/test step to CI; frontend `pnpm verify` does not by itself validate every Deno function.
+- Review authenticated mutation grants and extend pgTAP security contracts when narrowing permissions.
+- Keep `private.channel_secrets` service-only; do not add broad browser access merely to silence an advisor notice.
+- Re-evaluate unused indexes only with production-like traffic.
+- Optimize large chunks or third-party warnings only when measurement shows meaningful impact.
+- Define retention, redaction, deletion, and export policies for raw provider events and customer media.
 
 ## Resume checklist
 
-1. Read this file and inspect `git status` without discarding existing work.
-2. Ask the owner whether Docker/local Supabase is safe to start.
-3. For WhatsApp work, reproduce and capture the exact sanitized Meta error
-   before changing code or account configuration.
-4. Run `pnpm verify` after code changes. For database changes, also run a clean
-   local reset and `pnpm test:db` when local Docker use is approved.
-5. Keep hosted-development and production actions explicit; never run a linked
-   reset or expose service-role/provider secrets.
+1. Read `AGENTS.md` and inspect the current repository before using this handoff.
+2. Inspect `git status` and never discard existing user changes.
+3. Keep hosted-development and production actions explicit; never reset a linked project.
+4. For provider work, verify current official API behavior and deployed configuration rather than trusting old handoff notes.
+5. Run `pnpm verify` after broad code changes. Database changes also require the relevant migration replay, generated types, and `pnpm test:db` when local Supabase use is approved.
+6. Never expose provider credentials, service-role keys, real customer payloads, or private media.
