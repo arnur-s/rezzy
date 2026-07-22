@@ -12,7 +12,6 @@ const CONVERSATION_SELECT = `
   contact_id,
   assigned_to,
   status,
-  unread_count,
   last_message_at,
   last_message_preview,
   snoozed_until,
@@ -48,6 +47,7 @@ export async function getWorkspaceConversations(
   if (assignedIds.length === 0) {
     return conversations.map((row) => ({
       ...row,
+      unread_count: 0,
       assigned_profile: null,
     }))
   }
@@ -56,6 +56,7 @@ export async function getWorkspaceConversations(
 
   return conversations.map((row) => ({
     ...row,
+    unread_count: 0,
     assigned_profile: row.assigned_to
       ? (profilesById.get(row.assigned_to) ?? null)
       : null,
@@ -112,13 +113,18 @@ export async function getWorkspaceConversationsBySearch(
   )
 
   if (assignedIds.length === 0) {
-    return conversations.map((row) => ({ ...row, assigned_profile: null }))
+    return conversations.map((row) => ({
+      ...row,
+      unread_count: 0,
+      assigned_profile: null,
+    }))
   }
 
   const profilesById = await fetchProfilesByIds(assignedIds)
 
   return conversations.map((row) => ({
     ...row,
+    unread_count: 0,
     assigned_profile: row.assigned_to
       ? (profilesById.get(row.assigned_to) ?? null)
       : null,
@@ -139,11 +145,15 @@ export async function getConversationById(
 
   const assignedId = data.assigned_to
   if (!assignedId) {
-    return { ...data, assigned_profile: null }
+    return { ...data, unread_count: 0, assigned_profile: null }
   }
 
   const profilesById = await fetchProfilesByIds([assignedId])
-  return { ...data, assigned_profile: profilesById.get(assignedId) ?? null }
+  return {
+    ...data,
+    unread_count: 0,
+    assigned_profile: profilesById.get(assignedId) ?? null,
+  }
 }
 
 export async function markConversationRead(

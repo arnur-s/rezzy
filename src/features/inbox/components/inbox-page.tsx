@@ -74,16 +74,8 @@ export function InboxPage({
     setIsContactPanelOpen(false)
   }, [selectedConversationId])
 
-  const selectedConversation = useMemo(
-    () =>
-      conversationsQuery.data?.find((row) => row.id === selectedConversationId) ??
-      null,
-    [conversationsQuery.data, selectedConversationId],
-  )
-
-  // Overlay per-agent unread counts (from the read cursor) onto the shared
-  // conversation rows so the badge reflects this agent's unread, not a shared
-  // workspace counter.
+  // Overlay per-agent unread counts (from the read cursor) onto conversation
+  // rows so unread reflects this agent's state, not a shared workspace counter.
   const unreadCounts = unreadCountsQuery.data
   const withUnreadCounts = useCallback(
     (list: Array<ConversationWithRelations> | undefined) =>
@@ -96,6 +88,15 @@ export function InboxPage({
   const conversationsWithUnread = useMemo(
     () => withUnreadCounts(conversationsQuery.data),
     [withUnreadCounts, conversationsQuery.data],
+  )
+  // Sourced from the overlaid list so the thread's unread divider sees this
+  // agent's per-agent count, not the zeroed placeholder from the API.
+  const selectedConversation = useMemo(
+    () =>
+      conversationsWithUnread?.find(
+        (row) => row.id === selectedConversationId,
+      ) ?? null,
+    [conversationsWithUnread, selectedConversationId],
   )
   const searchResultsWithUnread = useMemo(
     () => withUnreadCounts(searchResults.data),

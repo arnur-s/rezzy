@@ -1,6 +1,6 @@
 begin;
 
-select plan(25);
+select plan(24);
 
 -- =============================================================================
 -- Seed: a workspace with two members (A, B), an outsider (C) who is never a
@@ -539,8 +539,7 @@ select is(
 -- =============================================================================
 -- get_workspace_unread_counts: per-agent, derived from each user's own read
 -- cursor. One agent reading a conversation must not affect another agent's
--- unread count, and mark_conversation_read no longer clears the shared
--- conversations.unread_count column.
+-- unread count.
 -- =============================================================================
 
 set local role authenticated;
@@ -574,16 +573,6 @@ select results_eq(
 );
 
 reset role;
-
-select isnt(
-  (
-    select unread_count
-    from public.conversations
-    where id = '10000000-0000-4000-8000-000000000502'
-  ),
-  0,
-  'mark_conversation_read no longer clears the shared conversations.unread_count'
-);
 
 set local role authenticated;
 set local request.jwt.claims =

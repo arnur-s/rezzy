@@ -1,6 +1,7 @@
 import { isChannelType } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
 import { supabase } from '@/utils/supabase'
+import { getUnreadCountsForWorkspaces } from './unread-counts'
 
 const STALE_THRESHOLD_HOURS = 48
 const MAX_ITEMS = 10
@@ -31,7 +32,6 @@ const ATTENTION_SELECT = `
   workspace_id,
   contact_id,
   status,
-  unread_count,
   last_message_at,
   snoozed_until,
   channel:channels!inner(id, type, name),
@@ -43,7 +43,6 @@ type Row = {
   workspace_id: string
   contact_id: string
   status: string
-  unread_count: number
   last_message_at: string | null
   snoozed_until: string | null
   channel: { id: string; type: string; name: string } | null
@@ -56,14 +55,18 @@ export async function getAttentionQueue(
 ): Promise<Array<AttentionItem>> {
   if (workspaceIds.length === 0) return []
 
-  const { data, error } = await supabase
-    .from('conversations')
-    .select(ATTENTION_SELECT)
-    .eq('assigned_to', userId)
-    .in('workspace_id', workspaceIds)
+  const [conversationsResult, unreadByConversation] = await Promise.all([
+    supabase
+      .from('conversations')
+      .select(ATTENTION_SELECT)
+      .eq('assigned_to', userId)
+      .in('workspace_id', workspaceIds),
+    getUnreadCountsForWorkspaces(workspaceIds),
+  ])
 
-  if (error) throw error
+  if (conversationsResult.error) throw conversationsResult.error
 
+  const { data } = conversationsResult
   const now = Date.now()
   const staleThreshold = now - STALE_THRESHOLD_HOURS * 60 * 60 * 1000
 
@@ -91,7 +94,7 @@ export async function getAttentionQueue(
       continue
     }
 
-    if (raw.status === 'open' && raw.unread_count > 0) {
+    if (raw.status === 'open' && (unreadByConversation.get(raw.id) ?? 0) > 0) {
       items.push({
         ...base,
         reason: 'unread',

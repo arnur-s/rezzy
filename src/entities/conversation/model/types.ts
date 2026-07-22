@@ -19,6 +19,13 @@ export type ConversationWithRelations = ConversationRow & {
   contact: Pick<ContactRow, 'id' | 'name' | 'phone' | 'avatar_url' | 'status'>
   /** Joined from profiles when assigned_to is set. */
   assigned_profile: AssignedProfile | null
+  /**
+   * Per-agent unread count for the current user, overlaid from the read-cursor
+   * RPC (get_workspace_unread_counts). This is a client-side field, not a DB
+   * column: the shared conversations.unread_count counter was removed in favor
+   * of per-agent unread. Defaults to 0 until the overlay is applied.
+   */
+  unread_count: number
 }
 
 export function isConversationStatus(

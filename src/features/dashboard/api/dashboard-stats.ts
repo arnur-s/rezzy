@@ -2,6 +2,7 @@ import { CHANNEL_TYPES, isChannelType } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
 import { isConversationStatus } from '@/entities/conversation'
 import { supabase } from '@/utils/supabase'
+import { getUnreadCountsForWorkspaces } from './unread-counts'
 
 export const dashboardQueryKeys = {
   all: ['dashboard'] as const,
@@ -39,11 +40,11 @@ export async function getDashboardStats(
     }
   }
 
-  const [conversationsResult, channelsResult, contactsResult] =
+  const [conversationsResult, channelsResult, contactsResult, unreadByConversation] =
     await Promise.all([
       supabase
         .from('conversations')
-        .select('workspace_id, status, unread_count, last_message_at')
+        .select('id, workspace_id, status, last_message_at')
         .in('workspace_id', workspaceIds),
       supabase
         .from('channels')
@@ -53,6 +54,7 @@ export async function getDashboardStats(
         .from('contacts')
         .select('workspace_id')
         .in('workspace_id', workspaceIds),
+      getUnreadCountsForWorkspaces(workspaceIds),
     ])
 
   if (conversationsResult.error) throw conversationsResult.error
@@ -80,7 +82,7 @@ export async function getDashboardStats(
   for (const row of conversationsResult.data) {
     const entry = perWorkspace.get(row.workspace_id)
     if (!entry) continue
-    entry.unread += row.unread_count
+    entry.unread += unreadByConversation.get(row.id) ?? 0
     if (isConversationStatus(row.status) && row.status === 'open') {
       entry.open += 1
     }

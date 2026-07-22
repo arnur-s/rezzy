@@ -818,7 +818,6 @@ export default {
           contact_id: contactId,
           channel_id: channelId,
           status: 'open',
-          unread_count: 0,
         })
         .select('id')
         .single()

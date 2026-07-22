@@ -238,7 +238,6 @@ export type Database = {
           last_message_preview: string | null
           snoozed_until: string | null
           status: string
-          unread_count: number
           updated_at: string
           workspace_id: string
         }
@@ -252,7 +251,6 @@ export type Database = {
           last_message_preview?: string | null
           snoozed_until?: string | null
           status?: string
-          unread_count?: number
           updated_at?: string
           workspace_id: string
         }
@@ -266,7 +264,6 @@ export type Database = {
           last_message_preview?: string | null
           snoozed_until?: string | null
           status?: string
-          unread_count?: number
           updated_at?: string
           workspace_id?: string
         }
@@ -588,6 +585,13 @@ export type Database = {
     }
     Functions: {
       get_channel_credentials: { Args: { p_channel_id: string }; Returns: Json }
+      get_unread_counts_for_workspaces: {
+        Args: { p_workspace_ids: string[] }
+        Returns: {
+          conversation_id: string
+          unread_count: number
+        }[]
+      }
       get_whatsapp_channel_by_phone: {
         Args: { p_phone_number_id: string }
         Returns: {

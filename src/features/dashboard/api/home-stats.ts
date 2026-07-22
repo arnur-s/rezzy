@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabase'
+import { getUnreadCountsForWorkspaces } from './unread-counts'
 
 const SNOOZE_HORIZON_HOURS = 24
 const STALE_THRESHOLD_HOURS = 48
@@ -24,14 +25,18 @@ export async function getHomeStats(
     return { unreadAssigned: 0, openAssigned: 0, snoozedWaking: 0, staleAssigned: 0 }
   }
 
-  const { data, error } = await supabase
-    .from('conversations')
-    .select('status, unread_count, snoozed_until, last_message_at')
-    .eq('assigned_to', userId)
-    .in('workspace_id', workspaceIds)
+  const [conversationsResult, unreadByConversation] = await Promise.all([
+    supabase
+      .from('conversations')
+      .select('id, status, snoozed_until, last_message_at')
+      .eq('assigned_to', userId)
+      .in('workspace_id', workspaceIds),
+    getUnreadCountsForWorkspaces(workspaceIds),
+  ])
 
-  if (error) throw error
+  if (conversationsResult.error) throw conversationsResult.error
 
+  const { data } = conversationsResult
   const now = Date.now()
   const snoozeHorizon = now + SNOOZE_HORIZON_HOURS * 60 * 60 * 1000
   const staleThreshold = now - STALE_THRESHOLD_HOURS * 60 * 60 * 1000
@@ -44,7 +49,7 @@ export async function getHomeStats(
   for (const row of data) {
     if (row.status === 'open') {
       openAssigned += 1
-      if (row.unread_count > 0) unreadAssigned += 1
+      if ((unreadByConversation.get(row.id) ?? 0) > 0) unreadAssigned += 1
       if (row.last_message_at && Date.parse(row.last_message_at) < staleThreshold) {
         staleAssigned += 1
       }

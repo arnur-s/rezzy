@@ -36,8 +36,8 @@ export function useMarkConversationRead(workspaceId: string) {
       markConversationRead(conversationId),
     onMutate: async (conversationId) => {
       // Unread is per-agent now: optimistically zero this conversation's count
-      // for the current user (the shared conversations.unread_count is no longer
-      // used for the inbox badge).
+      // for the current user (the shared conversations.unread_count column has
+      // been removed).
       await queryClient.cancelQueries({ queryKey: unreadKey })
       const unreadSnapshots = queryClient.getQueriesData<
         Record<string, number>
