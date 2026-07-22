@@ -1,8 +1,5 @@
 import type { Tables } from '@/api/types'
-import type { MessageRow } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
-import type { InitialScrollTarget } from '../utils/read-cursor'
-import { getInitialScrollTarget } from '../utils/read-cursor'
 
 export type ConversationReadCursor = Pick<
   Tables<'conversation_reads'>,
@@ -28,14 +25,6 @@ export async function getConversationReadCursor({
   }
 
   return data
-}
-
-export function getConversationInitialScrollTarget({
-  messages,
-}: {
-  messages: Array<MessageRow>
-}): InitialScrollTarget {
-  return getInitialScrollTarget({ messages })
 }
 
 export async function markConversationReadToMessage({

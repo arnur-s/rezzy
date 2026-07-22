@@ -13,6 +13,7 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PasswordResetRouteImport } from './routes/password-reset'
 import { Route as InstagramCallbackRouteImport } from './routes/instagram-callback'
+import { Route as E2eMessageListRouteImport } from './routes/e2e-message-list'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -47,6 +48,11 @@ const PasswordResetRoute = PasswordResetRouteImport.update({
 const InstagramCallbackRoute = InstagramCallbackRouteImport.update({
   id: '/instagram-callback',
   path: '/instagram-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const E2eMessageListRoute = E2eMessageListRouteImport.update({
+  id: '/e2e-message-list',
+  path: '/e2e-message-list',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -137,6 +143,7 @@ const AuthenticatedWorkspacesIdSettingsChannelsNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$id/settings/channels/': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
@@ -176,6 +184,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/e2e-message-list'
     | '/instagram-callback'
     | '/password-reset'
     | '/sign-in'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/workspaces/$id/settings/channels/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/e2e-message-list'
     | '/instagram-callback'
     | '/password-reset'
     | '/sign-in'
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/e2e-message-list'
     | '/instagram-callback'
     | '/password-reset'
     | '/sign-in'
@@ -259,6 +271,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  E2eMessageListRoute: typeof E2eMessageListRoute
   InstagramCallbackRoute: typeof InstagramCallbackRoute
   PasswordResetRoute: typeof PasswordResetRoute
   SignInRoute: typeof SignInRoute
@@ -293,6 +306,13 @@ declare module '@tanstack/react-router' {
       path: '/instagram-callback'
       fullPath: '/instagram-callback'
       preLoaderRoute: typeof InstagramCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e2e-message-list': {
+      id: '/e2e-message-list'
+      path: '/e2e-message-list'
+      fullPath: '/e2e-message-list'
+      preLoaderRoute: typeof E2eMessageListRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -476,6 +496,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  E2eMessageListRoute: E2eMessageListRoute,
   InstagramCallbackRoute: InstagramCallbackRoute,
   PasswordResetRoute: PasswordResetRoute,
   SignInRoute: SignInRoute,

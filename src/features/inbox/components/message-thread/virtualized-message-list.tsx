@@ -2,61 +2,57 @@ import type { MessageRow } from '@/entities/message'
 import { Chip, ScrollShadow } from '@heroui/react'
 import type { Range } from '@tanstack/react-virtual'
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLoadOlderMessagesSentinel } from '../../hooks/use-load-older-messages-sentinel'
+import {
+  diffMessageLists,
+  isInterruptingMessage,
+  isOwnOutboundMessage,
+  mergePendingMessageIds,
+} from '../../utils/message-changes'
 import {
   buildMessageGroups,
   flattenMessageGroups,
 } from '../../utils/message-groups'
-import {
-  isNearBottom,
-  preserveScrollTopAfterContentGrowth,
-  runAfterScrollLayout,
-} from '../../utils/message-scroll'
-import type { InitialScrollTarget } from '../../utils/read-cursor'
+import { getEligibleReadCommitId } from '../../utils/read-cursor'
 import { LoadOlderMessagesRegion } from './load-older-messages-region'
 import { MessageBubble } from './message-bubble'
 import { NewMessagesButton } from './new-messages-button'
 import { UnreadDivider } from './unread-divider'
 
 const ESTIMATED_MESSAGE_ITEM_SIZE = 72
+/**
+ * A scroll away from the end releases the bottom pin only when it happens
+ * within this window after real user input (wheel, touch, scrollbar, keys).
+ * Long enough to cover trackpad/touch momentum, short enough that later
+ * layout churn cannot masquerade as the user leaving the end.
+ */
+const USER_SCROLL_INTENT_WINDOW_MS = 2000
 const ESTIMATED_HEADING_ITEM_SIZE = 64
 const ESTIMATED_DIVIDER_ITEM_SIZE = 44
+/** px from the transcript end within which the viewport counts as "at the end". */
+const SCROLL_END_THRESHOLD = 80
+/**
+ * Breathing room above the first item, owned by the virtualizer (not CSS
+ * padding) so virtual offsets match DOM scroll offsets exactly. There is
+ * deliberately no `paddingEnd`: end-anchored growth corrections clamp against
+ * the last row's real overflow, so trailing virtualizer padding would leave
+ * the viewport short of the true bottom by exactly that padding. Bottom
+ * spacing comes from each row's own padding instead.
+ */
+const TRANSCRIPT_PADDING_START = 24
 
-function scrollToBottom(node: HTMLDivElement) {
-  try {
-    node.scrollTop = node.scrollHeight
-  } catch {
-    /* JSDOM: tests may define read-only scrollTop */
-  }
-}
-
-function isOwnOutbound(msg: MessageRow, currentUserId: string | null): boolean {
-  if (msg.direction !== 'outbound') return false
-  if (currentUserId == null) return true
-  return msg.sender_id == null || msg.sender_id === currentUserId
-}
-
-function isInterruptingMessage(
-  msg: MessageRow,
-  currentUserId: string | null,
-): boolean {
-  if (msg.direction === 'inbound') return true
-  return msg.direction === 'outbound' && !isOwnOutbound(msg, currentUserId)
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
 }
 
 type Props = {
   messages: Array<MessageRow>
   contactName: string
   currentUserId: string | null
-  initialScrollTarget: InitialScrollTarget
   unreadDividerMessageId: string | null
   hasUnreadInboundMessages: boolean
   onReadAnchorVisible: (lastReadMessageId: string) => void
@@ -66,11 +62,16 @@ type Props = {
   scrollToLatestNonce: number
 }
 
+/**
+ * The single message transcript. TanStack Virtual's chat APIs own the scroll
+ * behavior: `anchorTo: 'end'` keeps prepends and mid-list growth anchored,
+ * `followOnAppend` keeps a pinned viewport on new tail messages, and
+ * `scrollToEnd()` / `isAtEnd()` are the only positioning primitives used.
+ */
 export function VirtualizedMessageList({
   messages,
   contactName,
   currentUserId,
-  initialScrollTarget,
   unreadDividerMessageId,
   hasUnreadInboundMessages,
   onReadAnchorVisible,
@@ -80,53 +81,37 @@ export function VirtualizedMessageList({
   scrollToLatestNonce,
 }: Props) {
   const parentRef = useRef<HTMLDivElement | null>(null)
-  const contentRef = useRef<HTMLDivElement | null>(null)
   const loadOlderSentinelRef = useLoadOlderMessagesSentinel({
     rootRef: parentRef,
     hasMoreOlder,
     isFetchingOlder,
     onLoadOlder,
   })
-  const stickToBottomRef = useRef(true)
-  // Bottom-anchor intent for the media re-pin observer. Released ONLY by a real
-  // upward user scroll (see onScroll), never by the async scroll events a
-  // programmatic pin fires mid-cascade — see the non-virtualized list.
-  const atBottomRef = useRef(true)
-  const lastScrollTopRef = useRef(0)
-  const lastScrollHeightRef = useRef(0)
-  const initialScrollDoneRef = useRef(false)
-  const initialScrollScheduledRef = useRef(false)
-  const lastLenRef = useRef(0)
-  const lastFirstIdRef = useRef<string | null>(null)
-  const lastLastIdRef = useRef<string | null>(null)
+
+  /** IDs of interrupting messages that arrived while the user was away from the end. */
+  const [pendingMessageIds, setPendingMessageIds] = useState<Array<string>>([])
+
+  // Pin state: was the user at the transcript end? Updated from scroll events
+  // with `virtualizer.isAtEnd()` as the source of truth, but *released* only
+  // when the scroll follows recent user input (wheel / touch / scrollbar /
+  // keys). Late-loading media can shrink rows and clamp scrollTop past the end
+  // threshold without any user action — such layout churn must never cancel
+  // the pin; the onChange corrector below restores the end position instead.
+  // Data effects also read this ref because they run after the virtualizer has
+  // already applied follow/anchor scrolling for the same commit, so they need
+  // the at-end state from before the change.
+  const wasAtEndRef = useRef(true)
+  const lastUserScrollInputAtRef = useRef(0)
+
   const markedReadMessageIdRef = useRef<string | null>(null)
-  const [showNewMessagesButton, setShowNewMessagesButton] = useState(false)
-  const [newMessageCount, setNewMessageCount] = useState(0)
-
-  const prevLayoutRef = useRef({
-    scrollHeight: 0,
-    scrollTop: 0,
-    len: 0,
-    firstId: null as string | null,
-    lastId: null as string | null,
-  })
-
   const latestMessageIdRef = useRef<string | null>(null)
-  const onReadAnchorVisibleRef = useRef(onReadAnchorVisible)
-  const commitReadIfEligibleRef = useRef(() => {})
   const hasUnreadInboundRef = useRef(hasUnreadInboundMessages)
   const currentUserIdRef = useRef(currentUserId)
-
-  const firstId = messages[0]?.id ?? null
-  const lastId = messages.at(-1)?.id ?? null
-  const len = messages.length
+  const onReadAnchorVisibleRef = useRef(onReadAnchorVisible)
 
   useEffect(() => {
-    latestMessageIdRef.current = lastId
-  }, [lastId])
-  useEffect(() => {
-    onReadAnchorVisibleRef.current = onReadAnchorVisible
-  })
+    latestMessageIdRef.current = messages.at(-1)?.id ?? null
+  }, [messages])
   useEffect(() => {
     hasUnreadInboundRef.current = hasUnreadInboundMessages
   }, [hasUnreadInboundMessages])
@@ -134,14 +119,7 @@ export function VirtualizedMessageList({
     currentUserIdRef.current = currentUserId
   })
   useEffect(() => {
-    commitReadIfEligibleRef.current = () => {
-      const node = parentRef.current
-      if (!node || !isNearBottom(node) || !hasUnreadInboundRef.current) return
-      const id = latestMessageIdRef.current
-      if (!id || markedReadMessageIdRef.current === id) return
-      markedReadMessageIdRef.current = id
-      onReadAnchorVisibleRef.current(id)
-    }
+    onReadAnchorVisibleRef.current = onReadAnchorVisible
   })
 
   const groups = useMemo(() => buildMessageGroups(messages), [messages])
@@ -150,19 +128,13 @@ export function VirtualizedMessageList({
     [groups, unreadDividerMessageId],
   )
 
-  const headingIndexes = useMemo(
-    () =>
-      flatItems.reduce<Array<number>>((indexes, item, index) => {
-        if (item.kind === 'heading') indexes.push(index)
-        return indexes
-      }, []),
-    [flatItems],
-  )
-
-  const reversedHeadingIndexes = useMemo(
-    () => [...headingIndexes].reverse(),
-    [headingIndexes],
-  )
+  const reversedHeadingIndexes = useMemo(() => {
+    const indexes: Array<number> = []
+    flatItems.forEach((item, index) => {
+      if (item.kind === 'heading') indexes.push(index)
+    })
+    return indexes.reverse()
+  }, [flatItems])
 
   const activeStickyIndexRef = useRef(0)
 
@@ -191,287 +163,207 @@ export function VirtualizedMessageList({
       return ESTIMATED_MESSAGE_ITEM_SIZE
     },
     getItemKey: (index) => flatItems[index]?.key ?? index,
-    initialOffset: 0,
     overscan: 8,
-    paddingStart: 0,
+    anchorTo: 'end',
+    followOnAppend: true,
+    scrollEndThreshold: SCROLL_END_THRESHOLD,
+    paddingStart: TRANSCRIPT_PADDING_START,
     paddingEnd: 0,
     rangeExtractor: stickyRangeExtractor,
+    // Settle-time corrector: on iOS WebKit the virtualizer defers measurement
+    // corrections while its own reconcile scroll is running, and without a
+    // touch to flush them the initial end position can stick short. When idle,
+    // the user's last known position was the end, but the virtualizer reports
+    // otherwise, re-issue scrollToEnd. Guarded by isScrolling so it can never
+    // fight a user actively scrolling away.
+    onChange: (instance) => {
+      if (!instance.isScrolling && wasAtEndRef.current && !instance.isAtEnd()) {
+        instance.scrollToEnd()
+      }
+    },
   })
   const virtualItems = virtualizer.getVirtualItems()
 
-  const syncBottomUi = useCallback((atBottom: boolean) => {
-    stickToBottomRef.current = atBottom
-    if (atBottom) {
-      setShowNewMessagesButton(false)
-      setNewMessageCount(0)
-    }
+  const clearPendingMessages = useCallback(() => {
+    setPendingMessageIds((current) => (current.length > 0 ? [] : current))
   }, [])
 
-  const handleNewMessagesPress = useCallback(() => {
-    const node = parentRef.current
-    if (!node || flatItems.length === 0) return
-    const lastIndex = flatItems.length - 1
-    runAfterScrollLayout(
-      () =>
-        virtualizer.scrollToIndex(lastIndex, {
-          align: 'end',
-          behavior: 'smooth',
-        }),
-      () => {
-        virtualizer.scrollToIndex(lastIndex, {
-          align: 'end',
-          behavior: 'smooth',
-        })
-        const atBottom = isNearBottom(node)
-        syncBottomUi(atBottom)
-        commitReadIfEligibleRef.current()
-      },
-    )
-  }, [virtualizer, flatItems.length, syncBottomUi])
-
-  // Re-selecting the open conversation in the list jumps back to the latest
-  // message. Exact pin (scrollTop = scrollHeight), not estimate-based index
-  // scrolling. Initialized to the mount-time value so only later bumps trigger.
-  const lastHandledScrollNonceRef = useRef(scrollToLatestNonce)
-  useEffect(() => {
-    if (scrollToLatestNonce === lastHandledScrollNonceRef.current) return
-    lastHandledScrollNonceRef.current = scrollToLatestNonce
-    const node = parentRef.current
-    if (!node) return
-    atBottomRef.current = true
-    runAfterScrollLayout(
-      () => scrollToBottom(node),
-      () => {
-        scrollToBottom(node)
-        const atBottom = isNearBottom(node)
-        syncBottomUi(atBottom)
-        commitReadIfEligibleRef.current()
-      },
-    )
-  }, [scrollToLatestNonce, syncBottomUi])
-
-  useLayoutEffect(() => {
-    const node = parentRef.current
-    if (!node) return
-
-    const prev = prevLayoutRef.current
-    const isPrepend =
-      initialScrollDoneRef.current &&
-      len > prev.len &&
-      prev.len > 0 &&
-      firstId !== prev.firstId &&
-      lastId === prev.lastId
-
-    if (isPrepend) {
-      node.scrollTop = preserveScrollTopAfterContentGrowth({
-        previousScrollHeight: prev.scrollHeight,
-        previousScrollTop: node.scrollTop,
-        newScrollHeight: node.scrollHeight,
-      })
-    }
-
-    prevLayoutRef.current = {
-      scrollHeight: node.scrollHeight,
-      scrollTop: node.scrollTop,
-      len,
-      firstId,
-      lastId,
-    }
-  }, [len, firstId, lastId])
-
-  // Initial open: always land at the bottom (latest message); the unread divider
-  // stays as a visual marker only. Then gated mark-read.
-  useEffect(() => {
-    if (
-      initialScrollDoneRef.current ||
-      initialScrollScheduledRef.current ||
-      flatItems.length === 0
-    )
-      return
-
-    initialScrollScheduledRef.current = true
-
-    if (!initialScrollTarget.messageId) {
-      initialScrollDoneRef.current = true
-      const node = parentRef.current
-      if (node) {
-        const atBottom = isNearBottom(node)
-        stickToBottomRef.current = atBottom
-        if (atBottom) {
-          setShowNewMessagesButton(false)
-          setNewMessageCount(0)
-        }
-        commitReadIfEligibleRef.current()
-      }
-      return
-    }
-
-    // Pin via scrollTop = scrollHeight, not scrollToIndex: index scrolling
-    // computes the offset from estimated item sizes and lands mid-thread when
-    // real bubble heights differ. scrollHeight is always the current true
-    // bottom; as items measure, the ResizeObserver below re-pins until stable.
-    const scrollToInitialTarget = () => {
-      const node = parentRef.current
-      if (node) scrollToBottom(node)
-    }
-
-    runAfterScrollLayout(scrollToInitialTarget, () => {
-      scrollToInitialTarget()
-      initialScrollDoneRef.current = true
-      const node = parentRef.current
-      if (node) {
-        const atBottom = isNearBottom(node)
-        stickToBottomRef.current = atBottom
-        if (atBottom) {
-          setShowNewMessagesButton(false)
-          setNewMessageCount(0)
-        }
-        commitReadIfEligibleRef.current()
-      }
+  const commitReadIfEligible = useCallback(() => {
+    const id = getEligibleReadCommitId({
+      hasUnreadInboundMessages: hasUnreadInboundRef.current,
+      isAtEnd: virtualizer.isAtEnd(),
+      latestMessageId: latestMessageIdRef.current,
+      lastCommittedMessageId: markedReadMessageIdRef.current,
     })
-  }, [flatItems.length, initialScrollTarget.messageId])
+    if (!id) return
+    markedReadMessageIdRef.current = id
+    onReadAnchorVisibleRef.current(id)
+  }, [virtualizer])
 
+  // Initial open: deterministic bottom positioning, once per conversation
+  // (the component is keyed by conversation id, so a switch remounts it and
+  // resets every scroll-related ref and state above).
+  const didInitialScrollRef = useRef(false)
+  useLayoutEffect(() => {
+    if (didInitialScrollRef.current || flatItems.length === 0) return
+    didInitialScrollRef.current = true
+    virtualizer.scrollToEnd()
+  }, [flatItems.length, virtualizer])
+
+  // Data changes: classify by stable IDs. Own outbound returns to the end;
+  // interrupting appends while away from the end feed the pending counter.
+  // Prepends need no handling — anchorTo: 'end' keeps the viewport stable.
+  const prevMessagesRef = useRef<Array<MessageRow> | null>(null)
   useEffect(() => {
-    const count = len
+    const previous = prevMessagesRef.current
+    prevMessagesRef.current = messages
+    if (previous === messages) return
 
-    if (!initialScrollDoneRef.current) {
-      lastLenRef.current = count
-      lastFirstIdRef.current = firstId
-      lastLastIdRef.current = lastId
+    if (previous === null) {
+      // First data for this conversation: positioning is handled by the
+      // initial layout effect; a short thread never scrolls, so commit here.
+      commitReadIfEligible()
       return
     }
 
-    const prevLen = lastLenRef.current
-    const prevFirst = lastFirstIdRef.current
-    const prevLast = lastLastIdRef.current
+    const { appended } = diffMessageLists(previous, messages)
+    if (appended.length === 0) return
 
-    const isAppend =
-      count > prevLen &&
-      prevLen > 0 &&
-      firstId === prevFirst &&
-      lastId !== prevLast
-    const isPrepend =
-      count > prevLen &&
-      prevLen > 0 &&
-      firstId !== prevFirst &&
-      lastId === prevLast
+    const userId = currentUserIdRef.current
 
-    if (isPrepend) {
-      lastLenRef.current = count
-      lastFirstIdRef.current = firstId
-      lastLastIdRef.current = lastId
+    if (appended.some((row) => isOwnOutboundMessage(row, userId))) {
+      // Sending is explicit intent to return to the live conversation.
+      clearPendingMessages()
+      virtualizer.scrollToEnd()
+      commitReadIfEligible()
       return
     }
 
-    if (isAppend) {
-      const added = messages.slice(prevLen)
-      const uid = currentUserIdRef.current
-      const ownOutboundAdded = added.some((msg) => isOwnOutbound(msg, uid))
-      const interrupting = added.filter((msg) =>
-        isInterruptingMessage(msg, uid),
+    if (wasAtEndRef.current) {
+      // followOnAppend keeps the viewport pinned; long threads commit via the
+      // resulting scroll event, short (non-scrolling) threads commit here.
+      commitReadIfEligible()
+      return
+    }
+
+    const interruptingIds = appended
+      .filter((row) => isInterruptingMessage(row, userId))
+      .map((row) => row.id)
+    if (interruptingIds.length > 0) {
+      setPendingMessageIds((current) =>
+        mergePendingMessageIds(current, interruptingIds),
       )
-      const interruptingCount = interrupting.length
-
-      if (stickToBottomRef.current || ownOutboundAdded) {
-        const node = parentRef.current
-        const lastIndex = flatItems.length > 0 ? flatItems.length - 1 : -1
-        if (node && lastIndex >= 0) {
-          runAfterScrollLayout(
-            () => virtualizer.scrollToIndex(lastIndex, { align: 'end' }),
-            () => {
-              virtualizer.scrollToIndex(lastIndex, { align: 'end' })
-              const atBottom = isNearBottom(node)
-              syncBottomUi(atBottom)
-              commitReadIfEligibleRef.current()
-            },
-          )
-        }
-      } else if (interruptingCount > 0) {
-        setShowNewMessagesButton(true)
-        setNewMessageCount((prev) => prev + interruptingCount)
-      }
     }
+  }, [messages, virtualizer, clearPendingMessages, commitReadIfEligible])
 
-    lastLenRef.current = count
-    lastFirstIdRef.current = firstId
-    lastLastIdRef.current = lastId
-  }, [
-    len,
-    firstId,
-    lastId,
-    messages,
-    flatItems.length,
-    virtualizer,
-    syncBottomUi,
-  ])
-
+  // Single scroll listener: keeps the pin state fresh and resolves "reached
+  // the end" consequences (clear pending, commit read). Reaching the end
+  // always re-arms the pin; leaving it requires recent user input so that
+  // media-load layout churn cannot silently release it. State updates bail
+  // out unless something actually changes.
   useEffect(() => {
     const node = parentRef.current
     if (!node) return
+
+    const markUserScrollInput = () => {
+      lastUserScrollInputAtRef.current = Date.now()
+    }
 
     const onScroll = () => {
-      const scrollTop = node.scrollTop
-      const scrollHeight = node.scrollHeight
-      const atBottom = isNearBottom(node)
-      // Only a genuine upward user scroll releases the pin — see non-virtualized list.
-      const scrolledUp = scrollTop < lastScrollTopRef.current - 1
-      const contentShrank = scrollHeight < lastScrollHeightRef.current - 1
-      lastScrollTopRef.current = scrollTop
-      lastScrollHeightRef.current = scrollHeight
-
-      stickToBottomRef.current = atBottom
-      if (atBottom) {
-        atBottomRef.current = true
-        setShowNewMessagesButton(false)
-        setNewMessageCount(0)
-        commitReadIfEligibleRef.current()
-      } else if (scrolledUp && !contentShrank) {
-        atBottomRef.current = false
+      if (virtualizer.isAtEnd()) {
+        wasAtEndRef.current = true
+        clearPendingMessages()
+        commitReadIfEligible()
+      } else if (
+        Date.now() - lastUserScrollInputAtRef.current <
+        USER_SCROLL_INTENT_WINDOW_MS
+      ) {
+        wasAtEndRef.current = false
       }
     }
 
+    const inputEvents = ['wheel', 'touchstart', 'touchmove', 'mousedown', 'keydown'] as const
+    for (const event of inputEvents) {
+      node.addEventListener(event, markUserScrollInput, { passive: true })
+    }
     node.addEventListener('scroll', onScroll, { passive: true })
-    return () => node.removeEventListener('scroll', onScroll)
-  }, [])
+    return () => {
+      for (const event of inputEvents) {
+        node.removeEventListener(event, markUserScrollInput)
+      }
+      node.removeEventListener('scroll', onScroll)
+    }
+  }, [virtualizer, clearPendingMessages, commitReadIfEligible])
 
-  // Late-loading media grows measured items after the initial scroll; the
-  // virtualizer re-measures but does not keep the viewport pinned to the bottom.
-  // Re-pin on any content-size change while anchored there (see non-virtualized
-  // list for the atBottomRef rationale).
+  // The virtualizer re-pins end-anchored *item* growth on its own, but not
+  // viewport resizes: height changes (composer growing, mobile keyboard) move
+  // the fold, and width changes (pane resize, contact panel) rewrap every
+  // message so the batch of re-measurements drifts past the end threshold.
+  // Re-pin only when the user was at the end; scrollToEnd()'s reconcile loop
+  // absorbs the re-measurement churn.
   useEffect(() => {
     const node = parentRef.current
-    const content = contentRef.current
-    if (!node || !content || typeof ResizeObserver === 'undefined') return
+    if (!node || typeof ResizeObserver === 'undefined') return
 
+    let lastWidth = node.clientWidth
+    let lastHeight = node.clientHeight
     const observer = new ResizeObserver(() => {
-      if (atBottomRef.current) scrollToBottom(node)
+      const width = node.clientWidth
+      const height = node.clientHeight
+      if (width === lastWidth && height === lastHeight) return
+      lastWidth = width
+      lastHeight = height
+      if (wasAtEndRef.current) virtualizer.scrollToEnd()
     })
-    observer.observe(content)
+    observer.observe(node)
     return () => observer.disconnect()
-  }, [])
+  }, [virtualizer])
+
+  // Re-selecting the open conversation jumps back to the latest message.
+  // Initialized to the mount-time value so only later bumps trigger.
+  const lastHandledNonceRef = useRef(scrollToLatestNonce)
+  useEffect(() => {
+    if (scrollToLatestNonce === lastHandledNonceRef.current) return
+    lastHandledNonceRef.current = scrollToLatestNonce
+    clearPendingMessages()
+    virtualizer.scrollToEnd()
+    commitReadIfEligible()
+  }, [
+    scrollToLatestNonce,
+    virtualizer,
+    clearPendingMessages,
+    commitReadIfEligible,
+  ])
+
+  const handleNewMessagesPress = useCallback(() => {
+    virtualizer.scrollToEnd({
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    })
+    // Pending state and the read commit resolve in the scroll listener once
+    // the viewport actually reaches the end.
+  }, [virtualizer])
 
   return (
     <div className="relative min-h-0 flex-1 w-full">
       <ScrollShadow
         ref={parentRef}
-        className="flex flex-col items-center h-full w-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
+        className="h-full w-full overflow-y-auto overscroll-contain [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
       >
-        <div
-          ref={contentRef}
-          className="container flex w-full flex-col px-4 py-6 sm:px-6"
-        >
-          <LoadOlderMessagesRegion
-            sentinelRef={loadOlderSentinelRef}
-            isFetchingOlder={isFetchingOlder}
-            hasMoreOlder={hasMoreOlder}
-          />
+        {/* min-h-full + justify-end rests short transcripts against the
+            composer; once content overflows, the wrapper grows with it and the
+            virtual container's top matches the scroll content's top exactly. */}
+        <div className="flex min-h-full w-full flex-col justify-end">
           <div
-            style={{
-              height: virtualizer.getTotalSize(),
-              width: '100%',
-              position: 'relative',
-            }}
+            data-testid="message-transcript"
+            className="relative w-full"
+            style={{ height: virtualizer.getTotalSize() }}
           >
+            <div
+              ref={loadOlderSentinelRef}
+              className="absolute inset-x-0 top-0 h-px"
+              aria-hidden
+            />
+            <LoadOlderMessagesRegion isFetchingOlder={isFetchingOlder} />
             {virtualItems.map((virtualItem) => {
               const item = flatItems[virtualItem.index]
               const isHeading = item.kind === 'heading'
@@ -483,32 +375,35 @@ export function VirtualizedMessageList({
                   key={virtualItem.key}
                   data-index={virtualItem.index}
                   ref={virtualizer.measureElement}
-                  style={{
-                    ...(isHeading ? { zIndex: 1 } : {}),
-                    ...(isActiveSticky
-                      ? { position: 'sticky', top: 8 }
+                  style={
+                    isActiveSticky
+                      ? { position: 'sticky', top: 8, zIndex: 1, width: '100%' }
                       : {
                           position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
                           transform: `translateY(${virtualItem.start}px)`,
-                        }),
-                    left: 0,
-                    width: '100%',
-                  }}
+                          ...(isHeading ? { zIndex: 1 } : {}),
+                        }
+                  }
                 >
-                  {isHeading ? (
-                    <div className="flex justify-center py-3">
-                      <Chip>{item.heading}</Chip>
-                    </div>
-                  ) : item.kind === 'divider' ? (
-                    <UnreadDivider />
-                  ) : (
-                    <div className="pb-3">
-                      <MessageBubble
-                        message={item.message}
-                        contactName={contactName}
-                      />
-                    </div>
-                  )}
+                  <div className="container mx-auto w-full px-4 sm:px-6">
+                    {isHeading ? (
+                      <div className="flex justify-center py-3">
+                        <Chip>{item.heading}</Chip>
+                      </div>
+                    ) : item.kind === 'divider' ? (
+                      <UnreadDivider />
+                    ) : (
+                      <div className="pb-3">
+                        <MessageBubble
+                          message={item.message}
+                          contactName={contactName}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -516,9 +411,9 @@ export function VirtualizedMessageList({
         </div>
       </ScrollShadow>
 
-      {showNewMessagesButton && (
+      {pendingMessageIds.length > 0 && (
         <NewMessagesButton
-          count={newMessageCount}
+          count={pendingMessageIds.length}
           onPress={handleNewMessagesPress}
         />
       )}

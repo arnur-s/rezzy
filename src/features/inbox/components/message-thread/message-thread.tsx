@@ -2,14 +2,12 @@ import type { ChannelType } from '@/entities/channel'
 import { PLATFORM_META, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getConversationInitialScrollTarget } from '../../api/read-cursors'
 import {
   useConversationReadCursor,
   useMarkConversationReadToMessage,
   useMessages,
 } from '../../hooks/use-messages'
 import { useMessagesRealtime } from '../../hooks/use-messages-realtime'
-import type { InitialScrollTarget } from '../../utils/read-cursor'
 import { getFirstUnreadInboundMessageId } from '../../utils/read-cursor'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
@@ -100,11 +98,6 @@ export function MessageThread({
     }
   }, [messagesQuery.refetch, readCursorQuery.refetch, readCursorQuery.isError])
 
-  const initialScrollTargetRef = useRef<InitialScrollTarget | null>(null)
-  if (initialScrollTargetRef.current === null && messages.length > 0) {
-    initialScrollTargetRef.current = getConversationInitialScrollTarget({ messages })
-  }
-  const initialScrollTarget = initialScrollTargetRef.current ?? getConversationInitialScrollTarget({ messages })
   const liveUnreadDividerMessageId = useMemo(
     () =>
       getFirstUnreadInboundMessageId({
@@ -201,7 +194,6 @@ export function MessageThread({
           isError={messagesQuery.isError || readCursorQuery.isError}
           contactName={contactName}
           currentUserId={senderId}
-          initialScrollTarget={initialScrollTarget}
           unreadDividerMessageId={unreadDividerMessageId}
           hasUnreadInboundMessages={hasUnreadInboundMessages}
           onReadAnchorVisible={handleReadAnchorVisible}

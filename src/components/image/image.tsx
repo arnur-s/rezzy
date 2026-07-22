@@ -105,7 +105,15 @@ export function Image({
   return (
     <>
       <div
-        className={cn('group relative inline-block overflow-hidden', className)}
+        className={cn(
+          'group relative inline-block overflow-hidden',
+          // Reserve space while the image loads: the wrapper is sized by the
+          // <img>, which is 0px tall until it loads, so without this the
+          // skeleton is invisible and surrounding layout (e.g. chat rows)
+          // collapses and then jumps when the image arrives.
+          isLoading && !hasError && height === undefined && 'min-h-36',
+          className,
+        )}
         style={{ width, height }}
       >
         {/* Loading skeleton */}

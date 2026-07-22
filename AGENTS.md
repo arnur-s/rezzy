@@ -185,6 +185,15 @@ Do not manually edit:
 
 Change their source inputs and regenerate them with the repository scripts.
 
+## Test Account
+
+For manual and browser-driven verification against the development Supabase project, use the shared test account:
+
+- Email: `ncase01@gmail.com`
+- Password: `123456789`
+
+This is a disposable test login for the dev environment only. Never reuse these credentials for production data or real customer workspaces.
+
 ## Testing and Validation
 
 Add or update tests for critical business logic, regressions, complex hooks, reusable utilities, and important user interactions. Prefer meaningful tests over coverage-only tests.

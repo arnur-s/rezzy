@@ -1,8 +1,8 @@
 import type { MessageRow } from '@/entities/message'
 import { describe, expect, it } from 'vitest'
 import {
+  getEligibleReadCommitId,
   getFirstUnreadInboundMessageId,
-  getInitialScrollTarget,
 } from './read-cursor'
 
 function message({
@@ -58,19 +58,48 @@ const messages = [
   }),
 ]
 
-describe('getInitialScrollTarget', () => {
-  it('targets the latest message id when messages exist', () => {
-    expect(getInitialScrollTarget({ messages })).toEqual({
-      messageId: 'latest',
-      reason: 'latest',
-    })
+describe('getEligibleReadCommitId', () => {
+  const eligible = {
+    hasUnreadInboundMessages: true,
+    isAtEnd: true,
+    latestMessageId: 'latest',
+    lastCommittedMessageId: null,
+  }
+
+  it('returns the latest id when unread messages exist and the viewport is at the end', () => {
+    expect(getEligibleReadCommitId(eligible)).toBe('latest')
   })
 
-  it('returns null message id for an empty thread', () => {
-    expect(getInitialScrollTarget({ messages: [] })).toEqual({
-      messageId: null,
-      reason: 'latest',
-    })
+  it('returns null while away from the end', () => {
+    expect(getEligibleReadCommitId({ ...eligible, isAtEnd: false })).toBeNull()
+  })
+
+  it('returns null without unread inbound messages', () => {
+    expect(
+      getEligibleReadCommitId({ ...eligible, hasUnreadInboundMessages: false }),
+    ).toBeNull()
+  })
+
+  it('never re-commits the same latest id (status updates cannot re-trigger)', () => {
+    expect(
+      getEligibleReadCommitId({ ...eligible, lastCommittedMessageId: 'latest' }),
+    ).toBeNull()
+  })
+
+  it('commits again when a newer latest message appears', () => {
+    expect(
+      getEligibleReadCommitId({
+        ...eligible,
+        latestMessageId: 'newer',
+        lastCommittedMessageId: 'latest',
+      }),
+    ).toBe('newer')
+  })
+
+  it('returns null for an empty thread', () => {
+    expect(
+      getEligibleReadCommitId({ ...eligible, latestMessageId: null }),
+    ).toBeNull()
   })
 })
 

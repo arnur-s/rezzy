@@ -1,21 +1,26 @@
 import type { MessageRow } from '@/entities/message'
 
-/** Scroll target when opening a thread: always the latest message (bottom). */
-export type InitialScrollTarget = {
-  messageId: string | null
-  reason: 'latest'
-}
-
-export function getInitialScrollTarget({
-  messages,
+/**
+ * Read-commit gate: returns the message ID to commit as read, or null.
+ * A commit is eligible only when unread inbound messages exist, the viewport
+ * is at the transcript end, and this latest ID has not been committed yet —
+ * so status updates and repeat scroll events never re-commit the same cursor.
+ */
+export function getEligibleReadCommitId({
+  hasUnreadInboundMessages,
+  isAtEnd,
+  latestMessageId,
+  lastCommittedMessageId,
 }: {
-  messages: Array<MessageRow>
-}): InitialScrollTarget {
-  const latest = messages.at(-1)
-  if (!latest) {
-    return { messageId: null, reason: 'latest' }
-  }
-  return { messageId: latest.id, reason: 'latest' }
+  hasUnreadInboundMessages: boolean
+  isAtEnd: boolean
+  latestMessageId: string | null
+  lastCommittedMessageId: string | null
+}): string | null {
+  if (!hasUnreadInboundMessages || !isAtEnd) return null
+  if (!latestMessageId) return null
+  if (latestMessageId === lastCommittedMessageId) return null
+  return latestMessageId
 }
 
 /**
