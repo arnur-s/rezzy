@@ -1,4 +1,5 @@
 import { getUserDisplayName, getUserInitials } from '@/entities/user'
+import { UnreadNotificationsPopover } from '@/features/notifications'
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
@@ -8,7 +9,6 @@ import { Avatar, Button, Dropdown, Label, Separator } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { Link, useMatches, useNavigate } from '@tanstack/react-router'
 import {
-  BellIcon,
   CheckIcon,
   ChevronRightIcon,
   MonitorIcon,
@@ -120,14 +120,7 @@ export function Header({ className, onToggleSidebar }: HeaderProps) {
         >
           <SearchIcon className="size-4" />
         </Button>
-        <Button
-          isIconOnly
-          variant="ghost"
-          size="sm"
-          aria-label={m.header_notifications_label()}
-        >
-          <BellIcon className="size-4" />
-        </Button>
+        <UnreadNotificationsPopover workspaceId={workspaceId} />
 
         <ThemeSwitcher />
 

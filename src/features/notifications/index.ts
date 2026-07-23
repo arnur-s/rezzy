@@ -1,4 +1,5 @@
 export { NotificationSettings } from './components/notification-settings'
+export { UnreadNotificationsPopover } from './components/unread-notifications-popover'
 export { useMessageNotifications } from './hooks/use-message-notifications'
 export { useNotificationPreferences } from './hooks/use-notification-preferences'
 export { registerNotificationServiceWorker } from './utils/register-service-worker'

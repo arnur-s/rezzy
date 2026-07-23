@@ -7,20 +7,10 @@ import type {
   MessageNotificationDetails,
   MessagePreviewMode,
 } from '../model/types'
+import { initialsFromName } from '../utils/initials'
 import type { NotificationTarget } from '../utils/notification-navigation'
 import { buildNotificationPreview } from '../utils/notification-preview'
 import { NotificationPreview } from './notification-preview'
-
-function initialsFromName(name: string | null | undefined): string {
-  const trimmed = name?.trim()
-  if (!trimmed) return '—'
-  const initials = trimmed
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('')
-  return initials || '—'
-}
 
 type Props = {
   details: MessageNotificationDetails

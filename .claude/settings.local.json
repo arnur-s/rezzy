@@ -113,7 +113,23 @@
       "Bash(awk '/channels: \\\\{/{f=1} f&&/Row: \\\\{/{p=1} p{print NR\": \"$0} p&&/\\\\}/{c++} c==1&&p{exit}' /Users/arnurkupanov/cms/src/api/types.ts)",
       "Bash(git -C /Users/arnurkupanov/cms check-ignore src/paraglide/messages.js)",
       "Bash(node -e \"const s=require\\('./package.json'\\).scripts; Object.keys\\(s\\).forEach\\(k=>console.log\\(k+' = '+s[k]\\)\\)\")",
-      "Bash(grep -nA15 \"test:\")"
+      "Bash(grep -nA15 \"test:\")",
+      "Bash(grep -i 'inbox\\\\|$id')",
+      "Bash(awk '/message_notifications: \\\\{/,/Relationships/' src/api/types.ts)",
+      "Bash(node /Users/arnurkupanov/.claude/skills/impeccable/scripts/context.mjs)",
+      "Bash(pnpm i18n:compile)",
+      "Bash(node -e \"const {Popover} = require\\('/Users/arnurkupanov/cms/node_modules/@heroui/react'\\); console.log\\(Object.keys\\(Popover\\)\\)\")",
+      "Bash(node --input-type=module -e \"import\\('@heroui/react'\\).then\\(m => console.log\\(Object.keys\\(m.Popover\\)\\)\\)\")",
+      "Bash(node -e \"const {Badge, ScrollShadow, Skeleton, Alert} = require\\('/Users/arnurkupanov/cms/node_modules/@heroui/react'\\); console.log\\('Badge:', Object.keys\\(Badge\\)\\); console.log\\('ScrollShadow:', typeof ScrollShadow\\); console.log\\('Skeleton:', typeof Skeleton\\); console.log\\('Alert:', Object.keys\\(Alert\\)\\)\")",
+      "Bash(git checkout *)",
+      "Bash(node -e \"const {Typography, Popover} = require\\('/Users/arnurkupanov/cms/node_modules/@heroui/react'\\); console.log\\('Typography:', Object.keys\\(Typography\\)\\)\")",
+      "Bash(command -v supabase)",
+      "Bash(supabase --version)",
+      "Bash(docker info *)",
+      "Read(//Applications/**)",
+      "Bash(pnpm dlx *)",
+      "Bash(sed -i '' '18,34{/^[[:space:]]*$/!{/^#/!s/^/# /;};}' /Users/arnurkupanov/cms/.env.local)",
+      "Bash(awk 'NR>=16 && !/^#/ && !/^[[:space:]]*$/' /Users/arnurkupanov/cms/.env.local)"
     ]
   },
   "hooks": {
