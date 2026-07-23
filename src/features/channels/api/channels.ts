@@ -10,7 +10,7 @@ export const channelQueryKeys = {
 }
 
 const CHANNEL_PUBLIC_COLUMNS =
-  'id, workspace_id, type, name, provider_account_id, is_active, created_at, updated_at' as const
+  'id, workspace_id, type, name, provider_account_id, is_active, api_version, last_webhook_at, last_outbound_at, last_error_at, last_error_code, created_at, updated_at' as const
 
 type ConnectChannelSuccess = { channel: Channel }
 

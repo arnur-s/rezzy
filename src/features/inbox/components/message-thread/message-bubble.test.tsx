@@ -1,0 +1,246 @@
+import type { MessageReactionRow, MessageRow } from '@/entities/message'
+import { setLocale } from '@/paraglide/runtime'
+import { screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderWithQueryClient } from '@/test/render'
+import { MessageBubble } from './message-bubble'
+import {
+  
+  MessageThreadProvider
+} from './message-thread-context'
+import type {MessageThreadContextValue} from './message-thread-context';
+
+vi.mock('./message-media', () => ({
+  MessageMediaAttachment: ({ mediaUrl }: { mediaUrl: string | null }) => (
+    <div data-testid="media-attachment">{mediaUrl}</div>
+  ),
+}))
+
+function messageRow(overrides: Partial<MessageRow> = {}): MessageRow {
+  return {
+    id: 'msg-1',
+    conversation_id: 'conversation-1',
+    workspace_id: 'workspace-1',
+    sender_id: null,
+    direction: 'inbound',
+    type: 'text',
+    status: 'delivered',
+    content: 'hello',
+    media_url: null,
+    media_filename: null,
+    media_mime_type: null,
+    media_size: null,
+    metadata: {},
+    external_id: null,
+    reply_to_message_id: null,
+    external_reply_to_id: null,
+    edited_at: null,
+    deleted_at: null,
+    provider_timestamp: null,
+    created_at: '2026-07-23T10:00:00Z',
+    ...overrides,
+  }
+}
+
+function reactionRow(overrides: Partial<MessageReactionRow> = {}): MessageReactionRow {
+  return {
+    id: 'reaction-1',
+    workspace_id: 'workspace-1',
+    channel_id: 'channel-1',
+    conversation_id: 'conversation-1',
+    message_id: 'msg-1',
+    provider_message_id: '100',
+    reactor_external_id: '555',
+    is_from_contact: true,
+    emoji: '👍',
+    action: 'added',
+    provider_timestamp: null,
+    metadata: {},
+    created_at: '2026-07-23T10:01:00Z',
+    updated_at: '2026-07-23T10:01:00Z',
+    ...overrides,
+  }
+}
+
+function renderBubble(
+  message: MessageRow,
+  thread?: Partial<MessageThreadContextValue>,
+) {
+  const value: MessageThreadContextValue = {
+    channelType: 'telegram',
+    reactionsByMessageId: new Map(),
+    onReplyToMessage: null,
+    ...thread,
+  }
+  return renderWithQueryClient(
+    <MessageThreadProvider value={value}>
+      <MessageBubble message={message} contactName="Aizhan" />
+    </MessageThreadProvider>,
+  )
+}
+
+beforeEach(() => {
+  setLocale('en', { reload: false })
+})
+
+describe('MessageBubble structured types', () => {
+  it('renders locations with a map link', () => {
+    renderBubble(
+      messageRow({
+        type: 'location',
+        content: null,
+        metadata: {
+          location: { kind: 'venue', latitude: 51.1, longitude: 71.4, name: 'Coffee Boom', address: 'Turan 37' },
+        },
+      }),
+    )
+    expect(screen.getByText('Coffee Boom')).toBeTruthy()
+    expect(screen.getByText('Turan 37')).toBeTruthy()
+    expect(screen.getByRole('link').getAttribute('href')).toBe(
+      'https://maps.google.com/?q=51.1,71.4',
+    )
+  })
+
+  it('renders contact cards with phone numbers', () => {
+    renderBubble(
+      messageRow({
+        type: 'contact',
+        content: null,
+        metadata: {
+          contacts: [{ name: 'Dana A', phones: [{ wa_id: '77015550001' }] }],
+        },
+      }),
+    )
+    expect(screen.getByText('Dana A')).toBeTruthy()
+    expect(screen.getByText('+77015550001')).toBeTruthy()
+  })
+
+  it('renders interactive replies with their selection context', () => {
+    renderBubble(
+      messageRow({
+        type: 'interactive',
+        content: 'Plan B',
+        metadata: {
+          interactive: { kind: 'list_reply', id: 'row2', title: 'Plan B', description: 'Second option' },
+        },
+      }),
+    )
+    expect(screen.getByText('List selection')).toBeTruthy()
+    expect(screen.getByText('Plan B')).toBeTruthy()
+    expect(screen.getByText('Second option')).toBeTruthy()
+  })
+
+  it('renders an explicit unsupported fallback, never an empty bubble', () => {
+    renderBubble(
+      messageRow({
+        type: 'unsupported',
+        content: null,
+        metadata: { unsupported: { kind: 'poll', preview: 'Lunch?' } },
+      }),
+    )
+    expect(
+      screen.getByText("This message type isn't supported yet"),
+    ).toBeTruthy()
+    expect(screen.getByText('Lunch?')).toBeTruthy()
+  })
+
+  it('renders shares with a link and story replies with a label', () => {
+    renderBubble(
+      messageRow({
+        type: 'share',
+        content: null,
+        metadata: { share: { kind: 'ig_reel', url: 'https://cdn/reel', title: 'A reel' } },
+      }),
+    )
+    expect(screen.getByText('Shared reel')).toBeTruthy()
+    expect(screen.getByRole('link').getAttribute('href')).toBe('https://cdn/reel')
+  })
+})
+
+describe('MessageBubble reply, edit, delete, reactions', () => {
+  it('shows a compact quoted reply preview', () => {
+    renderBubble(
+      messageRow({
+        reply_to_message_id: 'parent-1',
+        metadata: {
+          quote: { external_id: '55', preview: 'original text', author_name: 'Aizhan K' },
+        },
+      }),
+    )
+    expect(screen.getByText('Aizhan K')).toBeTruthy()
+    expect(screen.getByText('original text')).toBeTruthy()
+  })
+
+  it('marks edited messages', () => {
+    renderBubble(messageRow({ edited_at: '2026-07-23T10:05:00Z' }))
+    expect(screen.getByText('edited')).toBeTruthy()
+  })
+
+  it('hides deleted content behind a placeholder', () => {
+    renderBubble(
+      messageRow({ content: 'secret text', deleted_at: '2026-07-23T10:06:00Z' }),
+    )
+    expect(screen.getByText('This message was deleted')).toBeTruthy()
+    expect(screen.queryByText('secret text')).toBeNull()
+  })
+
+  it('renders grouped reactions under the bubble', () => {
+    renderBubble(messageRow(), {
+      reactionsByMessageId: new Map([
+        [
+          'msg-1',
+          [
+            reactionRow(),
+            reactionRow({ id: 'reaction-2', reactor_external_id: '556' }),
+            reactionRow({ id: 'reaction-3', emoji: '❤️' }),
+          ],
+        ],
+      ]),
+    })
+    expect(screen.getByText('👍')).toBeTruthy()
+    expect(screen.getByText('2')).toBeTruthy()
+    expect(screen.getByText('❤️')).toBeTruthy()
+  })
+
+  it('offers retry for failed outbound messages', () => {
+    renderBubble(
+      messageRow({ direction: 'outbound', status: 'failed', sender_id: 'user-1' }),
+    )
+    expect(screen.getByText('Retry')).toBeTruthy()
+  })
+
+  it('renders extra structured attachments beyond the legacy first one', () => {
+    const message = {
+      ...messageRow({ type: 'image', content: null, media_url: 'ws/c/m/one.jpg' }),
+      message_attachments: [
+        {
+          id: 'att-2',
+          workspace_id: 'workspace-1',
+          message_id: 'msg-1',
+          position: 1,
+          kind: 'image',
+          provider_media_id: null,
+          provider_media_unique_id: null,
+          storage_bucket: 'chat-media',
+          storage_path: 'ws/c/m/two.jpg',
+          thumbnail_path: null,
+          filename: 'two.jpg',
+          mime_type: 'image/jpeg',
+          size_bytes: 100,
+          width: null,
+          height: null,
+          duration_seconds: null,
+          checksum: null,
+          download_status: 'stored',
+          failure_reason: null,
+          metadata: {},
+          created_at: '2026-07-23T10:00:00Z',
+        },
+      ],
+    }
+    renderBubble(message)
+    const attachments = screen.getAllByTestId('media-attachment')
+    expect(attachments).toHaveLength(2)
+    expect(attachments[1].textContent).toBe('ws/c/m/two.jpg')
+  })
+})

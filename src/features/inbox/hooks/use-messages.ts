@@ -12,6 +12,7 @@ import { useMemo } from 'react'
 import type { MessagePageCursor } from '../api/messages'
 import {
   getConversationMessagesPage,
+  retryOutboundMessage,
   sendOutboundMessage,
 } from '../api/messages'
 import { inboxQueryKeys } from '../api/query-keys'
@@ -139,6 +140,7 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
       senderId: string | null
       channelType: ChannelType
       clientMessageId?: string
+      replyToMessageId?: string | null
     }) =>
       sendOutboundMessage({
         id: variables.clientMessageId,
@@ -148,6 +150,7 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
         file: variables.file,
         senderId: variables.senderId,
         channelType: variables.channelType,
+        replyToMessageId: variables.replyToMessageId,
       }),
 
     onMutate: async (variables) => {
@@ -181,6 +184,11 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
         media_size: null,
         metadata: {},
         external_id: null,
+        reply_to_message_id: variables.replyToMessageId ?? null,
+        external_reply_to_id: null,
+        edited_at: null,
+        deleted_at: null,
+        provider_timestamp: null,
         created_at: new Date().toISOString(),
       }
 
@@ -251,6 +259,31 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
           )
         },
       )
+    },
+  })
+}
+
+/** Re-dispatches a failed outbound message and patches the fresh row in place. */
+export function useRetryMessage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (variables: { messageId: string; channelType: ChannelType }) =>
+      retryOutboundMessage(variables),
+    onSuccess: (message) => {
+      const messagesKey = inboxQueryKeys.messages(message.conversation_id)
+      patchInfiniteMessagesCache(queryClient, messagesKey, (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          pages: current.pages.map((page) => ({
+            ...page,
+            messages: page.messages.map((row) =>
+              row.id === message.id ? { ...row, ...message } : row,
+            ),
+          })),
+        }
+      })
     },
   })
 }

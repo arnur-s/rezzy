@@ -1,6 +1,7 @@
 import type { ChannelType } from '@/entities/channel'
 import { PLATFORM_META, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
+import type { MessageRow } from '@/entities/message'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   useConversationReadCursor,
@@ -8,9 +9,14 @@ import {
   useMessages,
 } from '../../hooks/use-messages'
 import { useMessagesRealtime } from '../../hooks/use-messages-realtime'
+import {
+  useConversationReactions,
+  useReactionsRealtime,
+} from '../../hooks/use-reactions'
 import { getFirstUnreadInboundMessageId } from '../../utils/read-cursor'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
+import { MessageThreadProvider } from './message-thread-context'
 import { MessageThreadHeader } from './message-thread-header'
 
 const MARK_READ_DEBOUNCE_MS = 280
@@ -48,7 +54,16 @@ export function MessageThread({
     conversationId,
     workspaceId,
   })
+  const { reactionsByMessageId } = useConversationReactions(conversationId)
+  useReactionsRealtime(conversationId)
   const messages = messagesQuery.messages
+
+  /** Reply composition target; cleared on send, cancel, or thread switch. */
+  const [replyTo, setReplyTo] = useState<MessageRow | null>(null)
+
+  useEffect(() => {
+    setReplyTo(null)
+  }, [conversationId])
   const isReadCursorLoading = !!senderId && readCursorQuery.isPending
   const unreadPrefetchPagesRef = useRef(0)
 
@@ -187,6 +202,13 @@ export function MessageThread({
         onBack={onBack}
       />
       <div className="flex items-center h-full min-h-0 flex-col bg-accent-soft/20 bg-[radial-gradient(circle_at_1px_1px,var(--border)_1px,transparent_0)] bg-size-[24px_24px]">
+        <MessageThreadProvider
+          value={{
+            channelType: channelTypeResolved,
+            reactionsByMessageId,
+            onReplyToMessage: setReplyTo,
+          }}
+        >
         <MessageList
           conversationId={conversation.id}
           messages={messages}
@@ -206,12 +228,16 @@ export function MessageThread({
             messagesQuery.isFetching && !messagesQuery.isFetchingNextPage
           }
         />
+        </MessageThreadProvider>
         <MessageComposer
           workspaceId={workspaceId}
           conversationId={conversation.id}
           channelType={channelTypeResolved}
           channelLabel={channelLabel}
           senderId={senderId}
+          replyTo={replyTo}
+          contactName={contactName}
+          onCancelReply={() => setReplyTo(null)}
         />
       </div>
     </div>

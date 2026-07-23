@@ -51,6 +51,11 @@ function harnessMessage({
     media_size: null,
     metadata: {},
     external_id: null,
+    reply_to_message_id: null,
+    external_reply_to_id: null,
+    edited_at: null,
+    deleted_at: null,
+    provider_timestamp: null,
     created_at: new Date(BASE_TIME + index * MINUTE).toISOString(),
   }
 }

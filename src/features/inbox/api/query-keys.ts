@@ -9,6 +9,8 @@ export const inboxQueryKeys = {
   readCursor: (conversationId: string, userId: string) =>
     ['inbox', 'read-cursor', conversationId, userId] as const,
   contact: (contactId: string) => ['inbox', 'contact', contactId] as const,
+  reactions: (conversationId: string) =>
+    ['inbox', 'reactions', conversationId] as const,
   // Per-agent unread counts, derived from the current user's read cursor.
   unreadCounts: (workspaceId: string, userId: string) =>
     ['inbox', 'unread-counts', workspaceId, userId] as const,

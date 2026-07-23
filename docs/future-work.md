@@ -1,6 +1,6 @@
 # Future work
 
-Last updated: 2026-07-20
+Last updated: 2026-07-23
 
 This is the handoff for unfinished work. The linked Supabase project is the
 development environment; Rezzy has not been deployed to production.
@@ -23,6 +23,24 @@ development environment; Rezzy has not been deployed to production.
 - The hosted development project has migrations
   `20260720090850_harden_function_privileges_and_data_api_grants.sql` and
   `20260720093622_optimize_rls_and_foreign_key_indexes.sql` applied.
+- 2026-07-23: the omnichannel provider-data expansion landed locally (see
+  `docs/provider-data-model.md`): sanitized `provider_events` archive with an
+  atomic claim RPC, `message_status_events` + advance-only status projection,
+  `message_reactions`, `message_attachments`, reply/edit/delete columns on
+  messages, identity `profile` JSONB, and reworked
+  Telegram/WhatsApp/Instagram webhooks with per-provider `lib.ts` normalizers
+  and `_shared` helpers. Migrations `20260723090000`–`20260723090600` are
+  applied locally only — the hosted dev project still needs `supabase db push`
+  plus redeploy of all webhook and send functions together (the Telegram
+  `external_id` semantics changed from update_id to message_id in the same
+  release).
+- Deferred from that expansion (each still lands safely as an
+  `ignored`/`unsupported` provider event): Telegram business messages, polls
+  (stored as unsupported with question preview), callback/inline queries,
+  media-group visual merging (stored per message with `media_group_id`),
+  reaction notifications/unread impact, a `provider_events` purge job
+  (retention anchor is in place), outbound reactions/edits, and WhatsApp
+  template sending.
 
 The current working tree contains uncommitted setup, WhatsApp, test, and
 Supabase changes. Several core WhatsApp files are still untracked. Preserve the

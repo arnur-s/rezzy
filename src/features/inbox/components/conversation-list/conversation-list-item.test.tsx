@@ -29,6 +29,8 @@ function conversation(overrides: {
     last_message_at: '2026-05-15T10:00:00Z',
     last_message_preview: 'Hi there',
     snoozed_until: null,
+    external_thread_id: null,
+    last_inbound_at: null,
     created_at: '2020-01-01',
     updated_at: '2020-01-01',
     channel: { id: 'c', type: 'telegram', name: null },
