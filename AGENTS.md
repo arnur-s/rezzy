@@ -8,6 +8,15 @@ Before changing code, inspect the relevant files, nearby patterns, `package.json
 
 `AGENTS.md` is the canonical shared instruction file for coding agents in this repository.
 
+## Coding-Agent Prompts
+
+When writing a task prompt for another coding agent:
+
+- Do not repeat the product overview, technology stack, architecture, folder responsibilities, or other general repository context already documented in this file.
+- Tell the agent to read `AGENTS.md` and inspect the current repository before making changes.
+- Keep the prompt focused on the task-specific objective, constraints, acceptance criteria, known edge cases, and relevant entry points.
+- Do not paste static project trees, schema dumps, or handoff lists into prompts as a substitute for inspecting the current repository.
+
 ## Product
 
 The repository contains **Rezzy**, a production-oriented, multi-workspace CRM and shared customer inbox for sales and account-management teams.
