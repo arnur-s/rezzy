@@ -52,6 +52,13 @@ export interface IgMessage {
   mid?: string
   text?: string
   attachments?: IgAttachment[]
+  reply_to?: { mid?: string; story?: { url?: string; id?: string } }
+  referral?: {
+    ref?: string
+    source?: string
+    type?: string
+    ads_context_data?: { ad_title?: string; photo_url?: string }
+  }
   is_echo?: boolean
   is_deleted?: boolean
   is_unsupported?: boolean
@@ -179,4 +186,144 @@ export function sanitizeFilenameSegment(name: string, maxLen: number): string {
     .trim()
     .slice(0, maxLen)
   return cleaned.length > 0 ? cleaned : 'file'
+}
+
+// ─── Provider-event fingerprints ─────────────────────────────────────────────
+
+export function igMessageFingerprint(mid: string): string {
+  return `msg:${mid}`
+}
+
+export function igReactionFingerprint(event: IgMessagingEvent): string | null {
+  const mid = event.reaction?.mid
+  const sender = event.sender?.id
+  if (!mid || !sender) return null
+  const action = event.reaction?.action ?? 'react'
+  return `reaction:${mid}:${sender}:${action}:${event.timestamp ?? 0}`
+}
+
+export function igReadFingerprint(event: IgMessagingEvent): string | null {
+  const sender = event.sender?.id
+  const mid = event.read?.mid
+  if (!sender || !mid) return null
+  return `read:${sender}:${mid}`
+}
+
+// ─── Full-message normalization ──────────────────────────────────────────────
+
+export type IgNormalizedType =
+  | 'text'
+  | 'media'
+  | 'share'
+  | 'story_reply'
+  | 'story_mention'
+  | 'unsupported'
+
+export interface NormalizedInstagramMessage {
+  /** 'media' resolves to image/video/audio/document per attachment MIME. */
+  type: IgNormalizedType
+  content: string | null
+  /** Every attachment, in order — not just the first one. */
+  attachments: Array<{
+    type: string
+    url: string | null
+    title: string | null
+    stickerId: string | null
+  }>
+  externalReplyToId: string | null
+  metadata: Record<string, unknown>
+}
+
+const SHARE_ATTACHMENT_TYPES = new Set(['share', 'ig_reel', 'reel', 'media_share'])
+
+/**
+ * Normalizes an inbound Instagram message keeping every attachment and the
+ * structured story/share/reply context. Unsupported payloads stay explicit.
+ */
+export function normalizeInstagramMessage(
+  message: IgMessage,
+): NormalizedInstagramMessage {
+  const metadata: Record<string, unknown> = {}
+  const content =
+    typeof message.text === 'string' && message.text.length > 0
+      ? message.text
+      : null
+
+  const attachments = (message.attachments ?? []).map((attachment) => ({
+    type: typeof attachment.type === 'string' ? attachment.type : 'unknown',
+    url:
+      typeof attachment.payload?.url === 'string' && attachment.payload.url.length > 0
+        ? attachment.payload.url
+        : null,
+    title:
+      typeof attachment.payload?.title === 'string'
+        ? attachment.payload.title
+        : null,
+    stickerId:
+      attachment.payload?.sticker_id !== undefined
+        ? String(attachment.payload.sticker_id)
+        : null,
+  }))
+
+  let externalReplyToId: string | null = null
+  if (message.reply_to?.mid) {
+    externalReplyToId = message.reply_to.mid
+    metadata.quote = { external_id: message.reply_to.mid }
+  }
+
+  if (message.referral) {
+    const referral = message.referral
+    metadata.referral = {
+      ...(referral.type ? { type: referral.type } : {}),
+      ...(referral.source ? { source: referral.source } : {}),
+      ...(referral.ref ? { ref: referral.ref } : {}),
+      ...(referral.ads_context_data?.ad_title
+        ? { ad_title: referral.ads_context_data.ad_title }
+        : {}),
+    }
+  }
+
+  if (message.is_unsupported) {
+    metadata.unsupported = { kind: 'instagram_unsupported' }
+    return { type: 'unsupported', content, attachments, externalReplyToId, metadata }
+  }
+
+  if (message.reply_to?.story) {
+    metadata.story = {
+      kind: 'reply',
+      ...(message.reply_to.story.id ? { id: message.reply_to.story.id } : {}),
+      ...(message.reply_to.story.url ? { url: message.reply_to.story.url } : {}),
+    }
+    return { type: 'story_reply', content, attachments, externalReplyToId, metadata }
+  }
+
+  if (attachments.some((a) => a.type === 'story_mention')) {
+    const mention = attachments.find((a) => a.type === 'story_mention')
+    metadata.story = {
+      kind: 'mention',
+      ...(mention?.url ? { url: mention.url } : {}),
+    }
+    return { type: 'story_mention', content, attachments, externalReplyToId, metadata }
+  }
+
+  const share = attachments.find((a) => SHARE_ATTACHMENT_TYPES.has(a.type))
+  if (share) {
+    metadata.share = {
+      kind: share.type,
+      ...(share.url ? { url: share.url } : {}),
+      ...(share.title ? { title: share.title } : {}),
+    }
+    return { type: 'share', content, attachments, externalReplyToId, metadata }
+  }
+
+  if (attachments.length > 0) {
+    return { type: 'media', content, attachments, externalReplyToId, metadata }
+  }
+
+  if (content !== null) {
+    return { type: 'text', content, attachments, externalReplyToId, metadata }
+  }
+
+  metadata.unsupported = { kind: 'unknown_payload' }
+  return { type: 'unsupported', content, attachments, externalReplyToId, metadata }
 }
