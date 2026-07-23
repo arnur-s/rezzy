@@ -17,6 +17,8 @@ function row(
     last_message_at: last,
     last_message_preview: null,
     snoozed_until: null,
+    external_thread_id: null,
+    last_inbound_at: null,
     created_at: '2020-01-01',
     updated_at: '2020-01-01',
     channel: { id: 'c', type: 'telegram', name: null },

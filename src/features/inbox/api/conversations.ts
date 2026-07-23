@@ -15,6 +15,8 @@ const CONVERSATION_SELECT = `
   last_message_at,
   last_message_preview,
   snoozed_until,
+  external_thread_id,
+  last_inbound_at,
   created_at,
   updated_at,
   channel:channels!inner(id, type, name),

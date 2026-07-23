@@ -9,7 +9,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { useConversations, useConversationsSearch } from '../hooks/use-conversations'
-import { useConversationsRealtime } from '../hooks/use-conversations-realtime'
 import { useResizablePanel } from '../hooks/use-resizable-panel'
 import { useWorkspaceUnreadCounts } from '../hooks/use-unread-counts'
 import { ContactPanel } from './contact-panel/contact-panel'
@@ -40,7 +39,6 @@ export function InboxPage({
   const senderId = session?.user.id ?? null
 
   const conversationsQuery = useConversations(workspaceId)
-  useConversationsRealtime(workspaceId)
   const unreadCountsQuery = useWorkspaceUnreadCounts(workspaceId, senderId)
 
   const workspacesQuery = useWorkspaces(senderId ?? undefined)

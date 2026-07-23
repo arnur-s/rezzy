@@ -8,8 +8,11 @@ export {
   isMessageType,
 } from './model/types'
 export type {
+  MessageAttachmentRow,
   MessageDirection,
+  MessageReactionRow,
   MessageRow,
+  MessageRowWithAttachments,
   MessageStatus,
   MessageType,
 } from './model/types'

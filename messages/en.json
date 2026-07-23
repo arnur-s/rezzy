@@ -14,7 +14,6 @@
   "common_save_changes": "Save changes",
   "common_back": "Back",
   "common_settings": "Settings",
-
   "sidebar_unknown_user": "User",
   "sidebar_unknown_email": "No email",
   "sidebar_logout_error": "Could not log out",
@@ -50,13 +49,11 @@
   "breadcrumbs_profile": "Profile",
   "breadcrumbs_settings": "App settings",
   "breadcrumbs_connect_channel": "Connect channel",
-
   "profile_page_kicker": "Profile",
   "profile_page_title": "Account profile",
   "profile_page_description": "Review the account identity used across workspaces",
   "profile_page_name_label": "Name",
   "profile_page_email_label": "Email",
-
   "auth_sign_in_welcome": "Welcome back",
   "auth_sign_in_description": "Enter your email and password to sign in",
   "auth_sign_in_brand_tagline": "Your CRM for modern customer conversations",
@@ -79,7 +76,6 @@
   "auth_sign_up_needs_confirmation": "Confirm your email to continue",
   "auth_sign_up_needs_confirmation_description": "We sent a confirmation link to {email}",
   "auth_sign_up_password_placeholder": "8 characters minimum",
-
   "workspaces_load_error_title": "Could not load workspaces",
   "workspaces_create_button": "Create workspace",
   "workspaces_create_error_title": "Could not create workspace",
@@ -95,7 +91,6 @@
   "workspaces_icon_browse_all": "Browse all icons",
   "workspaces_icon_search_placeholder": "Search for an icon",
   "workspaces_icon_empty": "No icons match",
-
   "workspace_settings_kicker": "Workspace",
   "workspace_settings_loading_title": "Workspace settings",
   "workspace_settings_description": "Manage how this workspace looks, who can access it, and where messages flow in from",
@@ -124,7 +119,6 @@
   "workspace_settings_members_role_admin": "Admin",
   "workspace_settings_members_role_member": "Member",
   "workspace_settings_members_role_viewer": "Viewer",
-
   "channels_list_title": "Connected channels",
   "channels_list_description": "Inbound conversations route into this workspace through these channels",
   "channels_connect_cta": "Connect channel",
@@ -167,7 +161,6 @@
   "channels_connect_discard_description": "You have unsaved changes. If you close now, the details you entered will be lost",
   "channels_connect_discard_confirm": "Discard changes",
   "channels_connect_discard_cancel": "Keep editing",
-
   "channels_type_telegram_label": "Telegram",
   "channels_type_telegram_description": "Connect a Telegram bot",
   "channels_type_instagram_label": "Instagram",
@@ -176,7 +169,6 @@
   "channels_type_email_description": "Connect your email inbox",
   "channels_type_whatsapp_label": "WhatsApp",
   "channels_type_whatsapp_description": "Connect WhatsApp Business API",
-
   "channels_telegram_form_title": "Connect a Telegram bot",
   "channels_telegram_name_placeholder": "e.g. Support bot",
   "channels_telegram_token_label": "Bot token",
@@ -259,7 +251,6 @@
   "instagram_callback_title": "Connecting Instagram…",
   "instagram_callback_body": "You can close this window",
   "channels_email_connect_cta": "Connect Gmail",
-
   "inbox_filter_all": "All",
   "inbox_filter_telegram": "Telegram",
   "inbox_filter_whatsapp": "WhatsApp",
@@ -352,7 +343,6 @@
   "inbox_media_document_fallback_name": "File",
   "inbox_unread_aria_label": "{count} unread",
   "inbox_channel_inactive_error": "Channel is inactive. Activate it in settings before sending messages",
-
   "dashboard_page_kicker": "Home",
   "dashboard_page_title": "Your workspaces",
   "dashboard_page_description": "Activity across every workspace you own",
@@ -374,7 +364,6 @@
   "dashboard_relative_minutes": "{count}m ago",
   "dashboard_relative_hours": "{count}h ago",
   "dashboard_relative_days": "{count}d ago",
-
   "home_greeting_fallback_name": "Hello",
   "home_greeting_morning": "Good morning",
   "home_greeting_afternoon": "Good afternoon",
@@ -405,11 +394,9 @@
   "sidebar_home_nav_label": "Home",
   "sidebar_workspaces_section_label": "Workspaces",
   "sidebar_workspace_unread_dot_aria": "{count} unread",
-
   "not_found_title": "404",
   "not_found_description": "Page not found",
   "not_found_go_home_link": "Go to home",
-
   "image_open_preview": "Open image preview",
   "image_preview_label": "Image preview",
   "image_preview_close": "Close preview",
@@ -431,6 +418,13 @@
   "notifications_preview_sticker": "Sticker",
   "notifications_open_thread": "Open thread",
   "notifications_show_full_message": "Show full message",
+  "notifications_bell_with_count_aria": "Notifications, {count} unread",
+  "notifications_item_open_aria": "Open conversation with {name}",
+  "notifications_popover_title": "Unread messages",
+  "notifications_popover_empty_title": "You're all caught up",
+  "notifications_popover_empty_description": "New unread messages will appear here",
+  "notifications_popover_error": "Could not load notifications",
+  "notifications_view_all": "View all messages",
   "settings_page_title": "Settings",
   "settings_page_description": "Manage how you get notified across your workspaces.",
   "settings_notifications_title": "Notifications",
@@ -459,5 +453,33 @@
   "settings_notifications_permission_unsupported_help": "This browser does not support desktop notifications.",
   "settings_notifications_save_success": "Notification preferences saved.",
   "settings_notifications_save_error": "Could not save notification preferences.",
-  "settings_notifications_permission_error": "Could not enable desktop notifications."
+  "settings_notifications_permission_error": "Could not enable desktop notifications.",
+  "inbox_message_type_location": "📍 Location",
+  "inbox_message_type_contact": "👤 Contact",
+  "inbox_message_type_interactive": "🔘 Interactive reply",
+  "inbox_message_type_share": "🔗 Shared post",
+  "inbox_message_type_story_reply": "💬 Story reply",
+  "inbox_message_type_story_mention": "📣 Story mention",
+  "inbox_message_type_system": "⚙️ System event",
+  "inbox_message_type_unsupported": "🚫 Unsupported message",
+  "inbox_message_status_played": "Played",
+  "inbox_message_edited": "edited",
+  "inbox_message_deleted": "This message was deleted",
+  "inbox_message_retry": "Retry",
+  "inbox_reply_action": "Reply",
+  "inbox_reply_to": "Replying to {name}",
+  "inbox_reply_to_you": "you",
+  "inbox_reply_cancel": "Cancel reply",
+  "inbox_reply_quoted_message": "Quoted message",
+  "inbox_location_open_map": "Open map",
+  "inbox_location_live": "Live location",
+  "inbox_interactive_button_reply": "Button reply",
+  "inbox_interactive_list_reply": "List selection",
+  "inbox_share_post": "Shared post",
+  "inbox_share_reel": "Shared reel",
+  "inbox_share_story_reply": "Story reply",
+  "inbox_share_story_mention": "Story mention",
+  "inbox_share_open_link": "Open link",
+  "inbox_unsupported_message": "This message type isn't supported yet",
+  "inbox_attachment_failed": "Attachment failed to load"
 }

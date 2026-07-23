@@ -7,6 +7,8 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 import {
   instagramAttachmentType,
   isSendableMessageType,
@@ -129,6 +131,32 @@ function previewFromRow(row: MessageRow): string {
   }
 }
 
+/**
+ * Marks the outbound message failed and persists safe provider diagnostics
+ * into the status history (never tokens or message bodies).
+ */
+async function recordSendFailure(
+  admin: SupabaseClient,
+  row: { id: string; workspace_id: string },
+  channelId: string | null,
+  errorCode: string | null,
+  errorType: string | null,
+  traceId: string | null = null,
+): Promise<void> {
+  await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+  await insertStatusEvent(admin, {
+    workspaceId: row.workspace_id,
+    messageId: row.id,
+    status: 'failed',
+    errorCode,
+    errorType,
+    traceId,
+  })
+  if (channelId) {
+    await touchChannelActivity(admin, channelId, 'error', errorCode)
+  }
+}
+
 export default {
   async fetch(req: Request): Promise<Response> {
     if (req.method === 'OPTIONS') {
@@ -225,7 +253,7 @@ export default {
 
     // Only text/image/video/audio are sendable through Instagram.
     if (!isSendableMessageType(row.type)) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, null, 'unsendable_type', null)
       return jsonResponse(400, {
         error: 'Instagram supports text, image, video and audio messages only.',
       })
@@ -237,10 +265,7 @@ export default {
         return jsonResponse(400, { error: 'Message has no content' })
       }
       if (textExceedsLimit(content)) {
-        await admin
-          .from('messages')
-          .update({ status: 'failed' })
-          .eq('id', row.id)
+        await recordSendFailure(admin, row, null, 'text_too_long', null)
         return jsonResponse(400, {
           error: 'Message is too long for Instagram (1000 bytes maximum).',
         })
@@ -272,7 +297,7 @@ export default {
       return jsonResponse(400, { error: 'Channel is not Instagram' })
     }
     if (!channel.is_active) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, channelId, 'channel_inactive', null)
       return jsonResponse(409, {
         error:
           'Channel is inactive. Activate it in settings before sending messages.',
@@ -294,7 +319,7 @@ export default {
       return jsonResponse(500, { error: 'Failed to verify messaging window' })
     }
     if (!isWithinMessagingWindow(lastInbound?.created_at, Date.now())) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, channelId, 'messaging_window_closed', null)
       return jsonResponse(403, {
         error:
           'You can only reply within 24 hours of the customer’s last Instagram message.',
@@ -334,7 +359,7 @@ export default {
     }
     const recipientId = contactChannel?.external_id?.trim() ?? ''
     if (!recipientId) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, channelId, 'missing_recipient', null)
       return jsonResponse(400, {
         error: 'No Instagram recipient is available for this conversation.',
       })
@@ -349,10 +374,7 @@ export default {
         .createSignedUrl(row.media_url, 3600)
       if (signedError || !signedData?.signedUrl) {
         console.error('send-instagram-message: signed URL error', signedError)
-        await admin
-          .from('messages')
-          .update({ status: 'failed' })
-          .eq('id', row.id)
+        await recordSendFailure(admin, row, channelId, 'signed_url_failed', null)
         return jsonResponse(502, {
           error: 'Failed to create signed URL for media',
         })
@@ -384,7 +406,7 @@ export default {
       })
     } catch (e) {
       logNetworkError('send-instagram-message: Instagram network error', e)
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, channelId, 'network_error', null)
       return jsonResponse(502, { error: 'Instagram request failed' })
     }
 
@@ -393,7 +415,7 @@ export default {
       igJson = (await igRes.json()) as InstagramSendResponse
     } catch (e) {
       logNetworkError('send-instagram-message: invalid Instagram response', e)
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, channelId, 'parse_error', null)
       return jsonResponse(502, {
         error: 'Instagram returned an invalid response',
       })
@@ -401,8 +423,15 @@ export default {
 
     const providerMessageId = igJson.message_id
     if (!igRes.ok || !providerMessageId) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
       const diagnostics = providerDiagnostics(igRes.status, igJson.error)
+      await recordSendFailure(
+        admin,
+        row,
+        channelId,
+        diagnostics.code != null ? String(diagnostics.code) : null,
+        typeof diagnostics.type === 'string' ? diagnostics.type : null,
+        typeof diagnostics.trace_id === 'string' ? diagnostics.trace_id : null,
+      )
       console.error(
         'send-instagram-message: Instagram API error',
         JSON.stringify({ message_id: row.id, ...diagnostics }),
@@ -433,6 +462,13 @@ export default {
       console.error('send-instagram-message: message update', updateMsgError)
       return jsonResponse(500, { error: 'Failed to update message' })
     }
+
+    await insertStatusEvent(admin, {
+      workspaceId: row.workspace_id,
+      messageId: row.id,
+      status: 'sent',
+    })
+    await touchChannelActivity(admin, channelId, 'outbound')
 
     const { error: updateConvError } = await admin
       .from('conversations')

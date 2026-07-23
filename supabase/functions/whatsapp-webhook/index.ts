@@ -1,105 +1,48 @@
-// whatsapp-webhook.ts
-// Single shared endpoint for every connected WhatsApp number. GET performs the
-// Meta verification handshake; POST is signature-verified (X-Hub-Signature-256),
-// routed to a channel by metadata.phone_number_id, and turned into inbound
-// messages. statuses[] events advance outbound message delivery state.
+// whatsapp-webhook: single shared endpoint for every connected WhatsApp
+// number. GET performs the Meta verification handshake; POST is
+// signature-verified (X-Hub-Signature-256), routed to a channel by
+// metadata.phone_number_id, split into logical events (messages + statuses),
+// persisted as sanitized provider events, then normalized idempotently.
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import {
+  fingerprintFromPayload,
+  sanitizeProviderPayload,
+} from '../_shared/sanitize.ts'
+import {
+  claimProviderEvent,
+  markEventFailed,
+  markEventIgnored,
+  markEventProcessed,
+} from '../_shared/provider-events.ts'
+import {
+  applyReactionOps,
+  insertStatusEvent,
+  persistInboundMessage,
+  resolveContactAndConversation,
+  touchChannelActivity,
+} from '../_shared/persist.ts'
+import type { AttachmentInput, NormalizedMessageInput } from '../_shared/types.ts'
+import {
+  buildWhatsappProfile,
+  normalizeWhatsappMessage,
+  normalizeWhatsappReaction,
+  normalizeWhatsappStatus,
+  whatsappMessageFingerprint,
+  whatsappStatusFingerprint,
+  type ResolvedWhatsappMedia,
+  type WhatsappChangeValue,
+  type WhatsappMessage,
+  type WhatsappWebhookBody,
+} from './lib.ts'
 
 const GRAPH_VERSION = Deno.env.get('WHATSAPP_GRAPH_VERSION') ?? 'v23.0'
 const GRAPH = `https://graph.facebook.com/${GRAPH_VERSION}`
 const CHAT_MEDIA_BUCKET = 'chat-media'
 
-// ─── WhatsApp types ───────────────────────────────────────────────────────────
-
-interface WhatsappMediaObject {
-  id: string
-  mime_type?: string
-  sha256?: string
-  caption?: string
-  filename?: string
-  voice?: boolean
-  animated?: boolean
-}
-
-interface WhatsappLocation {
-  latitude?: number
-  longitude?: number
-  name?: string
-  address?: string
-}
-
-interface WhatsappMessage {
-  from?: string
-  id?: string
-  timestamp?: string
-  type?: string
-  text?: { body?: string }
-  image?: WhatsappMediaObject
-  video?: WhatsappMediaObject
-  audio?: WhatsappMediaObject
-  document?: WhatsappMediaObject
-  sticker?: WhatsappMediaObject
-  location?: WhatsappLocation
-}
-
-interface WhatsappStatus {
-  id?: string
-  status?: string
-  recipient_id?: string
-}
-
-interface WhatsappContact {
-  wa_id?: string
-  profile?: { name?: string }
-}
-
-interface WhatsappChangeValue {
-  metadata?: { phone_number_id?: string; display_phone_number?: string }
-  contacts?: WhatsappContact[]
-  messages?: WhatsappMessage[]
-  statuses?: WhatsappStatus[]
-}
-
-interface WhatsappChange {
-  field?: string
-  value?: WhatsappChangeValue
-}
-
-interface WhatsappEntry {
-  id?: string
-  changes?: WhatsappChange[]
-}
-
-interface WhatsappWebhookBody {
-  object?: string
-  entry?: WhatsappEntry[]
-}
-
-type DbMessageType =
-  | 'text'
-  | 'image'
-  | 'video'
-  | 'audio'
-  | 'voice'
-  | 'document'
-  | 'sticker'
-
-interface ResolvedMedia {
-  dbType: Exclude<DbMessageType, 'text'>
-  media_id: string
-  mime_type: string | null
-  filename: string | null
-}
-
-interface ResolvedMessage {
-  dbType: DbMessageType
-  content: string | null
-  media: ResolvedMedia | null
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function logErrorType(context: string, error: unknown): void {
   const detail = error instanceof Error ? error.name : typeof error
@@ -141,93 +84,6 @@ async function verifySignature(
   return timingSafeEqual(expected, provided)
 }
 
-function resolveMediaObject(
-  dbType: ResolvedMedia['dbType'],
-  media: WhatsappMediaObject,
-  fallbackMime: string,
-): ResolvedMedia {
-  return {
-    dbType,
-    media_id: media.id,
-    mime_type: media.mime_type ?? fallbackMime,
-    filename: media.filename ?? null,
-  }
-}
-
-function resolveWhatsappMessage(message: WhatsappMessage): ResolvedMessage {
-  switch (message.type) {
-    case 'text':
-      return {
-        dbType: 'text',
-        content: message.text?.body ?? null,
-        media: null,
-      }
-    case 'image':
-      return message.image?.id
-        ? {
-            dbType: 'image',
-            content: message.image.caption ?? null,
-            media: resolveMediaObject('image', message.image, 'image/jpeg'),
-          }
-        : { dbType: 'text', content: null, media: null }
-    case 'video':
-      return message.video?.id
-        ? {
-            dbType: 'video',
-            content: message.video.caption ?? null,
-            media: resolveMediaObject('video', message.video, 'video/mp4'),
-          }
-        : { dbType: 'text', content: null, media: null }
-    case 'audio':
-      return message.audio?.id
-        ? {
-            dbType: message.audio.voice ? 'voice' : 'audio',
-            content: null,
-            media: resolveMediaObject(
-              message.audio.voice ? 'voice' : 'audio',
-              message.audio,
-              'audio/ogg',
-            ),
-          }
-        : { dbType: 'text', content: null, media: null }
-    case 'document':
-      return message.document?.id
-        ? {
-            dbType: 'document',
-            content: message.document.caption ?? null,
-            media: resolveMediaObject(
-              'document',
-              message.document,
-              'application/octet-stream',
-            ),
-          }
-        : { dbType: 'text', content: null, media: null }
-    case 'sticker':
-      return message.sticker?.id
-        ? {
-            dbType: 'sticker',
-            content: null,
-            media: resolveMediaObject('sticker', message.sticker, 'image/webp'),
-          }
-        : { dbType: 'text', content: null, media: null }
-    case 'location': {
-      const loc = message.location
-      const parts = [loc?.name, loc?.address].filter(Boolean)
-      const summary =
-        parts.length > 0
-          ? parts.join(' — ')
-          : loc?.latitude != null && loc?.longitude != null
-            ? `${loc.latitude}, ${loc.longitude}`
-            : null
-      return { dbType: 'text', content: summary, media: null }
-    }
-    default:
-      // Unsupported (contacts, interactive, button, reactions, …): record a row
-      // so the conversation still advances, without inventing content.
-      return { dbType: 'text', content: null, media: null }
-  }
-}
-
 function sanitizeFilenameSegment(name: string, maxLen: number): string {
   const cleaned = name
     .replace(/[/\\?%*:|"<>]/g, '_')
@@ -263,10 +119,10 @@ function extensionFromMime(mime: string | null): string {
 }
 
 function defaultMediaBaseName(
-  dbType: ResolvedMedia['dbType'],
+  kind: ResolvedWhatsappMedia['kind'],
   ext: string,
 ): string {
-  switch (dbType) {
+  switch (kind) {
     case 'image':
       return `photo${ext || '.jpg'}`
     case 'video':
@@ -327,7 +183,7 @@ async function whatsappDownloadMedia(
 }
 
 async function uploadToChatMedia(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   objectPath: string,
   bytes: ArrayBuffer,
   contentType: string,
@@ -343,55 +199,46 @@ async function uploadToChatMedia(
   return { error: error.message ?? 'upload failed' }
 }
 
-async function removeChatMediaObject(
-  supabase: ReturnType<typeof createClient>,
-  objectPath: string,
-): Promise<void> {
-  const { error } = await supabase.storage
-    .from(CHAT_MEDIA_BUCKET)
-    .remove([objectPath])
-  if (error) {
-    console.error('whatsapp-webhook: storage cleanup failed', error.message)
-  }
-}
-
-interface InboundMediaResult {
-  metadata: Record<string, unknown>
-  mediaUrl: string | null
-  mediaMimeType: string | null
-  mediaSize: number | null
-  mediaFilename: string | null
-  uploadedObjectPath: string | null
+interface MediaPipelineResult {
+  attachment: AttachmentInput
+  uploadFailed: boolean
+  uploadError: string | null
 }
 
 function failedMediaResult(
-  media: ResolvedMedia,
-  uploadError: string,
-): InboundMediaResult {
+  media: ResolvedWhatsappMedia,
+  reason: string,
+): MediaPipelineResult {
   return {
-    metadata: {
-      whatsapp: { media_id: media.media_id },
-      upload_failed: true,
-      upload_error: uploadError,
+    attachment: {
+      position: 0,
+      kind: media.kind,
+      providerMediaId: media.media_id,
+      filename: media.filename,
+      mimeType: media.mime_type,
+      checksum: media.sha256,
+      downloadStatus: 'failed',
+      failureReason: reason,
+      metadata: media.animated !== null ? { animated: media.animated } : {},
     },
-    mediaUrl: null,
-    mediaMimeType: media.mime_type,
-    mediaSize: null,
-    mediaFilename: media.filename,
-    uploadedObjectPath: null,
+    uploadFailed: true,
+    uploadError: reason,
   }
 }
 
 async function processInboundMedia(args: {
-  supabase: ReturnType<typeof createClient>
+  supabase: SupabaseClient
   token: string
   workspaceId: string
   conversationId: string
   messageId: string
-  media: ResolvedMedia
-}): Promise<InboundMediaResult> {
-  const { supabase, token, workspaceId, conversationId, messageId, media } =
-    args
+  media: ResolvedWhatsappMedia
+}): Promise<MediaPipelineResult> {
+  const { supabase, token, workspaceId, conversationId, messageId, media } = args
+
+  if (!token) {
+    return failedMediaResult(media, 'missing_access_token')
+  }
 
   const resolved = await whatsappGetMediaUrl(token, media.media_id)
   if (!resolved) {
@@ -406,7 +253,7 @@ async function processInboundMedia(args: {
   const contentType = media.mime_type ?? resolved.mime_type ?? undefined
   const ext = extensionFromMime(contentType ?? null)
   const rawFileName =
-    media.filename?.trim() || defaultMediaBaseName(media.dbType, ext)
+    media.filename?.trim() || defaultMediaBaseName(media.kind, ext)
   let safeFileName = sanitizeFilenameSegment(rawFileName, 180)
   if (!safeFileName.includes('.') && ext) {
     safeFileName = `${safeFileName}${ext}`
@@ -414,15 +261,8 @@ async function processInboundMedia(args: {
 
   const effectiveType = contentType ?? 'application/octet-stream'
 
-  let objectPath = [workspaceId, conversationId, messageId, safeFileName].join(
-    '/',
-  )
-  let uploadResult = await uploadToChatMedia(
-    supabase,
-    objectPath,
-    bytes,
-    effectiveType,
-  )
+  let objectPath = [workspaceId, conversationId, messageId, safeFileName].join('/')
+  let uploadResult = await uploadToChatMedia(supabase, objectPath, bytes, effectiveType)
 
   if (uploadResult.error && /exists|duplicate|already/i.test(uploadResult.error)) {
     const suffix = crypto.randomUUID().slice(0, 8)
@@ -432,12 +272,7 @@ async function processInboundMedia(args: {
       messageId,
       `${suffix}-${safeFileName}`,
     ].join('/')
-    uploadResult = await uploadToChatMedia(
-      supabase,
-      objectPath,
-      bytes,
-      effectiveType,
-    )
+    uploadResult = await uploadToChatMedia(supabase, objectPath, bytes, effectiveType)
   }
 
   if (uploadResult.error) {
@@ -446,186 +281,191 @@ async function processInboundMedia(args: {
   }
 
   return {
-    metadata: { whatsapp: { media_id: media.media_id }, upload_failed: false },
-    mediaUrl: objectPath,
-    mediaMimeType: effectiveType,
-    mediaSize: bytes.byteLength,
-    mediaFilename: safeFileName,
-    uploadedObjectPath: objectPath,
+    attachment: {
+      position: 0,
+      kind: media.kind,
+      providerMediaId: media.media_id,
+      storagePath: objectPath,
+      filename: safeFileName,
+      mimeType: effectiveType,
+      sizeBytes: bytes.byteLength,
+      checksum: media.sha256,
+      downloadStatus: 'stored',
+      metadata: media.animated !== null ? { animated: media.animated } : {},
+    },
+    uploadFailed: false,
+    uploadError: null,
   }
 }
 
-// ─── Delivery-status progression ────────────────────────────────────────────
+// ─── Statuses ────────────────────────────────────────────────────────────────
 
-const STATUS_RANK: Record<string, number> = {
-  sent: 1,
-  delivered: 2,
-  read: 3,
-}
-
+/**
+ * Applies statuses[] as status events (the DB trigger advances
+ * messages.status, never regressing). Returns true when a temporary failure
+ * should trigger a Meta redelivery.
+ */
 async function applyStatuses(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   workspaceId: string,
-  statuses: WhatsappStatus[],
-): Promise<void> {
-  for (const status of statuses) {
-    const externalId = status.id
-    const next = status.status
-    if (!externalId || !next) continue
+  channelId: string,
+  value: WhatsappChangeValue,
+): Promise<boolean> {
+  let hadTemporaryFailure = false
+  for (const rawStatus of value.statuses ?? []) {
+    const normalized = normalizeWhatsappStatus(rawStatus)
+    if (!normalized) continue
 
-    const { data: existing } = await supabase
-      .from('messages')
-      .select('id, status')
-      .eq('workspace_id', workspaceId)
-      .eq('external_id', externalId)
-      .maybeSingle()
-
-    if (!existing) continue
-    const current = existing.status as string | null
-
-    if (next === 'failed') {
-      if (current === 'failed') continue
-      await supabase
-        .from('messages')
-        .update({ status: 'failed' })
-        .eq('id', existing.id)
+    const claim = await claimProviderEvent(supabase, {
+      workspaceId,
+      channelId,
+      provider: 'whatsapp',
+      eventType: 'status',
+      eventFingerprint: whatsappStatusFingerprint(
+        normalized.externalId,
+        rawStatus.status ?? 'unknown',
+      ),
+      payload: sanitizeProviderPayload(rawStatus as Record<string, unknown>),
+      providerTimestamp: normalized.providerTimestamp,
+    })
+    if (claim.outcome === 'duplicate') continue
+    if (claim.outcome === 'error') {
+      hadTemporaryFailure = true
       continue
     }
 
-    const nextRank = STATUS_RANK[next]
-    const currentRank = current ? (STATUS_RANK[current] ?? 0) : 0
-    // Only advance forward — never downgrade a read message back to delivered.
-    if (!nextRank || nextRank <= currentRank) continue
-
-    await supabase
+    const { data: target } = await supabase
       .from('messages')
-      .update({ status: next })
-      .eq('id', existing.id)
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('external_id', normalized.externalId)
+      .limit(1)
+      .maybeSingle()
+
+    if (!target) {
+      await markEventIgnored(supabase, claim.eventId, 'status_target_missing')
+      continue
+    }
+
+    const firstError =
+      (normalized.metadata.provider_errors as
+        | Array<Record<string, unknown>>
+        | undefined)?.[0] ?? null
+
+    await insertStatusEvent(supabase, {
+      workspaceId,
+      messageId: target.id,
+      status: normalized.status,
+      providerEventId: claim.eventId,
+      providerTimestamp: normalized.providerTimestamp,
+      errorCode: normalized.errorCode,
+      errorType:
+        typeof firstError?.title === 'string' ? (firstError.title as string) : null,
+      metadata: normalized.metadata,
+    })
+
+    if (normalized.status === 'failed') {
+      await touchChannelActivity(supabase, channelId, 'error', normalized.errorCode)
+    }
+
+    await markEventProcessed(supabase, claim.eventId, {
+      createdMessageId: target.id,
+    })
   }
+  return hadTemporaryFailure
 }
 
-// ─── Inbound message ingestion ────────────────────────────────────────────────
+// ─── Inbound message ingestion ───────────────────────────────────────────────
 
 async function ingestMessage(args: {
-  supabase: ReturnType<typeof createClient>
+  supabase: SupabaseClient
   token: string
   channelId: string
   workspaceId: string
   message: WhatsappMessage
-  contactName: string
-}): Promise<void> {
+  contactName: string | null
+}): Promise<'ok' | 'temporary_failure'> {
   const { supabase, token, channelId, workspaceId, message, contactName } = args
 
   const waId = message.from?.trim()
   const externalMessageId = message.id?.trim()
-  if (!waId || !externalMessageId) return
+  if (!waId || !externalMessageId) return 'ok'
 
-  const { data: existingMessage } = await supabase
-    .from('messages')
-    .select('id')
-    .eq('workspace_id', workspaceId)
-    .eq('external_id', externalMessageId)
-    .maybeSingle()
+  const sanitizedPayload = sanitizeProviderPayload(
+    message as Record<string, unknown>,
+  )
+  const isReaction = message.type === 'reaction'
+  const claim = await claimProviderEvent(supabase, {
+    workspaceId,
+    channelId,
+    provider: 'whatsapp',
+    eventType: isReaction ? 'reaction' : 'message',
+    eventFingerprint: whatsappMessageFingerprint(externalMessageId),
+    payload: sanitizedPayload,
+    providerTimestamp: message.timestamp
+      ? new Date(Number(message.timestamp) * 1000).toISOString()
+      : null,
+  })
+  if (claim.outcome === 'duplicate') return 'ok'
+  if (claim.outcome === 'error') return 'temporary_failure'
+  const eventId = claim.eventId
 
-  if (existingMessage) return
-
-  const { data: existingContactChannel } = await supabase
-    .from('contact_channels')
-    .select('contact_id, contacts!inner(workspace_id)')
-    .eq('channel_type', 'whatsapp')
-    .eq('external_id', waId)
-    .eq('contacts.workspace_id', workspaceId)
-    .maybeSingle()
-
-  let contactId: string
-
-  if (existingContactChannel) {
-    contactId = existingContactChannel.contact_id as string
-    await supabase
-      .from('contact_channels')
-      .update({ external_name: contactName })
-      .eq('contact_id', contactId)
-      .eq('channel_type', 'whatsapp')
-      .eq('external_id', waId)
-    // Backfill the phone number only when it is still empty, so a manually
-    // edited value is never overwritten.
-    await supabase
-      .from('contacts')
-      .update({ phone: `+${waId}` })
-      .eq('id', contactId)
-      .is('phone', null)
-  } else {
-    const { data: newContact, error: contactError } = await supabase
-      .from('contacts')
-      .insert({
-        workspace_id: workspaceId,
-        name: contactName,
-        phone: `+${waId}`,
-        status: 'new',
-      })
-      .select('id')
-      .single()
-
-    if (contactError || !newContact) {
-      console.error('whatsapp-webhook: failed to create contact', contactError)
-      return
+  // ── Reactions ──────────────────────────────────────────────────────────────
+  if (isReaction) {
+    const normalized = normalizeWhatsappReaction(message)
+    if (!normalized) {
+      await markEventIgnored(supabase, eventId, 'reaction_without_target')
+      return 'ok'
     }
-
-    contactId = newContact.id
-
-    await supabase.from('contact_channels').insert({
-      workspace_id: workspaceId,
-      contact_id: contactId,
-      channel_id: channelId,
-      channel_type: 'whatsapp',
-      external_id: waId,
-      external_name: contactName,
+    const reactionIds = await applyReactionOps(
+      supabase,
+      {
+        workspaceId,
+        channelId,
+        providerMessageId: normalized.targetProviderMessageId,
+      },
+      normalized.op ? [normalized.op] : [],
+      {
+        replaceOthers: {
+          reactorExternalId: normalized.reactorExternalId,
+          keepEmoji: normalized.op?.emoji,
+        },
+      },
+    )
+    await markEventProcessed(supabase, eventId, {
+      createdRecordIds:
+        reactionIds.length > 0 ? { message_reactions: reactionIds } : {},
     })
+    return 'ok'
   }
 
-  const { data: existingConversation } = await supabase
-    .from('conversations')
-    .select('id')
-    .eq('contact_id', contactId)
-    .eq('channel_id', channelId)
-    .maybeSingle()
-
-  let conversationId: string
-
-  if (existingConversation) {
-    conversationId = existingConversation.id as string
-  } else {
-    const { data: newConversation, error: convError } = await supabase
-      .from('conversations')
-      .insert({
-        workspace_id: workspaceId,
-        contact_id: contactId,
-        channel_id: channelId,
-        status: 'open',
-      })
-      .select('id')
-      .single()
-
-    if (convError || !newConversation) {
-      console.error('whatsapp-webhook: failed to create conversation', convError)
-      return
-    }
-
-    conversationId = newConversation.id
+  // ── Ordinary messages ──────────────────────────────────────────────────────
+  const resolved = await resolveContactAndConversation(supabase, {
+    workspaceId,
+    channelId,
+    channelType: 'whatsapp',
+    externalId: waId,
+    externalName: contactName ?? waId,
+    profile: buildWhatsappProfile({
+      waId,
+      profileName: contactName,
+      referral: message.referral ?? null,
+    }),
+    phone: `+${waId}`,
+    createIfMissing: true,
+  })
+  if (!resolved) {
+    await markEventFailed(supabase, eventId, 'temporary', 'contact_resolution_failed')
+    return 'temporary_failure'
   }
+  const { conversationId } = resolved
 
-  const resolved = resolveWhatsappMessage(message)
+  const normalized = normalizeWhatsappMessage(message)
   const messageId = crypto.randomUUID()
+  const attachments: AttachmentInput[] = []
 
-  let metadata: Record<string, unknown> = {}
-  let mediaUrl: string | null = null
-  let mediaMimeType: string | null = null
-  let mediaSize: number | null = null
-  let mediaFilename: string | null = null
-  let uploadedObjectPath: string | null = null
-
-  if (resolved.media) {
-    let result: InboundMediaResult
+  if (normalized.media) {
+    let result: MediaPipelineResult
     try {
       result = await processInboundMedia({
         supabase,
@@ -633,49 +473,44 @@ async function ingestMessage(args: {
         workspaceId,
         conversationId,
         messageId,
-        media: resolved.media,
+        media: normalized.media,
       })
     } catch (e) {
       logErrorType('whatsapp-webhook: media pipeline error', e)
-      result = failedMediaResult(resolved.media, 'media_pipeline_failed')
+      result = failedMediaResult(normalized.media, 'media_pipeline_failed')
     }
-    metadata = result.metadata
-    mediaUrl = result.mediaUrl
-    mediaMimeType = result.mediaMimeType
-    mediaSize = result.mediaSize
-    mediaFilename = result.mediaFilename
-    uploadedObjectPath = result.uploadedObjectPath
-  }
-
-  const insertRow: Record<string, unknown> = {
-    id: messageId,
-    workspace_id: workspaceId,
-    conversation_id: conversationId,
-    external_id: externalMessageId,
-    direction: 'inbound',
-    type: resolved.dbType,
-    content: resolved.content,
-    sender_id: null,
-    status: 'delivered',
-    media_url: mediaUrl,
-    media_mime_type: mediaMimeType,
-    media_size: mediaSize,
-    media_filename: mediaFilename,
-  }
-  if (Object.keys(metadata).length > 0) {
-    insertRow.metadata = metadata
-  }
-
-  const { error: messageError } = await supabase
-    .from('messages')
-    .insert(insertRow)
-
-  if (messageError) {
-    console.error('whatsapp-webhook: failed to insert message', messageError)
-    if (uploadedObjectPath) {
-      await removeChatMediaObject(supabase, uploadedObjectPath)
+    attachments.push(result.attachment)
+    // Preserve the existing frontend metadata contract for media messages.
+    normalized.metadata.whatsapp = {
+      ...(normalized.metadata.whatsapp as Record<string, unknown> | undefined),
+      media_id: normalized.media.media_id,
     }
-    return
+    normalized.metadata.upload_failed = result.uploadFailed
+    if (result.uploadError) {
+      normalized.metadata.upload_error = result.uploadError
+    }
+  }
+
+  const persisted = await persistInboundMessage(supabase, messageId, {
+    workspaceId,
+    conversationId,
+    channelId,
+    externalId: externalMessageId,
+    type: normalized.type,
+    content: normalized.content,
+    externalReplyToId: normalized.externalReplyToId,
+    providerTimestamp: normalized.providerTimestamp,
+    metadata: normalized.metadata,
+    attachments,
+  } satisfies NormalizedMessageInput)
+
+  if (persisted.outcome === 'duplicate') {
+    await markEventIgnored(supabase, eventId, 'duplicate_message')
+    return 'ok'
+  }
+  if (persisted.outcome === 'error') {
+    await markEventFailed(supabase, eventId, 'temporary', persisted.message)
+    return 'temporary_failure'
   }
 
   const { error: convUpdateError } = await supabase
@@ -683,7 +518,6 @@ async function ingestMessage(args: {
     .update({ status: 'open' })
     .eq('id', conversationId)
     .neq('status', 'open')
-
   if (convUpdateError) {
     console.error('whatsapp-webhook: conversation update failed', convUpdateError)
   }
@@ -701,9 +535,12 @@ async function ingestMessage(args: {
   } catch (pushError) {
     console.error('whatsapp-webhook: push dispatch failed', pushError)
   }
+
+  await markEventProcessed(supabase, eventId, { createdMessageId: messageId })
+  return 'ok'
 }
 
-// ─── Main handler ─────────────────────────────────────────────────────────────
+// ─── Main handler ────────────────────────────────────────────────────────────
 
 export default {
   async fetch(req: Request): Promise<Response> {
@@ -753,6 +590,8 @@ export default {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    let hadTemporaryFailure = false
+
     for (const entry of payload.entry ?? []) {
       for (const change of entry.changes ?? []) {
         if (change.field !== 'messages') continue
@@ -767,6 +606,7 @@ export default {
 
         if (lookupError) {
           console.error('whatsapp-webhook: channel lookup failed', lookupError)
+          hadTemporaryFailure = true
           continue
         }
 
@@ -776,9 +616,17 @@ export default {
         const workspaceId = channel.workspace_id as string
         const channelId = channel.channel_id as string
 
+        await touchChannelActivity(supabase, channelId, 'webhook')
+
         // Statuses can arrive for inactive channels too; still record them.
         if (value?.statuses?.length) {
-          await applyStatuses(supabase, workspaceId, value.statuses)
+          const statusFailure = await applyStatuses(
+            supabase,
+            workspaceId,
+            channelId,
+            value,
+          )
+          hadTemporaryFailure = hadTemporaryFailure || statusFailure
         }
 
         if (!channel.is_active) continue
@@ -809,10 +657,10 @@ export default {
 
         for (const message of value.messages) {
           const contactName = message.from
-            ? (nameByWaId.get(message.from) ?? message.from)
-            : 'Unknown'
+            ? (nameByWaId.get(message.from) ?? null)
+            : null
           try {
-            await ingestMessage({
+            const result = await ingestMessage({
               supabase,
               token,
               channelId,
@@ -820,13 +668,22 @@ export default {
               message,
               contactName,
             })
+            if (result === 'temporary_failure') {
+              hadTemporaryFailure = true
+            }
           } catch (e) {
             logErrorType('whatsapp-webhook: ingest failed', e)
+            hadTemporaryFailure = true
           }
         }
       }
     }
 
+    // Non-200 makes Meta redeliver the batch; fingerprints dedup everything
+    // that already succeeded.
+    if (hadTemporaryFailure) {
+      return new Response('Temporary failure', { status: 500 })
+    }
     return new Response('OK', { status: 200 })
   },
 }

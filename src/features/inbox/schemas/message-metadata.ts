@@ -1,10 +1,11 @@
 import type { MessageRow, MessageType } from '@/entities/message'
-import { isMessageType } from '@/entities/message'
+import { getMediaPlaceholder, isMessageType } from '@/entities/message'
 import { z } from 'zod'
 
 const telegramMetadataSchema = z
   .object({
-    file_id: z.string().min(1),
+    /** Optional: text messages now carry telegram ids without file fields. */
+    file_id: z.string().min(1).optional(),
     file_unique_id: z.string().min(1).optional(),
     file_path: z.string().min(1).optional(),
     width: z.number().int().positive().optional(),
@@ -37,6 +38,134 @@ export const messageMediaMetadataSchema = z
   .passthrough()
 
 export type MessageMediaMetadata = z.infer<typeof messageMediaMetadataSchema>
+
+// ─── Structured provider metadata (parsed per message type at render time) ───
+
+export const locationMetadataSchema = z
+  .object({
+    kind: z.enum(['point', 'live', 'venue']).optional(),
+    latitude: z.number(),
+    longitude: z.number(),
+    name: z.string().optional(),
+    address: z.string().optional(),
+    live_period_seconds: z.number().optional(),
+  })
+  .passthrough()
+
+export type LocationMetadata = z.infer<typeof locationMetadataSchema>
+
+export const contactCardSchema = z
+  .object({
+    name: z.string().optional(),
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
+    phone: z.string().optional(),
+    phones: z
+      .array(
+        z.object({ phone: z.string().optional(), wa_id: z.string().optional() }).passthrough(),
+      )
+      .optional(),
+    emails: z.array(z.object({ email: z.string().optional() }).passthrough()).optional(),
+    company: z.string().optional(),
+  })
+  .passthrough()
+
+export type ContactCardMetadata = z.infer<typeof contactCardSchema>
+
+export const interactiveMetadataSchema = z
+  .object({
+    kind: z.string(),
+    id: z.string().optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+  })
+  .passthrough()
+
+export type InteractiveMetadata = z.infer<typeof interactiveMetadataSchema>
+
+export const shareMetadataSchema = z
+  .object({
+    kind: z.string().optional(),
+    url: z.string().optional(),
+    title: z.string().optional(),
+  })
+  .passthrough()
+
+export type ShareMetadata = z.infer<typeof shareMetadataSchema>
+
+export const storyMetadataSchema = z
+  .object({
+    kind: z.enum(['reply', 'mention']).optional(),
+    id: z.string().optional(),
+    url: z.string().optional(),
+  })
+  .passthrough()
+
+export type StoryMetadata = z.infer<typeof storyMetadataSchema>
+
+export const quoteMetadataSchema = z
+  .object({
+    external_id: z.string(),
+    preview: z.string().optional(),
+    author_name: z.string().optional(),
+    author_external_id: z.string().optional(),
+  })
+  .passthrough()
+
+export type QuoteMetadata = z.infer<typeof quoteMetadataSchema>
+
+export const unsupportedMetadataSchema = z
+  .object({
+    kind: z.string().optional(),
+    preview: z.string().optional(),
+  })
+  .passthrough()
+
+export type UnsupportedMetadata = z.infer<typeof unsupportedMetadataSchema>
+
+function metadataSection(raw: unknown, key: string): unknown {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null
+  return (raw as Record<string, unknown>)[key] ?? null
+}
+
+export function parseLocationMetadata(raw: unknown): LocationMetadata | null {
+  const result = locationMetadataSchema.safeParse(metadataSection(raw, 'location'))
+  return result.success ? result.data : null
+}
+
+export function parseContactsMetadata(raw: unknown): Array<ContactCardMetadata> {
+  const result = z.array(contactCardSchema).safeParse(metadataSection(raw, 'contacts'))
+  return result.success ? result.data : []
+}
+
+export function parseInteractiveMetadata(raw: unknown): InteractiveMetadata | null {
+  const result = interactiveMetadataSchema.safeParse(
+    metadataSection(raw, 'interactive'),
+  )
+  return result.success ? result.data : null
+}
+
+export function parseShareMetadata(raw: unknown): ShareMetadata | null {
+  const result = shareMetadataSchema.safeParse(metadataSection(raw, 'share'))
+  return result.success ? result.data : null
+}
+
+export function parseStoryMetadata(raw: unknown): StoryMetadata | null {
+  const result = storyMetadataSchema.safeParse(metadataSection(raw, 'story'))
+  return result.success ? result.data : null
+}
+
+export function parseQuoteMetadata(raw: unknown): QuoteMetadata | null {
+  const result = quoteMetadataSchema.safeParse(metadataSection(raw, 'quote'))
+  return result.success ? result.data : null
+}
+
+export function parseUnsupportedMetadata(raw: unknown): UnsupportedMetadata | null {
+  const result = unsupportedMetadataSchema.safeParse(
+    metadataSection(raw, 'unsupported'),
+  )
+  return result.success ? result.data : null
+}
 
 const MEDIA_RENDER_TYPES = new Set([
   'image',
@@ -137,7 +266,7 @@ export function listPreviewFromMessage(
       message.media_mime_type,
       message.media_filename,
     )
-    return `[${label}]`
+    return getMediaPlaceholder(label)
   }
   return null
 }

@@ -1,5 +1,10 @@
 import { m } from '@/paraglide/messages'
-import { CheckCheckIcon, CheckIcon, TriangleAlertIcon } from 'lucide-react'
+import {
+  CheckCheckIcon,
+  CheckIcon,
+  HeadphonesIcon,
+  TriangleAlertIcon,
+} from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
 import type { MessageStatus, MessageType } from '../model/types'
 
@@ -33,6 +38,12 @@ export const MESSAGE_STATUS_META: Record<MessageStatus, MessageStatusMeta> = {
     Icon: CheckCheckIcon,
     className: 'text-info',
   },
+  played: {
+    status: 'played',
+    labelKey: () => m.inbox_message_status_played(),
+    Icon: HeadphonesIcon,
+    className: 'text-info',
+  },
   failed: {
     status: 'failed',
     labelKey: () => m.inbox_message_status_failed(),
@@ -56,6 +67,22 @@ export function getMediaPlaceholder(type: MessageType): string {
       return m.inbox_message_type_document()
     case 'sticker':
       return m.inbox_message_type_sticker()
+    case 'location':
+      return m.inbox_message_type_location()
+    case 'contact':
+      return m.inbox_message_type_contact()
+    case 'interactive':
+      return m.inbox_message_type_interactive()
+    case 'share':
+      return m.inbox_message_type_share()
+    case 'story_reply':
+      return m.inbox_message_type_story_reply()
+    case 'story_mention':
+      return m.inbox_message_type_story_mention()
+    case 'system':
+      return m.inbox_message_type_system()
+    case 'unsupported':
+      return m.inbox_message_type_unsupported()
     case 'text':
       return m.inbox_media_placeholder()
   }

@@ -1,6 +1,10 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { sortConversationsByActivity } from '@/entities/conversation'
-import type { MessageRow } from '@/entities/message'
+import type {
+  MessageAttachmentRow,
+  MessageRow,
+  MessageRowWithAttachments,
+} from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
@@ -106,6 +110,41 @@ export function useMessagesRealtime({
             return {
               ...current,
               pages: updateMessageInPages(current.pages, message),
+            }
+          })
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_attachments',
+        },
+        (payload) => {
+          const attachment = payload.new as MessageAttachmentRow
+
+          patchInfiniteMessagesCache(queryClient, messagesKey, (current) => {
+            if (!current) return current
+            return {
+              ...current,
+              pages: current.pages.map((page) => ({
+                ...page,
+                messages: page.messages.map((row) => {
+                  if (row.id !== attachment.message_id) return row
+                  const withAttachments = row as MessageRowWithAttachments
+                  const existing = withAttachments.message_attachments ?? []
+                  if (existing.some((item) => item.id === attachment.id)) {
+                    return row
+                  }
+                  return {
+                    ...withAttachments,
+                    message_attachments: [...existing, attachment].sort(
+                      (a, b) => a.position - b.position,
+                    ),
+                  }
+                }),
+              })),
             }
           })
         },

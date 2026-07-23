@@ -45,6 +45,8 @@ function buildDetails(
       last_message_at: now,
       last_message_preview: null,
       snoozed_until: null,
+      external_thread_id: null,
+      last_inbound_at: null,
       created_at: now,
       updated_at: now,
       channel: { id: 'ch1', type: 'telegram', name: 'Support' },

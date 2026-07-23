@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -41,9 +36,14 @@ export type Database = {
     Tables: {
       channels: {
         Row: {
+          api_version: string | null
           created_at: string
           id: string
           is_active: boolean
+          last_error_at: string | null
+          last_error_code: string | null
+          last_outbound_at: string | null
+          last_webhook_at: string | null
           name: string | null
           provider_account_id: string | null
           type: string
@@ -51,9 +51,14 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          api_version?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_outbound_at?: string | null
+          last_webhook_at?: string | null
           name?: string | null
           provider_account_id?: string | null
           type: string
@@ -61,9 +66,14 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          api_version?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_outbound_at?: string | null
+          last_webhook_at?: string | null
           name?: string | null
           provider_account_id?: string | null
           type?: string
@@ -90,6 +100,8 @@ export type Database = {
           external_name: string | null
           id: string
           metadata: Json
+          profile: Json
+          profile_synced_at: string | null
           workspace_id: string
         }
         Insert: {
@@ -101,6 +113,8 @@ export type Database = {
           external_name?: string | null
           id?: string
           metadata?: Json
+          profile?: Json
+          profile_synced_at?: string | null
           workspace_id: string
         }
         Update: {
@@ -112,6 +126,8 @@ export type Database = {
           external_name?: string | null
           id?: string
           metadata?: Json
+          profile?: Json
+          profile_synced_at?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -246,7 +262,9 @@ export type Database = {
           channel_id: string
           contact_id: string
           created_at: string
+          external_thread_id: string | null
           id: string
+          last_inbound_at: string | null
           last_message_at: string | null
           last_message_preview: string | null
           snoozed_until: string | null
@@ -259,7 +277,9 @@ export type Database = {
           channel_id: string
           contact_id: string
           created_at?: string
+          external_thread_id?: string | null
           id?: string
+          last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
           snoozed_until?: string | null
@@ -272,7 +292,9 @@ export type Database = {
           channel_id?: string
           contact_id?: string
           created_at?: string
+          external_thread_id?: string | null
           id?: string
+          last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
           snoozed_until?: string | null
@@ -297,6 +319,93 @@ export type Database = {
           },
           {
             foreignKeyName: "conversations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_attachments: {
+        Row: {
+          checksum: string | null
+          created_at: string
+          download_status: string
+          duration_seconds: number | null
+          failure_reason: string | null
+          filename: string | null
+          height: number | null
+          id: string
+          kind: string
+          message_id: string
+          metadata: Json
+          mime_type: string | null
+          position: number
+          provider_media_id: string | null
+          provider_media_unique_id: string | null
+          size_bytes: number | null
+          storage_bucket: string
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+          workspace_id: string
+        }
+        Insert: {
+          checksum?: string | null
+          created_at?: string
+          download_status?: string
+          duration_seconds?: number | null
+          failure_reason?: string | null
+          filename?: string | null
+          height?: number | null
+          id?: string
+          kind: string
+          message_id: string
+          metadata?: Json
+          mime_type?: string | null
+          position?: number
+          provider_media_id?: string | null
+          provider_media_unique_id?: string | null
+          size_bytes?: number | null
+          storage_bucket?: string
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+          workspace_id: string
+        }
+        Update: {
+          checksum?: string | null
+          created_at?: string
+          download_status?: string
+          duration_seconds?: number | null
+          failure_reason?: string | null
+          filename?: string | null
+          height?: number | null
+          id?: string
+          kind?: string
+          message_id?: string
+          metadata?: Json
+          mime_type?: string | null
+          position?: number
+          provider_media_id?: string | null
+          provider_media_unique_id?: string | null
+          size_bytes?: number | null
+          storage_bucket?: string
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_attachments_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -356,19 +465,174 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          action: string
+          channel_id: string
+          conversation_id: string | null
+          created_at: string
+          emoji: string
+          id: string
+          is_from_contact: boolean
+          message_id: string | null
+          metadata: Json
+          provider_message_id: string
+          provider_timestamp: string | null
+          reactor_external_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          channel_id: string
+          conversation_id?: string | null
+          created_at?: string
+          emoji: string
+          id?: string
+          is_from_contact?: boolean
+          message_id?: string | null
+          metadata?: Json
+          provider_message_id: string
+          provider_timestamp?: string | null
+          reactor_external_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          channel_id?: string
+          conversation_id?: string | null
+          created_at?: string
+          emoji?: string
+          id?: string
+          is_from_contact?: boolean
+          message_id?: string | null
+          metadata?: Json
+          provider_message_id?: string
+          provider_timestamp?: string | null
+          reactor_external_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_status_events: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          error_subcode: string | null
+          error_type: string | null
+          id: string
+          message_id: string
+          metadata: Json
+          provider_event_id: string | null
+          provider_timestamp: string | null
+          retryable: boolean | null
+          status: string
+          trace_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          error_subcode?: string | null
+          error_type?: string | null
+          id?: string
+          message_id: string
+          metadata?: Json
+          provider_event_id?: string | null
+          provider_timestamp?: string | null
+          retryable?: boolean | null
+          status: string
+          trace_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          error_subcode?: string | null
+          error_type?: string | null
+          id?: string
+          message_id?: string
+          metadata?: Json
+          provider_event_id?: string | null
+          provider_timestamp?: string | null
+          retryable?: boolean | null
+          status?: string
+          trace_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_status_events_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_status_events_provider_event_id_fkey"
+            columns: ["provider_event_id"]
+            isOneToOne: false
+            referencedRelation: "provider_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_status_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string | null
           conversation_id: string
           created_at: string
+          deleted_at: string | null
           direction: string
+          edited_at: string | null
           external_id: string | null
+          external_reply_to_id: string | null
           id: string
           media_filename: string | null
           media_mime_type: string | null
           media_size: number | null
           media_url: string | null
           metadata: Json
+          provider_timestamp: string | null
+          reply_to_message_id: string | null
           sender_id: string | null
           status: string | null
           type: string
@@ -378,14 +642,19 @@ export type Database = {
           content?: string | null
           conversation_id: string
           created_at?: string
+          deleted_at?: string | null
           direction: string
+          edited_at?: string | null
           external_id?: string | null
+          external_reply_to_id?: string | null
           id?: string
           media_filename?: string | null
           media_mime_type?: string | null
           media_size?: number | null
           media_url?: string | null
           metadata?: Json
+          provider_timestamp?: string | null
+          reply_to_message_id?: string | null
           sender_id?: string | null
           status?: string | null
           type?: string
@@ -395,14 +664,19 @@ export type Database = {
           content?: string | null
           conversation_id?: string
           created_at?: string
+          deleted_at?: string | null
           direction?: string
+          edited_at?: string | null
           external_id?: string | null
+          external_reply_to_id?: string | null
           id?: string
           media_filename?: string | null
           media_mime_type?: string | null
           media_size?: number | null
           media_url?: string | null
           metadata?: Json
+          provider_timestamp?: string | null
+          reply_to_message_id?: string | null
           sender_id?: string | null
           status?: string | null
           type?: string
@@ -414,6 +688,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
@@ -481,6 +762,88 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      provider_events: {
+        Row: {
+          attempts: number
+          channel_id: string
+          claimed_at: string | null
+          created_at: string
+          created_message_id: string | null
+          created_record_ids: Json
+          error_kind: string | null
+          event_fingerprint: string
+          event_type: string
+          id: string
+          last_error: string | null
+          payload: Json
+          processed_at: string | null
+          provider: string
+          provider_timestamp: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          channel_id: string
+          claimed_at?: string | null
+          created_at?: string
+          created_message_id?: string | null
+          created_record_ids?: Json
+          error_kind?: string | null
+          event_fingerprint: string
+          event_type: string
+          id?: string
+          last_error?: string | null
+          payload: Json
+          processed_at?: string | null
+          provider: string
+          provider_timestamp?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          channel_id?: string
+          claimed_at?: string | null
+          created_at?: string
+          created_message_id?: string | null
+          created_record_ids?: Json
+          error_kind?: string | null
+          event_fingerprint?: string
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          provider_timestamp?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_events_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_events_created_message_id_fkey"
+            columns: ["created_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -600,6 +963,21 @@ export type Database = {
       begin_instagram_oauth: {
         Args: { p_channel_id?: string; p_workspace_id: string }
         Returns: string
+      }
+      claim_provider_event: {
+        Args: {
+          p_channel_id: string
+          p_event_fingerprint: string
+          p_event_type: string
+          p_payload: Json
+          p_provider: string
+          p_provider_timestamp?: string
+          p_workspace_id: string
+        }
+        Returns: {
+          duplicate: boolean
+          event_id: string
+        }[]
       }
       consume_oauth_state: {
         Args: { p_provider: string; p_state: string }
@@ -814,3 +1192,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

@@ -14,7 +14,6 @@
   "common_save_changes": "Сохранить изменения",
   "common_back": "Назад",
   "common_settings": "Настройки",
-
   "sidebar_unknown_user": "Пользователь",
   "sidebar_unknown_email": "Email не указан",
   "sidebar_logout_error": "Не удалось выйти",
@@ -50,13 +49,11 @@
   "breadcrumbs_settings": "Настройки приложения",
   "breadcrumbs_connect_channel": "Подключить канал",
   "sidebar_settings_label": "Настройки",
-
   "profile_page_kicker": "Профиль",
   "profile_page_title": "Профиль аккаунта",
   "profile_page_description": "Проверьте данные аккаунта, которые используются в рабочих пространствах",
   "profile_page_name_label": "Имя",
   "profile_page_email_label": "Email",
-
   "auth_sign_in_welcome": "С возвращением",
   "auth_sign_in_description": "Введите email и пароль для входа",
   "auth_sign_in_brand_tagline": "Ваша CRM для современных диалогов с клиентами",
@@ -79,7 +76,6 @@
   "auth_sign_up_needs_confirmation": "Подтвердите email для продолжения",
   "auth_sign_up_needs_confirmation_description": "Мы отправили ссылку для подтверждения на {email}",
   "auth_sign_up_password_placeholder": "Минимум 8 символов",
-
   "workspaces_load_error_title": "Не удалось загрузить рабочие пространства",
   "workspaces_create_button": "Создать рабочее пространство",
   "workspaces_create_error_title": "Не удалось создать рабочее пространство",
@@ -95,7 +91,6 @@
   "workspaces_icon_browse_all": "Просмотреть все иконки",
   "workspaces_icon_search_placeholder": "Поиск иконки",
   "workspaces_icon_empty": "Иконки не найдены",
-
   "workspace_settings_kicker": "Рабочее пространство",
   "workspace_settings_loading_title": "Настройки рабочего пространства",
   "workspace_settings_description": "Управляйте оформлением, доступом и каналами связи для этого рабочего пространства",
@@ -124,7 +119,6 @@
   "workspace_settings_members_role_admin": "Администратор",
   "workspace_settings_members_role_member": "Участник",
   "workspace_settings_members_role_viewer": "Наблюдатель",
-
   "channels_list_title": "Подключённые каналы",
   "channels_list_description": "Через эти каналы клиенты пишут в это рабочее пространство",
   "channels_connect_cta": "Подключить канал",
@@ -167,7 +161,6 @@
   "channels_connect_discard_description": "Есть несохранённые изменения. Если закрыть сейчас, введённые данные будут потеряны",
   "channels_connect_discard_confirm": "Отменить изменения",
   "channels_connect_discard_cancel": "Продолжить редактирование",
-
   "channels_type_telegram_label": "Telegram",
   "channels_type_telegram_description": "Подключите Telegram-бота",
   "channels_type_instagram_label": "Instagram",
@@ -176,7 +169,6 @@
   "channels_type_email_description": "Подключите свой почтовый ящик",
   "channels_type_whatsapp_label": "WhatsApp",
   "channels_type_whatsapp_description": "Подключите WhatsApp Business API",
-
   "channels_telegram_form_title": "Подключение Telegram-бота",
   "channels_telegram_name_placeholder": "Например, Бот поддержки",
   "channels_telegram_token_label": "Токен бота",
@@ -259,7 +251,6 @@
   "instagram_callback_title": "Подключение Instagram…",
   "instagram_callback_body": "Это окно можно закрыть",
   "channels_email_connect_cta": "Подключить Gmail",
-
   "inbox_filter_all": "Все",
   "inbox_filter_telegram": "Telegram",
   "inbox_filter_whatsapp": "WhatsApp",
@@ -352,7 +343,6 @@
   "inbox_media_document_fallback_name": "Файл",
   "inbox_unread_aria_label": "Непрочитанных: {count}",
   "inbox_channel_inactive_error": "Канал отключён. Активируйте его в настройках перед отправкой сообщений",
-
   "dashboard_page_kicker": "Главная",
   "dashboard_page_title": "Ваши рабочие пространства",
   "dashboard_page_description": "Активность во всех ваших рабочих пространствах",
@@ -374,7 +364,6 @@
   "dashboard_relative_minutes": "{count} мин назад",
   "dashboard_relative_hours": "{count} ч назад",
   "dashboard_relative_days": "{count} д назад",
-
   "home_greeting_fallback_name": "Привет",
   "home_greeting_morning": "Доброе утро",
   "home_greeting_afternoon": "Добрый день",
@@ -405,11 +394,9 @@
   "sidebar_home_nav_label": "Главная",
   "sidebar_workspaces_section_label": "Пространства",
   "sidebar_workspace_unread_dot_aria": "Непрочитанных: {count}",
-
   "not_found_title": "404",
   "not_found_description": "Страница не найдена",
   "not_found_go_home_link": "Перейти на главную",
-
   "image_open_preview": "Открыть предпросмотр",
   "image_preview_label": "Предпросмотр изображения",
   "image_preview_close": "Закрыть",
@@ -431,6 +418,13 @@
   "notifications_preview_sticker": "Стикер",
   "notifications_open_thread": "Открыть диалог",
   "notifications_show_full_message": "Показать сообщение полностью",
+  "notifications_bell_with_count_aria": "Уведомления, непрочитанных: {count}",
+  "notifications_item_open_aria": "Открыть диалог: {name}",
+  "notifications_popover_title": "Непрочитанные сообщения",
+  "notifications_popover_empty_title": "Всё прочитано",
+  "notifications_popover_empty_description": "Новые непрочитанные сообщения появятся здесь",
+  "notifications_popover_error": "Не удалось загрузить уведомления",
+  "notifications_view_all": "Все сообщения",
   "settings_page_title": "Настройки",
   "settings_page_description": "Управляйте уведомлениями во всех рабочих пространствах.",
   "settings_notifications_title": "Уведомления",
@@ -459,5 +453,33 @@
   "settings_notifications_permission_unsupported_help": "Этот браузер не поддерживает уведомления на рабочем столе.",
   "settings_notifications_save_success": "Настройки уведомлений сохранены.",
   "settings_notifications_save_error": "Не удалось сохранить настройки уведомлений.",
-  "settings_notifications_permission_error": "Не удалось включить уведомления на рабочем столе."
+  "settings_notifications_permission_error": "Не удалось включить уведомления на рабочем столе.",
+  "inbox_message_type_location": "📍 Геолокация",
+  "inbox_message_type_contact": "👤 Контакт",
+  "inbox_message_type_interactive": "🔘 Интерактивный ответ",
+  "inbox_message_type_share": "🔗 Публикация",
+  "inbox_message_type_story_reply": "💬 Ответ на историю",
+  "inbox_message_type_story_mention": "📣 Упоминание в истории",
+  "inbox_message_type_system": "⚙️ Системное событие",
+  "inbox_message_type_unsupported": "🚫 Неподдерживаемое сообщение",
+  "inbox_message_status_played": "Прослушано",
+  "inbox_message_edited": "изменено",
+  "inbox_message_deleted": "Это сообщение было удалено",
+  "inbox_message_retry": "Повторить",
+  "inbox_reply_action": "Ответить",
+  "inbox_reply_to": "Ответ: {name}",
+  "inbox_reply_to_you": "вы",
+  "inbox_reply_cancel": "Отменить ответ",
+  "inbox_reply_quoted_message": "Цитируемое сообщение",
+  "inbox_location_open_map": "Открыть карту",
+  "inbox_location_live": "Живая геолокация",
+  "inbox_interactive_button_reply": "Ответ кнопкой",
+  "inbox_interactive_list_reply": "Выбор из списка",
+  "inbox_share_post": "Публикация",
+  "inbox_share_reel": "Reels",
+  "inbox_share_story_reply": "Ответ на историю",
+  "inbox_share_story_mention": "Упоминание в истории",
+  "inbox_share_open_link": "Открыть ссылку",
+  "inbox_unsupported_message": "Этот тип сообщения пока не поддерживается",
+  "inbox_attachment_failed": "Не удалось загрузить вложение"
 }

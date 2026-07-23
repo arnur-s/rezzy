@@ -21,8 +21,16 @@ const MESSAGE_SELECT = `
   media_size,
   metadata,
   external_id,
+  reply_to_message_id,
+  external_reply_to_id,
+  edited_at,
+  deleted_at,
+  provider_timestamp,
   created_at
 ` as const
+
+/** Page select embeds structured attachments (legacy media_* stays for realtime rows). */
+const MESSAGE_PAGE_SELECT = `${MESSAGE_SELECT}, message_attachments (*)` as const
 
 export const MESSAGE_PAGE_SIZE = 50
 
@@ -49,7 +57,7 @@ export async function getConversationMessagesPage({
 }): Promise<MessagesPageResult> {
   let query = supabase
     .from('messages')
-    .select(MESSAGE_SELECT)
+    .select(MESSAGE_PAGE_SELECT)
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
@@ -140,6 +148,7 @@ export async function sendOutboundMessage({
   file,
   senderId,
   channelType,
+  replyToMessageId,
 }: {
   id?: string
   conversationId: string
@@ -148,6 +157,7 @@ export async function sendOutboundMessage({
   file?: File | null
   senderId: string | null
   channelType: ChannelType
+  replyToMessageId?: string | null
 }): Promise<MessageRow> {
   const remoteSendFunction = REMOTE_SEND_FUNCTIONS[channelType]
 
@@ -187,6 +197,7 @@ export async function sendOutboundMessage({
       media_size: uploadFile.size,
       sender_id: senderId,
       status: 'sent',
+      reply_to_message_id: replyToMessageId ?? null,
     }
   } else {
     insertPayload = {
@@ -198,6 +209,7 @@ export async function sendOutboundMessage({
       content: content.trim(),
       sender_id: senderId,
       status: 'sent',
+      reply_to_message_id: replyToMessageId ?? null,
     }
   }
 
@@ -237,6 +249,61 @@ export async function sendOutboundMessage({
     .from('messages')
     .select(MESSAGE_SELECT)
     .eq('id', inserted.id)
+    .single()
+
+  if (reloadError) {
+    throw reloadError
+  }
+
+  return fresh
+}
+
+/**
+ * Retries provider delivery for a failed outbound message: the existing row is
+ * reset to 'sent' and re-dispatched to the channel's send function. The send
+ * functions short-circuit when the provider already accepted the message.
+ */
+export async function retryOutboundMessage({
+  messageId,
+  channelType,
+}: {
+  messageId: string
+  channelType: ChannelType
+}): Promise<MessageRow> {
+  const remoteSendFunction = REMOTE_SEND_FUNCTIONS[channelType]
+  if (!remoteSendFunction) {
+    throw new Error('Channel does not support remote delivery')
+  }
+
+  const { error: resetError } = await supabase
+    .from('messages')
+    .update({ status: 'sent' })
+    .eq('id', messageId)
+    .eq('direction', 'outbound')
+    .eq('status', 'failed')
+
+  if (resetError) {
+    throw mapDatabaseError(resetError.message)
+  }
+
+  const { data: invokeData, error: invokeError } =
+    await supabase.functions.invoke<SendInvokeResult>(remoteSendFunction, {
+      body: { messageId },
+    })
+
+  if (invokeError) {
+    await markMessageFailed(messageId)
+    throw await mapSendInvokeError(invokeError)
+  }
+  if (!invokeData?.ok) {
+    await markMessageFailed(messageId)
+    throw new Error('Send failed')
+  }
+
+  const { data: fresh, error: reloadError } = await supabase
+    .from('messages')
+    .select(MESSAGE_SELECT)
+    .eq('id', messageId)
     .single()
 
   if (reloadError) {

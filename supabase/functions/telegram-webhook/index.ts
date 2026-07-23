@@ -1,168 +1,45 @@
-// telegram-webhook.ts
+// telegram-webhook: verify secret → parse → resolve trusted channel → persist
+// sanitized provider event → normalize → persist idempotently → ack.
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { timingSafeEqualStrings } from '../_shared/http.ts'
+import {
+  fingerprintFromPayload,
+  sanitizeProviderPayload,
+} from '../_shared/sanitize.ts'
+import {
+  claimProviderEvent,
+  markEventFailed,
+  markEventIgnored,
+  markEventProcessed,
+} from '../_shared/provider-events.ts'
+import {
+  applyReactionOps,
+  persistInboundMessage,
+  resolveContactAndConversation,
+  touchChannelActivity,
+} from '../_shared/persist.ts'
+import type { AttachmentInput, NormalizedMessageInput } from '../_shared/types.ts'
+import {
+  buildTelegramProfile,
+  classifyTelegramUpdate,
+  normalizeTelegramMessage,
+  normalizeTelegramReaction,
+  resolveExternalName,
+  telegramUpdateFingerprint,
+  type ResolvedMedia,
+  type TelegramMessage,
+  type TelegramUpdate,
+} from './lib.ts'
 
 const CHAT_MEDIA_BUCKET = 'chat-media'
-
-// ─── Telegram types ───────────────────────────────────────────────────────────
-
-interface TelegramUser {
-  id: number
-  first_name: string
-  last_name?: string
-  username?: string
-}
-
-interface TelegramPhotoSize {
-  file_id: string
-  file_unique_id: string
-  width?: number
-  height?: number
-  file_size?: number
-}
-
-interface TelegramVideo {
-  file_id: string
-  file_unique_id: string
-  width?: number
-  height?: number
-  duration?: number
-  mime_type?: string
-  file_name?: string
-  file_size?: number
-}
-
-interface TelegramAudio {
-  file_id: string
-  file_unique_id: string
-  duration?: number
-  mime_type?: string
-  file_name?: string
-  file_size?: number
-}
-
-interface TelegramVoice {
-  file_id: string
-  file_unique_id: string
-  duration?: number
-  mime_type?: string
-  file_size?: number
-}
-
-interface TelegramDocument {
-  file_id: string
-  file_unique_id: string
-  mime_type?: string
-  file_name?: string
-  file_size?: number
-}
-
-/** https://core.telegram.org/bots/api#sticker */
-interface TelegramSticker {
-  file_id: string
-  file_unique_id: string
-  type?: string
-  is_animated?: boolean
-  is_video?: boolean
-  width?: number
-  height?: number
-  emoji?: string
-  set_name?: string
-  file_size?: number
-}
-
-/** https://core.telegram.org/bots/api#animation */
-interface TelegramAnimation {
-  file_id: string
-  file_unique_id: string
-  width?: number
-  height?: number
-  duration?: number
-  mime_type?: string
-  file_name?: string
-  file_size?: number
-}
-
-/** https://core.telegram.org/bots/api#videonote */
-interface TelegramVideoNote {
-  file_id: string
-  file_unique_id: string
-  length?: number
-  duration?: number
-  file_size?: number
-}
-
-interface TelegramMessage {
-  message_id: number
-  from?: TelegramUser
-  chat: { id: number; title?: string }
-  date: number
-  text?: string
-  caption?: string
-  photo?: TelegramPhotoSize[]
-  video?: TelegramVideo
-  animation?: TelegramAnimation
-  audio?: TelegramAudio
-  voice?: TelegramVoice
-  video_note?: TelegramVideoNote
-  document?: TelegramDocument
-  sticker?: TelegramSticker
-}
-
-interface TelegramUpdate {
-  update_id: number
-  message?: TelegramMessage
-}
-
-type DbMessageType =
-  | 'text'
-  | 'image'
-  | 'video'
-  | 'audio'
-  | 'voice'
-  | 'document'
-  | 'sticker'
-
-type TelegramProviderMetadata = {
-  file_id: string
-  file_unique_id?: string
-  file_path?: string
-  width?: number
-  height?: number
-  duration?: number
-  emoji?: string
-  set_name?: string
-}
-
-interface ResolvedMedia {
-  dbType: Exclude<DbMessageType, 'text'>
-  file_id: string
-  file_unique_id: string | null
-  file_name: string | null
-  mime_type: string | null
-  size: number | null
-  telegram?: Omit<TelegramProviderMetadata, 'file_id' | 'file_unique_id'>
-}
-
-interface InboundMediaResult {
-  metadata: MessageMetadata
-  mediaUrl: string | null
-  mediaMimeType: string | null
-  mediaSize: number | null
-  mediaFilename: string | null
-  uploadedObjectPath: string | null
-}
-
-type MessageMetadata = Record<string, unknown>
 type SecretField = 'bot_token' | 'webhook_secret'
 
-// ─── Classification ───────────────────────────────────────────────────────────
+// ─── Credential helpers ──────────────────────────────────────────────────────
 
-function getCredentialString(
-  credentials: unknown,
-  field: SecretField,
-): string {
+function getCredentialString(credentials: unknown, field: SecretField): string {
   if (
     typeof credentials !== 'object' ||
     credentials === null ||
@@ -170,7 +47,6 @@ function getCredentialString(
   ) {
     return ''
   }
-
   const value = Object.entries(credentials).find(([key]) => key === field)?.[1]
   return typeof value === 'string' ? value.trim() : ''
 }
@@ -188,226 +64,7 @@ function logErrorType(context: string, error: unknown): void {
   console.error(`${context}: ${detail}`)
 }
 
-function inferDocumentDbType(
-  mime: string | null,
-  fileName: string | null,
-): Exclude<DbMessageType, 'text'> {
-  const mt = mime?.trim().toLowerCase() ?? ''
-  if (mt === 'application/x-tgsticker') return 'sticker'
-  if (mt.startsWith('video/')) return 'video'
-  if (mt.startsWith('audio/')) return 'audio'
-  if (mt.startsWith('image/')) return 'image'
-  const lower = fileName?.toLowerCase() ?? ''
-  const ext = lower.includes('.') ? (lower.split('.').pop() ?? '') : ''
-  if (!ext) return 'document'
-  if (ext === 'tgs') return 'sticker'
-  const video = new Set([
-    'mp4',
-    'm4v',
-    'webm',
-    'mov',
-    'mkv',
-    'avi',
-    '3gp',
-    '3g2',
-  ])
-  const audio = new Set([
-    'mp3',
-    'wav',
-    'ogg',
-    'm4a',
-    'aac',
-    'flac',
-    'opus',
-    'wma',
-  ])
-  const image = new Set([
-    'jpg',
-    'jpeg',
-    'png',
-    'gif',
-    'webp',
-    'heic',
-    'heif',
-    'bmp',
-    'tif',
-    'tiff',
-  ])
-  if (video.has(ext)) return 'video'
-  if (audio.has(ext)) return 'audio'
-  if (image.has(ext)) return 'image'
-  return 'document'
-}
-
-function resolveTelegramMedia(message: TelegramMessage): ResolvedMedia | null {
-  const photos = message.photo
-  if (photos?.length) {
-    const largest = photos.at(-1)!
-    return {
-      dbType: 'image',
-      file_id: largest.file_id,
-      file_unique_id: largest.file_unique_id ?? null,
-      file_name: null,
-      mime_type: 'image/jpeg',
-      size: largest.file_size ?? null,
-      telegram: {
-        width: largest.width,
-        height: largest.height,
-      },
-    }
-  }
-  if (message.video) {
-    const v = message.video
-    return {
-      dbType: 'video',
-      file_id: v.file_id,
-      file_unique_id: v.file_unique_id ?? null,
-      file_name: v.file_name ?? null,
-      mime_type: v.mime_type ?? null,
-      size: v.file_size ?? null,
-      telegram: {
-        width: v.width,
-        height: v.height,
-        duration: v.duration,
-      },
-    }
-  }
-  if (message.animation) {
-    const a = message.animation
-    return {
-      dbType: 'video',
-      file_id: a.file_id,
-      file_unique_id: a.file_unique_id ?? null,
-      file_name: a.file_name ?? null,
-      mime_type: a.mime_type ?? 'video/mp4',
-      size: a.file_size ?? null,
-      telegram: {
-        width: a.width,
-        height: a.height,
-        duration: a.duration,
-      },
-    }
-  }
-  if (message.audio) {
-    const a = message.audio
-    return {
-      dbType: 'audio',
-      file_id: a.file_id,
-      file_unique_id: a.file_unique_id ?? null,
-      file_name: a.file_name ?? null,
-      mime_type: a.mime_type ?? null,
-      size: a.file_size ?? null,
-      telegram: {
-        duration: a.duration,
-      },
-    }
-  }
-  if (message.voice) {
-    const v = message.voice
-    return {
-      dbType: 'voice',
-      file_id: v.file_id,
-      file_unique_id: v.file_unique_id ?? null,
-      file_name: null,
-      mime_type: v.mime_type ?? 'audio/ogg',
-      size: v.file_size ?? null,
-      telegram: {
-        duration: v.duration,
-      },
-    }
-  }
-  if (message.video_note) {
-    const vn = message.video_note
-    return {
-      dbType: 'video',
-      file_id: vn.file_id,
-      file_unique_id: vn.file_unique_id ?? null,
-      file_name: null,
-      mime_type: 'video/mp4',
-      size: vn.file_size ?? null,
-      telegram: {
-        width: vn.length,
-        height: vn.length,
-        duration: vn.duration,
-      },
-    }
-  }
-  if (message.sticker) {
-    const s = message.sticker
-    const stickerExtra: Omit<
-      TelegramProviderMetadata,
-      'file_id' | 'file_unique_id' | 'file_path'
-    > = {
-      width: s.width,
-      height: s.height,
-      emoji: s.emoji,
-      set_name: s.set_name,
-    }
-    if (s.is_video === true) {
-      return {
-        dbType: 'sticker',
-        file_id: s.file_id,
-        file_unique_id: s.file_unique_id ?? null,
-        file_name: 'sticker.webm',
-        mime_type: 'video/webm',
-        size: s.file_size ?? null,
-        telegram: stickerExtra,
-      }
-    }
-    if (s.is_animated === true) {
-      return {
-        dbType: 'sticker',
-        file_id: s.file_id,
-        file_unique_id: s.file_unique_id ?? null,
-        file_name: 'sticker.tgs',
-        mime_type: 'application/x-tgsticker',
-        size: s.file_size ?? null,
-        telegram: stickerExtra,
-      }
-    }
-    return {
-      dbType: 'sticker',
-      file_id: s.file_id,
-      file_unique_id: s.file_unique_id ?? null,
-      file_name: 'sticker.webp',
-      mime_type: 'image/webp',
-      size: s.file_size ?? null,
-      telegram: stickerExtra,
-    }
-  }
-  if (message.document) {
-    const d = message.document
-    const dbType = inferDocumentDbType(d.mime_type ?? null, d.file_name ?? null)
-    return {
-      dbType,
-      file_id: d.file_id,
-      file_unique_id: d.file_unique_id ?? null,
-      file_name: d.file_name ?? null,
-      mime_type: d.mime_type ?? null,
-      size: d.file_size ?? null,
-    }
-  }
-  return null
-}
-
-function getDbMessageType(message: TelegramMessage): DbMessageType {
-  const m = resolveTelegramMedia(message)
-  if (m) return m.dbType
-  return 'text'
-}
-
-/** Display name for CRM; Telegram sendMessage uses chat.id, not from.id. */
-function resolveExternalName(message: TelegramMessage): string {
-  const from = message.from
-  if (from) {
-    const full =
-      [from.first_name, from.last_name].filter(Boolean).join(' ') || null
-    if (full) return full
-    if (from.username) return from.username
-  }
-  if (message.chat.title?.trim()) return message.chat.title.trim()
-  return 'Unknown'
-}
+// ─── Media download pipeline ─────────────────────────────────────────────────
 
 function extensionFromFileName(fileName: string | null): string | null {
   if (!fileName?.includes('.')) return null
@@ -519,7 +176,7 @@ function defaultMediaBaseName(
 }
 
 async function uploadToChatMedia(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   objectPath: string,
   bytes: ArrayBuffer,
   contentType: string,
@@ -527,90 +184,92 @@ async function uploadToChatMedia(
   const body =
     bytes.byteLength === 0
       ? new Blob([], { type: contentType })
-      : new Blob([new Uint8Array(bytes)], {
-          type: contentType,
-        })
+      : new Blob([new Uint8Array(bytes)], { type: contentType })
   const { error } = await supabase.storage
     .from(CHAT_MEDIA_BUCKET)
-    .upload(objectPath, body, {
-      contentType,
-      upsert: false,
-    })
+    .upload(objectPath, body, { contentType, upsert: false })
   if (!error) return { error: null }
-  const msg = error.message ?? 'upload failed'
-  return { error: msg }
+  return { error: error.message ?? 'upload failed' }
 }
 
-async function removeChatMediaObject(
-  supabase: ReturnType<typeof createClient>,
-  objectPath: string,
-): Promise<void> {
-  const { error } = await supabase.storage
-    .from(CHAT_MEDIA_BUCKET)
-    .remove([objectPath])
-  if (error) {
-    console.error('telegram-webhook: storage cleanup failed', error.message)
+interface MediaPipelineResult {
+  attachment: AttachmentInput
+  /** telegram metadata fields kept for the existing frontend schema. */
+  telegramFileMetadata: Record<string, unknown>
+  uploadFailed: boolean
+  uploadError: string | null
+}
+
+function failedMediaResult(
+  media: ResolvedMedia,
+  reason: string,
+  filePath?: string,
+): MediaPipelineResult {
+  return {
+    attachment: {
+      position: 0,
+      kind: media.dbType,
+      providerMediaId: media.file_id,
+      providerMediaUniqueId: media.file_unique_id,
+      filename: media.file_name,
+      mimeType: media.mime_type,
+      sizeBytes: media.size,
+      width: media.width ?? null,
+      height: media.height ?? null,
+      durationSeconds: media.duration ?? null,
+      downloadStatus: 'failed',
+      failureReason: reason,
+      metadata: {
+        ...(media.emoji ? { emoji: media.emoji } : {}),
+        ...(media.set_name ? { set_name: media.set_name } : {}),
+      },
+    },
+    telegramFileMetadata: telegramFileMetadata(media, filePath),
+    uploadFailed: true,
+    uploadError: reason,
   }
 }
 
-function telegramMetadata(
+function telegramFileMetadata(
   media: ResolvedMedia,
   filePath?: string,
-): TelegramProviderMetadata {
+): Record<string, unknown> {
   return {
     file_id: media.file_id,
     ...(media.file_unique_id ? { file_unique_id: media.file_unique_id } : {}),
     ...(filePath ? { file_path: filePath } : {}),
-    ...(media.telegram ?? {}),
-  }
-}
-
-function failedInboundMediaResult(
-  media: ResolvedMedia,
-  uploadError: string,
-  filePath?: string,
-): InboundMediaResult {
-  return {
-    metadata: {
-      telegram: telegramMetadata(media, filePath),
-      upload_failed: true,
-      upload_error: uploadError,
-    },
-    mediaUrl: null,
-    mediaMimeType: media.mime_type,
-    mediaSize: media.size,
-    mediaFilename: media.file_name,
-    uploadedObjectPath: null,
+    ...(media.width !== undefined ? { width: media.width } : {}),
+    ...(media.height !== undefined ? { height: media.height } : {}),
+    ...(media.duration !== undefined ? { duration: media.duration } : {}),
+    ...(media.emoji ? { emoji: media.emoji } : {}),
+    ...(media.set_name ? { set_name: media.set_name } : {}),
   }
 }
 
 async function processInboundMedia(args: {
-  supabase: ReturnType<typeof createClient>
+  supabase: SupabaseClient
   botToken: string
   workspaceId: string
   conversationId: string
   messageId: string
   media: ResolvedMedia
-}): Promise<InboundMediaResult> {
+}): Promise<MediaPipelineResult> {
   const { supabase, botToken, workspaceId, conversationId, messageId, media } =
     args
 
   const filePath = await telegramGetFilePath(botToken, media.file_id)
   if (!filePath) {
-    console.error('telegram-webhook: could not resolve Telegram file path')
-    return failedInboundMediaResult(media, 'telegram_get_file_failed')
+    return failedMediaResult(media, 'telegram_get_file_failed')
   }
 
   const bytes = await telegramDownloadFile(botToken, filePath)
   if (!bytes || bytes.byteLength === 0) {
-    console.error('telegram-webhook: empty or missing file bytes')
-    return failedInboundMediaResult(media, 'telegram_download_failed', filePath)
+    return failedMediaResult(media, 'telegram_download_failed', filePath)
   }
 
   const extFromName = extensionFromFileName(media.file_name)
   const extFromTp = extensionFromPath(filePath)
-  const ext =
-    extFromName ?? extFromTp ?? (media.dbType === 'image' ? '.jpg' : '')
+  const ext = extFromName ?? extFromTp ?? (media.dbType === 'image' ? '.jpg' : '')
 
   const rawFileName =
     media.file_name?.trim() || defaultMediaBaseName(media.dbType, ext, filePath)
@@ -619,29 +278,12 @@ async function processInboundMedia(args: {
     safeFileName = `${safeFileName}${ext}`
   }
 
-  const contentType = resolveUploadContentType(
-    media.mime_type,
-    ext,
-    media.dbType,
-  )
+  const contentType = resolveUploadContentType(media.mime_type, ext, media.dbType)
 
-  let objectPath = [
-    workspaceId,
-    conversationId,
-    messageId,
-    safeFileName,
-  ].join('/')
-  let uploadResult = await uploadToChatMedia(
-    supabase,
-    objectPath,
-    bytes,
-    contentType,
-  )
+  let objectPath = [workspaceId, conversationId, messageId, safeFileName].join('/')
+  let uploadResult = await uploadToChatMedia(supabase, objectPath, bytes, contentType)
 
-  if (
-    uploadResult.error &&
-    /exists|duplicate|already/i.test(uploadResult.error)
-  ) {
+  if (uploadResult.error && /exists|duplicate|already/i.test(uploadResult.error)) {
     const suffix = crypto.randomUUID().slice(0, 8)
     objectPath = [
       workspaceId,
@@ -649,33 +291,40 @@ async function processInboundMedia(args: {
       messageId,
       `${suffix}-${safeFileName}`,
     ].join('/')
-    uploadResult = await uploadToChatMedia(
-      supabase,
-      objectPath,
-      bytes,
-      contentType,
-    )
+    uploadResult = await uploadToChatMedia(supabase, objectPath, bytes, contentType)
   }
 
   if (uploadResult.error) {
     console.error('telegram-webhook: storage upload failed', uploadResult.error)
-    return failedInboundMediaResult(media, 'storage_upload_failed', filePath)
+    return failedMediaResult(media, 'storage_upload_failed', filePath)
   }
 
   return {
-    metadata: {
-      telegram: telegramMetadata(media, filePath),
-      upload_failed: false,
+    attachment: {
+      position: 0,
+      kind: media.dbType,
+      providerMediaId: media.file_id,
+      providerMediaUniqueId: media.file_unique_id,
+      storagePath: objectPath,
+      filename: safeFileName,
+      mimeType: contentType,
+      sizeBytes: bytes.byteLength,
+      width: media.width ?? null,
+      height: media.height ?? null,
+      durationSeconds: media.duration ?? null,
+      downloadStatus: 'stored',
+      metadata: {
+        ...(media.emoji ? { emoji: media.emoji } : {}),
+        ...(media.set_name ? { set_name: media.set_name } : {}),
+      },
     },
-    mediaUrl: objectPath,
-    mediaMimeType: contentType,
-    mediaSize: bytes.byteLength,
-    mediaFilename: safeFileName,
-    uploadedObjectPath: objectPath,
+    telegramFileMetadata: telegramFileMetadata(media, filePath),
+    uploadFailed: false,
+    uploadError: null,
   }
 }
 
-// ─── Main handler ─────────────────────────────────────────────────────────────
+// ─── Main handler ────────────────────────────────────────────────────────────
 
 export default {
   async fetch(req: Request): Promise<Response> {
@@ -685,7 +334,6 @@ export default {
 
     const url = new URL(req.url)
     const channelId = url.pathname.split('/').pop()
-
     if (!channelId) {
       return new Response('Missing channel id', { status: 400 })
     }
@@ -728,8 +376,9 @@ export default {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    const secretFromHeader = req.headers.get('x-telegram-bot-api-secret-token')
-    if (secretFromHeader !== expectedSecret) {
+    const secretFromHeader =
+      req.headers.get('x-telegram-bot-api-secret-token') ?? ''
+    if (!timingSafeEqualStrings(secretFromHeader, expectedSecret)) {
       return new Response('Unauthorized', { status: 401 })
     }
 
@@ -744,128 +393,172 @@ export default {
       return new Response('OK', { status: 200 })
     }
 
-    const message = update.message
-    if (!message?.chat?.id) {
-      return new Response('OK', { status: 200 })
-    }
-
     const workspaceId: string = channel.workspace_id
-    const externalChatId = String(message.chat.id)
-    const externalName = resolveExternalName(message)
+    const classification = classifyTelegramUpdate(update)
+    if (classification.kind === 'empty') {
+      return new Response('OK', { status: 200 })
+    }
 
-    const { data: existingContactChannel } = await supabase
-      .from('contact_channels')
-      .select('contact_id, contacts!inner(workspace_id)')
-      .eq('channel_type', 'telegram')
-      .eq('external_id', externalChatId)
-      .eq('contacts.workspace_id', workspaceId)
-      .maybeSingle()
+    // Sanitize + persist the provider event before normalization; the
+    // fingerprint dedups provider redeliveries.
+    const sanitizedPayload = sanitizeProviderPayload(
+      update as unknown as Record<string, unknown>,
+    )
+    const fingerprint =
+      telegramUpdateFingerprint(update) ??
+      (await fingerprintFromPayload(sanitizedPayload))
 
-    let contactId: string
+    const eventDate =
+      classification.kind === 'reaction'
+        ? classification.reaction.date
+        : classification.kind === 'message' ||
+            classification.kind === 'edited_message'
+          ? classification.message.date
+          : undefined
+    const claim = await claimProviderEvent(supabase, {
+      workspaceId,
+      channelId,
+      provider: 'telegram',
+      eventType: classification.eventType,
+      eventFingerprint: fingerprint,
+      payload: sanitizedPayload,
+      providerTimestamp:
+        typeof eventDate === 'number'
+          ? new Date(eventDate * 1000).toISOString()
+          : null,
+    })
+    if (claim.outcome === 'duplicate') {
+      return new Response('OK', { status: 200 })
+    }
+    if (claim.outcome === 'error') {
+      console.error('telegram-webhook: event claim failed', claim.message)
+      return new Response('Event claim failed', { status: 500 })
+    }
+    const eventId = claim.eventId
 
-    if (existingContactChannel) {
-      contactId = existingContactChannel.contact_id
+    await touchChannelActivity(supabase, channelId, 'webhook')
 
-      await supabase
-        .from('contact_channels')
-        .update({ external_name: externalName })
-        .eq('contact_id', contactId)
-        .eq('channel_type', 'telegram')
-        .eq('external_id', externalChatId)
-    } else {
-      const { data: newContact, error: contactError } = await supabase
-        .from('contacts')
-        .insert({
-          workspace_id: workspaceId,
-          name: externalName,
-          status: 'new',
-        })
-        .select('id')
-        .single()
+    if (classification.kind === 'ignored') {
+      await markEventIgnored(supabase, eventId, classification.reason)
+      return new Response('OK', { status: 200 })
+    }
 
-      if (contactError || !newContact) {
-        console.error('Failed to create contact:', contactError)
-        return new Response('Failed to create contact', { status: 500 })
+    // ── Reactions ────────────────────────────────────────────────────────────
+    if (classification.kind === 'reaction') {
+      const reaction = classification.reaction
+      const normalized = normalizeTelegramReaction(reaction)
+      if (!normalized || normalized.ops.length === 0) {
+        await markEventIgnored(supabase, eventId, 'no_reaction_change')
+        return new Response('OK', { status: 200 })
       }
-
-      contactId = newContact.id
-
-      await supabase.from('contact_channels').insert({
-        workspace_id: workspaceId,
-        contact_id: contactId,
-        channel_id: channelId,
-        channel_type: 'telegram',
-        external_id: externalChatId,
-        external_name: externalName,
+      const resolved = await resolveContactAndConversation(supabase, {
+        workspaceId,
+        channelId,
+        channelType: 'telegram',
+        externalId: String(reaction.chat.id),
+        externalName: reaction.user
+          ? [reaction.user.first_name, reaction.user.last_name]
+              .filter(Boolean)
+              .join(' ') || 'Unknown'
+          : 'Unknown',
+        profile: buildTelegramProfile(reaction.user),
+        createIfMissing: false,
       })
+      const reactionIds = await applyReactionOps(
+        supabase,
+        {
+          workspaceId,
+          channelId,
+          providerMessageId: String(reaction.message_id),
+          conversationId: resolved?.conversationId ?? null,
+        },
+        normalized.ops,
+      )
+      await markEventProcessed(supabase, eventId, {
+        createdRecordIds:
+          reactionIds.length > 0 ? { message_reactions: reactionIds } : {},
+      })
+      return new Response('OK', { status: 200 })
     }
 
-    const { data: existingConversation } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('contact_id', contactId)
-      .eq('channel_id', channelId)
-      .maybeSingle()
-
-    let conversationId: string
-
-    if (existingConversation) {
-      conversationId = existingConversation.id
-    } else {
-      const { data: newConversation, error: convError } = await supabase
-        .from('conversations')
-        .insert({
-          workspace_id: workspaceId,
-          contact_id: contactId,
-          channel_id: channelId,
-          status: 'open',
-        })
-        .select('id')
-        .single()
-
-      if (convError || !newConversation) {
-        console.error('Failed to create conversation:', convError)
-        return new Response('Failed to create conversation', { status: 500 })
+    // ── Edits ────────────────────────────────────────────────────────────────
+    if (classification.kind === 'edited_message') {
+      const message = classification.message
+      const resolved = await resolveContactAndConversation(supabase, {
+        workspaceId,
+        channelId,
+        channelType: 'telegram',
+        externalId: String(message.chat.id),
+        externalName: resolveExternalName(message),
+        profile: buildTelegramProfile(message.from),
+        createIfMissing: false,
+      })
+      if (!resolved) {
+        await markEventIgnored(supabase, eventId, 'edit_target_conversation_missing')
+        return new Response('OK', { status: 200 })
       }
-
-      conversationId = newConversation.id
-    }
-
-    if (typeof update.update_id !== 'number') {
-      console.warn('telegram-webhook: missing update_id, ignoring')
+      const { data: target } = await supabase
+        .from('messages')
+        .select('id, metadata')
+        .eq('workspace_id', workspaceId)
+        .eq('conversation_id', resolved.conversationId)
+        .eq('external_id', String(message.message_id))
+        .maybeSingle()
+      if (!target) {
+        await markEventIgnored(supabase, eventId, 'edit_target_message_missing')
+        return new Response('OK', { status: 200 })
+      }
+      const normalized = normalizeTelegramMessage(message, update.update_id)
+      const existingMetadata =
+        target.metadata && typeof target.metadata === 'object'
+          ? (target.metadata as Record<string, unknown>)
+          : {}
+      const { error: editError } = await supabase
+        .from('messages')
+        .update({
+          content: normalized.content,
+          edited_at:
+            typeof message.edit_date === 'number'
+              ? new Date(message.edit_date * 1000).toISOString()
+              : new Date().toISOString(),
+          metadata: { ...existingMetadata, ...normalized.metadata },
+        })
+        .eq('id', target.id)
+      if (editError) {
+        await markEventFailed(supabase, eventId, 'temporary', editError.message)
+        return new Response('Edit failed', { status: 500 })
+      }
+      await markEventProcessed(supabase, eventId, { createdMessageId: target.id })
       return new Response('OK', { status: 200 })
     }
 
-    const externalMessageId = String(update.update_id)
-
-    const { data: existingMessage } = await supabase
-      .from('messages')
-      .select('id')
-      .eq('external_id', externalMessageId)
-      .maybeSingle()
-
-    if (existingMessage) {
-      return new Response('OK', { status: 200 })
+    // ── New messages ─────────────────────────────────────────────────────────
+    const message: TelegramMessage = classification.message
+    const resolved = await resolveContactAndConversation(supabase, {
+      workspaceId,
+      channelId,
+      channelType: 'telegram',
+      externalId: String(message.chat.id),
+      externalName: resolveExternalName(message),
+      profile: buildTelegramProfile(message.from, message.business_connection_id),
+      createIfMissing: true,
+    })
+    if (!resolved) {
+      await markEventFailed(supabase, eventId, 'temporary', 'contact_resolution_failed')
+      return new Response('Failed to resolve conversation', { status: 500 })
     }
+    const { contactId, conversationId } = resolved
 
-    const media = resolveTelegramMedia(message)
-    const dbType = getDbMessageType(message)
-    const content = message.caption ?? message.text ?? null
+    const normalized = normalizeTelegramMessage(message, update.update_id)
     const messageId = crypto.randomUUID()
+    const attachments: AttachmentInput[] = []
 
-    let metadata: MessageMetadata = {}
-    let mediaUrl: string | null = null
-    let mediaMimeType: string | null = null
-    let mediaSize: number | null = null
-    let mediaFilename: string | null = null
-    let uploadedObjectPath: string | null = null
-
-    if (media) {
+    if (normalized.media) {
       const botToken = getCredentialString(credentials, 'bot_token')
-      let mediaResult: InboundMediaResult
+      let mediaResult: MediaPipelineResult
       if (!botToken) {
         console.error('telegram-webhook: missing bot_token for media message')
-        mediaResult = failedInboundMediaResult(media, 'missing_bot_token')
+        mediaResult = failedMediaResult(normalized.media, 'missing_bot_token')
       } else {
         try {
           mediaResult = await processInboundMedia({
@@ -874,49 +567,45 @@ export default {
             workspaceId,
             conversationId,
             messageId,
-            media,
+            media: normalized.media,
           })
         } catch (e) {
           logErrorType('telegram-webhook: media pipeline error', e)
-          mediaResult = failedInboundMediaResult(media, 'media_pipeline_failed')
+          mediaResult = failedMediaResult(normalized.media, 'media_pipeline_failed')
         }
       }
-      metadata = mediaResult.metadata
-      mediaUrl = mediaResult.mediaUrl
-      mediaMimeType = mediaResult.mediaMimeType
-      mediaSize = mediaResult.mediaSize
-      mediaFilename = mediaResult.mediaFilename
-      uploadedObjectPath = mediaResult.uploadedObjectPath
-    }
-
-    const insertRow: Record<string, unknown> = {
-      id: messageId,
-      workspace_id: workspaceId,
-      conversation_id: conversationId,
-      external_id: externalMessageId,
-      direction: 'inbound',
-      type: dbType,
-      content,
-      sender_id: null,
-      status: 'delivered',
-      media_url: mediaUrl,
-      media_mime_type: mediaMimeType,
-      media_size: mediaSize,
-      media_filename: mediaFilename,
-    }
-    if (Object.keys(metadata).length > 0) {
-      insertRow.metadata = metadata
-    }
-
-    const { error: messageError } = await supabase
-      .from('messages')
-      .insert(insertRow)
-
-    if (messageError) {
-      console.error('Failed to insert message:', messageError)
-      if (uploadedObjectPath) {
-        await removeChatMediaObject(supabase, uploadedObjectPath)
+      attachments.push(mediaResult.attachment)
+      // Preserve the existing frontend metadata contract for media messages.
+      normalized.metadata.telegram = {
+        ...(normalized.metadata.telegram as Record<string, unknown>),
+        ...mediaResult.telegramFileMetadata,
       }
+      normalized.metadata.upload_failed = mediaResult.uploadFailed
+      if (mediaResult.uploadError) {
+        normalized.metadata.upload_error = mediaResult.uploadError
+      }
+    }
+
+    const input: NormalizedMessageInput = {
+      workspaceId,
+      conversationId,
+      channelId,
+      externalId: String(message.message_id),
+      type: normalized.type,
+      content: normalized.content,
+      externalReplyToId: normalized.externalReplyToId,
+      providerTimestamp: normalized.providerTimestamp,
+      metadata: normalized.metadata,
+      attachments,
+    }
+
+    const persisted = await persistInboundMessage(supabase, messageId, input)
+    if (persisted.outcome === 'duplicate') {
+      await markEventIgnored(supabase, eventId, 'duplicate_message')
+      return new Response('OK', { status: 200 })
+    }
+    if (persisted.outcome === 'error') {
+      await markEventFailed(supabase, eventId, 'temporary', persisted.message)
       return new Response('Failed to insert message', { status: 500 })
     }
 
@@ -925,7 +614,6 @@ export default {
       .update({ status: 'open' })
       .eq('id', conversationId)
       .neq('status', 'open')
-
     if (convUpdateError) {
       console.error(
         'telegram-webhook: conversation update failed',
@@ -946,6 +634,8 @@ export default {
     } catch (pushError) {
       console.error('telegram-webhook: push dispatch failed', pushError)
     }
+
+    await markEventProcessed(supabase, eventId, { createdMessageId: messageId })
 
     console.info(
       `Message stored — workspace: ${workspaceId}, contact: ${contactId}, conversation: ${conversationId}`,

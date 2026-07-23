@@ -1,23 +1,45 @@
 // instagram-webhook.ts
 // Single shared endpoint for every connected Instagram account. GET performs the
 // Meta verification handshake; POST is signature-verified (X-Hub-Signature-256),
-// routed to a channel by entry.id -> channels.provider_account_id, and turned
-// into inbound messages. messaging_seen (read.mid) advances outbound state.
+// routed to a channel by entry.id -> channels.provider_account_id, split into
+// logical events (messages, reactions, reads, deletions), persisted as
+// sanitized provider events, then normalized idempotently.
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import {
   extensionFromMime,
   extractReadMid,
-  type IgDbMessageType,
+  igMessageFingerprint,
+  igReactionFingerprint,
+  igReadFingerprint,
   type IgMessage,
   type IgMessagingEvent,
   type IgWebhookBody,
   mimeToDbType,
-  resolveInstagramMessage,
+  normalizeInstagramMessage,
   sanitizeFilenameSegment,
   verifySignature,
 } from './lib.ts'
+import { sanitizeProviderPayload } from '../_shared/sanitize.ts'
+import {
+  claimProviderEvent,
+  markEventFailed,
+  markEventIgnored,
+  markEventProcessed,
+} from '../_shared/provider-events.ts'
+import {
+  applyReactionOps,
+  insertStatusEvent,
+  persistInboundMessage,
+  touchChannelActivity,
+} from '../_shared/persist.ts'
+import { instagramReactionOp } from '../_shared/reactions.ts'
+import type {
+  AttachmentInput,
+  NormalizedMessageType,
+} from '../_shared/types.ts'
 
 const GRAPH_VERSION = Deno.env.get('INSTAGRAM_GRAPH_VERSION') ?? 'v25.0'
 const IG_GRAPH = `https://graph.instagram.com/${GRAPH_VERSION}`
@@ -34,25 +56,59 @@ interface SenderProfile {
   name?: string
   username?: string
   profile_pic?: string
+  is_verified_user?: boolean
+  follower_count?: number
+  is_user_follow_business?: boolean
+  is_business_follow_user?: boolean
 }
+
+const PROFILE_FIELDS_FULL =
+  'name,username,profile_pic,is_verified_user,follower_count,is_user_follow_business,is_business_follow_user'
+const PROFILE_FIELDS_BASIC = 'name,username,profile_pic'
 
 async function fetchSenderProfile(
   token: string,
   igsid: string,
 ): Promise<SenderProfile | null> {
   if (!token) return null
-  try {
-    const params = new URLSearchParams({
-      fields: 'name,username,profile_pic',
-      access_token: token,
-    })
+  const request = async (fields: string): Promise<SenderProfile | null> => {
+    const params = new URLSearchParams({ fields, access_token: token })
     const res = await fetch(`${IG_GRAPH}/${igsid}?${params}`)
     if (!res.ok) return null
     const data = await res.json()
     return data && typeof data === 'object' ? (data as SenderProfile) : null
+  }
+  try {
+    // Extended identity fields need additional permissions on some apps; fall
+    // back to the basic profile when the full request is rejected.
+    return (
+      (await request(PROFILE_FIELDS_FULL)) ??
+      (await request(PROFILE_FIELDS_BASIC))
+    )
   } catch (e) {
     logErrorType('instagram-webhook: sender profile fetch failed', e)
     return null
+  }
+}
+
+function buildInstagramProfile(profile: SenderProfile | null): Record<string, unknown> {
+  if (!profile) return {}
+  return {
+    ...(profile.username ? { username: profile.username } : {}),
+    ...(profile.name ? { name: profile.name } : {}),
+    ...(profile.profile_pic ? { profile_pic: profile.profile_pic } : {}),
+    ...(profile.is_verified_user !== undefined
+      ? { is_verified_user: profile.is_verified_user }
+      : {}),
+    ...(typeof profile.follower_count === 'number'
+      ? { follower_count: profile.follower_count }
+      : {}),
+    ...(profile.is_user_follow_business !== undefined
+      ? { is_user_follow_business: profile.is_user_follow_business }
+      : {}),
+    ...(profile.is_business_follow_user !== undefined
+      ? { is_business_follow_user: profile.is_business_follow_user }
+      : {}),
   }
 }
 
@@ -95,7 +151,7 @@ async function downloadInstagramMedia(
 }
 
 async function uploadToChatMedia(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   objectPath: string,
   bytes: ArrayBuffer,
   contentType: string,
@@ -108,23 +164,11 @@ async function uploadToChatMedia(
   return { error: error.message ?? 'upload failed' }
 }
 
-async function removeChatMediaObject(
-  supabase: ReturnType<typeof createClient>,
-  objectPath: string,
-): Promise<void> {
-  const { error } = await supabase.storage
-    .from(CHAT_MEDIA_BUCKET)
-    .remove([objectPath])
-  if (error) {
-    console.error('instagram-webhook: storage cleanup failed', error.message)
-  }
-}
-
 function defaultMediaBaseName(
-  dbType: Exclude<IgDbMessageType, 'text'>,
+  kind: 'image' | 'video' | 'audio' | 'document',
   ext: string,
 ): string {
-  switch (dbType) {
+  switch (kind) {
     case 'image':
       return `photo${ext || '.jpg'}`
     case 'video':
@@ -136,53 +180,57 @@ function defaultMediaBaseName(
   }
 }
 
-interface InboundMediaResult {
-  dbType: Exclude<IgDbMessageType, 'text'>
-  mediaUrl: string | null
-  mime: string | null
-  size: number | null
-  filename: string | null
-  uploadedObjectPath: string | null
-  uploadFailed: boolean
-  uploadError?: string
-}
-
-async function processInboundMedia(args: {
-  supabase: ReturnType<typeof createClient>
+/**
+ * Downloads one attachment into private storage. Failures become failed
+ * attachment rows — they never reject the message.
+ */
+async function processAttachment(args: {
+  supabase: SupabaseClient
   token: string
-  url: string
-  attachmentType: string
+  position: number
+  attachment: { type: string; url: string | null; title: string | null; stickerId: string | null }
   workspaceId: string
   conversationId: string
   messageId: string
-}): Promise<InboundMediaResult> {
-  const { supabase, token, url, attachmentType, workspaceId, conversationId, messageId } =
+}): Promise<AttachmentInput> {
+  const { supabase, token, position, attachment, workspaceId, conversationId, messageId } =
     args
 
-  const downloaded = await downloadInstagramMedia(url, token)
-  if (!downloaded) {
+  const baseMetadata: Record<string, unknown> = {
+    attachment_type: attachment.type,
+    ...(attachment.title ? { title: attachment.title } : {}),
+    ...(attachment.stickerId ? { sticker_id: attachment.stickerId } : {}),
+  }
+
+  if (!attachment.url) {
     return {
-      dbType: mimeToDbType(null, attachmentType),
-      mediaUrl: null,
-      mime: null,
-      size: null,
-      filename: null,
-      uploadedObjectPath: null,
-      uploadFailed: true,
-      uploadError: 'download_failed',
+      position,
+      kind: 'file',
+      downloadStatus: 'skipped',
+      failureReason: 'no_media_url',
+      metadata: baseMetadata,
     }
   }
 
-  const dbType = mimeToDbType(downloaded.mime, attachmentType)
+  const downloaded = await downloadInstagramMedia(attachment.url, token)
+  if (!downloaded) {
+    return {
+      position,
+      kind: mimeToDbType(null, attachment.type),
+      downloadStatus: 'failed',
+      failureReason: 'download_failed',
+      metadata: baseMetadata,
+    }
+  }
+
+  const kind = mimeToDbType(downloaded.mime, attachment.type)
   const ext = extensionFromMime(downloaded.mime)
-  let safeFileName = sanitizeFilenameSegment(
-    defaultMediaBaseName(dbType, ext),
-    180,
-  )
+  let safeFileName = sanitizeFilenameSegment(defaultMediaBaseName(kind, ext), 180)
   if (!safeFileName.includes('.') && ext) safeFileName = `${safeFileName}${ext}`
   const effectiveType = downloaded.mime ?? 'application/octet-stream'
+  const positionedName = position === 0 ? safeFileName : `${position}-${safeFileName}`
 
-  let objectPath = [workspaceId, conversationId, messageId, safeFileName].join('/')
+  let objectPath = [workspaceId, conversationId, messageId, positionedName].join('/')
   let uploadResult = await uploadToChatMedia(
     supabase,
     objectPath,
@@ -191,7 +239,12 @@ async function processInboundMedia(args: {
   )
   if (uploadResult.error && /exists|duplicate|already/i.test(uploadResult.error)) {
     const suffix = crypto.randomUUID().slice(0, 8)
-    objectPath = [workspaceId, conversationId, messageId, `${suffix}-${safeFileName}`].join('/')
+    objectPath = [
+      workspaceId,
+      conversationId,
+      messageId,
+      `${suffix}-${positionedName}`,
+    ].join('/')
     uploadResult = await uploadToChatMedia(
       supabase,
       objectPath,
@@ -202,65 +255,35 @@ async function processInboundMedia(args: {
   if (uploadResult.error) {
     console.error('instagram-webhook: storage upload failed', uploadResult.error)
     return {
-      dbType,
-      mediaUrl: null,
-      mime: downloaded.mime,
-      size: downloaded.bytes.byteLength,
-      filename: null,
-      uploadedObjectPath: null,
-      uploadFailed: true,
-      uploadError: 'storage_upload_failed',
+      position,
+      kind,
+      mimeType: downloaded.mime,
+      sizeBytes: downloaded.bytes.byteLength,
+      downloadStatus: 'failed',
+      failureReason: 'storage_upload_failed',
+      metadata: baseMetadata,
     }
   }
 
   return {
-    dbType,
-    mediaUrl: objectPath,
-    mime: effectiveType,
-    size: downloaded.bytes.byteLength,
-    filename: safeFileName,
-    uploadedObjectPath: objectPath,
-    uploadFailed: false,
+    position,
+    kind,
+    storagePath: objectPath,
+    filename: positionedName,
+    mimeType: effectiveType,
+    sizeBytes: downloaded.bytes.byteLength,
+    downloadStatus: 'stored',
+    metadata: baseMetadata,
   }
 }
 
-async function applyReadEvent(
-  supabase: ReturnType<typeof createClient>,
-  channelId: string,
-  workspaceId: string,
-  event: IgMessagingEvent,
-): Promise<void> {
-  const mid = extractReadMid(event)
-  if (!mid) return
-  const { error } = await supabase.rpc('mark_outbound_message_read', {
-    p_channel_id: channelId,
-    p_workspace_id: workspaceId,
-    p_external_id: mid,
-  })
-  if (error) console.error('instagram-webhook: mark read failed', error)
-}
-
-async function ingestMessage(args: {
-  supabase: ReturnType<typeof createClient>
+async function resolveConversation(args: {
+  supabase: SupabaseClient
   token: string
   channelId: string
-  workspaceId: string
   senderId: string
-  message: IgMessage
-}): Promise<void> {
-  const { supabase, token, channelId, workspaceId, senderId, message } = args
-
-  const mid = message.mid?.trim()
-  if (!mid) return
-
-  const { data: existing } = await supabase
-    .from('messages')
-    .select('id')
-    .eq('workspace_id', workspaceId)
-    .eq('external_id', mid)
-    .maybeSingle()
-  if (existing) return
-
+}): Promise<{ conversationId: string } | null> {
+  const { supabase, token, channelId, senderId } = args
   const profile = await fetchSenderProfile(token, senderId)
   const displayName = profile?.name ?? profile?.username ?? null
   const externalName = profile?.username ?? profile?.name ?? null
@@ -278,7 +301,7 @@ async function ingestMessage(args: {
   )
   if (resolveError) {
     console.error('instagram-webhook: resolve conversation failed', resolveError)
-    return
+    return null
   }
   const resolved = Array.isArray(resolvedRows) ? resolvedRows[0] : resolvedRows
   const conversationId =
@@ -287,84 +310,171 @@ async function ingestMessage(args: {
       : ''
   if (!conversationId) {
     console.error('instagram-webhook: resolve returned no conversation')
-    return
+    return null
   }
 
+  // The resolve RPC predates the profile column; sync the official identity
+  // profile separately (best effort).
+  const igProfile = buildInstagramProfile(profile)
+  if (Object.keys(igProfile).length > 0) {
+    await supabase
+      .from('contact_channels')
+      .update({ profile: igProfile, profile_synced_at: new Date().toISOString() })
+      .eq('channel_id', channelId)
+      .eq('external_id', senderId)
+  }
+
+  return { conversationId }
+}
+
+async function applyDeletedMessage(args: {
+  supabase: SupabaseClient
+  workspaceId: string
+  eventId: string
+  mid: string | null
+}): Promise<void> {
+  const { supabase, workspaceId, eventId, mid } = args
+  if (!mid) {
+    await markEventIgnored(supabase, eventId, 'deleted_without_mid')
+    return
+  }
+  const { data: target } = await supabase
+    .from('messages')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .eq('external_id', mid)
+    .limit(1)
+    .maybeSingle()
+  if (!target) {
+    await markEventIgnored(supabase, eventId, 'deleted_target_missing')
+    return
+  }
+  await supabase
+    .from('messages')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', target.id)
+  await insertStatusEvent(supabase, {
+    workspaceId,
+    messageId: target.id,
+    status: 'deleted',
+    providerEventId: eventId,
+  })
+  await markEventProcessed(supabase, eventId, { createdMessageId: target.id })
+}
+
+async function ingestMessage(args: {
+  supabase: SupabaseClient
+  token: string
+  channelId: string
+  workspaceId: string
+  senderId: string
+  eventId: string
+  message: IgMessage
+  providerTimestamp: string | null
+}): Promise<'ok' | 'temporary_failure'> {
+  const {
+    supabase,
+    token,
+    channelId,
+    workspaceId,
+    senderId,
+    eventId,
+    message,
+    providerTimestamp,
+  } = args
+
+  const mid = message.mid?.trim()
+  if (!mid) {
+    await markEventIgnored(supabase, eventId, 'message_without_mid')
+    return 'ok'
+  }
+
+  const resolved = await resolveConversation({ supabase, token, channelId, senderId })
+  if (!resolved) {
+    await markEventFailed(supabase, eventId, 'temporary', 'conversation_resolution_failed')
+    return 'temporary_failure'
+  }
+  const { conversationId } = resolved
+
+  const normalized = normalizeInstagramMessage(message)
   const messageId = crypto.randomUUID()
-  const parsed = resolveInstagramMessage(message)
 
-  let dbType: IgDbMessageType = 'text'
-  let metadata: Record<string, unknown> = { instagram: { mid } }
-  let mediaUrl: string | null = null
-  let mediaMime: string | null = null
-  let mediaSize: number | null = null
-  let mediaFilename: string | null = null
-  let uploadedObjectPath: string | null = null
-
-  if (parsed.attachment) {
-    let result: InboundMediaResult
+  const attachments: AttachmentInput[] = []
+  for (const [index, attachment] of normalized.attachments.entries()) {
     try {
-      result = await processInboundMedia({
-        supabase,
-        token,
-        url: parsed.attachment.url,
-        attachmentType: parsed.attachment.type,
-        workspaceId,
-        conversationId,
-        messageId,
-      })
+      attachments.push(
+        await processAttachment({
+          supabase,
+          token,
+          position: index,
+          attachment,
+          workspaceId,
+          conversationId,
+          messageId,
+        }),
+      )
     } catch (e) {
       logErrorType('instagram-webhook: media pipeline error', e)
-      result = {
-        dbType: mimeToDbType(null, parsed.attachment.type),
-        mediaUrl: null,
-        mime: null,
-        size: null,
-        filename: null,
-        uploadedObjectPath: null,
-        uploadFailed: true,
-        uploadError: 'media_pipeline_failed',
-      }
-    }
-    dbType = result.dbType
-    mediaUrl = result.mediaUrl
-    mediaMime = result.mime
-    mediaSize = result.size
-    mediaFilename = result.filename
-    uploadedObjectPath = result.uploadedObjectPath
-    metadata = {
-      instagram: { mid, attachment_type: parsed.attachment.type },
-      ...(result.uploadFailed
-        ? { upload_failed: true, upload_error: result.uploadError }
-        : {}),
+      attachments.push({
+        position: index,
+        kind: mimeToDbType(null, attachment.type),
+        downloadStatus: 'failed',
+        failureReason: 'media_pipeline_failed',
+        metadata: { attachment_type: attachment.type },
+      })
     }
   }
 
-  const { error: insertError } = await supabase.from('messages').insert({
-    id: messageId,
-    workspace_id: workspaceId,
-    conversation_id: conversationId,
-    external_id: mid,
-    direction: 'inbound',
+  // Message type: structured types stay as-is; plain media derives from the
+  // first attachment's downloaded kind.
+  let dbType: NormalizedMessageType
+  if (normalized.type === 'media') {
+    const firstKind = attachments[0]?.kind ?? 'document'
+    dbType = firstKind === 'file' ? 'document' : firstKind
+  } else {
+    dbType = normalized.type
+  }
+
+  const firstStored = attachments.find((a) => a.downloadStatus === 'stored')
+  const anyFailed = attachments.some((a) => a.downloadStatus === 'failed')
+  const metadata: Record<string, unknown> = {
+    ...normalized.metadata,
+    instagram: {
+      mid,
+      ...(normalized.attachments[0]?.type
+        ? { attachment_type: normalized.attachments[0].type }
+        : {}),
+    },
+    ...(anyFailed && !firstStored
+      ? {
+          upload_failed: true,
+          upload_error:
+            attachments.find((a) => a.failureReason)?.failureReason ??
+            'download_failed',
+        }
+      : {}),
+  }
+
+  const persisted = await persistInboundMessage(supabase, messageId, {
+    workspaceId,
+    conversationId,
+    channelId,
+    externalId: mid,
     type: dbType,
-    content: parsed.content,
-    sender_id: null,
-    status: 'delivered',
-    media_url: mediaUrl,
-    media_mime_type: mediaMime,
-    media_size: mediaSize,
-    media_filename: mediaFilename,
+    content: normalized.content,
+    externalReplyToId: normalized.externalReplyToId,
+    providerTimestamp,
     metadata,
+    attachments,
   })
 
-  if (insertError) {
-    // A duplicate webhook delivery races on messages_unique_external_id; treat
-    // the unique violation as a successful de-dup.
-    if (uploadedObjectPath) await removeChatMediaObject(supabase, uploadedObjectPath)
-    if (insertError.code !== '23505') {
-      console.error('instagram-webhook: failed to insert message', insertError)
-    }
-    return
+  if (persisted.outcome === 'duplicate') {
+    await markEventIgnored(supabase, eventId, 'duplicate_message')
+    return 'ok'
+  }
+  if (persisted.outcome === 'error') {
+    await markEventFailed(supabase, eventId, 'temporary', persisted.message)
+    return 'temporary_failure'
   }
 
   console.log(
@@ -382,6 +492,9 @@ async function ingestMessage(args: {
   } catch (pushError) {
     console.error('instagram-webhook: push dispatch failed', pushError)
   }
+
+  await markEventProcessed(supabase, eventId, { createdMessageId: messageId })
+  return 'ok'
 }
 
 export default {
@@ -442,6 +555,8 @@ export default {
         .join(',')}`,
     )
 
+    let hadTemporaryFailure = false
+
     for (const entry of payload.entry ?? []) {
       const igAccountId = entry.id?.trim()
       if (!igAccountId) continue
@@ -455,23 +570,23 @@ export default {
 
       if (lookupError) {
         console.error('instagram-webhook: channel lookup failed', lookupError)
+        hadTemporaryFailure = true
         continue
       }
       if (!channel) {
-        console.log(
-          `instagram-webhook: no channel for entry.id=${igAccountId}`,
-        )
+        console.log(`instagram-webhook: no channel for entry.id=${igAccountId}`)
         continue
       }
 
       const channelId = channel.id as string
       const workspaceId = channel.workspace_id as string
 
+      await touchChannelActivity(supabase, channelId, 'webhook')
+
       let token = ''
-      const { data: credentials } = await supabase.rpc(
-        'get_channel_credentials',
-        { p_channel_id: channelId },
-      )
+      const { data: credentials } = await supabase.rpc('get_channel_credentials', {
+        p_channel_id: channelId,
+      })
       if (
         credentials &&
         typeof credentials === 'object' &&
@@ -482,43 +597,182 @@ export default {
       }
 
       for (const event of entry.messaging ?? []) {
-        // Read receipts apply to outbound history regardless of channel state.
+        const providerTimestamp =
+          typeof event.timestamp === 'number'
+            ? new Date(event.timestamp).toISOString()
+            : null
+        const sanitizedEvent = sanitizeProviderPayload(
+          event as Record<string, unknown>,
+        )
+
+        // ── Read receipts (apply regardless of channel state) ───────────────
         if (event.read) {
-          await applyReadEvent(supabase, channelId, workspaceId, event)
+          const fingerprint = igReadFingerprint(event)
+          if (!fingerprint) continue
+          const claim = await claimProviderEvent(supabase, {
+            workspaceId,
+            channelId,
+            provider: 'instagram',
+            eventType: 'read',
+            eventFingerprint: fingerprint,
+            payload: sanitizedEvent,
+            providerTimestamp,
+          })
+          if (claim.outcome !== 'claimed') continue
+
+          const mid = extractReadMid(event)
+          const { error: readError } = await supabase.rpc(
+            'mark_outbound_message_read',
+            {
+              p_channel_id: channelId,
+              p_workspace_id: workspaceId,
+              p_external_id: mid,
+            },
+          )
+          if (readError) {
+            console.error('instagram-webhook: mark read failed', readError)
+          }
+          if (mid) {
+            const { data: target } = await supabase
+              .from('messages')
+              .select('id')
+              .eq('workspace_id', workspaceId)
+              .eq('external_id', mid)
+              .limit(1)
+              .maybeSingle()
+            if (target) {
+              await insertStatusEvent(supabase, {
+                workspaceId,
+                messageId: target.id,
+                status: 'read',
+                providerEventId: claim.eventId,
+                providerTimestamp,
+              })
+            }
+          }
+          await markEventProcessed(supabase, claim.eventId)
           continue
         }
-        // Reactions are acknowledged but not stored (no clean model fit).
-        if (event.reaction) continue
+
+        // ── Reactions ───────────────────────────────────────────────────────
+        if (event.reaction) {
+          const fingerprint = igReactionFingerprint(event)
+          const senderId = event.sender?.id?.trim()
+          if (!fingerprint || !senderId) continue
+          const claim = await claimProviderEvent(supabase, {
+            workspaceId,
+            channelId,
+            provider: 'instagram',
+            eventType: 'reaction',
+            eventFingerprint: fingerprint,
+            payload: sanitizedEvent,
+            providerTimestamp,
+          })
+          if (claim.outcome !== 'claimed') continue
+
+          const targetMid = event.reaction.mid
+          const op = instagramReactionOp({
+            reactorExternalId: senderId,
+            action: event.reaction.action === 'unreact' ? 'unreact' : 'react',
+            emoji: event.reaction.emoji,
+            reactionName: event.reaction.reaction,
+            providerTimestamp,
+          })
+          if (!targetMid || !op) {
+            await markEventIgnored(supabase, claim.eventId, 'reaction_without_target')
+            continue
+          }
+          const reactionIds = await applyReactionOps(
+            supabase,
+            { workspaceId, channelId, providerMessageId: targetMid },
+            [op],
+          )
+          await markEventProcessed(supabase, claim.eventId, {
+            createdRecordIds:
+              reactionIds.length > 0 ? { message_reactions: reactionIds } : {},
+          })
+          continue
+        }
 
         const message = event.message
         if (!message) continue
+
+        const mid = message.mid?.trim() ?? null
+        const senderId = event.sender?.id?.trim()
+
+        // ── Echoes and deletions ────────────────────────────────────────────
         if (message.is_echo || message.is_deleted) {
-          console.log('instagram-webhook: skipping echo/deleted message')
+          const fingerprint = mid
+            ? `${message.is_deleted ? 'deleted' : 'echo'}:${mid}`
+            : null
+          if (!fingerprint) continue
+          const claim = await claimProviderEvent(supabase, {
+            workspaceId,
+            channelId,
+            provider: 'instagram',
+            eventType: message.is_deleted ? 'deleted_message' : 'echo',
+            eventFingerprint: fingerprint,
+            payload: sanitizedEvent,
+            providerTimestamp,
+          })
+          if (claim.outcome !== 'claimed') continue
+          if (message.is_deleted) {
+            await applyDeletedMessage({
+              supabase,
+              workspaceId,
+              eventId: claim.eventId,
+              mid,
+            })
+          } else {
+            await markEventIgnored(supabase, claim.eventId, 'echo_message')
+          }
           continue
         }
+
         if (!channel.is_active) {
           console.log('instagram-webhook: channel inactive, skipping')
           continue
         }
+        if (!senderId || !mid) continue
 
-        const senderId = event.sender?.id?.trim()
-        if (!senderId) continue
+        const claim = await claimProviderEvent(supabase, {
+          workspaceId,
+          channelId,
+          provider: 'instagram',
+          eventType: 'message',
+          eventFingerprint: igMessageFingerprint(mid),
+          payload: sanitizedEvent,
+          providerTimestamp,
+        })
+        if (claim.outcome === 'duplicate') continue
+        if (claim.outcome === 'error') {
+          hadTemporaryFailure = true
+          continue
+        }
 
         try {
-          await ingestMessage({
+          const result = await ingestMessage({
             supabase,
             token,
             channelId,
             workspaceId,
             senderId,
+            eventId: claim.eventId,
             message,
+            providerTimestamp,
           })
+          if (result === 'temporary_failure') hadTemporaryFailure = true
         } catch (e) {
           logErrorType('instagram-webhook: ingest failed', e)
+          await markEventFailed(supabase, claim.eventId, 'temporary', 'ingest_exception')
+          hadTemporaryFailure = true
         }
       }
     }
 
+    if (hadTemporaryFailure) {
+      return new Response('Temporary failure', { status: 500 })
+    }
     return new Response('OK', { status: 200 })
   },
 }

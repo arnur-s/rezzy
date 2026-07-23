@@ -16,6 +16,14 @@ const MEDIA_LABELS: Record<Exclude<MessageType, 'text'>, () => string> = {
   audio: () => m.notifications_preview_audio(),
   document: () => m.notifications_preview_document(),
   sticker: () => m.notifications_preview_sticker(),
+  location: () => m.inbox_message_type_location(),
+  contact: () => m.inbox_message_type_contact(),
+  interactive: () => m.inbox_message_type_interactive(),
+  share: () => m.inbox_message_type_share(),
+  story_reply: () => m.inbox_message_type_story_reply(),
+  story_mention: () => m.inbox_message_type_story_mention(),
+  system: () => m.inbox_message_type_system(),
+  unsupported: () => m.inbox_message_type_unsupported(),
 }
 
 function resolveMediaLabel(message: NotificationMessage): string {

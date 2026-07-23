@@ -6,6 +6,8 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 
 const GRAPH_VERSION = Deno.env.get('WHATSAPP_GRAPH_VERSION') ?? 'v23.0'
 const GRAPH = `https://graph.facebook.com/${GRAPH_VERSION}`
@@ -45,6 +47,7 @@ interface MessageRow {
   media_url: string | null
   media_filename: string | null
   media_mime_type: string | null
+  reply_to_message_id: string | null
 }
 
 interface ConversationRow {
@@ -138,6 +141,39 @@ function whatsappErrorDiagnostics(
       typeof error?.error_subcode === 'number' ? error.error_subcode : null,
     type: sanitizedProviderString(error?.type, 100),
     trace_id: sanitizedProviderString(error?.fbtrace_id),
+  }
+}
+
+/**
+ * Marks the outbound message failed and persists safe provider diagnostics
+ * (code/subcode/type/trace id — never tokens, bodies, or phone numbers) into
+ * the status history.
+ */
+async function recordSendFailure(
+  admin: SupabaseClient,
+  row: { id: string; workspace_id: string },
+  channelId: string | null,
+  diagnostics: Partial<WhatsappErrorDiagnostics> & { reason?: string },
+): Promise<void> {
+  await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+  const errorCode =
+    diagnostics.code != null ? String(diagnostics.code) : (diagnostics.reason ?? null)
+  await insertStatusEvent(admin, {
+    workspaceId: row.workspace_id,
+    messageId: row.id,
+    status: 'failed',
+    errorCode,
+    errorSubcode:
+      diagnostics.error_subcode != null ? String(diagnostics.error_subcode) : null,
+    errorType: diagnostics.type ?? null,
+    traceId: diagnostics.trace_id ?? null,
+    metadata:
+      diagnostics.provider_http_status != null
+        ? { provider_http_status: diagnostics.provider_http_status }
+        : {},
+  })
+  if (channelId) {
+    await touchChannelActivity(admin, channelId, 'error', errorCode)
   }
 }
 
@@ -248,7 +284,7 @@ export default {
     const { data: message, error: msgError } = await admin
       .from('messages')
       .select(
-        'id, workspace_id, conversation_id, direction, status, content, external_id, type, media_url, media_filename, media_mime_type',
+        'id, workspace_id, conversation_id, direction, status, content, external_id, type, media_url, media_filename, media_mime_type, reply_to_message_id',
       )
       .eq('id', messageId)
       .maybeSingle()
@@ -341,7 +377,7 @@ export default {
     }
 
     if (!channelRow.is_active) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, conv.channel_id, { reason: 'channel_inactive' })
       return jsonResponse(409, {
         error:
           'Channel is inactive. Activate it in settings before sending messages.',
@@ -387,13 +423,26 @@ export default {
         'send-whatsapp-message: no whatsapp external_id for contact',
         conv.contact_id,
       )
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, conv.channel_id, { reason: 'missing_recipient' })
       return jsonResponse(400, {
         error: 'WhatsApp recipient id missing for contact',
       })
     }
 
     const canonicalTo = contactChannel.external_id.trim()
+
+    // Outbound replies quote the parent via its provider message id (wamid).
+    let replyContext: { message_id: string } | null = null
+    if (row.reply_to_message_id) {
+      const { data: parent } = await admin
+        .from('messages')
+        .select('external_id')
+        .eq('id', row.reply_to_message_id)
+        .maybeSingle()
+      if (parent?.external_id) {
+        replyContext = { message_id: parent.external_id }
+      }
+    }
     const cachedDialId = readDialOverride(contactChannel.metadata)
     const to = cachedDialId ?? canonicalTo
     const caption = row.content?.trim() ?? ''
@@ -410,10 +459,7 @@ export default {
 
       if (signedError || !signedData?.signedUrl) {
         console.error('send-whatsapp-message: signed URL error', signedError)
-        await admin
-          .from('messages')
-          .update({ status: 'failed' })
-          .eq('id', row.id)
+        await recordSendFailure(admin, row, conv.channel_id, { reason: 'signed_url_failed' })
         return jsonResponse(502, {
           error: 'Failed to create signed URL for media',
         })
@@ -441,6 +487,7 @@ export default {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
         to: recipient,
+        ...(replyContext ? { context: replyContext } : {}),
         ...messagePayload,
       }
 
@@ -491,7 +538,6 @@ export default {
           recipient_digits_only: /^\d+$/.test(recipient),
           recipient_e164_shape: /^[1-9]\d{6,14}$/.test(recipient),
           message_type: requestBody.type,
-          to: recipient,
         }),
       )
       return {
@@ -540,7 +586,10 @@ export default {
     }
 
     if (!result.ok) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, conv.channel_id, {
+        ...whatsappErrorDiagnostics(result.httpStatus, result.error),
+        ...(result.failureKind !== 'api' ? { reason: result.failureKind } : {}),
+      })
 
       if (result.failureKind === 'network') {
         return jsonResponse(502, { error: 'WhatsApp request failed' })
@@ -574,7 +623,7 @@ export default {
 
     const waMessageId = result.waMessageId
     if (!waMessageId) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, conv.channel_id, { reason: 'missing_wamid' })
       return jsonResponse(502, { error: 'WhatsApp send failed' })
     }
 
@@ -592,6 +641,13 @@ export default {
       console.error('send-whatsapp-message: message update', updateMsgError)
       return jsonResponse(500, { error: 'Failed to update message' })
     }
+
+    await insertStatusEvent(admin, {
+      workspaceId: row.workspace_id,
+      messageId: row.id,
+      status: 'sent',
+    })
+    await touchChannelActivity(admin, conv.channel_id, 'outbound')
 
     const { error: updateConvError } = await admin
       .from('conversations')

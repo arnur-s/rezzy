@@ -2,6 +2,8 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +33,7 @@ interface MessageRow {
   media_url: string | null
   media_filename: string | null
   media_mime_type: string | null
+  reply_to_message_id: string | null
 }
 
 interface ConversationRow {
@@ -41,7 +44,32 @@ interface ConversationRow {
 interface TelegramSendMessageResponse {
   ok: boolean
   description?: string
+  error_code?: number
   result?: { message_id: number }
+}
+
+/**
+ * Marks the outbound message failed and records a status-history event with
+ * safe provider diagnostics (never tokens or chat contents).
+ */
+async function recordSendFailure(
+  admin: SupabaseClient,
+  row: { id: string; workspace_id: string },
+  channelId: string | null,
+  errorCode: string | null,
+  errorDetail: string | null,
+): Promise<void> {
+  await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+  await insertStatusEvent(admin, {
+    workspaceId: row.workspace_id,
+    messageId: row.id,
+    status: 'failed',
+    errorCode,
+    errorType: errorDetail,
+  })
+  if (channelId) {
+    await touchChannelActivity(admin, channelId, 'error', errorCode)
+  }
 }
 
 interface ChannelRow {
@@ -169,7 +197,7 @@ export default {
     const { data: message, error: msgError } = await admin
       .from('messages')
       .select(
-        'id, workspace_id, conversation_id, direction, status, content, external_id, type, media_url, media_filename, media_mime_type',
+        'id, workspace_id, conversation_id, direction, status, content, external_id, type, media_url, media_filename, media_mime_type, reply_to_message_id',
       )
       .eq('id', messageId)
       .maybeSingle()
@@ -260,7 +288,7 @@ export default {
     }
 
     if (!channelRow.is_active) {
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(admin, row, channelRow.id, 'channel_inactive', null)
 
       return jsonResponse(409, {
         error:
@@ -307,13 +335,33 @@ export default {
         'send-telegram-message: no telegram external_id for contact',
         conv.contact_id,
       )
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(
+        admin,
+        row,
+        conv.channel_id,
+        'missing_chat_id',
+        null,
+      )
       return jsonResponse(400, {
         error: 'Telegram chat id missing for contact',
       })
     }
 
     const chatId = contactChannel.external_id.trim()
+
+    // Outbound replies use the parent's provider message id when known.
+    let replyParameters: { message_id: number } | null = null
+    if (row.reply_to_message_id) {
+      const { data: parent } = await admin
+        .from('messages')
+        .select('external_id')
+        .eq('id', row.reply_to_message_id)
+        .maybeSingle()
+      const parentExternalId = Number(parent?.external_id ?? '')
+      if (Number.isInteger(parentExternalId) && parentExternalId > 0) {
+        replyParameters = { message_id: parentExternalId }
+      }
+    }
 
     let telegramJson: TelegramSendMessageResponse
     const isMediaType = row.type !== 'text' && row.type !== 'sticker'
@@ -325,18 +373,19 @@ export default {
 
       if (signedError || !signedData?.signedUrl) {
         console.error('send-telegram-message: signed URL error', signedError)
-        await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+        await recordSendFailure(admin, row, conv.channel_id, 'signed_url_failed', null)
         return jsonResponse(502, { error: 'Failed to create signed URL for media' })
       }
 
       const method = TELEGRAM_MEDIA_METHOD[row.type] ?? 'sendDocument'
       const field = TELEGRAM_MEDIA_FIELD[row.type] ?? 'document'
-      const tgBody: Record<string, string> = {
+      const tgBody: Record<string, unknown> = {
         chat_id: chatId,
         [field]: signedData.signedUrl,
       }
       const caption = row.content?.trim() ?? ''
       if (caption) tgBody.caption = caption.slice(0, 1024)
+      if (replyParameters) tgBody.reply_parameters = replyParameters
 
       try {
         const tgRes = await fetch(
@@ -353,7 +402,7 @@ export default {
           'send-telegram-message: Telegram network error',
           e,
         )
-        await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+        await recordSendFailure(admin, row, conv.channel_id, 'network_error', null)
         return jsonResponse(502, { error: 'Telegram request failed' })
       }
     } else {
@@ -364,7 +413,11 @@ export default {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: content }),
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: content,
+              ...(replyParameters ? { reply_parameters: replyParameters } : {}),
+            }),
           },
         )
         telegramJson = (await tgRes.json()) as TelegramSendMessageResponse
@@ -373,7 +426,7 @@ export default {
           'send-telegram-message: Telegram network error',
           e,
         )
-        await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+        await recordSendFailure(admin, row, conv.channel_id, 'network_error', null)
         return jsonResponse(502, { error: 'Telegram request failed' })
       }
     }
@@ -383,7 +436,13 @@ export default {
         'send-telegram-message: Telegram API error',
         JSON.stringify(telegramJson),
       )
-      await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
+      await recordSendFailure(
+        admin,
+        row,
+        conv.channel_id,
+        telegramJson.error_code != null ? String(telegramJson.error_code) : null,
+        telegramJson.description ?? null,
+      )
       return jsonResponse(502, {
         error: telegramJson.description ?? 'Telegram send failed',
       })
@@ -405,6 +464,13 @@ export default {
       console.error('send-telegram-message: message update', updateMsgError)
       return jsonResponse(500, { error: 'Failed to update message' })
     }
+
+    await insertStatusEvent(admin, {
+      workspaceId: row.workspace_id,
+      messageId: row.id,
+      status: 'delivered',
+    })
+    await touchChannelActivity(admin, conv.channel_id, 'outbound')
 
     const { error: updateConvError } = await admin
       .from('conversations')
