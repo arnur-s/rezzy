@@ -1,5 +1,6 @@
 import { Button } from '@/components/button'
 import { listItemStyle } from '@/components/list'
+import { paneStyle } from '@/components/pane'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import type { Selection } from '@heroui/react'
@@ -26,6 +27,26 @@ type Props = {
   onRetry?: () => void
   isRetrying?: boolean
 }
+
+/**
+ * Row states for the most-read surface in the product.
+ *
+ * The list body is recessed and rows are transparent, so the selected row can
+ * be *lifted to a surface* rather than tinted. With a monochrome accent, an
+ * accent tint is by definition grey — the exact "generic grey block" this
+ * screen must avoid. Elevation reads as "you are here" without spending a
+ * colour the system does not have.
+ *
+ * Hover sits deliberately below selection so the two never compete, and focus
+ * is an inset ring so it survives on top of either.
+ */
+const conversationRowStyle = {
+  hover: 'data-[selected=false]:hover:bg-foreground/5',
+  selected:
+    'data-[selected=true]:bg-surface data-[selected=true]:shadow-surface data-[selected=true]:text-foreground',
+  focus:
+    'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-focus data-[focus-visible=true]:ring-inset',
+} as const
 
 function selectionToConversationId(keys: Selection): string | undefined {
   for (const id of keys) {
@@ -96,11 +117,11 @@ export function ConversationList({
     searchQuery.trim().length > 0 || primaryFilter !== 'all'
 
   return (
-    <div className="flex h-full min-h-0 flex-col border-r border-border/60">
-      <div className="h-[64px] shrink-0 flex items-center justify-center">
+    <div className={cn(paneStyle.surface, 'h-full w-full')}>
+      <div className="flex h-[64px] shrink-0 items-center justify-center px-1">
         <ConversationSearch value={searchQuery} onChange={onSearchChange} />
       </div>
-      <div className="shrink-0">
+      <div className={cn('shrink-0 border-b', paneStyle.separator)}>
         <PrimaryInboxFilters
           primaryFilter={primaryFilter}
           onPrimaryFilterChange={onPrimaryFilterChange}
@@ -108,11 +129,13 @@ export function ConversationList({
         />
       </div>
 
-      <ScrollShadow className="min-h-0 flex-1">
+      {/* Recessed body: rows are transparent against it, so the selected row
+          can lift to a surface instead of being tinted grey. */}
+      <ScrollShadow className={cn('min-h-0 flex-1', paneStyle.recessed)}>
         {isLoading ? (
           <ConversationListSkeleton />
         ) : isError ? (
-          <div className="px-4 py-6">
+          <div className="px-3 py-4">
             <Alert status="danger">
               <Alert.Indicator />
               <Alert.Content>
@@ -161,13 +184,13 @@ export function ConversationList({
                   // the open thread can jump back to the latest message.
                   onClick={() => onSelect(conversation.id)}
                   className={cn(
-                    'cursor-pointer flex w-full items-start text-left outline-none',
+                    'flex w-full cursor-pointer items-start text-left outline-none',
                     listItemStyle.md,
                     'px-3 py-2.5',
                     listItemStyle.transition,
-                    listItemStyle.data.hover,
-                    listItemStyle.data.selected,
-                    listItemStyle.data.focus,
+                    conversationRowStyle.hover,
+                    conversationRowStyle.selected,
+                    conversationRowStyle.focus,
                   )}
                 >
                   <ConversationListItem
@@ -194,14 +217,14 @@ function EmptyState({
 }) {
   if (hasActiveFilter) {
     return (
-      <div className="flex flex-col items-center px-6 py-12 text-center">
-        <Typography.Paragraph className="text-sm text-muted">
+      <div className="flex flex-col items-center px-6 py-16 text-center">
+        <Typography.Paragraph className="text-muted text-sm text-balance">
           {m.inbox_list_search_empty()}
         </Typography.Paragraph>
         <Button
           size="sm"
           variant="ghost"
-          className="mt-3"
+          className="mt-4"
           onPress={onClearFilters}
         >
           {m.inbox_list_clear_filters()}
@@ -210,11 +233,11 @@ function EmptyState({
     )
   }
   return (
-    <div className="px-6 py-12 text-center">
-      <Typography.Paragraph className="text-sm font-medium">
+    <div className="px-6 py-16 text-center">
+      <Typography.Paragraph className="text-sm font-medium text-balance">
         {m.inbox_list_empty_title()}
       </Typography.Paragraph>
-      <Typography.Paragraph className="mt-1 text-xs text-muted">
+      <Typography.Paragraph className="text-muted mt-1.5 text-xs text-balance">
         {m.inbox_list_empty_description()}
       </Typography.Paragraph>
     </div>

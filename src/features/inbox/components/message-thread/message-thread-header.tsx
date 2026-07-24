@@ -27,7 +27,7 @@ export function MessageThreadHeader({
     : conversation.channel.name?.trim() || ''
 
   return (
-    <header className="h-[64px] w-full flex items-center gap-3 border-b border-border/60 px-3 py-3 sm:px-6">
+    <header className="border-border/60 flex h-[64px] w-full shrink-0 items-center gap-3 border-b px-3 py-3 sm:px-6">
       {onBack ? (
         <Button
           variant="ghost"

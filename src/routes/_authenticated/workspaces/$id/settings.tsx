@@ -1,7 +1,9 @@
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { workspaceCrumbs } from '@/lib/breadcrumbs'
 import { m } from '@/paraglide/messages'
-import { Tabs } from '@heroui/react'
+import { paneStyle } from '@/components/pane'
+import { ScrollShadow, Tabs } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import {
   Outlet,
   createFileRoute,
@@ -90,22 +92,23 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto">
-      <header className="border-b border-border/60 py-6">
+    <div className={cn(paneStyle.surface, 'h-full w-full')}>
+      {/* Attached to the pane's top edge, above its scroll region. */}
+      <header className="border-border/60 shrink-0 border-b py-6">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
-          <p className="text-xs font-medium text-muted">
+          <p className="text-muted text-xs font-medium">
             {m.workspace_settings_kicker()}
           </p>
-          <h1 className="mt-1 text-lg font-semibold">
+          <h1 className="mt-1 text-base font-semibold">
             {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted">
+          <p className="text-muted mt-1 max-w-2xl text-sm">
             {m.workspace_settings_description()}
           </p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
+      <ScrollShadow className="mx-auto w-full max-w-3xl min-h-0 flex-1 px-4 py-6 sm:px-8 md:py-8">
         <Tabs
           className="w-full"
           selectedKey={selectedKey}
@@ -133,7 +136,7 @@ function RouteComponent() {
             <Outlet />
           </Tabs.Panel>
         </Tabs>
-      </div>
+      </ScrollShadow>
     </div>
   )
 }

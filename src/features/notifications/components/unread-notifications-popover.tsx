@@ -1,4 +1,5 @@
 import { Button } from '@/components/button'
+import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { Alert, Badge, Popover, ScrollShadow, Typography } from '@heroui/react'
 import { useNavigate } from '@tanstack/react-router'
@@ -10,7 +11,7 @@ import { UnreadNotificationItem } from './unread-notification-item'
 import { UnreadNotificationsSkeleton } from './unread-notifications-skeleton'
 
 type Props = {
-  /** Undefined outside workspace routes; the bell then opens onto the empty state. */
+  /** Active workspace, when the route has one. Notifications span all workspaces. */
   workspaceId: string | undefined
 }
 
@@ -21,18 +22,25 @@ export function UnreadNotificationsPopover({ workspaceId }: Props) {
   const { items, totalUnread, isPending, isError, isRetrying, retry } =
     useUnreadNotifications(workspaceId)
 
+  // Rows carry their own workspace, so a notification opens in the right inbox
+  // even from the home page.
   const handleSelect = useCallback(
-    (conversationId: string) => {
-      if (!workspaceId) return
+    (conversation: ConversationWithRelations) => {
       setIsOpen(false)
       void navigate({
         to: '/workspaces/$id/inbox/$conversationId',
-        params: { id: workspaceId, conversationId },
+        params: {
+          id: conversation.workspace_id,
+          conversationId: conversation.id,
+        },
       })
     },
-    [navigate, workspaceId],
+    [navigate],
   )
 
+  // Only offered on a workspace route. Notifications span every workspace, so
+  // off-route there is no single inbox that would show "all" of them — and the
+  // home page already lists them in full.
   const handleViewAll = useCallback(() => {
     if (!workspaceId) return
     setIsOpen(false)
@@ -105,10 +113,11 @@ export function UnreadNotificationsPopover({ workspaceId }: Props) {
           ) : (
             <ScrollShadow className="max-h-[min(60vh,22rem)]">
               <ul className="flex flex-col gap-0.5 px-1.5 pb-1.5">
-                {items.map((conversation) => (
+                {items.map((item) => (
                   <UnreadNotificationItem
-                    key={conversation.id}
-                    conversation={conversation}
+                    key={item.conversation.id}
+                    conversation={item.conversation}
+                    workspaceName={item.workspaceName}
                     onSelect={handleSelect}
                   />
                 ))}

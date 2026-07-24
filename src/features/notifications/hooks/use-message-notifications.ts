@@ -1,5 +1,7 @@
+import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
 import { useAuth } from '@/providers/auth-provider'
 import { supabase } from '@/utils/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 import { getMessageNotificationDetails } from '../api/notifications'
@@ -36,6 +38,7 @@ export function useMessageNotifications(): void {
   const { user } = useAuth()
   const userId = user?.id ?? null
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const preferencesQuery = useNotificationPreferences()
 
   const params = useParams({ strict: false })
@@ -143,6 +146,19 @@ export function useMessageNotifications(): void {
       if (ctx.preferences.soundEnabled) playNotificationSound()
     }
 
+    // Keeps the header bell live for workspaces the agent is not viewing. The
+    // active workspace already has useConversationsRealtime merging its rows,
+    // so re-fetching its list here would only duplicate that work.
+    const syncUnreadCaches = (row: MessageNotificationRow) => {
+      if (row.workspace_id === contextRef.current.openWorkspaceId) return
+      void queryClient.invalidateQueries({
+        queryKey: inboxQueryKeys.unreadCountsForWorkspace(row.workspace_id),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: inboxQueryKeys.conversations(row.workspace_id),
+      })
+    }
+
     const channel = supabase
       .channel(`notifications:${userId}`)
       .on(
@@ -154,7 +170,11 @@ export function useMessageNotifications(): void {
           filter: `recipient_id=eq.${userId}`,
         },
         (payload) => {
-          void present(payload.new as MessageNotificationRow)
+          const row = payload.new as MessageNotificationRow
+          // Cache sync is independent of the toast rules (dedupe, tab
+          // coordination, thread suppression) that can skip presentation.
+          syncUnreadCaches(row)
+          void present(row)
         },
       )
       .subscribe((status) => {
@@ -167,5 +187,5 @@ export function useMessageNotifications(): void {
       coordinator.destroy()
       void supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [userId, queryClient])
 }

@@ -1,5 +1,7 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
+import type { Workspace } from '@/entities/workspace'
 import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
+import { workspaceQueryKeys } from '@/features/workspaces/api/workspaces'
 import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
 import { QueryClient } from '@tanstack/react-query'
@@ -40,6 +42,21 @@ vi.mock('@/entities/channel', async () => {
     PlatformIcon: () => <span data-testid="platform-icon" />,
   }
 })
+
+function workspaceFixture(id: string, name: string): Workspace {
+  return {
+    id,
+    name,
+    created_at: '2026-01-01T00:00:00Z',
+    created_by: 'u1',
+    deleted_at: null,
+    description: null,
+    icon: null,
+    is_main: true,
+    updated_at: '2026-01-01T00:00:00Z',
+    updated_by: null,
+  }
+}
 
 function conversationFixture(
   id: string,
@@ -84,19 +101,48 @@ function createSeededClient() {
   })
 }
 
-function renderPopover({
-  conversations,
-  counts,
-}: {
+type Seed = {
   conversations: Array<ConversationWithRelations>
   counts: Record<string, number>
-}) {
+  workspaces?: Array<Workspace>
+  /** The route's active workspace; undefined mimics the home page. */
+  activeWorkspaceId?: string
+}
+
+function renderPopover(seed: Seed) {
+  const {
+    conversations,
+    counts,
+    workspaces = [workspaceFixture('w1', 'Acme Support')],
+  } = seed
+  // `in` rather than a default parameter: an explicit `undefined` means "home
+  // page", and a default would silently substitute a workspace instead.
+  const activeWorkspaceId = 'activeWorkspaceId' in seed
+    ? seed.activeWorkspaceId
+    : 'w1'
   const queryClient = createSeededClient()
-  queryClient.setQueryData(inboxQueryKeys.conversations('w1'), conversations)
-  queryClient.setQueryData(inboxQueryKeys.unreadCounts('w1', 'u1'), counts)
-  return renderWithQueryClient(<UnreadNotificationsPopover workspaceId="w1" />, {
-    queryClient,
-  })
+  queryClient.setQueryData(workspaceQueryKeys.list('u1'), workspaces)
+  for (const workspace of workspaces) {
+    queryClient.setQueryData(
+      inboxQueryKeys.conversations(workspace.id),
+      conversations.filter((row) => row.workspace_id === workspace.id),
+    )
+    queryClient.setQueryData(
+      inboxQueryKeys.unreadCounts(workspace.id, 'u1'),
+      Object.fromEntries(
+        Object.entries(counts).filter(([conversationId]) =>
+          conversations.some(
+            (row) =>
+              row.id === conversationId && row.workspace_id === workspace.id,
+          ),
+        ),
+      ),
+    )
+  }
+  return renderWithQueryClient(
+    <UnreadNotificationsPopover workspaceId={activeWorkspaceId} />,
+    { queryClient },
+  )
 }
 
 describe('UnreadNotificationsPopover', () => {
@@ -104,7 +150,7 @@ describe('UnreadNotificationsPopover', () => {
     setLocale('en', { reload: false })
   })
 
-  it('hides the badge and shows the empty state when nothing is unread', () => {
+  it('hides the badge and shows the empty state when nothing is unread', async () => {
     renderPopover({
       conversations: [conversationFixture('c1')],
       counts: { c1: 0 },
@@ -113,11 +159,11 @@ describe('UnreadNotificationsPopover', () => {
     expect(screen.queryByText('0')).toBeNull()
 
     fireEvent.click(trigger)
-    expect(screen.getByText("You're all caught up")).toBeTruthy()
+    expect(await screen.findByText("You're all caught up")).toBeTruthy()
     expect(screen.queryByText('Alice Johnson')).toBeNull()
   })
 
-  it('caps the visible badge at 99+ while announcing the real count', () => {
+  it('caps the visible badge at 99+ while announcing the real count', async () => {
     renderPopover({
       conversations: [
         conversationFixture('c1'),
@@ -125,25 +171,86 @@ describe('UnreadNotificationsPopover', () => {
       ],
       counts: { c1: 70, c2: 50 },
     })
-    expect(screen.getByText('99+')).toBeTruthy()
+    expect(await screen.findByText('99+')).toBeTruthy()
     expect(screen.getByLabelText('Notifications, 120 unread')).toBeTruthy()
   })
 
-  it('closes and navigates to the conversation without marking it read', async () => {
+  // The bug this feature shipped with: the header is global, but the data was
+  // scoped to the route's workspace, so the bell was empty on the home page.
+  it('shows notifications on routes without an active workspace', async () => {
     renderPopover({
       conversations: [conversationFixture('c1')],
-      counts: { c1: 2 },
+      counts: { c1: 3 },
+      activeWorkspaceId: undefined,
     })
-    fireEvent.click(screen.getByLabelText('Notifications, 2 unread'))
+    expect(await screen.findByLabelText('Notifications, 3 unread')).toBeTruthy()
+    expect(screen.getByText('3')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Notifications, 3 unread'))
+    expect(await screen.findByText('Alice Johnson')).toBeTruthy()
+    // No single inbox would show "all" of a cross-workspace list, so the
+    // footer is withheld rather than silently picking one workspace.
+    expect(
+      screen.queryByRole('button', { name: 'View all messages' }),
+    ).toBeNull()
+  })
+
+  it('offers view-all only on a workspace route', async () => {
+    renderPopover({
+      conversations: [conversationFixture('c1')],
+      counts: { c1: 3 },
+      activeWorkspaceId: 'w1',
+    })
+    fireEvent.click(await screen.findByLabelText('Notifications, 3 unread'))
     fireEvent.click(
-      screen.getByRole('button', {
-        name: /Open conversation with Alice Johnson/,
-      }),
+      await screen.findByRole('button', { name: 'View all messages' }),
+    )
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/workspaces/$id/inbox',
+      params: { id: 'w1' },
+    })
+  })
+
+  it('aggregates unread across every workspace and labels each row', async () => {
+    renderPopover({
+      conversations: [
+        conversationFixture('c1'),
+        conversationFixture('c2', 'Bob', { workspace_id: 'w2' }),
+      ],
+      counts: { c1: 2, c2: 3 },
+      workspaces: [
+        workspaceFixture('w1', 'Acme Support'),
+        workspaceFixture('w2', 'Globex'),
+      ],
+      activeWorkspaceId: undefined,
+    })
+    expect(await screen.findByLabelText('Notifications, 5 unread')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Notifications, 5 unread'))
+    expect(await screen.findByText('Acme Support')).toBeTruthy()
+    expect(screen.getByText('Globex')).toBeTruthy()
+  })
+
+  it('opens a conversation in its own workspace without marking it read', async () => {
+    renderPopover({
+      conversations: [
+        conversationFixture('c2', 'Bob', { workspace_id: 'w2' }),
+      ],
+      counts: { c2: 2 },
+      workspaces: [
+        workspaceFixture('w1', 'Acme Support'),
+        workspaceFixture('w2', 'Globex'),
+      ],
+      activeWorkspaceId: 'w1',
+    })
+    fireEvent.click(await screen.findByLabelText('Notifications, 2 unread'))
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Open conversation with Bob/ }),
     )
 
     expect(navigateMock).toHaveBeenCalledWith({
       to: '/workspaces/$id/inbox/$conversationId',
-      params: { id: 'w1', conversationId: 'c1' },
+      params: { id: 'w2', conversationId: 'c2' },
     })
     await waitFor(() => {
       expect(screen.queryByText('Unread messages')).toBeNull()
@@ -151,29 +258,12 @@ describe('UnreadNotificationsPopover', () => {
     expect(supabaseMock.rpc).not.toHaveBeenCalled()
   })
 
-  it('navigates to the workspace inbox from the view-all footer action', async () => {
-    renderPopover({
-      conversations: [conversationFixture('c1')],
-      counts: { c1: 2 },
-    })
-    fireEvent.click(screen.getByLabelText('Notifications, 2 unread'))
-    fireEvent.click(screen.getByRole('button', { name: 'View all messages' }))
-
-    expect(navigateMock).toHaveBeenCalledWith({
-      to: '/workspaces/$id/inbox',
-      params: { id: 'w1' },
-    })
-    await waitFor(() => {
-      expect(screen.queryByText('Unread messages')).toBeNull()
-    })
-  })
-
   it('updates the badge when the unread cache changes', async () => {
     const { queryClient } = renderPopover({
       conversations: [conversationFixture('c1')],
       counts: { c1: 2 },
     })
-    expect(screen.getByText('2')).toBeTruthy()
+    expect(await screen.findByText('2')).toBeTruthy()
 
     act(() => {
       queryClient.setQueryData(inboxQueryKeys.unreadCounts('w1', 'u1'), {
@@ -185,22 +275,10 @@ describe('UnreadNotificationsPopover', () => {
     expect(screen.getByLabelText('Notifications, 5 unread')).toBeTruthy()
   })
 
-  it('opens a single realtime channel scoped to the workspace', () => {
+  it('opens a single realtime channel scoped to the active workspace', () => {
     renderPopover({ conversations: [], counts: {} })
     expect(supabaseMock.channel).toHaveBeenCalledTimes(1)
     expect(supabaseMock.channel).toHaveBeenCalledWith('inbox:conversations:w1')
-  })
-
-  it('stays functional without a workspace: empty state, no footer, no subscription', () => {
-    renderWithQueryClient(<UnreadNotificationsPopover workspaceId={undefined} />, {
-      queryClient: createSeededClient(),
-    })
-    fireEvent.click(screen.getByLabelText('Notifications'))
-    expect(screen.getByText("You're all caught up")).toBeTruthy()
-    expect(
-      screen.queryByRole('button', { name: 'View all messages' }),
-    ).toBeNull()
-    expect(supabaseMock.channel).not.toHaveBeenCalled()
   })
 
   it('shows the error state with a retry action when loading fails', async () => {

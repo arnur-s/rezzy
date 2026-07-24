@@ -2,8 +2,12 @@ import type { ChannelType } from '@/entities/channel'
 import type { MessageRow } from '@/entities/message'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { m } from '@/paraglide/messages'
+import { paneStyle } from '@/components/pane'
 import { Button, Typography, toast } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import { XIcon } from 'lucide-react'
+
+import { TRANSCRIPT_MEASURE } from './transcript-measure'
 
 import { useSendMessage } from '../../hooks/use-messages'
 import { listPreviewFromMessage } from '../../schemas/message-metadata'
@@ -70,38 +74,52 @@ export function MessageComposer({
   const replyPreview = replyTo ? listPreviewFromMessage(replyTo) : null
 
   return (
-    <div className="container p-4 pb-0">
-      {replyTo ? (
-        <div className="mb-2 flex items-center gap-2 rounded-lg border-l-2 border-accent bg-foreground/5 px-3 py-1.5">
-          <div className="flex min-w-0 flex-1 flex-col text-xs">
-            <span className="font-medium text-foreground/80">
-              {m.inbox_reply_to({ name: replyAuthor ?? '' })}
-            </span>
-            {replyPreview ? (
-              <span className="truncate text-foreground/60">{replyPreview}</span>
-            ) : null}
+    <div className={cn(TRANSCRIPT_MEASURE, 'shrink-0 px-4 pt-3 pb-4 sm:px-6')}>
+      {/* A deliberate work surface, not a strip on the pane edge. It owns the
+          focus indication for the textarea inside it. */}
+      <div
+        className={cn(
+          paneStyle.raised,
+          'focus-within:ring-focus/40 p-2 transition-shadow focus-within:ring-2 motion-reduce:transition-none',
+        )}
+      >
+        {replyTo ? (
+          <div className="border-border/60 bg-foreground/5 mb-2 flex items-center gap-2 rounded-lg border px-3 py-1.5">
+            <div className="flex min-w-0 flex-1 flex-col text-xs">
+              <span className="text-foreground/80 font-medium">
+                {m.inbox_reply_to({ name: replyAuthor ?? '' })}
+              </span>
+              {replyPreview ? (
+                <span className="text-foreground/60 truncate">
+                  {replyPreview}
+                </span>
+              ) : null}
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-label={m.inbox_reply_cancel()}
+              onPress={() => onCancelReply?.()}
+              className="h-6 min-w-0 shrink-0 px-1"
+            >
+              <XIcon className="size-3.5" aria-hidden />
+            </Button>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            aria-label={m.inbox_reply_cancel()}
-            onPress={() => onCancelReply?.()}
-            className="h-6 min-w-0 shrink-0 px-1"
-          >
-            <XIcon className="size-3.5" aria-hidden />
-          </Button>
-        </div>
-      ) : null}
+        ) : null}
 
-      <ChatInput
-        onSend={handleSend}
-        disabled={isDisabled || sendMessage.isPending}
-        placeholder={m.inbox_composer_placeholder()}
-        autoFocusKey={isMobile ? undefined : conversationId}
-        acceptedMimeTypes={acceptedMimeTypes}
-      />
+        <ChatInput
+          onSend={handleSend}
+          disabled={isDisabled || sendMessage.isPending}
+          placeholder={m.inbox_composer_placeholder()}
+          autoFocusKey={isMobile ? undefined : conversationId}
+          acceptedMimeTypes={acceptedMimeTypes}
+        />
+      </div>
 
-      <Typography.Paragraph size="xs" className="mb-2 text-muted">
+      <Typography.Paragraph
+        size="xs"
+        className="text-muted mt-2 px-1 text-center"
+      >
         {m.inbox_composer_reply_via({ channel: channelLabel })}
       </Typography.Paragraph>
     </div>

@@ -235,7 +235,7 @@ export function ChatInput({
           />
         )}
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1">
           <input
             ref={fileInputRef}
             type="file"
@@ -272,57 +272,20 @@ export function ChatInput({
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               className={cn(
-                'w-full',
-                showStyledMirror && 'text-transparent caret-foreground',
+                // Transparent: the composer surface around it is the field.
+                // A filled input here would be a box inside a box.
+                'w-full bg-transparent shadow-none',
+                // The field spans the whole composer, so its own focus ring
+                // would outline the entire surface in near-black. The composer
+                // shows focus instead (focus-within, below).
+                'ring-0 outline-none focus:ring-0 focus-visible:ring-0',
+                showStyledMirror && 'caret-foreground text-transparent',
               )}
             />
           </div>
 
-          {showMicButton ? (
-            <Tooltip>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                isIconOnly
-                isDisabled={disabled}
-                aria-label={m.inbox_composer_voice_label()}
-                aria-pressed={isRecording}
-                onPointerDown={handleMicPointerDown}
-                onPointerUp={handleMicPointerEnd}
-                onPointerCancel={handleMicPointerEnd}
-                onPointerLeave={handleMicPointerEnd}
-                onContextMenu={(e) => e.preventDefault()}
-                className={cn(
-                  'relative',
-                  isRecording && 'text-danger ring-2 ring-danger/40',
-                )}
-              >
-                {isRecording && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 rounded-full bg-danger/15 animate-ping motion-reduce:animate-none"
-                  />
-                )}
-                <MicIcon className="relative size-4" />
-              </Button>
-              <Tooltip.Content>
-                <p>{m.inbox_composer_voice_hold_to_record()}</p>
-              </Tooltip.Content>
-            </Tooltip>
-          ) : (
-            <Button
-              size="sm"
-              variant="primary"
-              isIconOnly
-              isDisabled={!canSend}
-              onPress={handleSend}
-              aria-label={m.inbox_composer_send_label()}
-            >
-              <SendIcon className="size-4" />
-            </Button>
-          )}
-
+          {/* Input affordances group together; the send action is terminal,
+              set apart by a slightly larger gap so it reads as the commit. */}
           <Button
             size="sm"
             variant="ghost"
@@ -359,6 +322,52 @@ export function ChatInput({
               </Popover.Dialog>
             </Popover.Content>
           </Popover>
+
+          {showMicButton ? (
+            <Tooltip>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                isIconOnly
+                isDisabled={disabled}
+                aria-label={m.inbox_composer_voice_label()}
+                aria-pressed={isRecording}
+                onPointerDown={handleMicPointerDown}
+                onPointerUp={handleMicPointerEnd}
+                onPointerCancel={handleMicPointerEnd}
+                onPointerLeave={handleMicPointerEnd}
+                onContextMenu={(e) => e.preventDefault()}
+                className={cn(
+                  'relative ml-1',
+                  isRecording && 'text-danger ring-danger/40 ring-2',
+                )}
+              >
+                {isRecording && (
+                  <span
+                    aria-hidden
+                    className="bg-danger/15 absolute inset-0 animate-ping rounded-full motion-reduce:animate-none"
+                  />
+                )}
+                <MicIcon className="relative size-4" />
+              </Button>
+              <Tooltip.Content>
+                <p>{m.inbox_composer_voice_hold_to_record()}</p>
+              </Tooltip.Content>
+            </Tooltip>
+          ) : (
+            <Button
+              size="sm"
+              variant="primary"
+              isIconOnly
+              isDisabled={!canSend}
+              onPress={handleSend}
+              aria-label={m.inbox_composer_send_label()}
+              className="ml-1"
+            >
+              <SendIcon className="size-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

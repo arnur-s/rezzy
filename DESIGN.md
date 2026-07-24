@@ -2,18 +2,26 @@
 name: Rezzy
 description: Multi-workspace customer inbox and CRM for sales and account management teams
 colors:
-  signal-blue: 'oklch(62.04% 0.195 253.83)'
-  ash-canvas: 'oklch(97.02% 0 0)'
+  # Values mirror src/styles.css exactly. That file is the source of truth;
+  # if the two disagree, styles.css wins and this block is stale.
+  # Light mode
+  ink-accent: 'oklch(0 0 0)'
+  ash-canvas: 'oklch(93.5% 0 0)'
   clean-sheet: 'oklch(100% 0 0)'
-  graphite-text: 'oklch(21.03% 0.0059 285.89)'
-  slate-muted: 'oklch(55.17% 0.0138 285.94)'
-  hairline: 'oklch(90% 0.004 286.32)'
-  midnight-ink: 'oklch(12% 0.005 285.823)'
-  charcoal-surface: 'oklch(21.03% 0.0059 285.89)'
-  dusk-border: 'oklch(28% 0.006 286.033)'
-  meadow-green: 'oklch(73.29% 0.1935 150.81)'
-  warm-amber: 'oklch(78.19% 0.1585 72.33)'
-  coral-alert: 'oklch(65.32% 0.2328 25.74)'
+  quiet-step: 'oklch(95.24% 0 0)'
+  graphite-text: 'oklch(21.03% 0 0)'
+  slate-muted: 'oklch(55.17% 0 0)'
+  hairline: 'oklch(90% 0 0)'
+  # Dark mode
+  midnight-ink: 'oklch(12% 0 0)'
+  charcoal-surface: 'oklch(21.03% 0 0)'
+  charcoal-step: 'oklch(16.5% 0 0)'
+  dusk-border: 'oklch(28% 0 0)'
+  snow-accent: 'oklch(0.9848 0 0)'
+  # Status (shared)
+  meadow-green: 'oklch(0.6277 0.1604 153.06)'
+  warm-amber: 'oklch(0.8446 0.1525 80.6)'
+  coral-alert: 'oklch(0.573 0.2249 21.97)'
 typography:
   title:
     fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
@@ -48,24 +56,19 @@ spacing:
   lg: '24px'
 components:
   button-primary:
-    backgroundColor: '{colors.signal-blue}'
-    textColor: 'oklch(99.11% 0 0)'
-    rounded: '{rounded.md}'
-    padding: '8px 20px'
-  button-primary-hover:
-    backgroundColor: 'oklch(57% 0.18 253.83)'
-    textColor: 'oklch(99.11% 0 0)'
-    rounded: '{rounded.md}'
+    backgroundColor: '{colors.ink-accent}'
+    textColor: '{colors.snow-accent}'
+    rounded: '{rounded.sm}'
     padding: '8px 20px'
   button-ghost:
     backgroundColor: 'transparent'
     textColor: '{colors.graphite-text}'
-    rounded: '{rounded.md}'
+    rounded: '{rounded.sm}'
     padding: '8px 20px'
   button-ghost-hover:
-    backgroundColor: 'color-mix(in oklab, {colors.signal-blue} 10%, transparent)'
-    textColor: '{colors.signal-blue}'
-    rounded: '{rounded.md}'
+    backgroundColor: 'color-mix(in oklab, {colors.ink-accent} 10%, transparent)'
+    textColor: '{colors.ink-accent}'
+    rounded: '{rounded.sm}'
     padding: '8px 20px'
   nav-item:
     backgroundColor: 'transparent'
@@ -73,14 +76,19 @@ components:
     rounded: '{rounded.md}'
     padding: '8px 12px'
   nav-item-active:
-    backgroundColor: 'color-mix(in oklab, {colors.signal-blue} 12%, transparent)'
-    textColor: '{colors.signal-blue}'
+    backgroundColor: 'color-mix(in oklab, {colors.ink-accent} 12%, transparent)'
+    textColor: '{colors.ink-accent}'
     rounded: '{rounded.md}'
     padding: '8px 12px'
-  input-default:
-    backgroundColor: 'oklch(95.24% 0.0013 286.37)'
-    textColor: '{colors.graphite-text}'
+  workspace-pane:
+    backgroundColor: '{colors.clean-sheet}'
+    borderColor: 'transparent'
     rounded: '{rounded.lg}'
+    padding: '0px'
+  input-default:
+    backgroundColor: '{colors.quiet-step}'
+    textColor: '{colors.graphite-text}'
+    rounded: '{rounded.sm}'
     padding: '8px 12px'
 ---
 
@@ -92,52 +100,62 @@ components:
 
 Rezzy is designed for the rhythm of sustained professional work. Sales reps and account managers open this tool to scan new messages, reply to leads, check contact history, and move on. The interface should feel like a well-organized desk: everything findable, nothing asserting itself. The UI does not perform — it performs for you.
 
-The system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with shadow giving depth to cards and panels. In dark mode, everything flattens: midnight ink backgrounds, tonal steps replacing shadows, the same Signal Blue accent unchanged between both. Both modes share the same restraint. Neither mode is the default because neither use-case is assumed.
+The system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with shadow giving depth to panes. In dark mode, everything flattens: midnight ink backgrounds and tonal steps replacing shadows. The accent inverts between the two rather than staying fixed, because it is the end of the neutral ramp, not a hue. Both modes share the same restraint. Neither mode is the default because neither use-case is assumed.
 
-Color is rationed. Signal Blue is the only expressive color in the system. It marks where to act — active navigation, unread counts, primary buttons. Every other pixel is neutral infrastructure. This restraint is not minimalism for its own sake; it's operational clarity. When Signal Blue appears, it means something.
+Color is not rationed — it is nearly absent. The palette is pure neutral: every grey is zero-chroma, with no blue or purple cast anywhere. The accent is monochrome too — true black in light mode, near-white in dark. It marks where to act — active navigation, unread counts, the selected conversation, primary buttons — and it does so through tone alone. Chroma appears only in the three status colors, where meaning genuinely depends on hue. This is a stronger claim than a restrained palette: nothing on screen competes with the customer's own words.
+
+Structure, not color, carries the hierarchy. The authenticated shell is a base canvas with elevated panes floating on it, and that spatial relationship does the work an accent color would otherwise be asked to do.
 
 **Key Characteristics:**
 
 - System-adaptive theming: full light and dark support with shared token vocabulary
-- Restrained accent: Signal Blue occupies at most 10% of any given surface
+- Monochrome accent: the interface has no expressive hue outside status colors
+- Layered shell: a canvas holds the sidebar; workspace content sits on panes above it
 - Tonal elevation: light mode uses shadow; dark mode uses flat tonal layering
 - Work-dense scale: 14px body, 12px labels, no display sizes — this is a tool, not a brochure
 - System typography: no loaded typeface; the interface defers to the OS font
-- effect reserved: the dot-grid radial background appears only on auth and onboarding screens
+- Effect reserved: the dot-grid radial background appears only on auth and onboarding screens, never inside the product shell
 
-## 2. Colors: The Signal Palette
+## 2. Colors: The Monochrome Palette
 
-One expressive color, carefully placed. The rest is neutral infrastructure.
+No expressive color. Tone and structure carry everything except status.
 
-### Primary
+### Accent
 
-- **Signal Blue** (`oklch(62.04% 0.195 253.83)`): The sole action color. Used in active navigation highlights, unread count chips, primary buttons, focus rings, and the brand mark. Never decorative. When Signal Blue appears, it denotes a state the user should act on or has acted on.
+- **Ink Accent** (light: `oklch(0 0 0)` / dark: `oklch(0.9848 0 0)`): The sole action color, and it is not a color — it is the far end of the neutral ramp, inverting between modes. Used for active navigation, unread count chips, the selected conversation row, primary buttons, focus rings, outbound message bubbles, and the brand mark. Never decorative.
+- **Accent Soft** (`color-mix(in oklab, var(--accent) 15%, transparent)`, via HeroUI's `--accent-soft`): The accent at low opacity. Tints active states on *small controls that sit on a surface* — nav items, filter chips. It is not used for selected list rows; see The Lift-Not-Fill Rule.
 
 ### Neutral (Light Mode)
 
-- **Ash Canvas** (`oklch(97.02% 0 0)`): Page background in light mode. The working surface behind all panels and cards.
-- **Clean Sheet** (`oklch(100% 0 0)`): Card and surface backgrounds. The layer above the canvas.
-- **Graphite Text** (`oklch(21.03% 0.0059 285.89)`): Primary text and icons. Carries a faint blue-purple tint; warm enough to read, cool enough to recede.
-- **Slate Muted** (`oklch(55.17% 0.0138 285.94)`): Secondary text, timestamps, metadata, placeholder text. Always supporting, never leading.
-- **Hairline** (`oklch(90% 0.004 286.32)`): Borders, dividers, and separators. Visible enough to structure, invisible enough to not distract.
+- **Ash Canvas** (`oklch(93.5% 0 0)`): The app canvas. The sidebar and header sit directly on it; panes float above it. Deliberately a full step below Clean Sheet: because panes carry no border, the canvas contrast *is* the pane edge.
+- **Clean Sheet** (`oklch(100% 0 0)`): Pane and surface backgrounds. The layer above the canvas.
+- **Quiet Step** (`oklch(95.24% 0 0)`, HeroUI's `--surface-secondary`): The recessed step inside a pane — the message transcript, form field fills.
+- **Graphite Text** (`oklch(21.03% 0 0)`): Primary text and icons. Zero chroma — no blue-purple cast.
+- **Slate Muted** (`oklch(55.17% 0 0)`): Secondary text, timestamps, metadata, placeholder text. Always supporting, never leading.
+- **Hairline** (`oklch(90% 0 0)`): Borders, dividers, pane edges. Visible enough to structure, invisible enough to not distract.
 
 ### Neutral (Dark Mode)
 
-- **Midnight Ink** (`oklch(12% 0.005 285.823)`): Page background in dark mode. Near-black with a whisper of blue-indigo.
-- **Charcoal Surface** (`oklch(21.03% 0.0059 285.89)`): Card and surface backgrounds in dark mode. The tonal step above Midnight Ink.
-- **Dusk Border** (`oklch(28% 0.006 286.033)`): Borders and dividers in dark mode.
+- **Midnight Ink** (`oklch(12% 0 0)`): The app canvas in dark mode. Pure neutral near-black. Dark mode has no shadow *and* no pane border, so this token carries the entire separation between canvas and pane — it must stay well below Charcoal Surface.
+- **Charcoal Surface** (`oklch(21.03% 0 0)`): Pane backgrounds. The tonal step above Midnight Ink that replaces shadow.
+- **Charcoal Step** (`oklch(16.5% 0 0)`): The recessed step inside a pane. Sits *below* the pane, matching light mode's direction, so a surface lifted back up inside it (the composer, a selected row) reads as raised in both themes. This overrides HeroUI's default `--surface-secondary`, which sits above `--surface` and inverts the relationship.
+- **Dusk Border** (`oklch(28% 0 0)`): Separators *inside* panes only. Never around a pane.
 
 ### Tertiary (Status)
 
-- **Meadow Green** (`oklch(73.29% 0.1935 150.81)`): Success states, resolved conversation indicators.
-- **Warm Amber** (`oklch(78.19% 0.1585 72.33)`): Warning states.
-- **Coral Alert** (`oklch(65.32% 0.2328 25.74)`): Error states, form validation, danger actions.
+The only chroma in the system. Reserved for meaning that cannot be conveyed by tone.
+
+- **Meadow Green** (`oklch(0.6277 0.1604 153.06)`): Success states, resolved conversation indicators.
+- **Warm Amber** (`oklch(0.8446 0.1525 80.6)`): Warning states.
+- **Coral Alert** (`oklch(0.573 0.2249 21.97)`): Error states, form validation, danger actions, active voice recording.
 
 ### Named Rules
 
-**The Signal Rule.** Signal Blue is used on at most 10% of any given screen. Its rarity is the point. When it appears in an unread chip or an active nav item, it draws the eye precisely. Dilute it and you lose that signal entirely.
+**The Monochrome Rule.** There is no brand hue. If a design problem seems to need one, it is a hierarchy problem: solve it with tone, weight, spacing, or elevation. Introducing a chromatic accent would flatten the status colors, which are the only place hue currently means anything.
 
-**The Mode Split Rule.** Light mode and dark mode are not the same theme inverted. Light mode uses shadow for elevation; dark mode uses tonal layering. Never apply `shadow-*` unconditionally. Trust the `--surface-shadow` token to resolve to the correct value per theme.
+**The Lift-Not-Fill Rule.** In a monochrome system, tinting a selected row with the accent produces grey — the exact "generic grey block" that reads as disabled rather than chosen. So selection in a list is expressed by *elevation*: the list body is recessed, rows are transparent, and the selected row lifts to `--surface`. Small controls (nav items, filter chips) may still use a low-opacity accent tint, because they sit on a surface rather than in a recessed list.
+
+**The Mode Split Rule.** Light mode and dark mode are not the same theme inverted. Light mode uses shadow for elevation; dark mode uses tonal layering. Never apply `shadow-*` unconditionally. Trust the `--surface-shadow` token to resolve to the correct value per theme — and never delete its dark-mode override, which is what keeps dark surfaces flat.
 
 ## 3. Typography
 
@@ -162,7 +180,33 @@ No typeface is loaded. This is a deliberate choice: the interface defers to the 
 
 ## 4. Elevation
 
-The elevation system is theme-split by design. Light mode relies on a three-layer shadow to separate surfaces from backgrounds. Dark mode eliminates shadows entirely and expresses depth through tonal steps — Midnight Ink to Charcoal Surface creates the same spatial relationship that shadow creates in light mode.
+### The Three Layers
+
+The authenticated shell is three tonal layers. This is the structural backbone of the product and the reason it does not read as one flat sheet.
+
+1. **Canvas** (`--background`) — the base plane. The sidebar and header sit *directly* on it, with no surface of their own and no dividing borders. They belong to the application frame, not to the content.
+2. **Pane** (`--surface`) — workspace content floats here: the conversation list, the conversation, the details panel, the dashboard, settings. Panes are separated from the canvas and from each other by an ~8px gap, and they clip their own content.
+3. **Recessed** (`--surface-secondary`) — regions *inside* a pane that should sit back: the message transcript, form field fills. Never elevated, never shadowed.
+
+A fourth treatment, **Raised**, is a surface deliberately lifted back up inside a recessed region — the composer, and the selected conversation row.
+
+The layering is theme-split by design. Light mode relies on a three-layer shadow to separate panes from the canvas. Dark mode eliminates shadows entirely and expresses depth through tonal steps — Midnight Ink to Charcoal Surface creates the same spatial relationship that shadow creates in light mode.
+
+### Panes Have No Border
+
+This is the defining rule of the shell. A pane is a rounded, borderless surface; separation comes from the canvas showing through the gap around it, plus the light-mode shadow. Outlining every pane adds a grey line to a system that is already almost entirely grey, and it makes the shell read as a diagram of boxes rather than as depth.
+
+The consequence is that **canvas contrast is load-bearing**. If `--background` drifts too close to `--surface`, pane edges dissolve and the whole structure collapses — particularly in dark mode, where there is no shadow to fall back on. Changing either token means re-checking both themes.
+
+A hairline is correct in exactly one place: *between adjacent regions inside a single pane* — a pane header and its body, a filter strip and the list below it. Use `paneStyle.separator` there. Never draw a line around a pane.
+
+### Frame Metrics
+
+- **Outer padding:** 8px around the workspace area (4px on mobile). The panes never touch the browser edge.
+- **Gap between panes:** 8px, rendered as a real grid track so it can also carry the list-resize affordance.
+- **Pane radius:** 12px (`rounded-xl`), softened to 8px on mobile.
+- **Pane clipping:** `overflow-hidden` is mandatory. Pane headers and scroll regions must round with the pane.
+- **Scroll ownership:** every pane owns its own scrolling. The workspace area itself never scrolls.
 
 ### Shadow Vocabulary (Light Mode Only)
 
@@ -182,55 +226,70 @@ In dark mode, all three resolve to transparent or flat. Surfaces float above bac
 
 Resolved and unfussy. State changes happen through opacity and tonal shift, not through scale or bounce.
 
-- **Shape:** Gently curved (8px radius, via `--radius`)
-- **Primary:** Signal Blue fill, snow text. Height 40px, padding 0 20px. `transition-colors` at 150ms ease-out. Hover reduces opacity slightly; active scales to 0.98.
-- **Ghost:** Transparent background, graphite text. On hover: 10% Signal Blue tint background, Signal Blue text. Same radius and height as primary.
-- **Focus:** 2px offset ring in Signal Blue (`box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent)`).
+- **Shape:** Tightly curved (4px radius, via `--radius`). Controls are crisp; only the large workspace panes are softly rounded.
+- **Primary:** Accent fill, inverted text. Height 40px, padding 0 20px. `transition-colors` at 150ms ease-out. Hover reduces opacity slightly; active scales to 0.98.
+- **Ghost:** Transparent background, graphite text. On hover: 10% accent tint background, accent text. Same radius and height as primary.
+- **Focus:** 2px offset ring in the accent (`box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent)`).
 - **Loading:** Spinner (Lucide-equivalent, 16px) prepended; label and spinner visible simultaneously.
 
 ### Navigation Items
 
 The sidebar is the product's spine. Navigation items carry the entire wayfinding system.
 
-- **Shape:** Rounded (8px), full-width
+- **Shape:** Rounded (8px via `rounded-lg`), full-width
 - **Padding:** 8px vertical, 12px horizontal
 - **Typography:** 14px / 500 weight
-- **Inactive:** Foreground text at 60% opacity, transparent background. Hover: 8% Signal Blue tint bg, Signal Blue text.
-- **Active:** 12% Signal Blue tint background, Signal Blue text. Persists until route changes.
+- **Inactive:** Foreground text at 60% opacity, transparent background. Hover: 10% accent tint bg, accent text.
+- **Active:** 10% accent tint background (15% in dark), accent text. Persists until route changes.
 - **Icons:** 16px Lucide icons, `shrink-0`. Gap of 10px between icon and label.
 - **Collapsed state (64px sidebar):** Icon only, centered, tooltips on hover with 300ms delay.
-- **Focus:** 2px ring in `--focus` (Signal Blue).
+- **Focus:** 2px ring in `--focus`.
 
 ### Inputs and Fields
 
 Softly contained, focus-responsive.
 
-- **Shape:** More rounded than buttons (12px via `--field-radius`), matching the softer role of a form field
-- **Background:** Surface-secondary (`oklch(95.24% 0.0013 286.37)`), no border at rest
+- **Shape:** 4px via `--field-radius`, matching the button radius. Fields and controls share one crisp corner; the 12px curve is reserved for panes.
+- **Background:** Surface-secondary (`oklch(95.24% 0 0)`), no border at rest
 - **Prefix/Suffix:** Icon prefixes at 16px Lucide, 60% opacity. Action suffixes (reveal, copy) use the same 16px sizing and respond to hover.
-- **Focus:** Border-color shifts to Signal Blue; 2px ring in Signal Blue at 20% opacity around the group.
+- **Focus:** Border-color shifts to the accent; 2px ring in the accent at 20% opacity around the group.
+- **Exception:** a field already sitting on a raised surface (the composer's textarea) goes transparent instead of filled. A filled field inside a raised box is a box inside a box.
 - **Error:** Field border becomes Coral Alert; error message appears below in 12px label size.
 - **Disabled:** 50% opacity on the entire field group.
 
+### Workspace Panes
+
+The primary structural unit of the authenticated shell. Implemented as `paneStyle` / `WorkspacePane` in `src/components/pane.tsx`.
+
+- **Shape:** 12px radius (`rounded-xl`), 8px on mobile
+- **Background:** Clean Sheet (light) / Charcoal Surface (dark)
+- **Border:** none, ever. See "Panes Have No Border" above.
+- **Shadow:** Surface shadow in light; flat in dark (token-driven, never conditional in component code)
+- **Clipping:** `overflow-hidden`, always
+- **Padding:** none at the pane level. Padding belongs to the regions inside it, so headers and scroll regions can meet the pane edge.
+- **Header:** when present, 64px tall and attached to the pane's top edge with a hairline `border-b`
+- **Prohibition:** No nested panes, and no Card inside a pane. The pane *is* the container. If content seems to need its own box, it needs spacing or a recessed background instead.
+
 ### Cards
 
-Cards appear in the dashboard workspace grid and in overlaid form sheets.
+Cards are for the dashboard workspace grid and overlaid form sheets — not for structuring pane content.
 
-- **Shape:** 8px radius (matching `--radius`)
+- **Shape:** 4px radius (matching `--radius`)
 - **Background:** Clean Sheet (light) / Charcoal Surface (dark)
 - **Shadow:** Surface shadow in light; flat in dark (token-driven)
-- **Border:** Hairline (`oklch(90% 0.004 286.32)` in light; none in dark by default)
+- **Border:** Hairline in light; none in dark by default
 - **Padding:** 24px internal (via Card.Header/Content/Footer structure)
 - **Hover:** Transitions to `shadow-md`. The card rises slightly.
 - **Prohibition:** No nested cards. A Card inside a Card is never correct.
 
 ### Chips
 
-Used exclusively for unread message counts and conversation status indicators.
+Used for unread message counts, conversation status, and transcript date separators.
 
-- **Unread (filled):** Signal Blue background, snow text, 18px height, min-width 16px, px-1, fully rounded. 10px / 600 weight, tabular-nums. Caps at "99+" when `capAt99` is enabled.
+- **Unread (filled):** Accent background, inverted text, 18px height, min-width 16px, px-1, fully rounded. 10px / 600 weight, tabular-nums. Caps at "99+" when `capAt99` is enabled.
 - **Status (flat):** Transparent background, graphite text, no border, no shadow. Used when a conversation row is already active (selected state).
 - **Status labels (ConversationStatusChip):** Color-coded per status. 12px, pill shape.
+- **Date separators:** surface background, muted text, no shadow. Subtle through *color only* — never add a border or change the type size, because the transcript is virtualized and the row's measured height feeds scroll anchoring.
 
 ### Conversation List Items
 
@@ -239,19 +298,45 @@ The most-read surface in the application.
 - **Layout:** Icon (36px, rounded-xl platform avatar) + text body in a row. No card wrapping — items are direct children of a scrollable list.
 - **Typography:** Contact name at 14px / 600 weight (unread) or 500 (read). Preview at 12px, foreground at 80% (unread) or 55% (read). Timestamp at 11px / foreground at 50%.
 - **Unread state:** Name becomes semibold, preview text brightens, NumericUnreadChip appears in the trailing position.
-- **Active state:** Background tint (sidebar-accent); unread chip hides (count resets visually to 0).
-- **Hover/focus:** Implicit through list container's selection styles.
+- **List body:** recessed, so rows can lift off it. Rows themselves are transparent.
+- **Selected:** lifted to `--surface` with the surface shadow — a card raised out of the recessed list. Not a fill; see The Lift-Not-Fill Rule. The unread chip hides (count resets visually to 0).
+- **Hover:** `bg-foreground/5`, and only on unselected rows, so hover can never override selection.
+- **Focus:** inset 2px ring in `--focus`, so it stays legible on top of either state.
+
+### Composer
+
+A raised work surface inside the conversation pane, not a strip attached to the pane edge.
+
+- **Shape:** 12px radius, no border, surface background, theme-aware shadow
+- **Placement:** inside the conversation pane on the transcript's readable column, with margin around it so the recessed transcript shows through on all sides
+- **Internal padding:** 8px around the control row
+- **Field:** transparent, not filled — the composer surface is the field
+- **Focus:** the textarea's own ring is suppressed and the *composer* shows `focus-within`. A full-width field's ring would otherwise outline the whole surface in near-black.
+- **Control order:** attach, emoji, then mic-or-send. Send is terminal and set apart by a wider gap; it is the only primary-variant control in the pane.
+- **Footnote:** the "replying via {channel}" line sits *outside* the raised surface, centered, in muted 12px.
 
 ### Sidebar
 
-The structural container for navigation.
+The navigation spine. It belongs to the canvas, not to a surface.
 
 - **Width:** 260px expanded, 64px collapsed. Width transition at 200ms ease-out.
-- **Background:** Surface (light: white; dark: charcoal)
-- **Right border:** Hairline at 60% opacity
-- **Header:** 64px tall, 16px padding. Brand mark: 32px square, Signal Blue background, rounded-lg, white initial letter. Label at 14px / 600.
+- **Background:** none — the canvas shows through. The sidebar is never wrapped in a card or given a surface fill.
+- **Right border:** none. The workspace gap does the separating.
+- **Header:** 64px tall, 16px padding, borderless so the canvas top strip reads as one continuous band with the app header. Brand mark: 32px square, accent background, rounded-lg, inverted initial letter. Label at 14px / 600.
 - **Workspace switcher:** Dropdown trigger with WorkspaceMark icon, workspace name, and chevron. Sits in its own section with a separator below.
 - **Footer:** Sign-out action, below a separator. Ghost button style.
+
+### Application Header
+
+- **Height:** 64px, aligned with the sidebar brand row
+- **Background:** none, and no bottom border — it sits on the canvas above the panes
+- **Contents:** sidebar toggle, breadcrumbs, search, notifications, theme switcher, user menu
+
+### Message Transcript
+
+- **Background:** recessed (`--surface-secondary`). Never a pattern, gradient, or dot grid.
+- **Measure:** centered, max 820px. Messages must not sprawl across a wide pane. Tailwind's `container` is wrong here — its max-width tracks the breakpoint.
+- **Alignment:** the composer and the loading skeleton share the same measure, so all three line up on one axis.
 
 ### Background (Auth Only)
 
@@ -284,6 +369,12 @@ Two `::before` / `::after` pseudo-elements on `.`:
 - **Don't** use glassmorphism decoratively. No blur + transparency cards outside of a purposeful, specific context.
 - **Don't** use the hero-metric template: big number, small label, gradient accent. This is an operational tool, not a pitch deck.
 - **Don't** apply shadows unconditionally across themes. Dark mode is flat by design; shadow utilities must be theme-aware.
-- **Don't** nest HeroUI Cards. A `Card` inside another `Card` is always wrong structurally.
-- **Don't** load a custom display typeface for branding. The system font is fast, familiar, and correct for this product's register.
+- **Don't** nest HeroUI Cards. A `Card` inside another `Card` is always wrong structurally, and the same holds for a Card inside a workspace pane.
+- **Don't** load a custom display typeface for branding. The system font is fast, familiar, and correct for this product's register. `--font-sans` must always resolve to a real stack.
 - **Don't** use uppercase labels or all-caps text. Labels are sentence case throughout.
+- **Don't** put a decorative pattern behind the product shell. The dot grid, radial gradients, and any texture belong to auth screens only; the transcript and every pane use flat tonal backgrounds.
+- **Don't** let panes run edge-to-edge or share a border. If two regions look joined, the gap is missing.
+- **Don't** put a border on a pane, a composer, or any other large surface. Lines belong inside panes, not around them.
+- **Don't** use a flat neutral fill (`bg-foreground/10`) for a selected list row. Recess the list and lift the row.
+- **Don't** change the box metrics of anything inside the virtualized transcript for cosmetic reasons — borders and type-size changes on message rows or date separators perturb scroll anchoring. Restyle with color.
+- **Don't** delete the dark-mode `--surface-shadow` / `--overlay-shadow` / `--field-shadow` overrides in `src/styles.css`. Without them HeroUI's defaults apply and dark mode gains shadows the system is designed not to have.

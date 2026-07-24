@@ -192,6 +192,27 @@ describe('MessageList virtualized transcript', () => {
     expect(container.querySelector('[data-index]')).toBeTruthy()
   })
 
+  // Rows previously used Tailwind's `container`, whose max-width tracks the
+  // breakpoint (up to 1536px), so messages sprawled across a wide pane. The
+  // transcript must stay on a fixed readable column instead.
+  it('constrains message rows to the readable transcript measure', () => {
+    const { container } = render(
+      <MessageList
+        {...baseProps}
+        messages={baseMessages}
+        onReadAnchorVisible={vi.fn()}
+      />,
+    )
+
+    const row = container.querySelector('[data-index] > div')
+    expect(row).toBeTruthy()
+
+    const className = row?.getAttribute('class') ?? ''
+    expect(className).toContain('max-w-[820px]')
+    expect(className).toContain('mx-auto')
+    expect(className.split(/\s+/)).not.toContain('container')
+  })
+
   it('renders the unread divider at its transcript position', () => {
     render(
       <MessageList

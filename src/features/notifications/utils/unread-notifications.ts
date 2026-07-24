@@ -4,9 +4,16 @@ import type { ConversationWithRelations } from '@/entities/conversation'
 /** Most recent unread conversations shown before "view all" takes over. */
 export const UNREAD_NOTIFICATIONS_LIMIT = 6
 
+/** A rendered notification row: the conversation plus its display context. */
+export type UnreadNotification = {
+  conversation: ConversationWithRelations
+  /** Shown only when the agent belongs to more than one workspace. */
+  workspaceName: string | null
+}
+
 export type UnreadNotificationsViewModel = {
   /** Unread conversations (unread_count > 0), newest activity first, capped. */
-  items: Array<ConversationWithRelations>
+  items: Array<UnreadNotification>
   /** Sum of unread messages across every conversation, not just the capped list. */
   totalUnread: number
 }
@@ -47,14 +54,26 @@ export function capUnreadCount(count: number): string {
   return count > 99 ? '99+' : String(count)
 }
 
+/**
+ * Builds the popover view model from conversations and unread counts that may
+ * span several workspaces. Conversation ids are globally unique, so callers can
+ * merge per-workspace queries into one list and one counts map before calling.
+ *
+ * `workspaceNames` labels rows with their workspace; pass an empty map to hide
+ * the label (the agent only has one workspace, so it carries no information).
+ */
 export function buildUnreadNotificationsViewModel(
   conversations: Array<ConversationWithRelations> | undefined,
   unreadCounts: Record<string, number> | undefined,
+  workspaceNames: ReadonlyMap<string, string> = new Map(),
   limit: number = UNREAD_NOTIFICATIONS_LIMIT,
 ): UnreadNotificationsViewModel {
   const overlaid = overlayUnreadCounts(conversations, unreadCounts)
   return {
-    items: selectUnreadConversations(overlaid, limit),
+    items: selectUnreadConversations(overlaid, limit).map((conversation) => ({
+      conversation,
+      workspaceName: workspaceNames.get(conversation.workspace_id) ?? null,
+    })),
     totalUnread: totalUnreadCount(overlaid),
   }
 }

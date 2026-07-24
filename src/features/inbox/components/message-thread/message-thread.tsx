@@ -2,6 +2,8 @@ import type { ChannelType } from '@/entities/channel'
 import { PLATFORM_META, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import type { MessageRow } from '@/entities/message'
+import { paneStyle } from '@/components/pane'
+import { cn } from '@heroui/styles'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   useConversationReadCursor,
@@ -195,13 +197,20 @@ export function MessageThread({
   const contactName = conversation.contact.name?.trim() || '—'
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className={cn(paneStyle.surface, 'h-full w-full')}>
       <MessageThreadHeader
         conversation={conversation}
         onToggleContactPanel={onToggleContactPanel}
         onBack={onBack}
       />
-      <div className="flex items-center h-full min-h-0 flex-col bg-accent-soft/20 bg-[radial-gradient(circle_at_1px_1px,var(--border)_1px,transparent_0)] bg-size-[24px_24px]">
+      {/* The transcript sits on the recessed step so the header above and the
+          composer below both read as surfaces. Calm and neutral — no pattern. */}
+      <div
+        className={cn(
+          paneStyle.recessed,
+          'flex min-h-0 flex-1 flex-col items-center',
+        )}
+      >
         <MessageThreadProvider
           value={{
             channelType: channelTypeResolved,

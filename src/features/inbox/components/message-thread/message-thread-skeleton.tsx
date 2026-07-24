@@ -1,4 +1,6 @@
 import { Skeleton } from '@heroui/react'
+import { cn } from '@heroui/styles'
+import { TRANSCRIPT_MEASURE } from './transcript-measure'
 
 const ROWS = [
   { width: 'w-56', side: 'left' },
@@ -11,7 +13,7 @@ const ROWS = [
 export function MessageThreadSkeleton() {
   return (
     <div
-      className="container flex w-full flex-col gap-3 px-4 py-6 sm:px-6"
+      className={cn(TRANSCRIPT_MEASURE, 'flex flex-col gap-3 px-4 py-6 sm:px-6')}
       aria-hidden
     >
       {ROWS.map((row, index) => (

@@ -63,7 +63,9 @@ export function Sidebar({
   return (
     <>
       <aside
-        className="hidden w-65 shrink-0 flex-col overflow-hidden border-r border-border/60 transition-[width] duration-200 ease-out data-collapsed:w-16 motion-reduce:transition-none md:flex"
+        // No right border: the sidebar is part of the canvas, and the
+        // workspace gap does the separating.
+        className="hidden w-65 shrink-0 flex-col overflow-hidden transition-[width] duration-200 ease-out data-collapsed:w-16 motion-reduce:transition-none md:flex"
         data-collapsed={isCollapsed || undefined}
       >
         <SidebarBody user={user} isCollapsed={isCollapsed} />
@@ -141,7 +143,9 @@ function SidebarBody({
     <>
       <div className="flex h-full flex-col">
         {/* Brand */}
-        <div className="flex h-16 shrink-0 items-center px-4 border-b border-border/60">
+        {/* Aligns with the header row across the canvas. Borderless, so the
+            top strip reads as one continuous canvas band. */}
+        <div className="flex h-16 shrink-0 items-center px-4">
           <Link
             to="/"
             aria-label={m.sidebar_home_label()}

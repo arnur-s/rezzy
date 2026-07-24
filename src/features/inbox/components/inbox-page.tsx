@@ -3,7 +3,9 @@ import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useIsLg } from '@/hooks/use-is-lg'
 import { useIsMobile } from '@/hooks/use-is-mobile'
+import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
+import { Drawer } from '@heroui/react'
 import { cn } from '@heroui/styles'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -162,11 +164,23 @@ export function InboxPage({
     ],
   )
 
+  /**
+   * On lg the details pane gets its own column. Below lg it becomes an overlay
+   * drawer over the thread instead of replacing it, so the conversation never
+   * collapses to an unusable width.
+   */
+  const showContactAsPane = showContact && isLg && !isMobile
+  const showContactAsOverlay = showContact && !isLg && !isMobile
+  const showContactOnMobile = showContact && isMobile
+
+  // Gutter columns are real grid tracks, so the list width the resize hook
+  // stores stays the pane's own width.
   const gridTemplateColumns = useMemo(() => {
     if (isMobile) return undefined
-    if (showContact && isLg) return `${listWidth}px 4px minmax(0, 1fr) 20rem`
-    return `${listWidth}px 4px minmax(0, 1fr)`
-  }, [isMobile, isLg, showContact, listWidth])
+    if (showContactAsPane)
+      return `${listWidth}px 8px minmax(0, 1fr) 8px 20rem`
+    return `${listWidth}px 8px minmax(0, 1fr)`
+  }, [isMobile, showContactAsPane, listWidth])
 
   return (
     <div
@@ -176,9 +190,9 @@ export function InboxPage({
       {/* List pane */}
       <div
         className={cn(
-          'h-full min-h-0 min-w-0 overflow-hidden',
-          mobilePane === 'list' ? 'block' : 'hidden',
-          'md:block',
+          'h-full min-h-0 min-w-0',
+          mobilePane === 'list' ? 'flex' : 'hidden',
+          'md:flex',
         )}
       >
         <ConversationList
@@ -201,15 +215,13 @@ export function InboxPage({
 
       <ResizeHandle onMouseDown={handleListResize} />
 
-      {/* Thread pane.
-          On md without contact panel: visible.
-          On md with contact panel open: hidden (panel takes its slot).
-          On lg+: always visible. */}
+      {/* Thread pane. The dominant surface: always visible from md up, even
+          while the details panel is open (it overlays below lg). */}
       <div
         className={cn(
-          'h-full min-h-0 min-w-0 overflow-hidden',
-          mobilePane === 'thread' ? 'block' : 'hidden',
-          showContact ? 'md:hidden lg:block' : 'md:block',
+          'h-full min-h-0 min-w-0',
+          mobilePane === 'thread' ? 'flex' : 'hidden',
+          'md:flex',
         )}
       >
         <InboxThreadRouteContextProvider value={threadContext}>
@@ -217,23 +229,46 @@ export function InboxPage({
         </InboxThreadRouteContextProvider>
       </div>
 
-      {/* Contact panel pane. */}
-      {isContactPanelOpen && selectedConversation ? (
-        <div
-          className={cn(
-            'h-full min-h-0 min-w-0 overflow-hidden',
-            mobilePane === 'contact' ? 'block' : 'hidden',
-            // On md it slots into column 2 (replacing the thread).
-            // On lg+ it slots into column 3.
-            'md:block',
-          )}
-        >
+      {/* Gutter before the details pane on lg. */}
+      {showContactAsPane ? <div aria-hidden /> : null}
+
+      {/* Details pane: own column on lg, the single visible pane on mobile.
+          At tablet widths it is neither — the overlay below handles it. */}
+      {selectedConversation && (showContactAsPane || showContactOnMobile) ? (
+        <div className="flex h-full min-h-0 min-w-0">
           <ContactPanel
             workspaceId={workspaceId}
             conversation={selectedConversation}
             onClose={handleCloseContactPanel}
           />
         </div>
+      ) : null}
+
+      {/* Details overlay for tablet widths. Drawer gives focus trap and
+          escape-to-close, matching the mobile sidebar pattern. */}
+      {selectedConversation ? (
+        <Drawer.Backdrop
+          isOpen={showContactAsOverlay}
+          onOpenChange={(open) => {
+            if (!open) handleCloseContactPanel()
+          }}
+        >
+          <Drawer.Content placement="right">
+            <Drawer.Dialog
+              className="h-full w-80 max-w-[85vw] rounded-none p-0"
+              aria-label={m.inbox_contact_panel_title()}
+            >
+              <Drawer.Body className="min-h-0 p-0">
+                <ContactPanel
+                  workspaceId={workspaceId}
+                  conversation={selectedConversation}
+                  onClose={handleCloseContactPanel}
+                  className="rounded-none border-0 shadow-none"
+                />
+              </Drawer.Body>
+            </Drawer.Dialog>
+          </Drawer.Content>
+        </Drawer.Backdrop>
       ) : null}
     </div>
   )

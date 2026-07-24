@@ -9,7 +9,9 @@ import type { ConversationWithRelations } from '@/entities/conversation'
 import { getUserInitials } from '@/entities/user'
 import { useRecordContactVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { m } from '@/paraglide/messages'
+import { paneStyle } from '@/components/pane'
 import { Alert, Avatar, Button, ScrollShadow, Skeleton } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useContact } from '../../hooks/use-contact'
@@ -21,9 +23,16 @@ type Props = {
   workspaceId: string
   conversation: ConversationWithRelations
   onClose: () => void
+  /** Lets the tablet drawer strip the pane chrome it does not need. */
+  className?: string
 }
 
-export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
+export function ContactPanel({
+  workspaceId,
+  conversation,
+  onClose,
+  className,
+}: Props) {
   const contactQuery = useContact(conversation.contact.id)
 
   const channelTypes = useMemo(() => {
@@ -49,8 +58,8 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
   )
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col border-l border-border/60">
-      <header className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+    <aside className={cn(paneStyle.surface, 'h-full w-full', className)}>
+      <header className="border-border/60 flex h-[64px] shrink-0 items-center justify-between border-b px-4">
         <h3 className="text-sm font-semibold text-foreground">
           {m.inbox_contact_panel_title()}
         </h3>

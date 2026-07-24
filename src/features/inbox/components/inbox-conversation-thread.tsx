@@ -1,6 +1,8 @@
 import { Button } from '@/components/button'
+import { paneStyle } from '@/components/pane'
 import { m } from '@/paraglide/messages'
 import { Alert, Skeleton } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import type { ReactNode } from 'react'
 import { MessageThread } from './message-thread/message-thread'
 import { useInboxThreadRouteContext } from './inbox-route-context'
@@ -78,21 +80,24 @@ function InboxConversationUnavailable({
 
 function InboxConversationThreadSkeleton() {
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-[64px] shrink-0 items-center gap-3 border-b border-border/60 px-3 py-3 sm:px-6">
+    <div className={cn(paneStyle.surface, 'h-full w-full')}>
+      <div className="border-border/60 flex h-[64px] shrink-0 items-center gap-3 border-b px-3 py-3 sm:px-6">
         <Skeleton className="size-10 rounded-full" />
         <div className="min-w-0 flex-1 space-y-2">
           <Skeleton className="h-4 w-40 rounded" />
           <Skeleton className="h-3 w-28 rounded" />
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col justify-end gap-3 px-4 py-5">
+      <div
+        className={cn(
+          paneStyle.recessed,
+          'flex min-h-0 flex-1 flex-col justify-end gap-3 px-4 py-5',
+        )}
+      >
         <Skeleton className="h-16 w-3/5 rounded-2xl" />
         <Skeleton className="ml-auto h-20 w-2/3 rounded-2xl" />
         <Skeleton className="h-12 w-1/2 rounded-2xl" />
-      </div>
-      <div className="border-t border-border/60 p-3">
-        <Skeleton className="h-11 w-full rounded-xl" />
+        <Skeleton className="mt-2 h-14 w-full rounded-xl" />
       </div>
     </div>
   )
@@ -100,7 +105,12 @@ function InboxConversationThreadSkeleton() {
 
 function ThreadStateShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center px-6">
+    <div
+      className={cn(
+        paneStyle.surface,
+        'h-full w-full items-center justify-center px-6',
+      )}
+    >
       {children}
     </div>
   )

@@ -88,6 +88,33 @@ describe('ConversationList selection', () => {
 
     expect(onSelect).toHaveBeenCalledWith('conv-1')
   })
+
+  // The selected row is the primary wayfinding signal in the inbox. The list
+  // body is recessed and the selected row lifts to a surface — with a
+  // monochrome accent, any tint would be the grey block this must avoid.
+  it('lifts the selected row to a surface rather than filling it with grey', () => {
+    renderList({
+      conversations: [
+        conversationFixture('conv-1', 'Alice'),
+        conversationFixture('conv-2', 'Bob'),
+      ],
+      selectedConversationId: 'conv-1',
+    })
+
+    // Scope to the conversation row: the filter chips above the list are also
+    // selectable ListBox items and would otherwise match first.
+    const selected = screen.getByText('Alice').closest('[data-selected]')
+    expect(selected?.getAttribute('data-selected')).toBe('true')
+
+    const className = selected?.getAttribute('class') ?? ''
+    expect(className).toContain('data-[selected=true]:bg-surface')
+    expect(className).toContain('data-[selected=true]:shadow-surface')
+    expect(className).not.toContain('data-[selected=true]:bg-foreground/10')
+    // Hover applies only to unselected rows, so it cannot override selection.
+    expect(className).toContain('data-[selected=false]:hover:bg-foreground/5')
+    // Focus is a ring, so it stays visible on top of either state.
+    expect(className).toContain('data-[focus-visible=true]:ring-focus')
+  })
 })
 
 describe('ConversationList polish states', () => {

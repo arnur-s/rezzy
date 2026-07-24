@@ -1,6 +1,6 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { setLocale } from '@/paraglide/runtime'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { UnreadNotificationItem } from './unread-notification-item'
 
@@ -44,11 +44,18 @@ function conversationFixture(
   }
 }
 
-function renderItem(conversation: ConversationWithRelations) {
+function renderItem(
+  conversation: ConversationWithRelations,
+  workspaceName: string | null = null,
+) {
   const onSelect = vi.fn()
   render(
     <ul>
-      <UnreadNotificationItem conversation={conversation} onSelect={onSelect} />
+      <UnreadNotificationItem
+        conversation={conversation}
+        workspaceName={workspaceName}
+        onSelect={onSelect}
+      />
     </ul>,
   )
   return { onSelect }
@@ -87,13 +94,23 @@ describe('UnreadNotificationItem', () => {
     ).toBeTruthy()
   })
 
-  it('reports the conversation id when the row is clicked', () => {
-    const { onSelect } = renderItem(conversationFixture('c42'))
+  it('reports the conversation when the row is clicked', () => {
+    const conversation = conversationFixture('c42')
+    const { onSelect } = renderItem(conversation)
     fireEvent.click(
       screen.getByRole('button', {
         name: /Open conversation with Alice Johnson/,
       }),
     )
-    expect(onSelect).toHaveBeenCalledWith('c42')
+    expect(onSelect).toHaveBeenCalledWith(conversation)
+  })
+
+  it('shows the workspace label only when one is provided', () => {
+    renderItem(conversationFixture('c1'))
+    expect(screen.queryByText('Acme Support')).toBeNull()
+
+    cleanup()
+    renderItem(conversationFixture('c1'), 'Acme Support')
+    expect(screen.getByText('Acme Support')).toBeTruthy()
   })
 })

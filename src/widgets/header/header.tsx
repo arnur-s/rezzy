@@ -58,7 +58,9 @@ export function Header({ className, onToggleSidebar }: HeaderProps) {
   return (
     <header
       className={cn(
-        'flex h-[64px] shrink-0 items-center gap-2 px-3 z-1 border-b border-border/60',
+        // Sits on the app canvas, not on a surface: no border, no background.
+        // Separation from the panes below comes from the workspace gap.
+        'z-1 flex h-[64px] shrink-0 items-center gap-2 px-3',
         className,
       )}
     >

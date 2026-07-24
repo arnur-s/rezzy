@@ -1,5 +1,6 @@
 import type { MessageRow } from '@/entities/message'
 import { Chip, ScrollShadow } from '@heroui/react'
+import { cn } from '@heroui/styles'
 import type { Range } from '@tanstack/react-virtual'
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -18,6 +19,7 @@ import { getEligibleReadCommitId } from '../../utils/read-cursor'
 import { LoadOlderMessagesRegion } from './load-older-messages-region'
 import { MessageBubble } from './message-bubble'
 import { NewMessagesButton } from './new-messages-button'
+import { TRANSCRIPT_MEASURE } from './transcript-measure'
 import { UnreadDivider } from './unread-divider'
 
 const ESTIMATED_MESSAGE_ITEM_SIZE = 72
@@ -388,10 +390,16 @@ export function VirtualizedMessageList({
                         }
                   }
                 >
-                  <div className="container mx-auto w-full px-4 sm:px-6">
+                  <div className={cn(TRANSCRIPT_MEASURE, 'px-4 sm:px-6')}>
                     {isHeading ? (
                       <div className="flex justify-center py-3">
-                        <Chip>{item.heading}</Chip>
+                        {/* Subtle through colour only. Deliberately no border
+                            or type-size change: this row is measured by the
+                            virtualizer, and altering its box metrics perturbs
+                            end-anchored scroll correction. */}
+                        <Chip className="bg-surface text-muted shadow-none">
+                          {item.heading}
+                        </Chip>
                       </div>
                     ) : item.kind === 'divider' ? (
                       <UnreadDivider />

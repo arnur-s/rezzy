@@ -41,15 +41,19 @@ function RouteComponent() {
         </div>
       ) : session ? (
         <NotificationsProvider>
-          <div className="flex h-screen overflow-hidden">
+          {/* App canvas. The sidebar and header sit directly on it; route
+              content floats above it as inset panes (see components/pane). */}
+          <div className="bg-background flex h-screen overflow-hidden">
             <Sidebar
               isCollapsed={isCollapsed}
               isMobileOpen={isMobileSidebarOpen}
               onMobileOpenChange={setIsMobileSidebarOpen}
             />
-            <div className=" flex min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
               <Header onToggleSidebar={handleToggleSidebar} />
-              <main className="flex flex-1 overflow-auto z-1">
+              {/* Workspace area. Padding is the breathing room between the
+                  canvas edges and the panes; panes own their own scrolling. */}
+              <main className="flex min-h-0 flex-1 flex-col p-1 pt-0 md:p-2 md:pt-0">
                 <Outlet />
               </main>
             </div>
