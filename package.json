@@ -37,6 +37,8 @@
     "deploy-functions:supabase": "supabase functions deploy"
   },
   "dependencies": {
+    "@astryxdesign/core": "^0.1.8",
+    "@astryxdesign/theme-neutral": "^0.1.8",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@heroui/react": "^3.0.5",
@@ -61,6 +63,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@astryxdesign/cli": "^0.1.8",
     "@inlang/cli": "^3.0.0",
     "@inlang/paraglide-js": "^2.18.0",
     "@tailwindcss/typography": "^0.5.16",

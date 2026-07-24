@@ -1,4 +1,6 @@
 allowBuilds:
+  '@astryxdesign/cli': set this to true or false
+  '@astryxdesign/core': set this to true or false
   esbuild: true
   lightningcss: true
   unrs-resolver: false
