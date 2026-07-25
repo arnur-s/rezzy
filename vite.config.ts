@@ -28,8 +28,24 @@ const config = defineConfig({
         // creating a circular dependency: the entry chunk evaluates an icon
         // module before `createLucideIcon` is initialized, throwing
         // "t is not a function" at runtime.
+        //
+        // Same failure mode for React: `react/jsx-runtime` is CommonJS, so it
+        // is emitted as a lazy `__commonJS` initializer assigned to a hoisted
+        // `var` in the module body. Left unpinned it lands in the entry chunk,
+        // while component chunks the entry statically imports (e.g. Astryx's
+        // Tooltip) call that initializer at their own top level. Those chunks
+        // evaluate before the entry's body runs, so the var is still
+        // `undefined` — "a is not a function". Pinning React to its own vendor
+        // chunk removes the cycle: it has no edge back into app code, so it
+        // always evaluates first.
         manualChunks(id) {
           if (id.includes('node_modules/lucide-react')) return 'lucide-react'
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/')
+          )
+            return 'react'
         },
       },
     },
