@@ -1,5 +1,5 @@
 import { m } from '@/paraglide/messages'
-import { SearchField } from '@heroui/react'
+import { TextInput } from '@astryxdesign/core/TextInput'
 
 type Props = {
   value: string
@@ -8,18 +8,16 @@ type Props = {
 
 export function ConversationSearch({ value, onChange }: Props) {
   return (
-    <SearchField
-      aria-label={m.inbox_search_aria_label()}
-      value={value}
-      onChange={onChange}
-      variant="secondary"
-      className="px-2 w-full"
-    >
-      <SearchField.Group className="rounded-lg!">
-        <SearchField.SearchIcon />
-        <SearchField.Input placeholder={m.inbox_search_placeholder()} />
-        <SearchField.ClearButton />
-      </SearchField.Group>
-    </SearchField>
+    <div className="w-full px-2">
+      <TextInput
+        label={m.inbox_search_aria_label()}
+        isLabelHidden
+        placeholder={m.inbox_search_placeholder()}
+        value={value}
+        onChange={(next) => onChange(next)}
+        hasClear
+        size="sm"
+      />
+    </div>
   )
 }

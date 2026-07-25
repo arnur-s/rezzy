@@ -2,8 +2,9 @@ import { Image } from '@/components/image'
 import type { MessageType } from '@/entities/message'
 import { formatFileSize, getMediaPlaceholder } from '@/entities/message'
 import { m } from '@/paraglide/messages'
-import { Button, Skeleton, Surface } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Button } from '@astryxdesign/core/Button'
+import { Skeleton } from '@astryxdesign/core/Skeleton'
+import { cn } from '@/lib/cn'
 import { FileTextIcon, SparklesIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useMessageMediaUrl } from '../../hooks/use-message-media-url'
@@ -20,6 +21,45 @@ type Props = {
   mediaMimeType: string | null
   mediaSize: number | null
   workspaceId: string
+}
+
+/**
+ * Inline media is bounded by a box and then sized to its own aspect ratio —
+ * never stretched to the box. A portrait clip forced to the full column width
+ * and capped in height gets letterboxed, spending a 416×388 slot on a 216px
+ * video and pushing the rest of the thread off screen.
+ *
+ * Width caps at 360px and height at 280px: enough to recognize the content at
+ * a glance in a working inbox, small enough that two media messages in a row
+ * still read as one conversation rather than filling the fold. Full size lives
+ * in the preview.
+ */
+const MEDIA_MAX_WIDTH = 360
+const MEDIA_MAX_HEIGHT = 280
+
+type MediaFit = { width: number; height: number; aspectRatio: string }
+
+/**
+ * The rendered box for media whose intrinsic size the provider reported.
+ * Only Telegram sends dimensions today; returns null for everyone else so the
+ * caller falls back to the browser's own replaced-element sizing.
+ */
+function fitMedia(metadata: MessageMediaMetadata | null): MediaFit | null {
+  const width = metadata?.telegram?.width
+  const height = metadata?.telegram?.height
+  if (!width || !height) return null
+  const scale = Math.min(
+    MEDIA_MAX_WIDTH / width,
+    MEDIA_MAX_HEIGHT / height,
+    1,
+  )
+  return {
+    width: Math.round(width * scale),
+    height: Math.round(height * scale),
+    // Carried alongside the width so a narrow pane clamping `max-w-full`
+    // recomputes the height instead of distorting the frame.
+    aspectRatio: `${width} / ${height}`,
+  }
 }
 
 export function MessageMediaAttachment({
@@ -62,13 +102,12 @@ export function MessageMediaAttachment({
 
   if (uploadFailed || !storagePath) {
     return (
-      <Surface
-        variant="secondary"
+      <div
         className={cn(
-          'mt-1 max-w-full rounded-xl px-3 py-2 text-xs',
+          'bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-xs',
           isOutbound
-            ? 'bg-accent-soft text-accent-foreground/90'
-            : 'text-foreground/80',
+            ? 'bg-accent-muted text-on-accent/90'
+            : 'text-primary/80',
         )}
       >
         <div className="flex items-start gap-2">
@@ -78,49 +117,55 @@ export function MessageMediaAttachment({
           />
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="font-medium wrap-break-word">{displayName}</p>
-            <p className="text-foreground/55">{m.inbox_media_unavailable()}</p>
+            <p className="text-primary/55">{m.inbox_media_unavailable()}</p>
           </div>
         </div>
-      </Surface>
+      </div>
     )
   }
 
   if (signed.isPending) {
     return (
       <div className="mt-1 w-full max-w-xs">
-        <Skeleton className="h-36 w-full max-w-xs rounded-xl" />
+        <Skeleton width="100%" height={144} radius={4} />
       </div>
     )
   }
 
   if (signed.isError || !signed.data) {
     return (
-      <Surface
-        variant="secondary"
-        className="mt-1 max-w-full rounded-xl px-3 py-2 text-xs"
-      >
-        <p className="text-danger">{m.inbox_media_signed_url_error()}</p>
-        <Button
-          size="sm"
-          variant="secondary"
-          className="mt-2"
-          onPress={() => void signed.refetch()}
-        >
-          {m.common_retry()}
-        </Button>
-      </Surface>
+      <div className="bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-xs">
+        <p className="text-error">{m.inbox_media_signed_url_error()}</p>
+        <div className="mt-2">
+          <Button
+            label={m.common_retry()}
+            size="sm"
+            variant="secondary"
+            onClick={() => void signed.refetch()}
+          />
+        </div>
+      </div>
     )
   }
 
   const url = signed.data
+
+  const fit = fitMedia(metadata)
 
   if (messageType === 'image') {
     return (
       <Image
         src={url}
         alt={displayName}
-        className="mt-1 max-w-xs w-full rounded-xl"
-        imageClassName="max-h-96 object-contain rounded-xl"
+        // Known dimensions reserve the exact box, so the transcript never
+        // reflows when the image decodes.
+        width={fit?.width}
+        height={fit?.height}
+        className={cn('mt-1 rounded-xl', !fit && 'max-w-90')}
+        imageClassName={cn(
+          'rounded-xl',
+          fit ? 'object-cover' : 'max-h-70 max-w-full object-contain',
+        )}
         downloadable
       />
     )
@@ -128,11 +173,12 @@ export function MessageMediaAttachment({
 
   if (messageType === 'video') {
     return (
-      <div className="mt-1 w-full max-w-md min-w-0">
+      <div className="mt-1 min-w-0">
         {!mediaBroken ? (
           <MessageInlineVideo
             key={url}
             url={url}
+            fit={fit}
             onError={() => setMediaBroken(true)}
           />
         ) : (
@@ -195,9 +241,11 @@ export function MessageMediaAttachment({
 
 function MessageInlineVideo({
   url,
+  fit,
   onError,
 }: {
   url: string
+  fit: MediaFit | null
   onError: () => void
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -214,7 +262,16 @@ function MessageInlineVideo({
         controls
         playsInline
         preload="auto"
-        className="max-h-96 min-h-40 w-full rounded-xl bg-black/50 object-contain"
+        className={cn(
+          'max-w-full rounded-xl bg-black/50',
+          // Unknown dimensions: let the replaced element size itself from the
+          // stream, bounded on both axes — which preserves the ratio too.
+          !fit && 'max-h-70 min-h-40 object-contain',
+        )}
+        // Data-derived geometry, so it cannot be a token utility.
+        style={
+          fit ? { width: fit.width, aspectRatio: fit.aspectRatio } : undefined
+        }
         onError={onError}
       >
         {m.inbox_media_video_unsupported()}
@@ -242,11 +299,10 @@ function DocumentFallbackCard({
   const Icon = leading === 'sparkles' ? SparklesIcon : FileTextIcon
 
   return (
-    <Surface
-      variant="secondary"
+    <div
       className={cn(
-        'mt-1 flex max-w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs',
-        isOutbound ? 'bg-accent-soft' : '',
+        'bg-muted mt-1 flex max-w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs',
+        isOutbound ? 'bg-accent-muted' : '',
       )}
     >
       <Icon className="size-8 shrink-0 opacity-70" aria-hidden />
@@ -254,7 +310,7 @@ function DocumentFallbackCard({
         <p className="truncate font-medium" title={displayName}>
           {displayName}
         </p>
-        {meta ? <p className="truncate text-foreground/55">{meta}</p> : null}
+        {meta ? <p className="truncate text-primary/55">{meta}</p> : null}
       </div>
       <a
         href={downloadUrl}
@@ -264,6 +320,6 @@ function DocumentFallbackCard({
       >
         {m.inbox_media_download()}
       </a>
-    </Surface>
+    </div>
   )
 }

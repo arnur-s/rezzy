@@ -1,12 +1,14 @@
-import type { SpinnerRootProps } from '@heroui/react'
-import { Spinner } from '@heroui/react'
+import { Center } from '@astryxdesign/core/Center'
+import { Spinner } from '@astryxdesign/core/Spinner'
 
-type Props = SpinnerRootProps
+type Props = {
+  size?: 'sm' | 'md' | 'lg'
+}
 
 export function Loader({ size }: Props) {
   return (
-    <div className="flex h-full items-center justify-center">
+    <Center height="100%">
       <Spinner size={size} />
-    </div>
+    </Center>
   )
 }

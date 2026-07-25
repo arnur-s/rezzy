@@ -1,5 +1,4 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
-import { ListBox } from '@heroui/react'
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ConversationListItem } from './conversation-list-item'
@@ -47,20 +46,18 @@ function conversation(overrides: {
 
 function renderInList(row: ConversationWithRelations, isActive: boolean) {
   return render(
-    <ListBox
-      aria-label="Conversations"
-      selectionMode="single"
-      selectedKeys={isActive ? new Set([row.id]) : new Set()}
-      onSelectionChange={vi.fn()}
-    >
-      <ListBox.Item
-        id={row.id}
-        textValue={row.contact.name?.trim() || '—'}
+    <div role="listbox" aria-label="Conversations">
+      <button
+        type="button"
+        role="option"
+        aria-selected={isActive}
+        aria-label={row.contact.name?.trim() || '—'}
+        data-selected={isActive ? 'true' : 'false'}
         className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5"
       >
         <ConversationListItem conversation={row} isActive={isActive} />
-      </ListBox.Item>
-    </ListBox>,
+      </button>
+    </div>,
   )
 }
 

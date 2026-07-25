@@ -5,7 +5,8 @@ import {
   isChannelType,
 } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { Dropdown, Label } from '@heroui/react'
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
+import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
 import {
   CircleCheckIcon,
   MoreHorizontalIcon,
@@ -42,23 +43,51 @@ export function ChannelCard({ channel, workspaceId }: Props) {
     return formatter.format(new Date(channel.created_at))
   }, [channel.created_at])
 
+  const menuItems: Array<DropdownMenuOption> = [
+    {
+      label: m.channels_card_action_edit(),
+      icon: <PencilIcon className="size-4" />,
+      onClick: () => setIsEditOpen(true),
+    },
+    ...(channelType === 'whatsapp' || channelType === 'instagram'
+      ? [
+          {
+            label: m.channels_card_action_reconnect(),
+            icon: <RefreshCwIcon className="size-4" />,
+            onClick: () => setIsReconnectOpen(true),
+          },
+        ]
+      : []),
+    channel.is_active
+      ? {
+          label: m.channels_card_action_disconnect(),
+          icon: <Trash2Icon className="size-4" />,
+          onClick: () => setIsDeleteOpen(true),
+        }
+      : {
+          label: m.channels_card_action_activate(),
+          icon: <CircleCheckIcon className="size-4" />,
+          onClick: () => setIsActivateOpen(true),
+        },
+  ]
+
   return (
     <>
       <div className="flex min-h-20 items-center gap-4 py-4">
         {channelType ? (
           <ChannelTypeIcon type={channelType} size="lg" />
         ) : (
-          <span className="size-12 rounded-xl bg-muted" />
+          <span className="bg-muted size-12 rounded-xl" />
         )}
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-base font-semibold leading-tight">
+            <h3 className="truncate text-base leading-tight font-semibold">
               {channel.name?.trim() || m.channels_card_unnamed()}
             </h3>
             <ChannelStatusBadge isActive={channel.is_active} />
           </div>
-          <p className="mt-1 text-xs text-muted">
+          <p className="text-secondary mt-1 text-xs">
             {channelType
               ? m.channels_card_meta({
                   type: m[`channels_type_${channelType}_label`](),
@@ -68,57 +97,17 @@ export function ChannelCard({ channel, workspaceId }: Props) {
           </p>
         </div>
 
-        <Dropdown>
-          <Dropdown.Trigger aria-label={m.channels_card_actions_label()}>
-            <MoreHorizontalIcon className="size-4" />
-          </Dropdown.Trigger>
-
-          <Dropdown.Popover className="min-w-44">
-            <Dropdown.Menu
-              onAction={(key) => {
-                if (key === 'edit') setIsEditOpen(true)
-                if (key === 'reconnect') setIsReconnectOpen(true)
-                if (key === 'disconnect') setIsDeleteOpen(true)
-                if (key === 'activate') setIsActivateOpen(true)
-              }}
-            >
-              <Dropdown.Item
-                id="edit"
-                textValue={m.channels_card_action_edit()}
-              >
-                <PencilIcon className="size-4" />
-                <Label>{m.channels_card_action_edit()}</Label>
-              </Dropdown.Item>
-              {(channelType === 'whatsapp' || channelType === 'instagram') && (
-                <Dropdown.Item
-                  id="reconnect"
-                  textValue={m.channels_card_action_reconnect()}
-                >
-                  <RefreshCwIcon className="size-4" />
-                  <Label>{m.channels_card_action_reconnect()}</Label>
-                </Dropdown.Item>
-              )}
-              {channel.is_active ? (
-                <Dropdown.Item
-                  id="disconnect"
-                  textValue={m.channels_card_action_disconnect()}
-                  variant="danger"
-                >
-                  <Trash2Icon className="size-4" />
-                  <Label>{m.channels_card_action_disconnect()}</Label>
-                </Dropdown.Item>
-              ) : (
-                <Dropdown.Item
-                  id="activate"
-                  textValue={m.channels_card_action_activate()}
-                >
-                  <CircleCheckIcon className="size-4" />
-                  <Label>{m.channels_card_action_activate()}</Label>
-                </Dropdown.Item>
-              )}
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
+        <DropdownMenu
+          hasChevron={false}
+          menuWidth={176}
+          button={{
+            label: m.channels_card_actions_label(),
+            icon: <MoreHorizontalIcon className="size-4" />,
+            isIconOnly: true,
+            variant: 'ghost',
+          }}
+          items={menuItems}
+        />
       </div>
 
       <EditChannelNameModal

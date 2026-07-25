@@ -1,7 +1,8 @@
 import type { ChannelType } from '@/entities/channel'
 import { ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { Button, Chip } from '@heroui/react'
+import { Badge } from '@astryxdesign/core/Badge'
+import { Button } from '@astryxdesign/core/Button'
 
 type Props = {
   type: Exclude<ChannelType, 'telegram' | 'whatsapp' | 'instagram'>
@@ -24,27 +25,23 @@ export function ConnectChannelComingSoon({ onCancel, type }: Props) {
             <h2 className="text-lg font-semibold">
               {m[`channels_type_${type}_label`]()}
             </h2>
-            <Chip color="warning" size="sm" variant="soft">
-              <Chip.Label>{m.channels_coming_soon()}</Chip.Label>
-            </Chip>
+            <Badge variant="warning" label={m.channels_coming_soon()} />
           </div>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-secondary">
             {m[`channels_type_${type}_description`]()}
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-muted/30 bg-muted/30 p-6 text-sm text-muted">
+      <div className="border-border/30 bg-muted/30 text-secondary flex flex-col gap-3 rounded-2xl border border-dashed p-6 text-sm">
         <p>{m.channels_coming_soon_body()}</p>
-        <Button isDisabled className="self-start">
-          {m[ctaKey]()}
-        </Button>
+        <div className="self-start">
+          <Button label={m[ctaKey]()} isDisabled />
+        </div>
       </div>
 
       <div className="flex">
-        <Button variant="secondary" onClick={onCancel}>
-          {m.common_back()}
-        </Button>
+        <Button label={m.common_back()} variant="secondary" onClick={onCancel} />
       </div>
     </div>
   )

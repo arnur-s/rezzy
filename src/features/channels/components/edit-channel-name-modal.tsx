@@ -1,17 +1,12 @@
-import { Button } from '@/components/button'
 import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import {
-  FieldError,
-  Input,
-  Label,
-  Modal,
-  TextField,
-  toast,
-} from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useUpdateChannelName } from '../hooks/use-channels'
 import type { EditChannelNameFormValues } from '../schemas/channel-form-schemas'
 import { editChannelNameSchema } from '../schemas/channel-form-schemas'
@@ -29,14 +24,10 @@ export function EditChannelNameModal({
   onOpenChange,
   workspaceId,
 }: Props) {
+  const showToast = useToast()
   const updateChannelMutation = useUpdateChannelName(workspaceId)
 
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-    reset,
-  } = useForm<EditChannelNameFormValues>({
+  const { control, handleSubmit, reset } = useForm<EditChannelNameFormValues>({
     defaultValues: { name: channel.name ?? '' },
     disabled: updateChannelMutation.isPending,
     resolver: standardSchemaResolver(editChannelNameSchema),
@@ -53,13 +44,14 @@ export function EditChannelNameModal({
       { id: channel.id, name: values.name },
       {
         onError: (error) => {
-          toast.danger(m.channels_update_error_title(), {
-            description:
+          showToast({
+            body:
               error instanceof Error ? error.message : m.common_unknown_error(),
+            type: 'error',
           })
         },
         onSuccess: () => {
-          toast.success(m.channels_update_success())
+          showToast({ body: m.channels_update_success(), type: 'info' })
           onOpenChange(false)
         },
       },
@@ -67,49 +59,55 @@ export function EditChannelNameModal({
   }
 
   return (
-    <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-      <Modal.Container>
-        <Modal.Dialog className="sm:max-w-[480px]">
-          <Modal.CloseTrigger />
-          <Modal.Header>
-            <Modal.Heading>{m.channels_edit_modal_title()}</Modal.Heading>
-          </Modal.Header>
-          <Modal.Body>
-            <form
-              className="flex flex-col gap-4 px-4 pt-4 pb-6"
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <TextField
-                fullWidth
-                isDisabled={updateChannelMutation.isPending}
-                isInvalid={!!errors.name}
-              >
-                <Label>{m.channels_name_label()}</Label>
-                <Input
-                  autoFocus
-                  placeholder={m.channels_name_placeholder()}
-                  variant="secondary"
-                  {...register('name')}
-                />
-                <FieldError>{errors.name?.message}</FieldError>
-              </TextField>
+    <Dialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      purpose="form"
+      width={480}
+    >
+      <DialogHeader
+        title={m.channels_edit_modal_title()}
+        onOpenChange={onOpenChange}
+      />
+      <form
+        className="flex flex-col gap-4 px-4 pt-4 pb-6"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <Controller
+          control={control}
+          name="name"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.channels_name_label()}
+              placeholder={m.channels_name_placeholder()}
+              hasAutoFocus
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={updateChannelMutation.isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
 
-              <div className="flex items-center justify-end gap-2 mt-4">
-                <Button variant="secondary" onClick={() => onOpenChange(false)}>
-                  {m.common_cancel()}
-                </Button>
-
-                <Button
-                  isLoading={updateChannelMutation.isPending}
-                  type="submit"
-                >
-                  {m.common_save()}
-                </Button>
-              </div>
-            </form>
-          </Modal.Body>
-        </Modal.Dialog>
-      </Modal.Container>
-    </Modal.Backdrop>
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <Button
+            label={m.common_cancel()}
+            type="button"
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+          />
+          <Button
+            label={m.common_save()}
+            type="submit"
+            variant="primary"
+            isLoading={updateChannelMutation.isPending}
+          />
+        </div>
+      </form>
+    </Dialog>
   )
 }

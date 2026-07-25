@@ -1,6 +1,4 @@
-import { paneStyle } from '@/components/pane'
 import { MessageThreadEmpty } from '@/features/inbox/components/message-thread/message-thread-empty'
-import { cn } from '@heroui/styles'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox/')({
@@ -8,9 +6,9 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox/')({
 })
 
 function RouteComponent() {
-  // Occupies the conversation pane slot, so it carries the same pane chrome.
+  // Occupies the thread region of the inbox layout, flat on the content sheet.
   return (
-    <div className={cn(paneStyle.surface, 'h-full w-full')}>
+    <div className="flex h-full w-full min-h-0 flex-col">
       <MessageThreadEmpty />
     </div>
   )

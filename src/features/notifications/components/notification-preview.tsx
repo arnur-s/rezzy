@@ -1,6 +1,6 @@
 import { m } from '@/paraglide/messages'
-import { Button } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Button } from '@astryxdesign/core/Button'
+import { cn } from '@/lib/cn'
 import { useState } from 'react'
 
 type Props = {
@@ -33,7 +33,7 @@ export function NotificationPreview({
     <div className={cn('flex flex-col items-start gap-1', className)}>
       <p
         className={cn(
-          'text-sm leading-snug text-foreground/80',
+          'text-sm leading-snug text-primary/80',
           expanded
             ? 'max-h-40 overflow-y-auto whitespace-pre-wrap wrap-break-word'
             : 'line-clamp-2',
@@ -43,13 +43,11 @@ export function NotificationPreview({
       </p>
       {canExpand && !expanded ? (
         <Button
+          label={m.notifications_show_full_message()}
           variant="ghost"
           size="sm"
-          className="h-auto px-0 text-xs font-medium text-foreground/70 transition-colors hover:text-foreground"
-          onPress={() => setExpanded(true)}
-        >
-          {m.notifications_show_full_message()}
-        </Button>
+          onClick={() => setExpanded(true)}
+        />
       ) : null}
     </div>
   )

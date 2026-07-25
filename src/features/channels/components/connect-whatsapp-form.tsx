@@ -1,11 +1,12 @@
-import { Button } from '@/components/button'
 import { ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { FieldError, Input, Label, TextField, toast } from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import type { ChannelConnectErrorCode } from '../api/channels'
 import { ChannelConnectError } from '../api/channels'
 import {
@@ -87,6 +88,7 @@ export function ConnectWhatsappForm({
   onDirtyChange,
 }: Props) {
   const navigate = useNavigate()
+  const showToast = useToast()
   const createChannelMutation = useCreateWhatsappChannel(target.workspaceId)
   const reconnectChannelMutation = useReconnectWhatsappChannel(
     target.workspaceId,
@@ -98,9 +100,9 @@ export function ConnectWhatsappForm({
   const canConnect = isConfigured && isSecure
 
   const {
-    formState: { errors, isDirty },
+    control,
+    formState: { isDirty },
     handleSubmit,
-    register,
   } = useForm<WhatsappChannelFormValues>({
     defaultValues: whatsappChannelDefaultValues,
     disabled: isConnecting,
@@ -141,11 +143,13 @@ export function ConnectWhatsappForm({
           name: values.name,
         })
       }
-      toast.success(
-        target.kind === 'reconnect'
-          ? m.channels_whatsapp_reconnect_success()
-          : m.channels_whatsapp_create_success(),
-      )
+      showToast({
+        body:
+          target.kind === 'reconnect'
+            ? m.channels_whatsapp_reconnect_success()
+            : m.channels_whatsapp_create_success(),
+        type: 'info',
+      })
       if (onSuccess) {
         onSuccess()
         return
@@ -157,33 +161,15 @@ export function ConnectWhatsappForm({
     } catch (error) {
       if (error instanceof EmbeddedSignupError) {
         const description = describeSignupError(error.reason)
-        if (description) {
-          toast.danger(
-            target.kind === 'reconnect'
-              ? m.channels_whatsapp_reconnect_error_title()
-              : m.channels_create_error_title(),
-            { description },
-          )
-        }
+        if (description) showToast({ body: description, type: 'error' })
       } else if (error instanceof ChannelConnectError) {
-        toast.danger(
-          target.kind === 'reconnect'
-            ? m.channels_whatsapp_reconnect_error_title()
-            : m.channels_create_error_title(),
-          {
-            description: describeConnectError(error.code),
-          },
-        )
+        showToast({ body: describeConnectError(error.code), type: 'error' })
       } else {
-        toast.danger(
-          target.kind === 'reconnect'
-            ? m.channels_whatsapp_reconnect_error_title()
-            : m.channels_create_error_title(),
-          {
-            description:
-              error instanceof Error ? error.message : m.common_unknown_error(),
-          },
-        )
+        showToast({
+          body:
+            error instanceof Error ? error.message : m.common_unknown_error(),
+          type: 'error',
+        })
       }
       // Leave the flow open so the user can retry; success paths unmount instead.
       setIsConnecting(false)
@@ -200,7 +186,7 @@ export function ConnectWhatsappForm({
               ? m.channels_whatsapp_reconnect_form_title()
               : m.channels_whatsapp_form_title()}
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="text-secondary mt-1 text-sm">
             {target.kind === 'reconnect'
               ? m.channels_whatsapp_reconnect_form_subtitle()
               : m.channels_whatsapp_form_subtitle()}
@@ -210,51 +196,58 @@ export function ConnectWhatsappForm({
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         {target.kind === 'create' && (
-          <TextField
-            fullWidth
-            isDisabled={isConnecting}
-            isInvalid={!!errors.name}
-          >
-            <Label>{m.channels_name_label()}</Label>
-            <Input
-              autoFocus
-              placeholder={m.channels_whatsapp_name_placeholder()}
-              variant="secondary"
-              {...register('name')}
-            />
-            <p className="mt-1.5 text-xs text-muted">
-              {m.channels_whatsapp_name_helper()}
-            </p>
-            <FieldError>{errors.name?.message}</FieldError>
-          </TextField>
+          <Controller
+            control={control}
+            name="name"
+            render={({ field, fieldState }) => (
+              <TextInput
+                label={m.channels_name_label()}
+                placeholder={m.channels_whatsapp_name_placeholder()}
+                description={m.channels_whatsapp_name_helper()}
+                hasAutoFocus
+                value={field.value}
+                onChange={(next) => field.onChange(next)}
+                isDisabled={isConnecting}
+                status={
+                  fieldState.error?.message
+                    ? { type: 'error', message: fieldState.error.message }
+                    : undefined
+                }
+              />
+            )}
+          />
         )}
 
         {!isConfigured && (
-          <p className="rounded-xl border border-dashed border-muted/30 bg-muted/30 p-4 text-xs text-muted">
+          <p className="border-border/30 bg-muted/30 text-secondary rounded-xl border border-dashed p-4 text-xs">
             {m.channels_whatsapp_not_configured()}
           </p>
         )}
 
         {isConfigured && !isSecure && (
-          <p className="rounded-xl border border-dashed border-warning/40 bg-warning/10 p-4 text-xs text-muted">
+          <p className="border-warning/40 bg-warning/10 text-secondary rounded-xl border border-dashed p-4 text-xs">
             {m.channels_whatsapp_requires_https()}
           </p>
         )}
 
-        <div className="flex items-center justify-between gap-2 mt-4">
-          <Button variant="secondary" onClick={onCancel}>
-            {target.kind === 'reconnect' ? m.common_cancel() : m.common_back()}
-          </Button>
-
+        <div className="mt-4 flex items-center justify-between gap-2">
           <Button
+            label={target.kind === 'reconnect' ? m.common_cancel() : m.common_back()}
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+          />
+          <Button
+            label={
+              target.kind === 'reconnect'
+                ? m.channels_whatsapp_reconnect_cta()
+                : m.channels_whatsapp_connect_cta()
+            }
+            type="submit"
+            variant="primary"
             isDisabled={!canConnect}
             isLoading={isConnecting}
-            type="submit"
-          >
-            {target.kind === 'reconnect'
-              ? m.channels_whatsapp_reconnect_cta()
-              : m.channels_whatsapp_connect_cta()}
-          </Button>
+          />
         </div>
       </form>
     </div>

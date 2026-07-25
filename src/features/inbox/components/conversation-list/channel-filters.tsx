@@ -3,10 +3,9 @@ import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import type { Channel, ChannelType } from '@/entities/channel'
 import { CHANNEL_TYPES, PlatformIcon, isChannelType } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { Disclosure } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { ChevronRight } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 type Props = {
   channelTypeFilter: ChannelType | null
@@ -49,6 +48,8 @@ export function ChannelFilters({
     return counts
   }, [channels, channelUnreadCounts])
 
+  const [isOpen, setIsOpen] = useState(true)
+
   if (activeTypes.length === 0) return null
 
   function handleTypeClick(type: ChannelType) {
@@ -71,26 +72,30 @@ export function ChannelFilters({
   }
 
   return (
-    <Disclosure>
-      <Disclosure.Heading>
-        <Disclosure.Trigger
+    <div>
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        className={cn(
+          'flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase outline-none transition-colors',
+          'text-primary/40 hover:text-primary/70',
+          'focus-visible:ring-accent focus-visible:ring-2',
+        )}
+      >
+        <span className="flex-1 text-left">
+          {m.inbox_channels_section_label()}
+        </span>
+        <ChevronRight
           className={cn(
-            'flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider outline-none transition-colors',
-            'text-foreground/40 hover:text-foreground/70',
-            'focus-visible:ring-2 focus-visible:ring-focus',
+            'h-3.5 w-3.5 shrink-0 transition-transform',
+            isOpen && 'rotate-90',
           )}
-        >
-          <span className="flex-1 text-left">
-            {m.inbox_channels_section_label()}
-          </span>
-          <Disclosure.Indicator>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-          </Disclosure.Indicator>
-        </Disclosure.Trigger>
-      </Disclosure.Heading>
+        />
+      </button>
 
-      <Disclosure.Content>
-        <Disclosure.Body className="mb-2 px-2 pt-0 pb-0">
+      {isOpen ? (
+        <div className="mb-2 px-2 pt-0 pb-0">
           <List size="sm">
             {activeTypes.map((type) => {
               const typeChannels = channelsByType.get(type) ?? []
@@ -113,7 +118,6 @@ export function ChannelFilters({
                     {count > 0 && (
                       <NumericUnreadChip
                         count={count}
-                        flat={isTypeActive}
                         aria-label={m.inbox_unread_aria_label({ count })}
                       />
                     )}
@@ -130,10 +134,10 @@ export function ChannelFilters({
                               onClick={() => handleChannelClick(ch)}
                               className={cn(
                                 'flex w-full items-center gap-1.5 rounded-md py-1 pl-7 pr-3 text-xs font-medium outline-none transition-colors',
-                                'focus-visible:ring-2 focus-visible:ring-focus',
+                                'focus-visible:ring-2 focus-visible:ring-accent',
                                 isChActive
-                                  ? 'bg-foreground/10 text-foreground'
-                                  : 'text-foreground/50 hover:bg-foreground/5 hover:text-foreground',
+                                  ? 'bg-primary/10 text-primary'
+                                  : 'text-primary/50 hover:bg-primary/5 hover:text-primary',
                               )}
                             >
                               <span className="flex-1 truncate text-left">
@@ -142,7 +146,6 @@ export function ChannelFilters({
                               {chCount > 0 && (
                                 <NumericUnreadChip
                                   count={chCount}
-                                  flat={isChActive}
                                   aria-label={m.inbox_unread_aria_label({
                                     count: chCount,
                                   })}
@@ -158,8 +161,8 @@ export function ChannelFilters({
               )
             })}
           </List>
-        </Disclosure.Body>
-      </Disclosure.Content>
-    </Disclosure>
+        </div>
+      ) : null}
+    </div>
   )
 }

@@ -1,6 +1,6 @@
 import { m } from '@/paraglide/messages'
-import { Card } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Card } from '@astryxdesign/core/Card'
+import { cn } from '@/lib/cn'
 import {
   InboxIcon,
   MailWarningIcon,
@@ -56,23 +56,23 @@ function StatCard({
   accent?: boolean
 }) {
   return (
-    <Card variant="secondary">
-      <Card.Header className="flex flex-row items-center justify-between gap-2 space-y-0">
-        <Card.Description className="text-xs uppercase tracking-wide">
+    <Card variant="muted">
+      <div className="flex flex-row items-center justify-between gap-2">
+        <span className="text-secondary text-xs tracking-wide uppercase">
           {label}
-        </Card.Description>
+        </span>
         <span
           className={cn(
             'flex size-7 items-center justify-center rounded-md',
             accent
-              ? 'bg-accent/10 text-accent'
-              : 'bg-foreground/5 text-foreground/60',
+              ? 'bg-accent-bg/10 text-accent'
+              : 'bg-primary/5 text-primary/60',
           )}
         >
           <Icon className="size-4" />
         </span>
-      </Card.Header>
-      <Card.Content>
+      </div>
+      <div className="mt-2">
         <span
           className={cn(
             'text-3xl font-semibold tabular-nums',
@@ -81,7 +81,7 @@ function StatCard({
         >
           {value.toLocaleString()}
         </span>
-      </Card.Content>
+      </div>
     </Card>
   )
 }

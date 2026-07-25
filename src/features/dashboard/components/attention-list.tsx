@@ -1,21 +1,38 @@
 import { PlatformIcon } from '@/entities/channel'
 import type { Workspace } from '@/entities/workspace'
 import type { AttentionItem } from '@/features/dashboard/api/attention-queue'
+import { SectionError } from '@/features/dashboard/components/section-error'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
 import { m } from '@/paraglide/messages'
 import { List } from '@/components/list'
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { Link } from '@tanstack/react-router'
-import { CheckIcon } from 'lucide-react'
+import { CheckIcon, ChevronRightIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
 type Props = {
   items: Array<AttentionItem>
+  /** Qualifying items before the cap, so the list can be honest about what it hides. */
+  total: number
   workspaces: Array<Workspace>
   isLoading: boolean
+  isError: boolean
+  onRetry: () => void
+  isRetrying?: boolean
+  /** Present when the user has exactly one workspace. */
+  inboxWorkspaceId: string | null
 }
 
-export function AttentionList({ items, workspaces, isLoading }: Props) {
+export function AttentionList({
+  items,
+  total,
+  workspaces,
+  isLoading,
+  isError,
+  onRetry,
+  isRetrying = false,
+  inboxWorkspaceId,
+}: Props) {
   const workspaceNameById = useMemo(() => {
     const map = new Map<string, string>()
     for (const w of workspaces) map.set(w.id, w.name)
@@ -26,25 +43,50 @@ export function AttentionList({ items, workspaces, isLoading }: Props) {
     <section aria-labelledby="home-attention-title" className="space-y-3">
       <h2
         id="home-attention-title"
-        className="text-foreground text-sm font-semibold"
+        className="text-primary text-sm font-semibold"
       >
         {m.home_attention_title()}
       </h2>
 
       {isLoading ? (
         <Skeleton />
+      ) : isError ? (
+        <SectionError
+          message={m.home_attention_error()}
+          onRetry={onRetry}
+          isRetrying={isRetrying}
+        />
       ) : items.length === 0 ? (
         <EmptyState />
       ) : (
-        <List size="md">
-          {items.map((item) => (
-            <AttentionRow
-              key={item.conversationId}
-              item={item}
-              workspaceName={workspaceNameById.get(item.workspaceId)}
-            />
-          ))}
-        </List>
+        <>
+          <List size="md">
+            {items.map((item) => (
+              <AttentionRow
+                key={item.conversationId}
+                item={item}
+                workspaceName={workspaceNameById.get(item.workspaceId)}
+              />
+            ))}
+          </List>
+          {total > items.length ? (
+            <p className="text-secondary text-xs">
+              {m.home_attention_showing_top({ count: items.length, total })}
+              {inboxWorkspaceId ? (
+                <>
+                  {' · '}
+                  <Link
+                    to="/workspaces/$id/inbox"
+                    params={{ id: inboxWorkspaceId }}
+                    className="text-primary font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
+                  >
+                    {m.home_open_inbox()}
+                  </Link>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+        </>
       )}
     </section>
   )
@@ -66,13 +108,11 @@ function AttentionRow({
   return (
     <List.Item className="-mx-2">
       <Link
-        to="/workspaces/$id/inbox"
-        params={{ id: item.workspaceId }}
-        aria-label={m.home_attention_row_aria({
-          contact: item.contactName,
-          reason: reasonLabel,
-        })}
-        className="active:scale-[0.99]"
+        to="/workspaces/$id/inbox/$conversationId"
+        params={{
+          id: item.workspaceId,
+          conversationId: item.conversationId,
+        }}
       >
         {item.channelType ? (
           <PlatformIcon type={item.channelType} size="md" withPlate />
@@ -81,14 +121,17 @@ function AttentionRow({
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="text-foreground truncate text-sm font-semibold">
-            {item.contactName}
+          <p className="flex items-center gap-2 text-sm">
+            <span className="text-primary truncate font-semibold">
+              {item.contactName}
+            </span>
+            <ReasonChip reason={item.reason} label={reasonLabel} />
           </p>
-          <p className="text-foreground/55 mt-0.5 flex items-center gap-1.5 truncate text-xs">
+          <p className="text-secondary mt-0.5 flex items-center gap-1.5 truncate text-xs">
             {workspaceName ? (
               <>
                 <span className="truncate">{workspaceName}</span>
-                <span aria-hidden="true" className="text-foreground/30">
+                <span aria-hidden="true" className="text-primary/30">
                   ·
                 </span>
               </>
@@ -97,7 +140,10 @@ function AttentionRow({
           </p>
         </div>
 
-        <ReasonChip reason={item.reason} label={reasonLabel} />
+        <ChevronRightIcon
+          aria-hidden="true"
+          className="text-secondary/70 size-4 shrink-0"
+        />
       </Link>
     </List.Item>
   )
@@ -112,14 +158,15 @@ function ReasonChip({
 }) {
   const classes: Record<AttentionItem['reason'], string> = {
     snoozed:
-      'bg-warning/10 text-warning-foreground border-warning/20 dark:text-warning',
-    unread: 'bg-accent/10 text-accent border-accent/20',
-    stale: 'bg-foreground/[0.05] text-foreground/70 border-foreground/10',
+      'bg-warning/10 text-on-warning border-warning/20 dark:text-warning',
+    unread: 'bg-accent-bg/10 text-accent border-accent/20',
+    stale: 'bg-primary/[0.05] text-secondary border-primary/10',
   }
   return (
     <span
+      title={getReasonHint(reason)}
       className={cn(
-        'shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-4',
+        'shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold leading-4',
         classes[reason],
       )}
     >
@@ -138,10 +185,10 @@ function EmptyState() {
         <CheckIcon className="size-4" />
       </span>
       <div className="min-w-0">
-        <p className="text-foreground text-sm font-semibold">
+        <p className="text-primary text-sm font-semibold">
           {m.home_attention_empty_title()}
         </p>
-        <p className="text-foreground/55 text-xs">
+        <p className="text-secondary text-xs">
           {m.home_attention_empty_description()}
         </p>
       </div>
@@ -153,7 +200,7 @@ function Skeleton() {
   return (
     <ul className="space-y-2" aria-hidden="true">
       {Array.from({ length: 3 }).map((_, i) => (
-        <li key={i} className="bg-foreground/5 h-12 animate-pulse rounded-lg" />
+        <li key={i} className="bg-primary/5 h-12 animate-pulse rounded-lg" />
       ))}
     </ul>
   )
@@ -167,6 +214,17 @@ function getReasonLabel(reason: AttentionItem['reason']): string {
       return m.home_attention_reason_unread()
     case 'stale':
       return m.home_attention_reason_stale()
+  }
+}
+
+function getReasonHint(reason: AttentionItem['reason']): string {
+  switch (reason) {
+    case 'snoozed':
+      return m.home_attention_reason_snoozed_hint()
+    case 'unread':
+      return m.home_attention_reason_unread_hint()
+    case 'stale':
+      return m.home_attention_reason_stale_hint()
   }
 }
 

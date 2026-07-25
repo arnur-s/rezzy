@@ -1,6 +1,9 @@
 import { m } from '@/paraglide/messages'
-import { Label, ListBox, Select, Skeleton, Switch, toast } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Selector } from '@astryxdesign/core/Selector'
+import { Skeleton } from '@astryxdesign/core/Skeleton'
+import { Switch } from '@astryxdesign/core/Switch'
+import { useToast } from '@astryxdesign/core/Toast'
+import { cn } from '@/lib/cn'
 import type { ReactNode } from 'react'
 import {
   useNotificationPreferences,
@@ -10,12 +13,13 @@ import { usePushSubscription } from '../hooks/use-push-subscription'
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   MESSAGE_PREVIEW_MODES,
-  
-  
-  
-  isMessagePreviewMode
+  isMessagePreviewMode,
 } from '../model/types'
-import type {MessagePreviewMode, NotificationPermissionState, NotificationPreferences} from '../model/types';
+import type {
+  MessagePreviewMode,
+  NotificationPermissionState,
+  NotificationPreferences,
+} from '../model/types'
 
 function errorDescription(error: unknown): string {
   return error instanceof Error ? error.message : m.common_unknown_error()
@@ -42,10 +46,10 @@ type SettingRowProps = {
 
 function SettingRow({ label, description, control }: SettingRowProps) {
   return (
-    <div className="flex items-start justify-between gap-4 border-t border-border/60 py-4 first:border-t-0">
+    <div className="border-border/60 flex items-start justify-between gap-4 border-t py-4 first:border-t-0">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="mt-0.5 text-sm text-muted">{description}</p>
+        <p className="text-primary text-sm font-medium">{label}</p>
+        <p className="text-secondary mt-0.5 text-sm">{description}</p>
       </div>
       <div className="shrink-0">{control}</div>
     </div>
@@ -65,15 +69,12 @@ function ToggleSwitch({
 }) {
   return (
     <Switch
-      isSelected={isSelected}
-      onChange={onChange}
+      label={ariaLabel}
+      isLabelHidden
+      value={isSelected}
+      onChange={(checked) => onChange(checked)}
       isDisabled={isDisabled}
-      aria-label={ariaLabel}
-    >
-      <Switch.Control>
-        <Switch.Thumb />
-      </Switch.Control>
-    </Switch>
+    />
   )
 }
 
@@ -83,10 +84,10 @@ function NotificationSettingsSkeleton() {
       {[0, 1, 2, 3].map((row) => (
         <div key={row} className="flex items-center justify-between gap-4 py-2">
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-3 w-64" />
+            <Skeleton width={160} height={16} radius={2} />
+            <Skeleton width={256} height={12} radius={2} />
           </div>
-          <Skeleton className="h-6 w-11 rounded-full" />
+          <Skeleton width={44} height={24} radius="rounded" />
         </div>
       ))}
     </div>
@@ -94,6 +95,7 @@ function NotificationSettingsSkeleton() {
 }
 
 export function NotificationSettings() {
+  const showToast = useToast()
   const preferencesQuery = useNotificationPreferences()
   const updatePreferences = useUpdateNotificationPreferences()
   const push = usePushSubscription()
@@ -104,9 +106,7 @@ export function NotificationSettings() {
   function save(next: NotificationPreferences) {
     updatePreferences.mutate(next, {
       onError: (error) => {
-        toast.danger(m.settings_notifications_save_error(), {
-          description: errorDescription(error),
-        })
+        showToast({ body: errorDescription(error), type: 'error' })
       },
     })
   }
@@ -118,9 +118,7 @@ export function NotificationSettings() {
         if (!subscribed) return
         save({ ...preferences, desktopEnabled: true })
       } catch (error) {
-        toast.danger(m.settings_notifications_permission_error(), {
-          description: errorDescription(error),
-        })
+        showToast({ body: errorDescription(error), type: 'error' })
       }
       return
     }
@@ -128,14 +126,14 @@ export function NotificationSettings() {
     save({ ...preferences, desktopEnabled: false })
   }
 
-  function handlePreviewChange(next: unknown) {
-    if (typeof next !== 'string' || !isMessagePreviewMode(next)) return
+  function handlePreviewChange(next: string) {
+    if (!isMessagePreviewMode(next)) return
     save({ ...preferences, previewMode: next })
   }
 
   if (preferencesQuery.isError) {
     return (
-      <p className="text-sm text-danger">
+      <p className="text-error text-sm">
         {m.settings_notifications_load_error()}
       </p>
     )
@@ -153,10 +151,10 @@ export function NotificationSettings() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h3 className="text-base font-semibold text-foreground">
+        <h3 className="text-primary text-base font-semibold">
           {m.settings_notifications_title()}
         </h3>
-        <p className="mt-1 text-sm text-muted">
+        <p className="text-secondary mt-1 text-sm">
           {m.settings_notifications_description()}
         </p>
       </div>
@@ -188,17 +186,17 @@ export function NotificationSettings() {
         />
 
         <div className="flex items-center justify-between gap-4 pl-0 text-sm">
-          <span className="text-muted">
+          <span className="text-secondary">
             {m.settings_notifications_permission_label()}
           </span>
           <span
             className={cn(
               'font-medium',
               push.permission === 'granted' && 'text-success',
-              push.permission === 'denied' && 'text-danger',
+              push.permission === 'denied' && 'text-error',
               (push.permission === 'default' ||
                 push.permission === 'unsupported') &&
-                'text-foreground/70',
+                'text-primary/70',
             )}
           >
             {PERMISSION_LABELS[push.permission]()}
@@ -206,12 +204,12 @@ export function NotificationSettings() {
         </div>
 
         {push.permission === 'denied' ? (
-          <p className="mt-1 text-xs text-muted">
+          <p className="text-secondary mt-1 text-xs">
             {m.settings_notifications_permission_denied_help()}
           </p>
         ) : null}
         {push.permission === 'unsupported' ? (
-          <p className="mt-1 text-xs text-muted">
+          <p className="text-secondary mt-1 text-xs">
             {m.settings_notifications_permission_unsupported_help()}
           </p>
         ) : null}
@@ -228,43 +226,27 @@ export function NotificationSettings() {
           }
         />
 
-        <div className="flex items-start justify-between gap-4 border-t border-border/60 py-4">
+        <div className="border-border/60 flex items-start justify-between gap-4 border-t py-4">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-primary text-sm font-medium">
               {m.settings_notifications_preview_label()}
             </p>
-            <p className="mt-0.5 text-sm text-muted">
+            <p className="text-secondary mt-0.5 text-sm">
               {m.settings_notifications_preview_description()}
             </p>
           </div>
-          <Select
-            value={preferences.previewMode}
-            onChange={handlePreviewChange}
-            variant="secondary"
-            className="w-48 shrink-0"
-          >
-            <Label className="sr-only">
-              {m.settings_notifications_preview_label()}
-            </Label>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                {MESSAGE_PREVIEW_MODES.map((mode) => (
-                  <ListBox.Item
-                    key={mode}
-                    id={mode}
-                    textValue={PREVIEW_MODE_LABELS[mode]()}
-                  >
-                    {PREVIEW_MODE_LABELS[mode]()}
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                ))}
-              </ListBox>
-            </Select.Popover>
-          </Select>
+          <div className="w-48 shrink-0">
+            <Selector
+              label={m.settings_notifications_preview_label()}
+              isLabelHidden
+              value={preferences.previewMode}
+              onChange={handlePreviewChange}
+              options={MESSAGE_PREVIEW_MODES.map((mode) => ({
+                value: mode,
+                label: PREVIEW_MODE_LABELS[mode](),
+              }))}
+            />
+          </div>
         </div>
       </div>
     </div>

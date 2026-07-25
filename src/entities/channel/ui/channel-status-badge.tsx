@@ -1,5 +1,5 @@
 import { m } from '@/paraglide/messages'
-import { Chip } from '@heroui/react'
+import { Badge } from '@astryxdesign/core/Badge'
 
 type Props = {
   isActive: boolean
@@ -7,16 +7,11 @@ type Props = {
 
 export function ChannelStatusBadge({ isActive }: Props) {
   return (
-    <Chip
-      color={isActive ? 'success' : 'default'}
-      size="sm"
-      variant="soft"
-    >
-      <Chip.Label>
-        {isActive
-          ? m.channels_status_active()
-          : m.channels_status_inactive()}
-      </Chip.Label>
-    </Chip>
+    <Badge
+      variant={isActive ? 'success' : 'neutral'}
+      label={
+        isActive ? m.channels_status_active() : m.channels_status_inactive()
+      }
+    />
   )
 }

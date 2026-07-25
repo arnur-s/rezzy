@@ -6,4 +6,4 @@
  * tracks the breakpoint (up to 1536px) and lets messages sprawl across an
  * empty canvas on wide displays.
  */
-export const TRANSCRIPT_MEASURE = 'mx-auto w-full max-w-[820px]'
+export const TRANSCRIPT_MEASURE = 'mx-auto w-full max-w-3xl'

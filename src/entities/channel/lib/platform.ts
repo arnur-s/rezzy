@@ -32,7 +32,7 @@ export const PLATFORM_META: Record<ChannelType, PlatformMeta> = {
   email: {
     type: 'email',
     labelKey: () => m.inbox_filter_email(),
-    iconColorClass: 'text-foreground/60',
-    iconTintClass: 'bg-foreground/5',
+    iconColorClass: 'text-primary/60',
+    iconTintClass: 'bg-primary/5',
   },
 }

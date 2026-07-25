@@ -2,8 +2,8 @@ import type { ChannelType } from '@/entities/channel'
 import { PLATFORM_META, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import type { MessageRow } from '@/entities/message'
-import { paneStyle } from '@/components/pane'
-import { cn } from '@heroui/styles'
+import { m } from '@/paraglide/messages'
+import { ChatLayout } from '@astryxdesign/core/Chat'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   useConversationReadCursor,
@@ -20,6 +20,7 @@ import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
 import { MessageThreadProvider } from './message-thread-context'
 import { MessageThreadHeader } from './message-thread-header'
+import { ThreadScrollButton } from './thread-scroll-button'
 
 const MARK_READ_DEBOUNCE_MS = 280
 const MAX_UNREAD_PREFETCH_PAGES = 5
@@ -81,7 +82,7 @@ export function MessageThread({
 
     const readId = readCursor?.last_read_message_id
     if (!readId) return
-    if (messages.some((m) => m.id === readId)) return
+    if (messages.some((msg) => msg.id === readId)) return
     if (!messagesQuery.hasNextPage) return
     if (messagesQuery.isFetchingNextPage) return
     if (unreadPrefetchPagesRef.current >= MAX_UNREAD_PREFETCH_PAGES) return
@@ -100,8 +101,10 @@ export function MessageThread({
   ])
 
   const handleLoadOlder = useCallback(() => {
-    if (!messagesQuery.hasNextPage || messagesQuery.isFetchingNextPage) return
-    void messagesQuery.fetchNextPage()
+    if (!messagesQuery.hasNextPage || messagesQuery.isFetchingNextPage) {
+      return Promise.resolve()
+    }
+    return messagesQuery.fetchNextPage()
   }, [
     messagesQuery.fetchNextPage,
     messagesQuery.hasNextPage,
@@ -146,7 +149,7 @@ export function MessageThread({
   useEffect(() => {
     if (
       sessionUnreadDividerMessageId != null &&
-      !messages.some((m) => m.id === sessionUnreadDividerMessageId)
+      !messages.some((msg) => msg.id === sessionUnreadDividerMessageId)
     ) {
       setSessionUnreadDividerMessageId(null)
     }
@@ -194,23 +197,27 @@ export function MessageThread({
   const channelLabel = isChannelType(conversation.channel.type)
     ? PLATFORM_META[conversation.channel.type].labelKey()
     : conversation.channel.name?.trim() || ''
-  const contactName = conversation.contact.name?.trim() || '—'
+  // Empty (not an em-dash) so downstream copy can read naturally without a
+  // name, and avatars fall back to their neutral icon rather than a dash.
+  const contactName = conversation.contact.name?.trim() || ''
 
   return (
-    <div className={cn(paneStyle.surface, 'h-full w-full')}>
+    <div className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden">
       <MessageThreadHeader
         conversation={conversation}
+        workspaceId={workspaceId}
         onToggleContactPanel={onToggleContactPanel}
         onBack={onBack}
       />
-      {/* The transcript sits on the recessed step so the header above and the
-          composer below both read as surfaces. Calm and neutral — no pattern. */}
-      <div
-        className={cn(
-          paneStyle.recessed,
-          'flex min-h-0 flex-1 flex-col items-center',
-        )}
-      >
+      {hasUnreadInboundMessages ? (
+        <p role="status" className="sr-only">
+          {m.inbox_unread_aria_label({ count: unreadCount })}
+        </p>
+      ) : null}
+      {/* ChatLayout owns the scroll container, follow-on-append, and the
+          scroll-to-bottom button; it is keyed by conversation so switching
+          threads resets scroll state. */}
+      <div className="flex min-h-0 flex-1 flex-col">
         <MessageThreadProvider
           value={{
             channelType: channelTypeResolved,
@@ -218,36 +225,45 @@ export function MessageThread({
             onReplyToMessage: setReplyTo,
           }}
         >
-        <MessageList
-          conversationId={conversation.id}
-          messages={messages}
-          isLoading={messagesQuery.isPending || isReadCursorLoading}
-          isError={messagesQuery.isError || readCursorQuery.isError}
-          contactName={contactName}
-          currentUserId={senderId}
-          unreadDividerMessageId={unreadDividerMessageId}
-          hasUnreadInboundMessages={hasUnreadInboundMessages}
-          onReadAnchorVisible={handleReadAnchorVisible}
-          hasMoreOlder={messagesQuery.hasNextPage}
-          isFetchingOlder={messagesQuery.isFetchingNextPage}
-          onLoadOlder={handleLoadOlder}
-          scrollToLatestNonce={scrollToLatestNonce}
-          onRetry={handleRetryMessages}
-          isRetrying={
-            messagesQuery.isFetching && !messagesQuery.isFetchingNextPage
-          }
-        />
+          <ChatLayout
+            key={conversation.id}
+            scrollButton={
+              <ThreadScrollButton messages={messages} currentUserId={senderId} />
+            }
+            composer={
+              <MessageComposer
+                workspaceId={workspaceId}
+                conversationId={conversation.id}
+                channelType={channelTypeResolved}
+                channelLabel={channelLabel}
+                senderId={senderId}
+                replyTo={replyTo}
+                contactName={contactName}
+                onCancelReply={() => setReplyTo(null)}
+              />
+            }
+          >
+            <MessageList
+              conversationId={conversation.id}
+              messages={messages}
+              isLoading={messagesQuery.isPending || isReadCursorLoading}
+              isError={messagesQuery.isError || readCursorQuery.isError}
+              contactName={contactName}
+              currentUserId={senderId}
+              unreadDividerMessageId={unreadDividerMessageId}
+              hasUnreadInboundMessages={hasUnreadInboundMessages}
+              onReadAnchorVisible={handleReadAnchorVisible}
+              hasMoreOlder={messagesQuery.hasNextPage}
+              isFetchingOlder={messagesQuery.isFetchingNextPage}
+              onLoadOlder={handleLoadOlder}
+              scrollToLatestNonce={scrollToLatestNonce}
+              onRetry={handleRetryMessages}
+              isRetrying={
+                messagesQuery.isFetching && !messagesQuery.isFetchingNextPage
+              }
+            />
+          </ChatLayout>
         </MessageThreadProvider>
-        <MessageComposer
-          workspaceId={workspaceId}
-          conversationId={conversation.id}
-          channelType={channelTypeResolved}
-          channelLabel={channelLabel}
-          senderId={senderId}
-          replyTo={replyTo}
-          contactName={contactName}
-          onCancelReply={() => setReplyTo(null)}
-        />
       </div>
     </div>
   )

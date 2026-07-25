@@ -1,4 +1,4 @@
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import {
   countEmojiGraphemes,
   isEmojiOnlyMessage,

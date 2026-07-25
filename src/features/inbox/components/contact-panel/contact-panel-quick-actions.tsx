@@ -1,6 +1,7 @@
 import type { ConversationStatus } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
-import { Button, toast } from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { useToast } from '@astryxdesign/core/Toast'
 import { CheckCircle2Icon, ClockIcon, InboxIcon } from 'lucide-react'
 import { useUpdateConversationStatus } from '../../hooks/use-conversations'
 
@@ -15,6 +16,7 @@ export function ContactPanelQuickActions({
   conversationId,
   currentStatus,
 }: Props) {
+  const showToast = useToast()
   const updateStatus = useUpdateConversationStatus(workspaceId)
 
   function apply(status: ConversationStatus) {
@@ -23,9 +25,10 @@ export function ContactPanelQuickActions({
       { conversationId, status },
       {
         onError: (error) => {
-          toast.danger(m.inbox_contact_panel_status_save_error(), {
-            description:
+          showToast({
+            body:
               error instanceof Error ? error.message : m.common_unknown_error(),
+            type: 'error',
           })
         },
       },
@@ -37,25 +40,19 @@ export function ContactPanelQuickActions({
     return (
       <div className="flex flex-col gap-2">
         <Button
+          label={m.inbox_quick_action_close()}
           size="sm"
           variant="secondary"
-          onPress={() => {
-            apply('closed')
-          }}
-        >
-          <CheckCircle2Icon className="size-4" />
-          {m.inbox_quick_action_close()}
-        </Button>
+          icon={<CheckCircle2Icon className="size-4" />}
+          onClick={() => apply('closed')}
+        />
         <Button
+          label={m.inbox_quick_action_snooze()}
           size="sm"
           variant="secondary"
-          onPress={() => {
-            apply('snoozed')
-          }}
-        >
-          <ClockIcon className="size-4" />
-          {m.inbox_quick_action_snooze()}
-        </Button>
+          icon={<ClockIcon className="size-4" />}
+          onClick={() => apply('snoozed')}
+        />
       </div>
     )
   }
@@ -63,15 +60,12 @@ export function ContactPanelQuickActions({
   return (
     <div className="flex flex-col gap-2">
       <Button
+        label={m.inbox_quick_action_reopen()}
         size="sm"
         variant="secondary"
-        onPress={() => {
-          apply('open')
-        }}
-      >
-        <InboxIcon className="size-4" />
-        {m.inbox_quick_action_reopen()}
-      </Button>
+        icon={<InboxIcon className="size-4" />}
+        onClick={() => apply('open')}
+      />
     </div>
   )
 }

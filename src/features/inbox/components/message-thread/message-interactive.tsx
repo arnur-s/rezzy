@@ -1,5 +1,5 @@
 import { m } from '@/paraglide/messages'
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { MousePointerClickIcon } from 'lucide-react'
 import type { InteractiveMetadata } from '../../schemas/message-metadata'
 
@@ -17,7 +17,7 @@ export function MessageInteractive({ interactive, isOutbound }: Props) {
         <span
           className={cn(
             'text-xs',
-            isOutbound ? 'text-accent-foreground/75' : 'text-foreground/60',
+            isOutbound ? 'text-on-accent/75' : 'text-primary/60',
           )}
         >
           {interactive.kind === 'list_reply'
@@ -29,7 +29,7 @@ export function MessageInteractive({ interactive, isOutbound }: Props) {
           <span
             className={cn(
               'text-xs',
-              isOutbound ? 'text-accent-foreground/75' : 'text-foreground/60',
+              isOutbound ? 'text-on-accent/75' : 'text-primary/60',
             )}
           >
             {interactive.description}

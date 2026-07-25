@@ -1,4 +1,4 @@
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { UserRoundIcon } from 'lucide-react'
 import type { ContactCardMetadata } from '../../schemas/message-metadata'
 
@@ -30,7 +30,7 @@ export function MessageContactCard({ contacts, isOutbound }: Props) {
             <span
               className={cn(
                 'flex size-8 shrink-0 items-center justify-center rounded-full',
-                isOutbound ? 'bg-accent-foreground/15' : 'bg-foreground/10',
+                isOutbound ? 'bg-on-accent/15' : 'bg-primary/10',
               )}
             >
               <UserRoundIcon className="size-4" aria-hidden />
@@ -42,8 +42,8 @@ export function MessageContactCard({ contacts, isOutbound }: Props) {
                   className={cn(
                     'truncate text-xs',
                     isOutbound
-                      ? 'text-accent-foreground/75'
-                      : 'text-foreground/60',
+                      ? 'text-on-accent/75'
+                      : 'text-primary/60',
                   )}
                 >
                   {phone}
@@ -54,8 +54,8 @@ export function MessageContactCard({ contacts, isOutbound }: Props) {
                   className={cn(
                     'truncate text-xs',
                     isOutbound
-                      ? 'text-accent-foreground/75'
-                      : 'text-foreground/60',
+                      ? 'text-on-accent/75'
+                      : 'text-primary/60',
                   )}
                 >
                   {card.company}

@@ -1,6 +1,5 @@
 import { NotFound } from '@/components/not-found'
 import type { AuthContextValue } from '@/providers/auth-provider'
-import { Toast } from '@heroui/react'
 import type { QueryClient } from '@tanstack/react-query'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 
@@ -13,10 +12,7 @@ export const Route = createRootRouteWithContext<{
 })
 
 function RootComponent() {
-  return (
-    <>
-      <Toast.Provider placement="top" />
-      <Outlet />
-    </>
-  )
+  // Toasts render through Astryx's LayerProvider (wired in main.tsx); no
+  // viewport element is needed here.
+  return <Outlet />
 }

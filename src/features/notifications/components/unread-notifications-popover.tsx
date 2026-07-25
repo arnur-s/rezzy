@@ -1,7 +1,7 @@
-import { Button } from '@/components/button'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
-import { Alert, Badge, Popover, ScrollShadow, Typography } from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { Popover } from '@astryxdesign/core/Popover'
 import { useNavigate } from '@tanstack/react-router'
 import { BellIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -47,98 +47,98 @@ export function UnreadNotificationsPopover({ workspaceId }: Props) {
     void navigate({ to: '/workspaces/$id/inbox', params: { id: workspaceId } })
   }, [navigate, workspaceId])
 
+  const content = (
+    <div className="flex w-full flex-col overflow-hidden">
+      <p className="text-primary px-4 pt-3.5 pb-2 text-sm font-semibold">
+        {m.notifications_popover_title()}
+      </p>
+
+      {isPending ? (
+        <UnreadNotificationsSkeleton />
+      ) : isError ? (
+        <div className="px-3 pb-3">
+          <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
+            <span className="text-error text-sm">
+              {m.notifications_popover_error()}
+            </span>
+            <Button
+              label={m.common_retry()}
+              size="sm"
+              variant="ghost"
+              onClick={retry}
+              isLoading={isRetrying}
+            />
+          </div>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="px-6 pt-4 pb-6 text-center">
+          <p className="text-sm font-medium">
+            {m.notifications_popover_empty_title()}
+          </p>
+          <p className="text-secondary mt-1 text-xs">
+            {m.notifications_popover_empty_description()}
+          </p>
+        </div>
+      ) : (
+        <div className="max-h-[min(60vh,22rem)] overflow-y-auto">
+          <ul className="flex flex-col gap-0.5 px-1.5 pb-1.5">
+            {items.map((item) => (
+              <UnreadNotificationItem
+                key={item.conversation.id}
+                conversation={item.conversation}
+                workspaceName={item.workspaceName}
+                onSelect={handleSelect}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {workspaceId ? (
+        <div className="border-border/60 border-t p-1.5">
+          <Button
+            label={m.notifications_view_all()}
+            size="sm"
+            variant="ghost"
+            width="100%"
+            onClick={handleViewAll}
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+
   return (
-    <Popover isOpen={isOpen} onOpenChange={setIsOpen}>
-      <Badge.Anchor>
-        {/* The trigger is itself the pressable element (ThemeSwitcher pattern);
-            nesting a Button inside would create two focusable button roles. */}
-        <Popover.Trigger
+    <Popover
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      placement="below"
+      alignment="end"
+      width="min(92vw, 22rem)"
+      label={m.notifications_popover_title()}
+      content={isOpen ? content : null}
+    >
+      <span className="relative inline-flex">
+        <button
+          type="button"
           aria-label={
             totalUnread > 0
               ? m.notifications_bell_with_count_aria({ count: totalUnread })
               : m.header_notifications_label()
           }
-          className="text-foreground hover:bg-accent/10 dark:hover:bg-accent/15 inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-focus aria-expanded:bg-foreground/10"
+          className="text-primary hover:bg-accent-bg/10 dark:hover:bg-accent-bg/15 focus-visible:ring-accent aria-expanded:bg-primary/10 inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2"
         >
           <BellIcon className="size-4" />
-        </Popover.Trigger>
+        </button>
         {totalUnread > 0 ? (
-          // The trigger label already announces the count; keep the visual
-          // badge out of the accessibility tree to avoid a double read.
-          <Badge
-            size="sm"
-            color="accent"
+          <span
             aria-hidden="true"
-            className="pointer-events-none tabular-nums"
+            className="bg-accent-bg text-on-accent pointer-events-none absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums"
           >
             {capUnreadCount(totalUnread)}
-          </Badge>
+          </span>
         ) : null}
-      </Badge.Anchor>
-
-      <Popover.Content placement="bottom end" className="w-[min(92vw,22rem)]">
-        <Popover.Dialog className="flex w-full flex-col overflow-hidden rounded-[inherit] p-0">
-          <Popover.Heading className="px-4 pt-3.5 pb-2 text-sm font-semibold text-foreground">
-            {m.notifications_popover_title()}
-          </Popover.Heading>
-
-          {isPending ? (
-            <UnreadNotificationsSkeleton />
-          ) : isError ? (
-            <div className="px-3 pb-3">
-              <Alert status="danger">
-                <Alert.Indicator />
-                <Alert.Content>
-                  <Alert.Title>{m.notifications_popover_error()}</Alert.Title>
-                </Alert.Content>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onPress={retry}
-                  isLoading={isRetrying}
-                >
-                  {m.common_retry()}
-                </Button>
-              </Alert>
-            </div>
-          ) : items.length === 0 ? (
-            <div className="px-6 pt-4 pb-6 text-center">
-              <Typography.Paragraph className="text-sm font-medium">
-                {m.notifications_popover_empty_title()}
-              </Typography.Paragraph>
-              <Typography.Paragraph className="mt-1 text-xs text-muted">
-                {m.notifications_popover_empty_description()}
-              </Typography.Paragraph>
-            </div>
-          ) : (
-            <ScrollShadow className="max-h-[min(60vh,22rem)]">
-              <ul className="flex flex-col gap-0.5 px-1.5 pb-1.5">
-                {items.map((item) => (
-                  <UnreadNotificationItem
-                    key={item.conversation.id}
-                    conversation={item.conversation}
-                    workspaceName={item.workspaceName}
-                    onSelect={handleSelect}
-                  />
-                ))}
-              </ul>
-            </ScrollShadow>
-          )}
-
-          {workspaceId ? (
-            <div className="border-t border-border/60 p-1.5">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="w-full"
-                onPress={handleViewAll}
-              >
-                {m.notifications_view_all()}
-              </Button>
-            </div>
-          ) : null}
-        </Popover.Dialog>
-      </Popover.Content>
+      </span>
     </Popover>
   )
 }

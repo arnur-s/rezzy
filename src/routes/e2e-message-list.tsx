@@ -1,5 +1,7 @@
 import type { MessageRow } from '@/entities/message'
 import { MessageList } from '@/features/inbox/components/message-thread/message-list'
+import { ThreadScrollButton } from '@/features/inbox/components/message-thread/thread-scroll-button'
+import { ChatLayout } from '@astryxdesign/core/Chat'
 import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -241,26 +243,38 @@ function MessageListHarness() {
 
   return (
     <div className="flex h-dvh flex-col" data-testid="harness-root">
-      <MessageList
-        conversationId={conversationId}
-        messages={messages}
-        isLoading={false}
-        isError={false}
-        contactName="Harness Contact"
-        currentUserId={CURRENT_USER_ID}
-        unreadDividerMessageId={unreadDividerMessageId}
-        hasUnreadInboundMessages={hasUnreadInboundMessages}
-        onReadAnchorVisible={handleReadAnchorVisible}
-        hasMoreOlder={false}
-        isFetchingOlder={false}
-        onLoadOlder={() => {}}
-        scrollToLatestNonce={scrollToLatestNonce}
-      />
-      <div
-        data-testid="harness-composer"
-        className="shrink-0 border-t border-border"
-        style={{ height: composerHeight }}
-      />
+      <ChatLayout
+        key={conversationId}
+        scrollButton={
+          <ThreadScrollButton
+            messages={messages}
+            currentUserId={CURRENT_USER_ID}
+          />
+        }
+        composer={
+          <div
+            data-testid="harness-composer"
+            className="shrink-0 border-t border-border"
+            style={{ height: composerHeight }}
+          />
+        }
+      >
+        <MessageList
+          conversationId={conversationId}
+          messages={messages}
+          isLoading={false}
+          isError={false}
+          contactName="Harness Contact"
+          currentUserId={CURRENT_USER_ID}
+          unreadDividerMessageId={unreadDividerMessageId}
+          hasUnreadInboundMessages={hasUnreadInboundMessages}
+          onReadAnchorVisible={handleReadAnchorVisible}
+          hasMoreOlder={false}
+          isFetchingOlder={false}
+          onLoadOlder={() => Promise.resolve()}
+          scrollToLatestNonce={scrollToLatestNonce}
+        />
+      </ChatLayout>
     </div>
   )
 }

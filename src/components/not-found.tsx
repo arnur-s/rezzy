@@ -1,27 +1,26 @@
 import { m } from '@/paraglide/messages'
-import { Link as HeroLink, Typography } from '@heroui/react'
-import { cn } from '@heroui/styles'
-import { Link as RouterLink } from '@tanstack/react-router'
+import { Button } from '@astryxdesign/core/Button'
+import { EmptyState } from '@astryxdesign/core/EmptyState'
+import { useNavigate } from '@tanstack/react-router'
+import { CompassIcon } from 'lucide-react'
 
 export function NotFound() {
+  const navigate = useNavigate()
+
   return (
-    <div className="flex flex-col items-center justify-center gap-2 w-full h-full">
-      <Typography className="text-center text-4xl font-bold">
-        {m.not_found_title()}
-      </Typography>
-      <Typography className="text-center text-lg text-muted">
-        {m.not_found_description()}
-      </Typography>
-      <HeroLink
-        href="/"
-        render={({ className, children }) => (
-          <RouterLink to="/" className={cn(className)}>
-            {children}
-          </RouterLink>
-        )}
-      >
-        {m.not_found_go_home_link()}
-      </HeroLink>
+    <div className="flex h-full w-full items-center justify-center">
+      <EmptyState
+        icon={<CompassIcon className="text-secondary size-8" />}
+        title={m.not_found_title()}
+        description={m.not_found_description()}
+        actions={
+          <Button
+            label={m.not_found_go_home_link()}
+            variant="secondary"
+            onClick={() => void navigate({ to: '/' })}
+          />
+        }
+      />
     </div>
   )
 }

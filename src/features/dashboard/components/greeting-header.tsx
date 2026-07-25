@@ -6,45 +6,25 @@ type Props = {
   user: User
 }
 
+/** The page's h1: one line, salutation first. The avatar lives in the TopNav. */
 export function GreetingHeader({ user }: Props) {
+  const greeting = getTimeOfDayGreeting()
   const displayName = getDisplayName(user)
-  const initial = displayName.trim().charAt(0).toUpperCase() || 'U'
-  const avatarUrl = (user.user_metadata.avatar_url as string | undefined) ?? null
 
   return (
-    <header className="flex items-center gap-4">
-      <span
-        aria-hidden="true"
-        className="bg-accent/10 text-accent flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-semibold"
-      >
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt=""
-            className="size-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          initial
-        )}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate text-base font-semibold leading-tight">
-          {displayName}
-        </p>
-        <p className="text-foreground/55 truncate text-sm leading-tight">
-          {getTimeOfDayGreeting()}
-        </p>
-      </div>
-    </header>
+    <h1 className="text-primary truncate text-lg leading-tight font-semibold">
+      {displayName
+        ? m.home_greeting_line({ greeting, name: displayName })
+        : greeting}
+    </h1>
   )
 }
 
-function getDisplayName(user: User): string {
+function getDisplayName(user: User): string | null {
   const fullName = user.user_metadata.full_name
   if (typeof fullName === 'string' && fullName.trim()) return fullName.trim()
   const name = user.user_metadata.name
   if (typeof name === 'string' && name.trim()) return name.trim()
-  if (user.email) return user.email.split('@')[0] ?? m.home_greeting_fallback_name()
-  return m.home_greeting_fallback_name()
+  if (user.email) return user.email.split('@')[0] || null
+  return null
 }

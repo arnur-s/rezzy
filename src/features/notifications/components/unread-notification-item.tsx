@@ -5,9 +5,8 @@ import type { ConversationWithRelations } from '@/entities/conversation'
 import { FormattedMessageText } from '@/features/inbox/components/formatted-message-text'
 import { formatRelativeShort } from '@/features/inbox/utils/relative-time'
 import { m } from '@/paraglide/messages'
-import { Avatar } from '@heroui/react'
-import { cn } from '@heroui/styles'
-import { initialsFromName } from '../utils/initials'
+import { Avatar } from '@astryxdesign/core/Avatar'
+import { cn } from '@/lib/cn'
 
 type Props = {
   conversation: ConversationWithRelations
@@ -53,14 +52,11 @@ export function UnreadNotificationItem({
         )}
       >
         <div className="relative shrink-0">
-          <Avatar size="md">
-            {conversation.contact.avatar_url ? (
-              <Avatar.Image src={conversation.contact.avatar_url} />
-            ) : null}
-            <Avatar.Fallback>
-              {initialsFromName(conversation.contact.name)}
-            </Avatar.Fallback>
-          </Avatar>
+          <Avatar
+            size="md"
+            name={conversation.contact.name ?? undefined}
+            src={conversation.contact.avatar_url ?? undefined}
+          />
           {channelType ? (
             <PlatformIcon
               type={channelType}
@@ -73,10 +69,10 @@ export function UnreadNotificationItem({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-primary">
               {contactName}
             </span>
-            <span className="shrink-0 text-[11px] text-foreground/50 tabular-nums">
+            <span className="shrink-0 text-xs text-primary/50 tabular-nums">
               {timestamp}
             </span>
           </div>
@@ -85,7 +81,7 @@ export function UnreadNotificationItem({
               as="span"
               content={conversation.last_message_preview?.trim() ?? ''}
               variant="preview"
-              className="block min-w-0 flex-1 truncate text-foreground/80"
+              className="block min-w-0 flex-1 truncate text-primary/80"
             />
             <NumericUnreadChip
               count={unreadCount}
@@ -94,7 +90,7 @@ export function UnreadNotificationItem({
             />
           </div>
           {workspaceName ? (
-            <span className="mt-0.5 block truncate text-[11px] text-foreground/50">
+            <span className="mt-0.5 block truncate text-xs text-primary/50">
               {workspaceName}
             </span>
           ) : null}

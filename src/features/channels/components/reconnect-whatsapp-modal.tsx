@@ -1,8 +1,7 @@
-import { Button } from '@/components/button'
 import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { AlertDialog, Modal } from '@heroui/react'
-import { TriangleAlertIcon } from 'lucide-react'
+import { AlertDialog } from '@astryxdesign/core/AlertDialog'
+import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog'
 import { useEffect, useState } from 'react'
 import { ConnectWhatsapp } from './connect-whatsapp'
 
@@ -44,69 +43,40 @@ export function ReconnectWhatsappModal({
 
   return (
     <>
-      <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>
-        <Modal.Container>
-          <Modal.Dialog
-            aria-label={m.channels_whatsapp_reconnect_title()}
-            className="sm:max-w-140"
-          >
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>
-                {m.channels_whatsapp_reconnect_title()}
-              </Modal.Heading>
-            </Modal.Header>
-            <Modal.Body className="-mx-2 px-2">
-              {isOpen && (
-                <ConnectWhatsapp
-                  target={{
-                    kind: 'reconnect',
-                    workspaceId,
-                    channelId: channel.id,
-                  }}
-                  onCancel={() => handleOpenChange(false)}
-                  onDirtyChange={setHasUnsavedChanges}
-                  onSuccess={() => onOpenChange(false)}
-                />
-              )}
-            </Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
+      <Dialog
+        isOpen={isOpen}
+        onOpenChange={handleOpenChange}
+        purpose="form"
+        width={560}
+      >
+        <DialogHeader
+          title={m.channels_whatsapp_reconnect_title()}
+          onOpenChange={handleOpenChange}
+        />
+        {isOpen && (
+          <ConnectWhatsapp
+            target={{
+              kind: 'reconnect',
+              workspaceId,
+              channelId: channel.id,
+            }}
+            onCancel={() => handleOpenChange(false)}
+            onDirtyChange={setHasUnsavedChanges}
+            onSuccess={() => onOpenChange(false)}
+          />
+        )}
+      </Dialog>
 
-      <AlertDialog.Backdrop
+      <AlertDialog
         isOpen={isConfirmingClose}
         onOpenChange={setIsConfirmingClose}
-      >
-        <AlertDialog.Container>
-          <AlertDialog.Dialog>
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="warning">
-                <TriangleAlertIcon />
-              </AlertDialog.Icon>
-              <AlertDialog.Heading>
-                {m.channels_whatsapp_reconnect_discard_title()}
-              </AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <p className="text-sm text-muted">
-                {m.channels_whatsapp_reconnect_discard_description()}
-              </p>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                variant="secondary"
-                onClick={() => setIsConfirmingClose(false)}
-              >
-                {m.channels_connect_discard_cancel()}
-              </Button>
-              <Button variant="danger" onPress={confirmDiscard}>
-                {m.channels_connect_discard_confirm()}
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
+        title={m.channels_whatsapp_reconnect_discard_title()}
+        description={m.channels_whatsapp_reconnect_discard_description()}
+        actionLabel={m.channels_connect_discard_confirm()}
+        onAction={confirmDiscard}
+        cancelLabel={m.channels_connect_discard_cancel()}
+        actionVariant="destructive"
+      />
     </>
   )
 }

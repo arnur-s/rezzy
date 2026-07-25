@@ -41,8 +41,6 @@
     "@astryxdesign/theme-neutral": "^0.1.8",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
-    "@heroui/react": "^3.0.5",
-    "@heroui/styles": "^3.0.5",
     "@hookform/resolvers": "^5.2.2",
     "@sindresorhus/slugify": "^3.0.0",
     "@supabase/supabase-js": "^2.105.3",

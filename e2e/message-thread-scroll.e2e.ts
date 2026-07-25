@@ -6,10 +6,11 @@ import { chromium, webkit } from 'playwright'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 /**
- * Real-browser regression tests for the virtualized message transcript.
- * Drives the dev-only harness route (src/routes/e2e-message-list.tsx), which
- * renders MessageList with deterministic in-page data and exposes
- * window.__mtHarness controls.
+ * Real-browser regression tests for the chat transcript (astryx ChatLayout +
+ * ChatTranscript). Drives the dev-only harness route
+ * (src/routes/e2e-message-list.tsx), which renders MessageList inside a
+ * ChatLayout with deterministic in-page data and exposes window.__mtHarness
+ * controls.
  */
 
 type HarnessWindowApi = {
@@ -82,7 +83,7 @@ type Metrics = {
   distanceFromEnd: number
 }
 
-const SCROLLER = '[data-testid="harness-root"] [class*="overflow-y-auto"]'
+const SCROLLER = '[data-testid="harness-root"] .astryx-chat-layout'
 
 async function openHarness(page: Page, count: number): Promise<void> {
   await page.goto(`${BASE_URL}${HARNESS_PATH}?count=${count}`)
@@ -99,8 +100,8 @@ function metrics(page: Page): Promise<Metrics> {
 }
 
 async function expectPinned(page: Page): Promise<void> {
-  // Poll longer than the virtualizer's internal scroll-reconcile window (5s)
-  // so slow measurement convergence (WebKit) cannot flake the assertion.
+  // Poll past ChatLayout's spring animation and the transcript's pin
+  // corrector so slow convergence (WebKit) cannot flake the assertion.
   await expect
     .poll(async () => (await metrics(page)).distanceFromEnd, { timeout: 10_000 })
     .toBeLessThanOrEqual(AT_END_EPSILON)
@@ -120,8 +121,7 @@ async function scrollTo(page: Page, top: number): Promise<void> {
     el.dispatchEvent(new WheelEvent('wheel', { deltaY: -1, bubbles: true }))
     el.scrollTo({ top: t })
   }, top)
-  // Let the virtualizer settle its range AND its isScrolling state (150ms
-  // reset delay) — WebKit defers measurement corrections while "scrolling".
+  // Let ChatLayout's scroll handling settle before asserting.
   await page.waitForTimeout(400)
 }
 
@@ -216,26 +216,32 @@ function runScrollSuite(
       await newPage()
       await openHarness(page, 3)
 
+      // Whether or not the short transcript overflows at the current density,
+      // it must open resting at its end …
       const m = await metrics(page)
-      // No overflow: the transcript is shorter than the viewport …
-      expect(m.scrollHeight).toBeLessThanOrEqual(m.clientHeight + 1)
+      if (m.scrollHeight > m.clientHeight + 1) {
+        await expectPinned(page)
+      }
 
-      // … and the last message rests against the bottom, not the top.
-      const scrollerBox = await page.locator(SCROLLER).boundingBox()
+      // … and the last message rests against the composer dock, not the top.
+      const composerBox = await page
+        .locator('[data-testid="harness-composer"]')
+        .boundingBox()
       const lastBox = await page.locator('[data-message-id="m-1002"]').boundingBox()
-      if (!scrollerBox || !lastBox) throw new Error('missing layout boxes')
-      const gapBelowLast = scrollerBox.y + scrollerBox.height - (lastBox.y + lastBox.height)
-      expect(gapBelowLast).toBeLessThanOrEqual(80)
+      if (!composerBox || !lastBox) throw new Error('missing layout boxes')
+      const gapBelowLast = composerBox.y - (lastBox.y + lastBox.height)
+      expect(gapBelowLast).toBeLessThanOrEqual(120)
     })
 
-    it('opens a long thread at the latest message with virtualization active', async () => {
+    it('opens a long thread at the latest message', async () => {
       await newPage()
       await openHarness(page, 400)
       await expectPinned(page)
 
-      // The newest message is on screen; the oldest is virtualized out.
+      // The newest message is on screen; the full transcript renders in normal
+      // flow (no virtualization), so the oldest exists but sits above the fold.
       await expectMessageVisible(page, 'm-1399')
-      expect(await page.locator('[data-message-id="m-1000"]').count()).toBe(0)
+      expect(await page.locator('[data-message-id="m-1000"]').count()).toBe(1)
     })
 
     it('follows appended messages while pinned and commits the read cursor once', async () => {
@@ -473,8 +479,6 @@ describe('message thread scrolling (webkit specifics)', () => {
     await h.appendInbound()
     await page.waitForTimeout(500)
 
-    // On iOS UAs the virtualizer defers scroll corrections while it believes a
-    // scroll or touch is in flight and flushes them on the next interaction.
     // A real device always has a next touch; synthesize one so a correction
     // deferred by test-timing races cannot leave the assertion hanging.
     await page.$eval(SCROLLER, (el) => {

@@ -1,6 +1,6 @@
 import type { MessageReactionRow, MessageRow } from '@/entities/message'
 import { setLocale } from '@/paraglide/runtime'
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithQueryClient } from '@/test/render'
 import { MessageBubble } from './message-bubble'
@@ -65,6 +65,7 @@ function reactionRow(overrides: Partial<MessageReactionRow> = {}): MessageReacti
 function renderBubble(
   message: MessageRow,
   thread?: Partial<MessageThreadContextValue>,
+  props?: { closesRun?: boolean; isTabStop?: boolean },
 ) {
   const value: MessageThreadContextValue = {
     channelType: 'telegram',
@@ -74,7 +75,7 @@ function renderBubble(
   }
   return renderWithQueryClient(
     <MessageThreadProvider value={value}>
-      <MessageBubble message={message} contactName="Aizhan" />
+      <MessageBubble message={message} {...props} />
     </MessageThreadProvider>,
   )
 }
@@ -206,7 +207,73 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
     renderBubble(
       messageRow({ direction: 'outbound', status: 'failed', sender_id: 'user-1' }),
     )
-    expect(screen.getByText('Retry')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
+    // Failure is stated in words, not left to a status glyph.
+    expect(screen.getByText('Failed')).toBeTruthy()
+  })
+
+  it('leaves the quoted author unstated rather than labelling it', () => {
+    renderBubble(
+      messageRow({
+        reply_to_message_id: 'parent-1',
+        metadata: { quote: { external_id: '55', preview: 'original text' } },
+      }),
+    )
+    expect(screen.getByText('original text')).toBeTruthy()
+    expect(screen.queryByText('Quoted message')).toBeNull()
+  })
+})
+
+describe('MessageBubble run footers and reply affordance', () => {
+  const replyThread = { onReplyToMessage: vi.fn() }
+
+  it('shows one timestamp per run instead of one per bubble', () => {
+    const message = messageRow()
+    const closing = renderBubble(message, undefined, { closesRun: true })
+    // Read the rendered time back so the assertion holds in any timezone.
+    const stamp = screen.getByText(/^\d{1,2}:\d{2}\s?(AM|PM)?$/i).textContent
+    expect(stamp).toBeTruthy()
+    closing.unmount()
+
+    renderBubble(message, undefined, { closesRun: false })
+    expect(screen.queryByText(stamp)).toBeNull()
+  })
+
+  it('keeps the footer mid-run when the message carries its own state', () => {
+    renderBubble(
+      messageRow({ direction: 'outbound', status: 'failed', sender_id: 'user-1' }),
+      undefined,
+      { closesRun: false },
+    )
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
+  })
+
+  it('exposes exactly one sequential tab stop per transcript', () => {
+    const { unmount } = renderBubble(messageRow(), replyThread, {
+      isTabStop: true,
+    })
+    expect(screen.getByRole('button', { name: 'Reply' }).tabIndex).toBe(0)
+    unmount()
+
+    renderBubble(messageRow(), replyThread, { isTabStop: false })
+    // Still focusable by the arrow keys, just not by Tab.
+    expect(screen.getByRole('button', { name: 'Reply' }).tabIndex).toBe(-1)
+  })
+
+  it('replies with the message the rail belongs to', () => {
+    const onReplyToMessage = vi.fn()
+    const message = messageRow({ id: 'msg-42' })
+    renderBubble(message, { onReplyToMessage })
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }))
+    expect(onReplyToMessage).toHaveBeenCalledWith(message)
+  })
+
+  it('offers no reply control on a deleted message', () => {
+    renderBubble(
+      messageRow({ deleted_at: '2026-07-23T10:06:00Z' }),
+      { onReplyToMessage: vi.fn() },
+    )
+    expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull()
   })
 
   it('renders extra structured attachments beyond the legacy first one', () => {

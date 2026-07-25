@@ -1,5 +1,6 @@
 import { m } from '@/paraglide/messages'
-import { Label, TextArea, TextField, toast } from '@heroui/react'
+import { TextArea } from '@astryxdesign/core/TextArea'
+import { useToast } from '@astryxdesign/core/Toast'
 import { useEffect, useState } from 'react'
 import { useUpdateContactNotes } from '../../hooks/use-contact'
 
@@ -10,6 +11,7 @@ type Props = {
 
 export function ContactPanelNotes({ contactId, initialNotes }: Props) {
   const [value, setValue] = useState(initialNotes)
+  const showToast = useToast()
   const updateNotes = useUpdateContactNotes()
 
   useEffect(() => {
@@ -22,9 +24,10 @@ export function ContactPanelNotes({ contactId, initialNotes }: Props) {
       { contactId, notes: value },
       {
         onError: (error) => {
-          toast.danger(m.inbox_contact_panel_notes_save_error(), {
-            description:
+          showToast({
+            body:
               error instanceof Error ? error.message : m.common_unknown_error(),
+            type: 'error',
           })
         },
       },
@@ -32,18 +35,13 @@ export function ContactPanelNotes({ contactId, initialNotes }: Props) {
   }
 
   return (
-    <TextField fullWidth>
-      <Label className="text-xs font-medium text-foreground/70">
-        {m.inbox_contact_panel_notes_label()}
-      </Label>
-      <TextArea
-        className="min-h-24 w-full resize-y"
-        placeholder={m.inbox_contact_panel_notes_placeholder()}
-        rows={4}
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        onBlur={handleBlur}
-      />
-    </TextField>
+    <TextArea
+      label={m.inbox_contact_panel_notes_label()}
+      placeholder={m.inbox_contact_panel_notes_placeholder()}
+      rows={4}
+      value={value}
+      onChange={(next) => setValue(next)}
+      onBlur={handleBlur}
+    />
   )
 }

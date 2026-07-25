@@ -4,6 +4,7 @@ import type { MessageRow } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import { mapDatabaseError } from '../utils/error-message'
+import { PresentableError } from '../utils/presentable-error'
 import { normalizeImageOrientation } from '../utils/image-orientation'
 
 const MESSAGE_SELECT = `
@@ -101,7 +102,11 @@ async function mapSendInvokeError(error: unknown): Promise<Error> {
     } catch {
       /* ignore */
     }
-    return new Error(message ?? `Send failed (${res.status})`)
+    // A message the edge function chose to send back is meant for the user;
+    // the bare status fallback is not, so keep it out of PresentableError.
+    return message
+      ? new PresentableError(message)
+      : new Error(`Send failed (${res.status})`)
   }
   if (error instanceof Error) return error
   return new Error('Send failed')

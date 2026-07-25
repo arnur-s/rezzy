@@ -1,7 +1,7 @@
 import type { ChannelType } from '@/entities/channel'
 import { CHANNEL_META, ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { Chip } from '@heroui/react'
+import { Badge } from '@astryxdesign/core/Badge'
 import { ChevronRightIcon } from 'lucide-react'
 
 type Props = {
@@ -52,17 +52,15 @@ function ChannelTypeCard({
             {m[`channels_type_${type}_label`]()}
           </h3>
           {meta.comingSoon && (
-            <Chip color="warning" size="sm" variant="soft">
-              <Chip.Label>{m.channels_coming_soon()}</Chip.Label>
-            </Chip>
+            <Badge variant="warning" label={m.channels_coming_soon()} />
           )}
         </div>
-        <p className="mt-1 text-xs text-muted">
+        <p className="mt-1 text-xs text-secondary">
           {m[`channels_type_${type}_description`]()}
         </p>
       </div>
 
-      <ChevronRightIcon className="size-4 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+      <ChevronRightIcon className="size-4 shrink-0 text-secondary transition group-hover:translate-x-0.5 group-hover:text-primary" />
     </button>
   )
 }

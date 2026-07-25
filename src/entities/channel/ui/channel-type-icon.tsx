@@ -1,4 +1,4 @@
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { CHANNEL_META } from '../lib/channel-meta'
 import type { ChannelType } from '../model/types'
 

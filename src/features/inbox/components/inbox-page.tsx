@@ -5,20 +5,18 @@ import { useIsLg } from '@/hooks/use-is-lg'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
-import { Drawer } from '@heroui/react'
-import { cn } from '@heroui/styles'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ConversationWithRelations } from '@/entities/conversation'
+import { Layout, LayoutPanel } from '@astryxdesign/core/Layout'
+import { ResizeHandle, useResizable } from '@astryxdesign/core/Resizable'
 import { useConversations, useConversationsSearch } from '../hooks/use-conversations'
-import { useResizablePanel } from '../hooks/use-resizable-panel'
 import { useWorkspaceUnreadCounts } from '../hooks/use-unread-counts'
 import { ContactPanel } from './contact-panel/contact-panel'
 import type { InboxPrimaryFilter } from './conversation-list/conversation-list'
 import { ConversationList } from './conversation-list/conversation-list'
 import { InboxThreadRouteContextProvider } from './inbox-route-context'
 import type { InboxThreadRouteContextValue } from './inbox-route-context'
-import { ResizeHandle } from './resize-handle'
 
 type MobilePane = 'list' | 'thread' | 'contact'
 
@@ -131,11 +129,11 @@ export function InboxPage({
 
   const isMobile = useIsMobile()
   const isLg = useIsLg()
-  const { width: listWidth, handleMouseDown: handleListResize } = useResizablePanel({
-    storageKey: 'inbox:list-width',
-    defaultWidth: 320,
-    min: 200,
-    max: 480,
+  const listResize = useResizable({
+    defaultSize: 320,
+    minSizePx: 200,
+    maxSizePx: 480,
+    autoSaveId: 'inbox:list-width',
   })
 
   const showContact = isContactPanelOpen && selectedConversation !== null
@@ -171,105 +169,114 @@ export function InboxPage({
    */
   const showContactAsPane = showContact && isLg && !isMobile
   const showContactAsOverlay = showContact && !isLg && !isMobile
-  const showContactOnMobile = showContact && isMobile
 
-  // Gutter columns are real grid tracks, so the list width the resize hook
-  // stores stays the pane's own width.
-  const gridTemplateColumns = useMemo(() => {
-    if (isMobile) return undefined
-    if (showContactAsPane)
-      return `${listWidth}px 8px minmax(0, 1fr) 8px 20rem`
-    return `${listWidth}px 8px minmax(0, 1fr)`
-  }, [isMobile, showContactAsPane, listWidth])
+  const conversationListNode = (
+    <ConversationList
+      conversations={
+        isSearchActive ? searchResultsWithUnread : conversationsWithUnread
+      }
+      isLoading={isSearchActive ? searchResults.isPending : conversationsQuery.isPending}
+      isError={isSearchActive ? searchResults.isError : conversationsQuery.isError}
+      selectedConversationId={selectedConversationId}
+      onSelect={handleSelectConversation}
+      primaryFilter={primaryFilter}
+      onPrimaryFilterChange={setPrimaryFilter}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      userId={senderId}
+      onRetry={handleRetryConversations}
+      isRetrying={isSearchActive ? searchResults.isRefetching : conversationsQuery.isRefetching}
+    />
+  )
 
-  return (
-    <div
-      className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1"
-      style={gridTemplateColumns ? { gridTemplateColumns } : undefined}
-    >
-      {/* List pane */}
-      <div
-        className={cn(
-          'h-full min-h-0 min-w-0',
-          mobilePane === 'list' ? 'flex' : 'hidden',
-          'md:flex',
-        )}
-      >
-        <ConversationList
-          conversations={
-            isSearchActive ? searchResultsWithUnread : conversationsWithUnread
-          }
-          isLoading={isSearchActive ? searchResults.isPending : conversationsQuery.isPending}
-          isError={isSearchActive ? searchResults.isError : conversationsQuery.isError}
-          selectedConversationId={selectedConversationId}
-          onSelect={handleSelectConversation}
-          primaryFilter={primaryFilter}
-          onPrimaryFilterChange={setPrimaryFilter}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          userId={senderId}
-          onRetry={handleRetryConversations}
-          isRetrying={isSearchActive ? searchResults.isRefetching : conversationsQuery.isRefetching}
-        />
-      </div>
+  const threadNode = (
+    <InboxThreadRouteContextProvider value={threadContext}>
+      {threadSlot}
+    </InboxThreadRouteContextProvider>
+  )
 
-      <ResizeHandle onMouseDown={handleListResize} />
-
-      {/* Thread pane. The dominant surface: always visible from md up, even
-          while the details panel is open (it overlays below lg). */}
-      <div
-        className={cn(
-          'h-full min-h-0 min-w-0',
-          mobilePane === 'thread' ? 'flex' : 'hidden',
-          'md:flex',
-        )}
-      >
-        <InboxThreadRouteContextProvider value={threadContext}>
-          {threadSlot}
-        </InboxThreadRouteContextProvider>
-      </div>
-
-      {/* Gutter before the details pane on lg. */}
-      {showContactAsPane ? <div aria-hidden /> : null}
-
-      {/* Details pane: own column on lg, the single visible pane on mobile.
-          At tablet widths it is neither — the overlay below handles it. */}
-      {selectedConversation && (showContactAsPane || showContactOnMobile) ? (
-        <div className="flex h-full min-h-0 min-w-0">
+  // Mobile shows exactly one pane at a time; panes never share the viewport.
+  if (isMobile) {
+    return (
+      <div className="flex h-full min-h-0 w-full">
+        {mobilePane === 'list' ? conversationListNode : null}
+        {mobilePane === 'thread' ? threadNode : null}
+        {mobilePane === 'contact' && selectedConversation ? (
           <ContactPanel
             workspaceId={workspaceId}
             conversation={selectedConversation}
             onClose={handleCloseContactPanel}
           />
+        ) : null}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <Layout
+        height="fill"
+        start={
+          <>
+            <LayoutPanel
+              padding={0}
+              isScrollable={false}
+              hasDivider
+              label={m.inbox_conversation_list_aria_label()}
+              resizable={listResize.props}
+            >
+              {conversationListNode}
+            </LayoutPanel>
+            <ResizeHandle
+              direction="horizontal"
+              resizable={listResize.props}
+              label={m.inbox_conversation_list_resize_label()}
+            />
+          </>
+        }
+        content={threadNode}
+        end={
+          selectedConversation && showContactAsPane ? (
+            <LayoutPanel
+              padding={0}
+              isScrollable={false}
+              hasDivider
+              width={320}
+              label={m.inbox_contact_panel_title()}
+            >
+              <ContactPanel
+                workspaceId={workspaceId}
+                conversation={selectedConversation}
+                onClose={handleCloseContactPanel}
+              />
+            </LayoutPanel>
+          ) : undefined
+        }
+      />
+
+      {/* Details overlay for tablet widths: a right-side sheet over the thread,
+          matching the mobile sidebar pattern. */}
+      {selectedConversation && showContactAsOverlay ? (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label={m.inbox_contact_panel_title()}
+            className="absolute inset-0 bg-black/50"
+            onClick={handleCloseContactPanel}
+          />
+          <div
+            role="dialog"
+            aria-label={m.inbox_contact_panel_title()}
+            className="absolute inset-y-0 right-0 h-full w-80 max-w-[85vw]"
+          >
+            <ContactPanel
+              workspaceId={workspaceId}
+              conversation={selectedConversation}
+              onClose={handleCloseContactPanel}
+            />
+          </div>
         </div>
       ) : null}
-
-      {/* Details overlay for tablet widths. Drawer gives focus trap and
-          escape-to-close, matching the mobile sidebar pattern. */}
-      {selectedConversation ? (
-        <Drawer.Backdrop
-          isOpen={showContactAsOverlay}
-          onOpenChange={(open) => {
-            if (!open) handleCloseContactPanel()
-          }}
-        >
-          <Drawer.Content placement="right">
-            <Drawer.Dialog
-              className="h-full w-80 max-w-[85vw] rounded-none p-0"
-              aria-label={m.inbox_contact_panel_title()}
-            >
-              <Drawer.Body className="min-h-0 p-0">
-                <ContactPanel
-                  workspaceId={workspaceId}
-                  conversation={selectedConversation}
-                  onClose={handleCloseContactPanel}
-                  className="rounded-none border-0 shadow-none"
-                />
-              </Drawer.Body>
-            </Drawer.Dialog>
-          </Drawer.Content>
-        </Drawer.Backdrop>
-      ) : null}
-    </div>
+    </>
   )
 }

@@ -1,5 +1,5 @@
 import { m } from '@/paraglide/messages'
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { CircleOffIcon } from 'lucide-react'
 import type { UnsupportedMetadata } from '../../schemas/message-metadata'
 
@@ -27,7 +27,7 @@ export function MessageUnsupported({ unsupported, messageType, isOutbound }: Pro
         <span
           className={cn(
             'italic',
-            isOutbound ? 'text-accent-foreground/80' : 'text-foreground/70',
+            isOutbound ? 'text-on-accent/80' : 'text-primary/70',
           )}
         >
           {label}
@@ -36,7 +36,7 @@ export function MessageUnsupported({ unsupported, messageType, isOutbound }: Pro
           <span
             className={cn(
               'truncate text-xs',
-              isOutbound ? 'text-accent-foreground/70' : 'text-foreground/55',
+              isOutbound ? 'text-on-accent/70' : 'text-primary/55',
             )}
           >
             {unsupported.preview}

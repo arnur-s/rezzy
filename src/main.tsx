@@ -1,7 +1,12 @@
 import { registerNotificationServiceWorker } from '@/features/notifications'
 import { AuthProvider, useAuth } from '@/providers/auth-provider'
-import { ThemeProvider } from '@/providers/theme-provider'
+import { ThemeProvider, useTheme } from '@/providers/theme-provider'
 import { queryClient } from '@/utils/query-client'
+import { RouterLink } from '@/components/router-link'
+import { LayerProvider } from '@astryxdesign/core/Layer'
+import { LinkProvider } from '@astryxdesign/core/Link'
+import { Theme } from '@astryxdesign/core/theme'
+import { neutralTheme } from '@astryxdesign/theme-neutral'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import ReactDOM from 'react-dom/client'
@@ -20,8 +25,23 @@ const rootElement = document.getElementById('app')!
 
 function App() {
   const auth = useAuth()
+  // Bridge the app's stored light/dark preference into the Astryx theme so a
+  // single control drives both the design system and any remaining app styles.
+  const { theme } = useTheme()
 
-  return <RouterProvider router={router} context={{ auth }} />
+  return (
+    <Theme theme={neutralTheme} mode={theme}>
+      <LayerProvider>
+        <RouterProvider
+          router={router}
+          context={{ auth }}
+          InnerWrap={({ children }) => (
+            <LinkProvider component={RouterLink}>{children}</LinkProvider>
+          )}
+        />
+      </LayerProvider>
+    </Theme>
+  )
 }
 
 if (!rootElement.innerHTML) {

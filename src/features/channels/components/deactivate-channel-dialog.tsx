@@ -1,8 +1,7 @@
-import { Button } from '@/components/button'
 import type { Channel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { AlertDialog, toast } from '@heroui/react'
-import { TriangleAlertIcon } from 'lucide-react'
+import { AlertDialog } from '@astryxdesign/core/AlertDialog'
+import { useToast } from '@astryxdesign/core/Toast'
 import { useDeactivateChannel } from '../hooks/use-channels'
 
 type Props = {
@@ -18,60 +17,38 @@ export function DeactivateChannelDialog({
   onOpenChange,
   workspaceId,
 }: Props) {
+  const showToast = useToast()
   const deactivateChannelMutation = useDeactivateChannel(workspaceId)
 
   function handleConfirm() {
     deactivateChannelMutation.mutate(channel.id, {
       onError: (error) => {
-        toast.danger(m.channels_disconnect_error_title(), {
-          description:
+        showToast({
+          body:
             error instanceof Error ? error.message : m.common_unknown_error(),
+          type: 'error',
         })
       },
       onSuccess: () => {
-        toast.success(m.channels_disconnect_success())
+        showToast({ body: m.channels_disconnect_success(), type: 'info' })
         onOpenChange(false)
       },
     })
   }
 
   return (
-    <AlertDialog.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialog.Container>
-        <AlertDialog.Dialog>
-          <AlertDialog.Header>
-            <AlertDialog.Icon status="danger">
-              <TriangleAlertIcon />
-            </AlertDialog.Icon>
-            <AlertDialog.Heading>
-              {m.channels_disconnect_confirm_title()}
-            </AlertDialog.Heading>
-          </AlertDialog.Header>
-          <AlertDialog.Body>
-            <p className="text-sm text-muted">
-              {m.channels_disconnect_confirm_description({
-                name: channel.name ?? channel.type,
-              })}
-            </p>
-          </AlertDialog.Body>
-          <AlertDialog.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-              isDisabled={deactivateChannelMutation.isPending}
-            >
-              {m.common_cancel()}
-            </Button>
-            <Button
-              variant="danger"
-              isLoading={deactivateChannelMutation.isPending}
-              onPress={handleConfirm}
-            >
-              {m.channels_disconnect_action()}
-            </Button>
-          </AlertDialog.Footer>
-        </AlertDialog.Dialog>
-      </AlertDialog.Container>
-    </AlertDialog.Backdrop>
+    <AlertDialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      title={m.channels_disconnect_confirm_title()}
+      description={m.channels_disconnect_confirm_description({
+        name: channel.name ?? channel.type,
+      })}
+      actionLabel={m.channels_disconnect_action()}
+      onAction={handleConfirm}
+      cancelLabel={m.common_cancel()}
+      actionVariant="destructive"
+      isActionLoading={deactivateChannelMutation.isPending}
+    />
   )
 }

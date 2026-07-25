@@ -1,4 +1,4 @@
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { Children, cloneElement, createContext, isValidElement, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 
@@ -21,17 +21,17 @@ interface ListItemProps {
 export const listItemStyle = {
   sm: 'gap-2 rounded-md px-2 py-1.5',
   md: 'gap-3 rounded-lg px-2 py-2',
-  focus: 'focus-visible:ring-2 focus-visible:ring-focus',
+  focus: 'focus-visible:ring-2 focus-visible:ring-accent',
   transition: 'transition motion-reduce:transition-none',
   press: 'active:scale-[0.98]',
-  hover: 'hover:bg-foreground/4',
-  selected: 'bg-foreground/10 text-foreground',
-  unselected: 'text-foreground/60 hover:bg-foreground/4 hover:text-foreground',
-  // Data-attribute variants for HeroUI ListBox
+  hover: 'hover:bg-primary/4',
+  selected: 'bg-primary/10 text-primary',
+  unselected: 'text-primary/60 hover:bg-primary/4 hover:text-primary',
+  // Data-attribute variants for rows that reflect selection via data-selected
   data: {
-    hover: 'data-[selected=false]:hover:bg-foreground/4',
-    selected: 'data-[selected=true]:bg-foreground/10',
-    focus: 'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-focus',
+    hover: 'data-[selected=false]:hover:bg-primary/4',
+    selected: 'data-[selected=true]:bg-primary/10',
+    focus: 'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-accent',
   },
 } as const
 

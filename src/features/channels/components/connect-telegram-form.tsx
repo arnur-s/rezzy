@@ -1,11 +1,12 @@
-import { Button } from '@/components/button'
 import { ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { FieldError, Input, Label, TextField, toast } from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { ChannelConnectError } from '../api/channels'
 import { useCreateTelegramChannel } from '../hooks/use-channels'
 import type { TelegramChannelFormValues } from '../schemas/channel-form-schemas'
@@ -36,12 +37,13 @@ export function ConnectTelegramForm({
   onDirtyChange,
 }: Props) {
   const navigate = useNavigate()
+  const showToast = useToast()
   const createChannelMutation = useCreateTelegramChannel(workspaceId)
 
   const {
-    formState: { errors, isDirty },
+    control,
+    formState: { isDirty },
     handleSubmit,
-    register,
   } = useForm<TelegramChannelFormValues>({
     defaultValues: telegramChannelDefaultValues,
     disabled: createChannelMutation.isPending,
@@ -69,18 +71,17 @@ export function ConnectTelegramForm({
                   : error.code === 'unauthorized'
                     ? m.channels_telegram_error_unauthorized()
                     : m.common_unknown_error()
-          toast.danger(m.channels_create_error_title(), {
-            description,
-          })
+          showToast({ body: description, type: 'error' })
           return
         }
-        toast.danger(m.channels_create_error_title(), {
-          description:
+        showToast({
+          body:
             error instanceof Error ? error.message : m.common_unknown_error(),
+          type: 'error',
         })
       },
       onSuccess: () => {
-        toast.success(m.channels_telegram_create_success())
+        showToast({ body: m.channels_telegram_create_success(), type: 'info' })
         if (onSuccess) {
           onSuccess()
           return
@@ -105,48 +106,59 @@ export function ConnectTelegramForm({
       </div>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <TextField
-          fullWidth
-          isDisabled={createChannelMutation.isPending}
-          isInvalid={!!errors.name}
-        >
-          <Label>{m.channels_name_label()}</Label>
-          <Input
-            autoFocus
-            placeholder={m.channels_telegram_name_placeholder()}
+        <Controller
+          control={control}
+          name="name"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.channels_name_label()}
+              placeholder={m.channels_telegram_name_placeholder()}
+              hasAutoFocus
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={createChannelMutation.isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="botToken"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.channels_telegram_token_label()}
+              placeholder={m.channels_telegram_token_placeholder()}
+              description={m.channels_telegram_token_helper()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={createChannelMutation.isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <Button
+            label={m.common_back()}
+            type="button"
             variant="secondary"
-            {...register('name')}
+            onClick={onCancel}
           />
-          <FieldError>{errors.name?.message}</FieldError>
-        </TextField>
-
-        <TextField
-          fullWidth
-          isDisabled={createChannelMutation.isPending}
-          isInvalid={!!errors.botToken}
-        >
-          <Label>{m.channels_telegram_token_label()}</Label>
-          <Input
-            autoComplete="off"
-            placeholder={m.channels_telegram_token_placeholder()}
-            spellCheck={false}
-            variant="secondary"
-            {...register('botToken')}
+          <Button
+            label={m.channels_telegram_submit()}
+            type="submit"
+            variant="primary"
+            isLoading={createChannelMutation.isPending}
           />
-          <p className="mt-1.5 text-xs text-muted">
-            {m.channels_telegram_token_helper()}
-          </p>
-          <FieldError>{errors.botToken?.message}</FieldError>
-        </TextField>
-
-        <div className="flex items-center justify-between gap-2 mt-4">
-          <Button variant="secondary" onClick={onCancel}>
-            {m.common_back()}
-          </Button>
-
-          <Button isLoading={createChannelMutation.isPending} type="submit">
-            {m.channels_telegram_submit()}
-          </Button>
         </div>
       </form>
     </div>

@@ -1,4 +1,4 @@
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { MailIcon } from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
 import type { ChannelType } from '../model/types'
@@ -14,7 +14,7 @@ type Props = {
 }
 
 const PLATE_SIZE: Record<NonNullable<Props['size']>, string> = {
-  xs: 'size-[18px] [&>svg]:size-3',
+  xs: 'size-4.5 [&>svg]:size-3',
   sm: 'size-7 [&>svg]:size-4',
   md: 'size-9 [&>svg]:size-5',
   lg: 'size-11 [&>svg]:size-6',

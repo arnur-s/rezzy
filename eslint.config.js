@@ -21,7 +21,6 @@ export default [
       'src/routeTree.gen.ts',
       'supabase/functions/**',
       'public/**',
-      '.heroui-docs/**',
     ],
   },
   // Disable ESLint rules that conflict with Prettier; keep this last.

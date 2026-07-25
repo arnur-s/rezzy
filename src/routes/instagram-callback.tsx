@@ -1,6 +1,6 @@
 import { INSTAGRAM_OAUTH_MESSAGE_TYPE } from '@/features/channels/lib/instagram-oauth'
 import { m } from '@/paraglide/messages'
-import { Spinner } from '@heroui/react'
+import { Spinner } from '@astryxdesign/core/Spinner'
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
@@ -65,7 +65,7 @@ function RouteComponent() {
       <Spinner />
       <div>
         <p className="text-base font-medium">{m.instagram_callback_title()}</p>
-        <p className="mt-1 text-sm text-muted">{m.instagram_callback_body()}</p>
+        <p className="mt-1 text-sm text-secondary">{m.instagram_callback_body()}</p>
       </div>
     </div>
   )

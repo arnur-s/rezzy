@@ -2,8 +2,8 @@ import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { workspaceCrumbs } from '@/lib/breadcrumbs'
 import { m } from '@/paraglide/messages'
 import { paneStyle } from '@/components/pane'
-import { ScrollShadow, Tabs } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Tab, TabList } from '@astryxdesign/core/TabList'
+import { cn } from '@/lib/cn'
 import {
   Outlet,
   createFileRoute,
@@ -21,8 +21,6 @@ type SettingsNavItem = {
   label: string
 }
 
-const settingsTabIndicatorClassName =
-  'dark:bg-foreground/15 dark:ring-1 dark:ring-foreground/10'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
   {
@@ -96,47 +94,32 @@ function RouteComponent() {
       {/* Attached to the pane's top edge, above its scroll region. */}
       <header className="border-border/60 shrink-0 border-b py-6">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
-          <p className="text-muted text-xs font-medium">
+          <p className="text-secondary text-xs font-medium">
             {m.workspace_settings_kicker()}
           </p>
           <h1 className="mt-1 text-base font-semibold">
             {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
           </h1>
-          <p className="text-muted mt-1 max-w-2xl text-sm">
+          <p className="text-secondary mt-1 max-w-2xl text-sm">
             {m.workspace_settings_description()}
           </p>
         </div>
       </header>
 
-      <ScrollShadow className="mx-auto w-full max-w-3xl min-h-0 flex-1 px-4 py-6 sm:px-8 md:py-8">
-        <Tabs
-          className="w-full"
-          selectedKey={selectedKey}
-          onSelectionChange={(key) => handleSectionChange(key as string)}
+      <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 py-6 sm:px-8 md:py-8">
+        <TabList
+          value={selectedKey}
+          onChange={(key) => handleSectionChange(key)}
+          aria-label={m.workspace_settings_sections_nav_aria_label()}
         >
-          <Tabs.ListContainer>
-            <Tabs.List
-              aria-label={m.workspace_settings_sections_nav_aria_label()}
-            >
-              {navItems.map((item) => (
-                <Tabs.Tab key={item.key} id={item.key}>
-                  {item.label}
-                  <Tabs.Indicator className={settingsTabIndicatorClassName} />
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs.ListContainer>
-          <Tabs.Panel className="pt-8" id="general">
-            <Outlet />
-          </Tabs.Panel>
-          <Tabs.Panel className="pt-8" id="channels">
-            <Outlet />
-          </Tabs.Panel>
-          <Tabs.Panel className="pt-8" id="members">
-            <Outlet />
-          </Tabs.Panel>
-        </Tabs>
-      </ScrollShadow>
+          {navItems.map((item) => (
+            <Tab key={item.key} value={item.key} label={item.label} />
+          ))}
+        </TabList>
+        <div className="pt-8">
+          <Outlet />
+        </div>
+      </div>
     </div>
   )
 }

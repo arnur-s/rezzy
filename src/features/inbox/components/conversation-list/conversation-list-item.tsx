@@ -6,7 +6,7 @@ import {
 } from '@/entities/conversation'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { memo } from 'react'
 import { FormattedMessageText } from '../formatted-message-text'
 import { formatRelativeShort } from '../../utils/relative-time'
@@ -46,13 +46,13 @@ function ConversationListItemImpl({
             className={cn(
               'min-w-0 flex-1 truncate text-sm',
               isUnread
-                ? 'font-semibold text-foreground'
-                : 'font-medium text-foreground/90',
+                ? 'font-semibold text-primary'
+                : 'font-medium text-primary/90',
             )}
           >
             {contactName}
           </span>
-          <span className="shrink-0 text-[11px] text-foreground/50">
+          <span className="shrink-0 text-xs text-primary/50">
             {formatRelativeShort(conversation.last_message_at)}
           </span>
         </div>
@@ -64,13 +64,12 @@ function ConversationListItemImpl({
             variant="preview"
             className={cn(
               'block min-w-0 flex-1 truncate',
-              isUnread ? 'text-foreground/80' : 'text-foreground/55',
+              isUnread ? 'text-primary/80' : 'text-primary/55',
             )}
           />
           {isUnread ? (
             <NumericUnreadChip
               count={visibleUnreadCount}
-              flat={isActive}
               aria-label={m.inbox_unread_aria_label({
                 count: visibleUnreadCount,
               })}
@@ -80,7 +79,7 @@ function ConversationListItemImpl({
 
         {status ? (
           <div className="mt-1.5">
-            <ConversationStatusChip status={status} size="sm" />
+            <ConversationStatusChip status={status} />
           </div>
         ) : null}
       </div>

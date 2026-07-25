@@ -1,12 +1,9 @@
-import { Button } from '@/components/button'
 import { listItemStyle } from '@/components/list'
-import { paneStyle } from '@/components/pane'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
-import type { Selection } from '@heroui/react'
-import { Alert, ListBox, ScrollShadow, Typography } from '@heroui/react'
-import { cn } from '@heroui/styles'
-import { useCallback, useMemo } from 'react'
+import { Button } from '@astryxdesign/core/Button'
+import { cn } from '@/lib/cn'
+import { useMemo } from 'react'
 import { ConversationListItem } from './conversation-list-item'
 import { ConversationListSkeleton } from './conversation-list-skeleton'
 import { ConversationSearch } from './conversation-search'
@@ -31,29 +28,20 @@ type Props = {
 /**
  * Row states for the most-read surface in the product.
  *
- * The list body is recessed and rows are transparent, so the selected row can
- * be *lifted to a surface* rather than tinted. With a monochrome accent, an
- * accent tint is by definition grey — the exact "generic grey block" this
- * screen must avoid. Elevation reads as "you are here" without spending a
- * colour the system does not have.
- *
- * Hover sits deliberately below selection so the two never compete, and focus
- * is an inset ring so it survives on top of either.
+ * The list is flat on the shell's content surface and shares the side nav's
+ * selection grammar: selection is a quiet fill, hover sits a step below it so
+ * the two never compete, and focus is an inset ring so it survives on top of
+ * either.
  */
 const conversationRowStyle = {
-  hover: 'data-[selected=false]:hover:bg-foreground/5',
-  selected:
-    'data-[selected=true]:bg-surface data-[selected=true]:shadow-surface data-[selected=true]:text-foreground',
+  hover: listItemStyle.data.hover,
+  selected: cn(
+    listItemStyle.data.selected,
+    'data-[selected=true]:text-primary',
+  ),
   focus:
-    'data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-focus data-[focus-visible=true]:ring-inset',
+    'focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset',
 } as const
-
-function selectionToConversationId(keys: Selection): string | undefined {
-  for (const id of keys) {
-    return String(id)
-  }
-  return undefined
-}
 
 export function ConversationList({
   conversations,
@@ -97,31 +85,15 @@ export function ConversationList({
     })
   }, [conversations, primaryFilter, userId])
 
-  const selectedKeys = useMemo(
-    () =>
-      selectedConversationId
-        ? new Set([selectedConversationId])
-        : new Set<string>(),
-    [selectedConversationId],
-  )
-
-  const handleSelectionChange = useCallback(
-    (keys: Selection) => {
-      const id = selectionToConversationId(keys)
-      if (id) onSelect(id)
-    },
-    [onSelect],
-  )
-
   const hasActiveFilter =
     searchQuery.trim().length > 0 || primaryFilter !== 'all'
 
   return (
-    <div className={cn(paneStyle.surface, 'h-full w-full')}>
-      <div className="flex h-[64px] shrink-0 items-center justify-center px-1">
+    <div className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden">
+      <div className="flex h-16 shrink-0 items-center justify-center px-1">
         <ConversationSearch value={searchQuery} onChange={onSearchChange} />
       </div>
-      <div className={cn('shrink-0 border-b', paneStyle.separator)}>
+      <div className="border-border/60 shrink-0 border-b">
         <PrimaryInboxFilters
           primaryFilter={primaryFilter}
           onPrimaryFilterChange={onPrimaryFilterChange}
@@ -129,29 +101,25 @@ export function ConversationList({
         />
       </div>
 
-      {/* Recessed body: rows are transparent against it, so the selected row
-          can lift to a surface instead of being tinted grey. */}
-      <ScrollShadow className={cn('min-h-0 flex-1', paneStyle.recessed)}>
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (
           <ConversationListSkeleton />
         ) : isError ? (
           <div className="px-3 py-4">
-            <Alert status="danger">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>{m.inbox_list_load_error()}</Alert.Title>
-              </Alert.Content>
+            <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
+              <span className="text-error text-sm">
+                {m.inbox_list_load_error()}
+              </span>
               {onRetry ? (
                 <Button
+                  label={m.common_retry()}
                   size="sm"
                   variant="ghost"
-                  onPress={onRetry}
+                  onClick={onRetry}
                   isLoading={isRetrying}
-                >
-                  {m.common_retry()}
-                </Button>
+                />
               ) : null}
-            </Alert>
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <EmptyState
@@ -162,26 +130,22 @@ export function ConversationList({
             }}
           />
         ) : (
-          <ListBox
+          <div
+            role="listbox"
             aria-label={m.inbox_conversation_list_aria_label()}
-            selectionMode="single"
-            disallowEmptySelection
-            selectedKeys={selectedKeys}
-            onSelectionChange={handleSelectionChange}
             className="flex flex-col gap-0.5 px-2 py-2 outline-none"
           >
             {filtered.map((conversation) => {
               const isActive = conversation.id === selectedConversationId
               const contactName = conversation.contact.name?.trim() || '—'
               return (
-                <ListBox.Item
+                <button
                   key={conversation.id}
-                  id={conversation.id}
-                  textValue={contactName}
-                  // Plain DOM click, not onAction: with selection enabled,
-                  // react-aria never fires onAction for a single click on the
-                  // already-selected row, but this must re-trigger onSelect so
-                  // the open thread can jump back to the latest message.
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  aria-label={contactName}
+                  data-selected={isActive ? 'true' : 'false'}
                   onClick={() => onSelect(conversation.id)}
                   className={cn(
                     'flex w-full cursor-pointer items-start text-left outline-none',
@@ -197,13 +161,12 @@ export function ConversationList({
                     conversation={conversation}
                     isActive={isActive}
                   />
-                </ListBox.Item>
+                </button>
               )
             })}
-          </ListBox>
+          </div>
         )}
-      </ScrollShadow>
-
+      </div>
     </div>
   )
 }
@@ -218,28 +181,28 @@ function EmptyState({
   if (hasActiveFilter) {
     return (
       <div className="flex flex-col items-center px-6 py-16 text-center">
-        <Typography.Paragraph className="text-muted text-sm text-balance">
+        <p className="text-secondary text-sm text-balance">
           {m.inbox_list_search_empty()}
-        </Typography.Paragraph>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="mt-4"
-          onPress={onClearFilters}
-        >
-          {m.inbox_list_clear_filters()}
-        </Button>
+        </p>
+        <div className="mt-4">
+          <Button
+            label={m.inbox_list_clear_filters()}
+            size="sm"
+            variant="ghost"
+            onClick={onClearFilters}
+          />
+        </div>
       </div>
     )
   }
   return (
     <div className="px-6 py-16 text-center">
-      <Typography.Paragraph className="text-sm font-medium text-balance">
+      <p className="text-sm font-medium text-balance">
         {m.inbox_list_empty_title()}
-      </Typography.Paragraph>
-      <Typography.Paragraph className="text-muted mt-1.5 text-xs text-balance">
+      </p>
+      <p className="text-secondary mt-1.5 text-xs text-balance">
         {m.inbox_list_empty_description()}
-      </Typography.Paragraph>
+      </p>
     </div>
   )
 }

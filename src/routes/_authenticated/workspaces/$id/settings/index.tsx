@@ -1,4 +1,3 @@
-import { Button } from '@/components/button'
 import { WorkspaceIconPicker } from '@/entities/workspace'
 import {
   useUpdateWorkspace,
@@ -8,15 +7,13 @@ import type { CreateWorkspaceFormValues } from '@/features/workspaces/schemas/wo
 import { createWorkspaceFormSchema } from '@/features/workspaces/schemas/workspace-form-schema'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
-import {
-  FieldError,
-  Input,
-  Label,
-  Skeleton,
-  TextArea,
-  TextField,
-  toast,
-} from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { FieldStatus } from '@astryxdesign/core/FieldStatus'
+import { Skeleton } from '@astryxdesign/core/Skeleton'
+import { Text } from '@astryxdesign/core/Text'
+import { TextArea } from '@astryxdesign/core/TextArea'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { createFileRoute } from '@tanstack/react-router'
 import type { IconName } from 'lucide-react/dynamic'
@@ -36,6 +33,7 @@ function RouteComponent() {
   const { id: workspaceId } = Route.useParams()
   const { session } = useAuth()
   const userId = session?.user.id
+  const showToast = useToast()
 
   const workspaceQuery = useWorkspace(workspaceId)
   const updateWorkspaceMutation = useUpdateWorkspace(userId ?? '')
@@ -90,13 +88,17 @@ function RouteComponent() {
       },
       {
         onError: (error) => {
-          toast.danger(m.workspace_settings_update_error_title(), {
-            description:
+          showToast({
+            body:
               error instanceof Error ? error.message : m.common_unknown_error(),
+            type: 'error',
           })
         },
         onSuccess: (workspace) => {
-          toast.success(m.workspace_settings_update_success())
+          showToast({
+            body: m.workspace_settings_update_success(),
+            type: 'info',
+          })
           reset({
             description: workspace.description ?? '',
             icon: (workspace.icon as IconName | null) ?? undefined,
@@ -109,7 +111,7 @@ function RouteComponent() {
 
   if (workspaceQuery.isError) {
     return (
-      <div className="text-sm text-danger">
+      <div className="text-error text-sm">
         {m.workspace_settings_load_error()}
       </div>
     )
@@ -125,7 +127,7 @@ function RouteComponent() {
         <h2 className="text-lg font-semibold">
           {m.workspace_settings_general_title()}
         </h2>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-secondary">
           {m.workspace_settings_general_description()}
         </p>
       </div>
@@ -135,23 +137,18 @@ function RouteComponent() {
           control={control}
           name="name"
           render={({ field, fieldState }) => (
-            <TextField
-              fullWidth
+            <TextInput
+              label={m.workspaces_name_label()}
+              placeholder={m.workspaces_name_placeholder()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
               isDisabled={isFormDisabled}
-              isInvalid={fieldState.invalid}
-            >
-              <Label>{m.workspaces_name_label()}</Label>
-              <Input
-                autoComplete="organization"
-                placeholder={m.workspaces_name_placeholder()}
-                name={field.name}
-                ref={field.ref}
-                value={field.value}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-              />
-              <FieldError>{fieldState.error?.message}</FieldError>
-            </TextField>
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
           )}
         />
 
@@ -159,24 +156,19 @@ function RouteComponent() {
           control={control}
           name="description"
           render={({ field, fieldState }) => (
-            <TextField
-              fullWidth
+            <TextArea
+              label={m.workspaces_description_label()}
+              placeholder={m.workspaces_description_placeholder()}
+              rows={3}
+              value={field.value ?? ''}
+              onChange={(next) => field.onChange(next)}
               isDisabled={isFormDisabled}
-              isInvalid={fieldState.invalid}
-            >
-              <Label>{m.workspaces_description_label()}</Label>
-              <TextArea
-                className="min-h-24 w-full resize-y"
-                placeholder={m.workspaces_description_placeholder()}
-                rows={3}
-                name={field.name}
-                ref={field.ref}
-                value={field.value ?? ''}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-              />
-              <FieldError>{fieldState.error?.message}</FieldError>
-            </TextField>
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
           )}
         />
 
@@ -185,31 +177,33 @@ function RouteComponent() {
           name="icon"
           render={({ field, fieldState }) => (
             <div className="flex flex-col gap-2">
-              <Label className="text-sm font-medium">
+              <Text as="label" type="label">
                 {m.workspaces_icon_label()}
-              </Label>
+              </Text>
               <WorkspaceIconPicker
                 isDisabled={isFormDisabled}
                 onChange={field.onChange}
                 value={field.value}
               />
               {fieldState.error?.message ? (
-                <p className="text-xs text-danger">
-                  {fieldState.error.message}
-                </p>
+                <FieldStatus
+                  type="error"
+                  message={fieldState.error.message}
+                  variant="detached"
+                />
               ) : null}
             </div>
           )}
         />
 
-        <div className="flex justify-end border-t border-border/60 pt-5">
+        <div className="border-border/60 flex justify-end border-t pt-5">
           <Button
+            label={m.common_save_changes()}
+            type="submit"
+            variant="primary"
             isDisabled={!isDirty}
             isLoading={updateWorkspaceMutation.isPending}
-            type="submit"
-          >
-            {m.common_save_changes()}
-          </Button>
+          />
         </div>
       </form>
     </div>
@@ -219,14 +213,14 @@ function RouteComponent() {
 function GeneralSettingsSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Skeleton className="h-7 w-48 rounded" />
-        <Skeleton className="mt-2 h-4 w-full max-w-md rounded" />
+      <div className="space-y-2">
+        <Skeleton width={192} height={28} radius={2} />
+        <Skeleton width="100%" height={16} radius={2} />
       </div>
       <div className="space-y-5">
-        <Skeleton className="h-24 w-full rounded-xl" />
-        <Skeleton className="h-10 w-full rounded-md" />
-        <Skeleton className="h-24 w-full rounded-md" />
+        <Skeleton width="100%" height={96} radius={4} />
+        <Skeleton width="100%" height={40} radius={3} />
+        <Skeleton width="100%" height={96} radius={3} />
       </div>
     </div>
   )

@@ -1,4 +1,3 @@
-import { Button as RetryButton } from '@/components/button'
 import {
   PLATFORM_META,
   PlatformIcon,
@@ -6,12 +5,12 @@ import {
 } from '@/entities/channel'
 import { isConversationStatus } from '@/entities/conversation'
 import type { ConversationWithRelations } from '@/entities/conversation'
-import { getUserInitials } from '@/entities/user'
 import { useRecordContactVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { m } from '@/paraglide/messages'
-import { paneStyle } from '@/components/pane'
-import { Alert, Avatar, Button, ScrollShadow, Skeleton } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Avatar } from '@astryxdesign/core/Avatar'
+import { Button } from '@astryxdesign/core/Button'
+import { IconButton } from '@astryxdesign/core/IconButton'
+import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useContact } from '../../hooks/use-contact'
@@ -23,16 +22,9 @@ type Props = {
   workspaceId: string
   conversation: ConversationWithRelations
   onClose: () => void
-  /** Lets the tablet drawer strip the pane chrome it does not need. */
-  className?: string
 }
 
-export function ContactPanel({
-  workspaceId,
-  conversation,
-  onClose,
-  className,
-}: Props) {
+export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
   const contactQuery = useContact(conversation.contact.id)
 
   const channelTypes = useMemo(() => {
@@ -46,7 +38,6 @@ export function ContactPanel({
 
   const contactName =
     contactQuery.data?.name?.trim() || conversation.contact.name?.trim() || '—'
-  const initials = getUserInitials(contactName)
   const status = isConversationStatus(conversation.status)
     ? conversation.status
     : 'open'
@@ -58,53 +49,47 @@ export function ContactPanel({
   )
 
   return (
-    <aside className={cn(paneStyle.surface, 'h-full w-full', className)}>
-      <header className="border-border/60 flex h-[64px] shrink-0 items-center justify-between border-b px-4">
-        <h3 className="text-sm font-semibold text-foreground">
+    <aside
+      // bg-surface keeps the panel opaque when it renders as the tablet
+      // overlay drawer; docked it matches the content sheet seamlessly.
+      className="bg-surface flex h-full w-full min-w-0 flex-col overflow-hidden"
+    >
+      <header className="border-border/60 flex h-16 shrink-0 items-center justify-between border-b px-4">
+        <h3 className="text-primary text-sm font-semibold">
           {m.inbox_contact_panel_title()}
         </h3>
-        <Button
+        <IconButton
           variant="ghost"
-          isIconOnly
           size="sm"
-          onPress={onClose}
-          aria-label={m.inbox_contact_panel_close()}
-        >
-          <XIcon className="size-4" />
-        </Button>
+          onClick={onClose}
+          label={m.inbox_contact_panel_close()}
+          icon={<XIcon className="size-4" />}
+        />
       </header>
 
-      <ScrollShadow className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-6 px-4 py-5">
           {contactQuery.isError ? (
-            <Alert status="danger">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>{m.inbox_contact_panel_load_error()}</Alert.Title>
-              </Alert.Content>
-              <RetryButton
+            <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
+              <span className="text-error text-sm">
+                {m.inbox_contact_panel_load_error()}
+              </span>
+              <Button
+                label={m.common_retry()}
                 size="sm"
                 variant="ghost"
-                onPress={() => {
-                  void contactQuery.refetch()
-                }}
+                onClick={() => void contactQuery.refetch()}
                 isLoading={contactQuery.isRefetching}
-              >
-                {m.common_retry()}
-              </RetryButton>
-            </Alert>
+              />
+            </div>
           ) : null}
 
           <div className="flex flex-col items-center text-center">
-            <Avatar size="lg" className="size-16">
-              <Avatar.Fallback className="text-base">
-                {initials}
-              </Avatar.Fallback>
-            </Avatar>
-            <p className="mt-3 text-base font-semibold text-foreground">
+            <Avatar size="lg" name={contactName} />
+            <p className="text-primary mt-3 text-base font-semibold">
               {contactName}
             </p>
-            <p className="mt-0.5 text-xs text-foreground/55">
+            <p className="mt-0.5 text-xs text-primary/55">
               {contactQuery.data?.phone ||
                 conversation.contact.phone ||
                 m.inbox_contact_panel_phone_empty()}
@@ -112,15 +97,15 @@ export function ContactPanel({
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-medium text-foreground/70">
+            <p className="mb-2 text-xs font-medium text-primary/70">
               {m.inbox_contact_panel_channels_label()}
             </p>
             {contactQuery.isPending ? (
-              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton width="100%" height={32} radius={3} />
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {channelTypes.length === 0 ? (
-                  <span className="text-xs text-foreground/55">—</span>
+                  <span className="text-xs text-primary/55">—</span>
                 ) : (
                   channelTypes.map((type) => (
                     <span
@@ -154,10 +139,10 @@ export function ContactPanel({
               initialNotes={contactQuery.data.notes ?? ''}
             />
           ) : (
-            <Skeleton className="h-24 w-full rounded-md" />
+            <Skeleton width="100%" height={96} radius={3} />
           )}
         </div>
-      </ScrollShadow>
+      </div>
     </aside>
   )
 }

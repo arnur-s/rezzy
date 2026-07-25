@@ -189,7 +189,7 @@ describe('MessageList virtualized transcript', () => {
     expect(
       container.querySelector('[data-testid="message-transcript"]'),
     ).toBeTruthy()
-    expect(container.querySelector('[data-index]')).toBeTruthy()
+    expect(container.querySelector('[data-message-id]')).toBeTruthy()
   })
 
   // Rows previously used Tailwind's `container`, whose max-width tracks the
@@ -204,11 +204,13 @@ describe('MessageList virtualized transcript', () => {
       />,
     )
 
-    const row = container.querySelector('[data-index] > div')
+    const row = container.querySelector(
+      '[data-testid="message-transcript"]',
+    )
     expect(row).toBeTruthy()
 
     const className = row?.getAttribute('class') ?? ''
-    expect(className).toContain('max-w-[820px]')
+    expect(className).toContain('max-w-3xl')
     expect(className).toContain('mx-auto')
     expect(className.split(/\s+/)).not.toContain('container')
   })

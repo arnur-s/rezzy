@@ -32,23 +32,26 @@ export const MESSAGE_STATUS_META: Record<MessageStatus, MessageStatusMeta> = {
     Icon: CheckCheckIcon,
     className: 'opacity-70',
   },
+  // The system is monochrome: read/played read as "acknowledged" through full
+  // foreground strength, distinct from the muted 70% of sent/delivered — not a
+  // blue "info" hue, which isn't one of the three sanctioned status colors.
   read: {
     status: 'read',
     labelKey: () => m.inbox_message_status_read(),
     Icon: CheckCheckIcon,
-    className: 'text-info',
+    className: 'text-primary',
   },
   played: {
     status: 'played',
     labelKey: () => m.inbox_message_status_played(),
     Icon: HeadphonesIcon,
-    className: 'text-info',
+    className: 'text-primary',
   },
   failed: {
     status: 'failed',
     labelKey: () => m.inbox_message_status_failed(),
     Icon: TriangleAlertIcon,
-    className: 'text-danger',
+    className: 'text-error',
   },
 }
 

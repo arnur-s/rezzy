@@ -1,17 +1,11 @@
-import { Button } from '@/components/button'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import { supabase } from '@/utils/supabase'
-import {
-  Card,
-  FieldError,
-  Link as HeroLink,
-  InputGroup,
-  Label,
-  TextField,
-  toast,
-} from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Button } from '@astryxdesign/core/Button'
+import { Card } from '@astryxdesign/core/Card'
+import { Text } from '@astryxdesign/core/Text'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useMutation } from '@tanstack/react-query'
 import {
@@ -19,9 +13,8 @@ import {
   createFileRoute,
   useNavigate,
 } from '@tanstack/react-router'
-import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useMemo } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 export const Route = createFileRoute('/sign-in')({
@@ -44,7 +37,7 @@ const defaultValues: LoginForm = {
 
 function RouteComponent() {
   const navigate = useNavigate()
-  const [showPassword, setShowPassword] = useState(false)
+  const showToast = useToast()
 
   const locale = getLocale()
   const loginFormSchema = useMemo(() => createLoginFormSchema(), [locale])
@@ -57,7 +50,10 @@ function RouteComponent() {
       })
 
       if (error) {
-        toast.danger(m.auth_sign_in_failed_to_sign_in())
+        showToast({
+          body: m.auth_sign_in_failed_to_sign_in(),
+          type: 'error',
+        })
         throw error
       }
 
@@ -71,9 +67,8 @@ function RouteComponent() {
   const isFormDisabled = signInMutation.isPending
 
   const {
-    register,
+    control,
     handleSubmit,
-    formState: { errors },
   } = useForm<LoginForm>({
     resolver: standardSchemaResolver(loginFormSchema),
     defaultValues,
@@ -85,104 +80,86 @@ function RouteComponent() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-surface md:bg-background">
-      <Card
-        className={cn(
-          'z-1 flex w-full max-w-md flex-col gap-6 md:px-6 md:py-8',
-          'max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:rounded-none',
-          'md:border md:border-border md:text-surface-foreground md:shadow-surface',
-        )}
-      >
-        <Card.Header>
-          <Card.Title>{m.auth_sign_in_welcome()}</Card.Title>
-          <Card.Description>{m.auth_sign_in_description()}</Card.Description>
-        </Card.Header>
+    <div className="bg-surface md:bg-body flex min-h-dvh items-center justify-center px-4">
+      <Card variant="default" maxWidth={448} width="100%">
+        <div className="flex flex-col gap-1">
+          <Text as="p" size="lg" weight="semibold">
+            {m.auth_sign_in_welcome()}
+          </Text>
+          <Text as="p" type="supporting">
+            {m.auth_sign_in_description()}
+          </Text>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
-          <Card.Content className="gap-4">
-            <TextField isInvalid={!!errors.email} isDisabled={isFormDisabled}>
-              <Label>{m.common_email()}</Label>
-              <InputGroup variant="secondary">
-                <InputGroup.Prefix>
-                  <MailIcon className="size-4" />
-                </InputGroup.Prefix>
-                <InputGroup.Input
-                  placeholder={m.common_email_placeholder()}
-                  {...register('email')}
-                />
-              </InputGroup>
-              <FieldError>{errors.email?.message}</FieldError>
-            </TextField>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="mt-6 flex flex-col gap-4"
+        >
+          <Controller
+            control={control}
+            name="email"
+            render={({ field, fieldState }) => (
+              <TextInput
+                label={m.common_email()}
+                type="email"
+                placeholder={m.common_email_placeholder()}
+                value={field.value}
+                onChange={(next) => field.onChange(next)}
+                isDisabled={isFormDisabled}
+                status={
+                  fieldState.error?.message
+                    ? { type: 'error', message: fieldState.error.message }
+                    : undefined
+                }
+              />
+            )}
+          />
 
-            <TextField
-              isInvalid={!!errors.password}
-              isDisabled={isFormDisabled}
+          <Controller
+            control={control}
+            name="password"
+            render={({ field, fieldState }) => (
+              <TextInput
+                label={m.common_password()}
+                type="password"
+                placeholder="••••••••"
+                value={field.value}
+                onChange={(next) => field.onChange(next)}
+                isDisabled={isFormDisabled}
+                status={
+                  fieldState.error?.message
+                    ? { type: 'error', message: fieldState.error.message }
+                    : undefined
+                }
+              />
+            )}
+          />
+
+          <div className="text-right">
+            <RouterLink
+              to="/password-reset"
+              className="text-accent text-sm underline"
             >
-              <Label>{m.common_password()}</Label>
-              <InputGroup variant="secondary">
-                <InputGroup.Prefix>
-                  <LockIcon className="size-4" />
-                </InputGroup.Prefix>
-                <InputGroup.Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  {...register('password')}
-                />
-                <InputGroup.Suffix
-                  role="button"
-                  className="cursor-pointer"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeIcon className="size-4" />
-                  ) : (
-                    <EyeOffIcon className="size-4" />
-                  )}
-                </InputGroup.Suffix>
-              </InputGroup>
-              <FieldError>{errors.password?.message}</FieldError>
-            </TextField>
+              {m.auth_sign_in_forgot_password_label()}
+            </RouterLink>
+          </div>
 
-            <div className="text-right">
-              <HeroLink
-                href="/password-reset"
-                render={({ className, children }) => (
-                  <RouterLink to="/password-reset" className={cn(className)}>
-                    {children}
-                  </RouterLink>
-                )}
-              >
-                {m.auth_sign_in_forgot_password_label()}
-              </HeroLink>
-            </div>
-          </Card.Content>
+          <Button
+            label={m.common_sign_in()}
+            type="submit"
+            variant="primary"
+            width="100%"
+            isLoading={signInMutation.isPending}
+          />
 
-          <Card.Footer className="mt-4 flex-col gap-4">
-            <Button
-              type="submit"
-              fullWidth
-              isLoading={signInMutation.isPending}
-            >
-              {m.common_sign_in()}
-            </Button>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted">
-                {m.auth_sign_in_dont_have_an_account_label()}
-              </span>
-
-              <HeroLink
-                href="/sign-up"
-                render={({ className, children }) => (
-                  <RouterLink to="/sign-up" className={cn(className)}>
-                    {children}
-                  </RouterLink>
-                )}
-              >
-                {m.common_sign_up()}
-              </HeroLink>
-            </div>
-          </Card.Footer>
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-secondary text-sm">
+              {m.auth_sign_in_dont_have_an_account_label()}
+            </span>
+            <RouterLink to="/sign-up" className="text-accent text-sm underline">
+              {m.common_sign_up()}
+            </RouterLink>
+          </div>
         </form>
       </Card>
     </div>

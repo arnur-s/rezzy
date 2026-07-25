@@ -1,6 +1,6 @@
-import { Modal } from '@heroui/react'
-import { CreateWorkspaceForm } from '../create-workspace-form'
 import { m } from '@/paraglide/messages'
+import { Dialog, DialogHeader  } from '@astryxdesign/core/Dialog'
+import { CreateWorkspaceForm } from '../create-workspace-form'
 
 type Props = {
   isOpen: boolean
@@ -13,18 +13,17 @@ export function CreateWorkspaceModal({ isOpen, onOpenChange }: Props) {
   }
 
   return (
-    <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-      <Modal.Container>
-        <Modal.Dialog className="sm:max-w-[600px]">
-          <Modal.CloseTrigger />
-          <Modal.Header>
-            <Modal.Heading>{m.workspaces_create_modal_title()}</Modal.Heading>
-          </Modal.Header>
-          <Modal.Body>
-            <CreateWorkspaceForm onCancel={closeModal} onSuccess={closeModal} />
-          </Modal.Body>
-        </Modal.Dialog>
-      </Modal.Container>
-    </Modal.Backdrop>
+    <Dialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      purpose="form"
+      width={600}
+    >
+      <DialogHeader
+        title={m.workspaces_create_modal_title()}
+        onOpenChange={onOpenChange}
+      />
+      <CreateWorkspaceForm onCancel={closeModal} onSuccess={closeModal} />
+    </Dialog>
   )
 }

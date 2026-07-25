@@ -1,11 +1,12 @@
-import { Button } from '@/components/button'
 import { ChannelTypeIcon } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
-import { FieldError, Input, Label, TextField, toast } from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import type { ChannelConnectErrorCode } from '../api/channels'
 import { ChannelConnectError } from '../api/channels'
 import {
@@ -53,6 +54,7 @@ export function ConnectWhatsappManualForm({
   onDirtyChange,
 }: Props) {
   const navigate = useNavigate()
+  const showToast = useToast()
   const createChannelMutation = useCreateWhatsappChannelManual(
     target.workspaceId,
   )
@@ -66,9 +68,9 @@ export function ConnectWhatsappManualForm({
       : createChannelMutation.isPending
 
   const {
-    formState: { errors, isDirty },
+    control,
+    formState: { isDirty },
     handleSubmit,
-    register,
   } = useForm<WhatsappManualChannelFormValues>({
     defaultValues: whatsappManualChannelDefaultValues,
     disabled: isPending,
@@ -94,19 +96,16 @@ export function ConnectWhatsappManualForm({
             : error instanceof Error
               ? error.message
               : m.common_unknown_error()
-        toast.danger(
-          target.kind === 'reconnect'
-            ? m.channels_whatsapp_reconnect_error_title()
-            : m.channels_create_error_title(),
-          { description },
-        )
+        showToast({ body: description, type: 'error' })
       },
       onSuccess: () => {
-        toast.success(
-          target.kind === 'reconnect'
-            ? m.channels_whatsapp_reconnect_success()
-            : m.channels_whatsapp_create_success(),
-        )
+        showToast({
+          body:
+            target.kind === 'reconnect'
+              ? m.channels_whatsapp_reconnect_success()
+              : m.channels_whatsapp_create_success(),
+          type: 'info',
+        })
         if (onSuccess) {
           onSuccess()
           return
@@ -129,7 +128,7 @@ export function ConnectWhatsappManualForm({
               ? m.channels_whatsapp_reconnect_manual_title()
               : m.channels_whatsapp_manual_title()}
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="text-secondary mt-1 text-sm">
             {target.kind === 'reconnect'
               ? m.channels_whatsapp_reconnect_manual_subtitle()
               : m.channels_whatsapp_manual_subtitle()}
@@ -138,83 +137,106 @@ export function ConnectWhatsappManualForm({
       </div>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <TextField
-          fullWidth
-          isDisabled={isPending}
-          isInvalid={!!errors.phoneNumberId}
-        >
-          <Label>{m.channels_whatsapp_phone_number_id_label()}</Label>
-          <Input
-            autoFocus
-            autoComplete="off"
-            placeholder="123456789012345"
-            spellCheck={false}
-            variant="secondary"
-            {...register('phoneNumberId')}
-          />
-          <p className="mt-1.5 text-xs text-muted">
-            {m.channels_whatsapp_phone_number_id_helper()}
-          </p>
-          <FieldError>{errors.phoneNumberId?.message}</FieldError>
-        </TextField>
+        <Controller
+          control={control}
+          name="phoneNumberId"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.channels_whatsapp_phone_number_id_label()}
+              placeholder="123456789012345"
+              description={m.channels_whatsapp_phone_number_id_helper()}
+              hasAutoFocus
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
 
-        <TextField
-          fullWidth
-          isDisabled={isPending}
-          isInvalid={!!errors.accessToken}
-        >
-          <Label>{m.channels_whatsapp_access_token_label()}</Label>
-          <Input
-            autoComplete="off"
-            placeholder="EAAG..."
-            spellCheck={false}
-            type="password"
-            variant="secondary"
-            {...register('accessToken')}
-          />
-          <p className="mt-1.5 text-xs text-muted">
-            {m.channels_whatsapp_access_token_helper()}
-          </p>
-          <FieldError>{errors.accessToken?.message}</FieldError>
-        </TextField>
+        <Controller
+          control={control}
+          name="accessToken"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.channels_whatsapp_access_token_label()}
+              placeholder="EAAG..."
+              description={m.channels_whatsapp_access_token_helper()}
+              type="password"
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
 
-        <TextField fullWidth isDisabled={isPending} isInvalid={!!errors.wabaId}>
-          <Label>{m.channels_whatsapp_waba_id_label()}</Label>
-          <Input
-            autoComplete="off"
-            placeholder="123456789012345"
-            spellCheck={false}
-            variant="secondary"
-            {...register('wabaId')}
-          />
-          <p className="mt-1.5 text-xs text-muted">
-            {m.channels_whatsapp_waba_id_helper()}
-          </p>
-          <FieldError>{errors.wabaId?.message}</FieldError>
-        </TextField>
+        <Controller
+          control={control}
+          name="wabaId"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.channels_whatsapp_waba_id_label()}
+              placeholder="123456789012345"
+              description={m.channels_whatsapp_waba_id_helper()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
 
         {target.kind === 'create' && (
-          <TextField fullWidth isDisabled={isPending} isInvalid={!!errors.name}>
-            <Label>{m.channels_name_label()}</Label>
-            <Input
-              placeholder={m.channels_whatsapp_name_placeholder()}
-              variant="secondary"
-              {...register('name')}
-            />
-            <FieldError>{errors.name?.message}</FieldError>
-          </TextField>
+          <Controller
+            control={control}
+            name="name"
+            render={({ field, fieldState }) => (
+              <TextInput
+                label={m.channels_name_label()}
+                placeholder={m.channels_whatsapp_name_placeholder()}
+                value={field.value}
+                onChange={(next) => field.onChange(next)}
+                isDisabled={isPending}
+                status={
+                  fieldState.error?.message
+                    ? { type: 'error', message: fieldState.error.message }
+                    : undefined
+                }
+              />
+            )}
+          />
         )}
 
-        <div className="flex items-center justify-between gap-2 mt-4">
-          <Button variant="secondary" onClick={onBack}>
-            {m.common_back()}
-          </Button>
-
-          <Button isLoading={isPending} type="submit">
-            {target.kind === 'reconnect'
-              ? m.channels_whatsapp_reconnect_manual_submit()
-              : m.channels_whatsapp_manual_submit()}
-          </Button>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <Button
+            label={m.common_back()}
+            type="button"
+            variant="secondary"
+            onClick={onBack}
+          />
+          <Button
+            label={
+              target.kind === 'reconnect'
+                ? m.channels_whatsapp_reconnect_manual_submit()
+                : m.channels_whatsapp_manual_submit()
+            }
+            type="submit"
+            variant="primary"
+            isLoading={isPending}
+          />
         </div>
       </form>
     </div>

@@ -1,13 +1,14 @@
 import { PlatformIcon, isChannelType } from '@/entities/channel'
 import { formatRelativeShort } from '@/features/inbox/utils/relative-time'
 import { m } from '@/paraglide/messages'
-import { Avatar, Button, toast } from '@heroui/react'
+import { Avatar } from '@astryxdesign/core/Avatar'
+import { Button } from '@astryxdesign/core/Button'
+import type { ShowToastFn } from '@astryxdesign/core/Toast'
 import { BellIcon } from 'lucide-react'
 import type {
   MessageNotificationDetails,
   MessagePreviewMode,
 } from '../model/types'
-import { initialsFromName } from '../utils/initials'
 import type { NotificationTarget } from '../utils/notification-navigation'
 import { buildNotificationPreview } from '../utils/notification-preview'
 import { NotificationPreview } from './notification-preview'
@@ -18,7 +19,7 @@ type Props = {
   onOpen: () => void
 }
 
-/** Rich in-app notification body rendered inside a HeroUI toast. */
+/** Rich in-app notification body rendered inside an Astryx toast. */
 export function MessageNotification({ details, previewMode, onOpen }: Props) {
   const { conversation, message, workspaceName } = details
   const contactName = conversation.contact.name
@@ -34,42 +35,40 @@ export function MessageNotification({ details, previewMode, onOpen }: Props) {
     <div className="flex w-full items-start gap-3">
       {showContactVisuals ? (
         <div className="relative shrink-0">
-          <Avatar size="md">
-            {conversation.contact.avatar_url ? (
-              <Avatar.Image src={conversation.contact.avatar_url} />
-            ) : null}
-            <Avatar.Fallback>{initialsFromName(contactName)}</Avatar.Fallback>
-          </Avatar>
+          <Avatar
+            size="md"
+            name={contactName ?? undefined}
+            src={conversation.contact.avatar_url ?? undefined}
+          />
           {channelType ? (
             <PlatformIcon
               type={channelType}
               size="xs"
               withPlate
-              className="absolute -right-1 -bottom-1 ring-2 ring-surface"
+              className="ring-surface absolute -right-1 -bottom-1 ring-2"
             />
           ) : null}
         </div>
       ) : (
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-3xl bg-default text-muted">
+        <span className="bg-muted text-secondary flex size-10 shrink-0 items-center justify-center rounded-3xl">
           <BellIcon className="size-5" aria-hidden />
         </span>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {/* Reserve trailing space so the timestamp clears the close button
-            HeroUI pins to the top-right: always-visible on touch (wider gap),
-            hover-only and corner-tucked on desktop (narrower gap). */}
+        {/* Reserve trailing space so the timestamp clears the toast's close
+            button pinned to the top-right. */}
         <div className="flex items-baseline gap-2 pe-6 sm:pe-2">
-          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+          <span className="text-primary min-w-0 flex-1 truncate text-sm font-semibold">
             {preview.title}
           </span>
-          <span className="shrink-0 text-[11px] text-foreground/50 tabular-nums">
+          <span className="text-primary/50 shrink-0 text-xs tabular-nums">
             {formatRelativeShort(details.createdAt)}
           </span>
         </div>
 
         {workspaceName ? (
-          <span className="max-w-full self-start truncate rounded-full bg-default px-2 py-0.5 text-[11px] font-medium text-default-foreground">
+          <span className="bg-muted text-primary max-w-full self-start truncate rounded-full px-2 py-0.5 text-xs font-medium">
             {workspaceName}
           </span>
         ) : null}
@@ -83,66 +82,59 @@ export function MessageNotification({ details, previewMode, onOpen }: Props) {
         ) : null}
 
         <div className="mt-1.5">
-          <Button size="sm" variant="primary" onPress={onOpen}>
-            {m.notifications_open_thread()}
-          </Button>
+          <Button
+            label={m.notifications_open_thread()}
+            size="sm"
+            variant="primary"
+            onClick={onOpen}
+          />
         </div>
       </div>
     </div>
   )
 }
 
-/** Tracks the active toast per conversation so repeats replace rather than stack. */
-const activeToastByConversation = new Map<string, string>()
-
 export type ShowMessageNotificationOptions = {
   details: MessageNotificationDetails
   previewMode: MessagePreviewMode
   onOpen: (target: NotificationTarget) => void
+  /** Obtained from `useToast()` in the calling hook. */
+  showToast: ShowToastFn
 }
 
 /**
- * Show a message notification as a HeroUI toast. Repeated messages for the same
- * conversation replace the previous toast instead of stacking uncontrollably.
+ * Show a message notification as an Astryx toast. Repeated messages for the same
+ * conversation replace the previous toast via `uniqueID` + `collisionBehavior`,
+ * so notifications never stack uncontrollably.
  */
 export function showMessageNotificationToast({
   details,
   previewMode,
   onOpen,
+  showToast,
 }: ShowMessageNotificationOptions): void {
-  const previousId = activeToastByConversation.get(details.conversationId)
-  if (previousId) toast.close(previousId)
+  // Captured so the "Open" action can dismiss the toast it lives inside.
+  const holder: { dismiss: () => void } = { dismiss: () => {} }
 
-  const holder: { id: string } = { id: '' }
-  const dismiss = () => {
-    if (holder.id) toast.close(holder.id)
-  }
   const handleOpen = () => {
     onOpen({
       workspaceId: details.workspaceId,
       conversationId: details.conversationId,
     })
-    dismiss()
+    holder.dismiss()
   }
 
-  holder.id = toast(
-    <MessageNotification
-      details={details}
-      previewMode={previewMode}
-      onOpen={handleOpen}
-    />,
-    {
-      timeout: 8000,
-      // Our body renders its own contact avatar; suppress HeroUI's default
-      // info-circle indicator so it doesn't sit beside it.
-      indicator: null,
-      onClose: () => {
-        if (activeToastByConversation.get(details.conversationId) === holder.id) {
-          activeToastByConversation.delete(details.conversationId)
-        }
-      },
-    },
-  )
-
-  activeToastByConversation.set(details.conversationId, holder.id)
+  holder.dismiss = showToast({
+    body: (
+      <MessageNotification
+        details={details}
+        previewMode={previewMode}
+        onOpen={handleOpen}
+      />
+    ),
+    type: 'info',
+    uniqueID: details.conversationId,
+    collisionBehavior: 'overwrite',
+    autoHideDuration: 8000,
+  })
 }

@@ -90,9 +90,10 @@ describe('ConversationList selection', () => {
   })
 
   // The selected row is the primary wayfinding signal in the inbox. The list
-  // body is recessed and the selected row lifts to a surface — with a
-  // monochrome accent, any tint would be the grey block this must avoid.
-  it('lifts the selected row to a surface rather than filling it with grey', () => {
+  // sits flat on the shell's content sheet, so selection is the shared quiet
+  // fill from listItemStyle — a lifted sub-surface belonged to the old
+  // floating-pane shell and would read as a stray card here.
+  it('marks the selected row with the shared selection fill, not a lifted surface', () => {
     renderList({
       conversations: [
         conversationFixture('conv-1', 'Alice'),
@@ -107,13 +108,12 @@ describe('ConversationList selection', () => {
     expect(selected?.getAttribute('data-selected')).toBe('true')
 
     const className = selected?.getAttribute('class') ?? ''
-    expect(className).toContain('data-[selected=true]:bg-surface')
-    expect(className).toContain('data-[selected=true]:shadow-surface')
-    expect(className).not.toContain('data-[selected=true]:bg-foreground/10')
+    expect(className).toContain('data-[selected=true]:bg-primary/10')
+    expect(className).not.toContain('data-[selected=true]:shadow-md')
     // Hover applies only to unselected rows, so it cannot override selection.
-    expect(className).toContain('data-[selected=false]:hover:bg-foreground/5')
+    expect(className).toContain('data-[selected=false]:hover:bg-primary/4')
     // Focus is a ring, so it stays visible on top of either state.
-    expect(className).toContain('data-[focus-visible=true]:ring-focus')
+    expect(className).toContain('focus-visible:ring-accent')
   })
 })
 

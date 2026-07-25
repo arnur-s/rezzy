@@ -1,5 +1,5 @@
 import type { MessageReactionRow } from '@/entities/message'
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import { useMemo } from 'react'
 
 type Props = {
@@ -35,11 +35,11 @@ export function MessageReactionsRow({ reactions, isOutbound }: Props) {
       {grouped.map(([emoji, count]) => (
         <span
           key={emoji}
-          className="inline-flex items-center gap-0.5 rounded-full bg-foreground/8 px-1.5 py-0.5 text-xs shadow-xs"
+          className="inline-flex items-center gap-0.5 rounded-full bg-primary/8 px-1.5 py-0.5 text-xs shadow-xs"
         >
           <span>{emoji}</span>
           {count > 1 ? (
-            <span className="text-[10px] text-foreground/60">{count}</span>
+            <span className="text-xs text-primary/60">{count}</span>
           ) : null}
         </span>
       ))}

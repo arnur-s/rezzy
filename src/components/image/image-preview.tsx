@@ -1,6 +1,6 @@
 import { m } from '@/paraglide/messages'
-import { Button, Spinner, Tooltip } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Spinner } from '@astryxdesign/core/Spinner'
+import { cn } from '@/lib/cn'
 import {
   ChevronLeft,
   ChevronRight,
@@ -254,7 +254,9 @@ export function ImagePreview({
         onPointerLeave={handlePointerUp}
       >
         {isLoading && !hasError && (
-          <Spinner className="absolute text-white/60" />
+          <span className="absolute">
+            <Spinner shade="onMedia" />
+          </span>
         )}
 
         {hasError && (
@@ -289,22 +291,16 @@ export function ImagePreview({
 
       {/* Close button — top right */}
       <div className="absolute top-3 right-3 z-10">
-        <Tooltip>
-          <Button
-            ref={closeButtonRef}
-            isIconOnly
-            variant="ghost"
-            size="sm"
-            onPress={onClose}
-            aria-label={m.image_preview_close()}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <X className="size-4" />
-          </Button>
-          <Tooltip.Content>
-            <p>{m.image_preview_close()}</p>
-          </Tooltip.Content>
-        </Tooltip>
+        <button
+          ref={closeButtonRef}
+          type="button"
+          onClick={onClose}
+          title={m.image_preview_close()}
+          aria-label={m.image_preview_close()}
+          className="inline-flex items-center justify-center rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/50"
+        >
+          <X className="size-4" />
+        </button>
       </div>
 
       {/* Image counter — top center */}
@@ -317,46 +313,34 @@ export function ImagePreview({
       {/* Nav — previous */}
       {showNav && (
         <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
-          <Tooltip>
-            <Button
-              isIconOnly
-              variant="ghost"
-              size="sm"
-              aria-label={m.image_preview_prev()}
-              aria-disabled={activeIndex === 0}
-              onPress={() => activeIndex > 0 && onNavigate(activeIndex - 1)}
-              className="text-white/70 hover:text-white hover:bg-white/10 aria-disabled:opacity-30"
-            >
-              <ChevronLeft className="size-5" />
-            </Button>
-            <Tooltip.Content>
-              <p>{m.image_preview_prev()}</p>
-            </Tooltip.Content>
-          </Tooltip>
+          <button
+            type="button"
+            aria-label={m.image_preview_prev()}
+            title={m.image_preview_prev()}
+            aria-disabled={activeIndex === 0}
+            onClick={() => activeIndex > 0 && onNavigate(activeIndex - 1)}
+            className="inline-flex items-center justify-center rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white aria-disabled:opacity-30"
+          >
+            <ChevronLeft className="size-5" />
+          </button>
         </div>
       )}
 
       {/* Nav — next */}
       {showNav && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
-          <Tooltip>
-            <Button
-              isIconOnly
-              variant="ghost"
-              size="sm"
-              aria-label={m.image_preview_next()}
-              aria-disabled={activeIndex === images.length - 1}
-              onPress={() =>
-                activeIndex < images.length - 1 && onNavigate(activeIndex + 1)
-              }
-              className="text-white/70 hover:text-white hover:bg-white/10 aria-disabled:opacity-30"
-            >
-              <ChevronRight className="size-5" />
-            </Button>
-            <Tooltip.Content>
-              <p>{m.image_preview_next()}</p>
-            </Tooltip.Content>
-          </Tooltip>
+          <button
+            type="button"
+            aria-label={m.image_preview_next()}
+            title={m.image_preview_next()}
+            aria-disabled={activeIndex === images.length - 1}
+            onClick={() =>
+              activeIndex < images.length - 1 && onNavigate(activeIndex + 1)
+            }
+            className="inline-flex items-center justify-center rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white aria-disabled:opacity-30"
+          >
+            <ChevronRight className="size-5" />
+          </button>
         </div>
       )}
 
@@ -432,22 +416,16 @@ function ToolbarButton({
   isDisabled,
 }: ToolbarButtonProps) {
   return (
-    <Tooltip>
-      <Button
-        isIconOnly
-        variant="ghost"
-        size="sm"
-        onPress={onPress}
-        isDisabled={isDisabled}
-        aria-label={label}
-        className="text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-30"
-      >
-        <Icon className="size-4" />
-      </Button>
-      <Tooltip.Content>
-        <p>{label}</p>
-      </Tooltip.Content>
-    </Tooltip>
+    <button
+      type="button"
+      onClick={onPress}
+      disabled={isDisabled}
+      aria-label={label}
+      title={label}
+      className="inline-flex items-center justify-center rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-30"
+    >
+      <Icon className="size-4" />
+    </button>
   )
 }
 

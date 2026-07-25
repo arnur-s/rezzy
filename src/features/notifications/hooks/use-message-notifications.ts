@@ -1,6 +1,7 @@
 import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
 import { useAuth } from '@/providers/auth-provider'
 import { supabase } from '@/utils/supabase'
+import { useToast } from '@astryxdesign/core/Toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
@@ -39,6 +40,12 @@ export function useMessageNotifications(): void {
   const userId = user?.id ?? null
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  // Read by the once-mounted realtime callback; kept current via the ref below.
+  const showToast = useToast()
+  const showToastRef = useRef(showToast)
+  useEffect(() => {
+    showToastRef.current = showToast
+  }, [showToast])
   const preferencesQuery = useNotificationPreferences()
 
   const params = useParams({ strict: false })
@@ -141,6 +148,7 @@ export function useMessageNotifications(): void {
         details,
         previewMode: ctx.preferences.previewMode,
         onOpen: (target) => goToThread.current(target),
+        showToast: showToastRef.current,
       })
 
       if (ctx.preferences.soundEnabled) playNotificationSound()

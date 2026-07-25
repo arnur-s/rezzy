@@ -21,10 +21,28 @@ export type AttentionItem = {
   timestamp: string
 }
 
+export type AttentionQueue = {
+  /** The MAX_ITEMS most urgent items, ranked snoozed > unread > stale. */
+  items: Array<AttentionItem>
+  /** Total qualifying items before the cap, so the UI can say "showing N of M". */
+  total: number
+}
+
+export type TeamNewItem = {
+  conversationId: string
+  workspaceId: string
+  contactName: string
+  channelType: ChannelType | null
+  /** ISO timestamp of the latest message. */
+  timestamp: string
+}
+
 export const attentionQueueQueryKeys = {
   all: ['dashboard', 'attention'] as const,
   forUser: (userId: string, workspaceIds: Array<string>) =>
     ['dashboard', 'attention', userId, [...workspaceIds].sort()] as const,
+  teamNew: (workspaceIds: Array<string>) =>
+    ['dashboard', 'attention', 'team-new', [...workspaceIds].sort()] as const,
 }
 
 const ATTENTION_SELECT = `
@@ -52,8 +70,8 @@ type Row = {
 export async function getAttentionQueue(
   userId: string,
   workspaceIds: Array<string>,
-): Promise<Array<AttentionItem>> {
-  if (workspaceIds.length === 0) return []
+): Promise<AttentionQueue> {
+  if (workspaceIds.length === 0) return { items: [], total: 0 }
 
   const [conversationsResult, unreadByConversation] = await Promise.all([
     supabase
@@ -118,11 +136,59 @@ export async function getAttentionQueue(
     stale: 2,
   }
 
+  // Within a reason, urgency direction differs: overdue snoozes and stale
+  // threads surface the LONGEST-waiting first; unread surfaces the newest.
+  const timeDirection: Record<AttentionReason, 1 | -1> = {
+    snoozed: 1,
+    unread: -1,
+    stale: 1,
+  }
+
   items.sort((a, b) => {
     const r = reasonOrder[a.reason] - reasonOrder[b.reason]
     if (r !== 0) return r
-    return Date.parse(b.timestamp) - Date.parse(a.timestamp)
+    return (
+      (Date.parse(a.timestamp) - Date.parse(b.timestamp)) *
+      timeDirection[a.reason]
+    )
   })
 
-  return items.slice(0, MAX_ITEMS)
+  return { items: items.slice(0, MAX_ITEMS), total: items.length }
+}
+
+const TEAM_NEW_LIMIT = 5
+
+/**
+ * Unassigned open conversations with the most recent inbound activity —
+ * "what just arrived for the team" as opposed to "what's aging on my plate".
+ */
+export async function getTeamNewQueue(
+  workspaceIds: Array<string>,
+): Promise<Array<TeamNewItem>> {
+  if (workspaceIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(ATTENTION_SELECT)
+    .is('assigned_to', null)
+    .eq('status', 'open')
+    .in('workspace_id', workspaceIds)
+    .not('last_message_at', 'is', null)
+    .order('last_message_at', { ascending: false })
+    .limit(TEAM_NEW_LIMIT)
+
+  if (error) throw error
+
+  const items: Array<TeamNewItem> = []
+  for (const raw of data as Array<Row>) {
+    if (!raw.contact || !raw.channel || !raw.last_message_at) continue
+    items.push({
+      conversationId: raw.id,
+      workspaceId: raw.workspace_id,
+      contactName: raw.contact.name?.trim() || 'Untitled contact',
+      channelType: isChannelType(raw.channel.type) ? raw.channel.type : null,
+      timestamp: raw.last_message_at,
+    })
+  }
+  return items
 }

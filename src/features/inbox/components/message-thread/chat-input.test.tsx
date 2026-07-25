@@ -1,8 +1,8 @@
 import { m } from '@/paraglide/messages'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as HeroUI from '@heroui/react'
 import { ChatInput } from './chat-input'
+import { clearConversationDraft } from '../../utils/conversation-drafts'
 
 type VoiceInputOptions = {
   onResult: (text: string) => void
@@ -50,17 +50,9 @@ vi.mock('@/hooks/use-voice-input', () => ({
   },
 }))
 
-vi.mock('@heroui/react', async () => {
-  const actual = await vi.importActual<typeof HeroUI>('@heroui/react')
-  return {
-    ...actual,
-    toast: {
-      danger: vi.fn(),
-      info: vi.fn(),
-      success: vi.fn(),
-    },
-  }
-})
+vi.mock('@astryxdesign/core/Toast', () => ({
+  useToast: () => vi.fn(),
+}))
 
 const micName = m.inbox_composer_voice_label()
 const sendName = m.inbox_composer_send_label()
@@ -162,5 +154,87 @@ describe('ChatInput voice/send toggle', () => {
 
     fireEvent.keyDown(textarea, { key: 'Enter' })
     expect(onSend).toHaveBeenCalledWith('dictated message', null)
+  })
+
+  it('dictates with the keyboard: Space starts and release stops recording', () => {
+    render(<ChatInput onSend={vi.fn()} />)
+
+    const mic = screen.getByRole('button', { name: micName })
+    fireEvent.keyDown(mic, { key: ' ' })
+    expect(voiceMock.startRecording).toHaveBeenCalledOnce()
+
+    fireEvent.keyUp(mic, { key: ' ' })
+    expect(voiceMock.stopRecording).toHaveBeenCalledOnce()
+  })
+})
+
+describe('ChatInput draft safety', () => {
+  beforeEach(() => {
+    voiceMock.reset()
+    clearConversationDraft('conversation-1')
+  })
+
+  it('never destroys typed text on Escape', () => {
+    render(<ChatInput onSend={vi.fn()} />)
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    act(() => {
+      fireEvent.change(textarea, { target: { value: 'a careful reply' } })
+    })
+
+    fireEvent.keyDown(textarea, { key: 'Escape' })
+    expect(textarea.value).toBe('a careful reply')
+  })
+
+  it('Escape cancels the reply target instead of clearing text', () => {
+    const onCancelReply = vi.fn()
+    render(<ChatInput onSend={vi.fn()} onCancelReply={onCancelReply} />)
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    act(() => {
+      fireEvent.change(textarea, { target: { value: 'draft' } })
+    })
+
+    fireEvent.keyDown(textarea, { key: 'Escape' })
+    expect(onCancelReply).toHaveBeenCalledOnce()
+    expect(textarea.value).toBe('draft')
+  })
+
+  it('restores the draft after the composer remounts (thread switch)', () => {
+    const first = render(
+      <ChatInput onSend={vi.fn()} draftKey="conversation-1" />,
+    )
+
+    act(() => {
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: 'unsent thoughts' },
+      })
+    })
+
+    first.unmount()
+
+    render(<ChatInput onSend={vi.fn()} draftKey="conversation-1" />)
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe(
+      'unsent thoughts',
+    )
+  })
+
+  it('clears the draft once the message is sent', () => {
+    const onSend = vi.fn()
+    const first = render(
+      <ChatInput onSend={onSend} draftKey="conversation-1" />,
+    )
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    act(() => {
+      fireEvent.change(textarea, { target: { value: 'ship it' } })
+    })
+    fireEvent.keyDown(textarea, { key: 'Enter' })
+    expect(onSend).toHaveBeenCalledWith('ship it', null)
+
+    first.unmount()
+
+    render(<ChatInput onSend={vi.fn()} draftKey="conversation-1" />)
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('')
   })
 })

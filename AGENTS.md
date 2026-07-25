@@ -43,7 +43,7 @@ Core stack:
 - React and TypeScript
 - Vite
 - TanStack Router and TanStack Query
-- HeroUI React v3 and Tailwind CSS v4
+- Astryx design system (`@astryxdesign/core`) and Tailwind CSS v4
 - React Hook Form and Zod
 - Supabase
 - Paraglide/Inlang
@@ -148,17 +148,18 @@ Use React Hook Form with Zod validation.
 - Keep submission and mutation behavior in the owning feature.
 - Reuse form fields when reuse improves consistency rather than hiding simple code.
 
-## UI and HeroUI
+## UI and Astryx
 
-Use HeroUI components when they fit the interaction, and Tailwind CSS for layout, spacing, responsive behavior, and focused visual adjustments.
+Use Astryx (`@astryxdesign/core`) components when they fit the interaction, and Tailwind CSS utilities backed by the Astryx tokens (`bg-surface`, `text-primary`, …) for layout, spacing, and responsive behavior.
 
-HeroUI v3 differs from earlier HeroUI/NextUI APIs. For component work:
+For component work:
 
-1. Inspect current usage in this repository.
-2. Check the installed package types.
-3. Consult the official HeroUI v3 documentation or `https://heroui.com/llms-patterns.txt` when external documentation is available.
+1. Discover with the Astryx CLI before writing UI: `pnpm exec astryx build "<idea>"`, then `astryx component <Name>` for the exact props. Do not guess APIs.
+2. Inspect current usage in this repository; check the installed package types when in doubt.
+3. Keep the CSS cascade-layer order in `src/styles.css` intact — Astryx component styles live in the `astryx-base` layer and break silently if Tailwind preflight is layered above them.
+4. Theme comes from `@astryxdesign/theme-neutral` (runtime `<Theme>` in `main.tsx` plus `theme.css`); never override `--color-*` tokens in `:root`.
 
-Do not rely on remembered v2 APIs. Do not run a documentation generator that overwrites this file, and do not paste a generated component index into `AGENTS.md`.
+Do not add compatibility shims that mimic the old HeroUI prop surface. Do not run a documentation generator that overwrites this file, and do not paste a generated component index into `AGENTS.md`.
 
 Follow the design tokens and visual rules already implemented in `src/styles.css` and described in `DESIGN.md`. Avoid one-off colors, spacing scales, and component variants without a clear need.
 

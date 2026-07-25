@@ -1,202 +1,22 @@
-@import 'tailwindcss';
-@import '@heroui/styles';
+/* Cascade-layer order required by Astryx: component styles live in
+   `astryx-base` and must sit ABOVE Tailwind preflight (`base`) but BELOW
+   `components`/`utilities`. Without this declaration, first-appearance
+   ordering lets preflight strip every Astryx component's styling.
+   Sequence comes from @astryxdesign/core/src/tailwind-theme.css. */
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
 
-/* ================================================================
-   Light Theme
-   Palette from custom.css: a blue-tinted neutral scale (hue 253.83)
-   with a Signal Blue accent. Four accent/status lightnesses are
-   darkened from the raw export to clear WCAG AA — each is marked
-   and shows its measured ratio. Prior monochrome theme preserved at
-   styles.previous.css; the export before it at uber.css.
-   ================================================================ */
-:root,
-.light,
-.default,
-[data-theme='light'],
-[data-theme='default'] {
-  color-scheme: light;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+@import '@astryxdesign/theme-neutral/theme.css';
 
-  /* Layout */
-  --spacing: 0.25rem;
-  --radius: 0.5rem;
-  --field-radius: 0.75rem;
-  --border-width: 1px;
-  --field-border-width: 0px;
-  --disabled-opacity: 0.5;
-  --ring-offset-width: 2px;
-  --cursor-interactive: pointer;
-  --cursor-disabled: not-allowed;
-
-  /* Theme Colors (Light Mode) */
-  /* Darkened from custom.css's 62.04%: outbound message bubbles are
-     `bg-accent text-accent-foreground` at 14px, and white on the raw
-     accent measures 3.59:1 — below the 4.5:1 floor for body text on the
-     most-read surface in the product. 56% measures 4.59:1 and keeps
-     accent-on-surface at 4.70:1. Hue and chroma intent unchanged.
-     Known remaining gap: where the accent is used as *text* on a 10% accent
-     tint (`bg-accent/10 text-accent`) it measures 3.45:1 on the sidebar's
-     active nav item and 4.12:1 on the avatar chip — both were ~18:1 when the
-     accent was black. Clearing 4.5:1 in both needs L=49%, which turns the
-     azure into a deep navy; left at 56% so the chosen hue survives. Fix by
-     dropping to 49%, or by giving those two patterns a darker text token. */
-  --accent: oklch(56% 0.177 253.83);
-  --accent-foreground: oklch(99.11% 0 0);
-  --accent-soft-foreground: oklch(56% 0.177 253.83);
-  /* Canvas. Deliberately a step below custom.css's 97.02%: workspace panes
-     carry no border, so this contrast *is* the pane edge. The raw export
-     separates canvas from surface by only 1.087 and the panes disappear;
-     93.5% holds 1.207, matching the previous theme's 1.211. See DESIGN.md,
-     "Panes Have No Border". */
-  --background: oklch(93.5% 0.0064 253.83);
-  --border: oklch(90% 0.0064 253.83);
-  /* Darkened from custom.css's 65.32%: --danger-foreground is now white,
-     and white on the raw danger measures 3.51:1. 59% measures 4.52:1, and
-     danger-as-text on a surface goes 3.59:1 -> 4.62:1 for validation copy. */
-  --danger: oklch(59% 0.236 25.74);
-  --danger-foreground: oklch(99.11% 0 0);
-  --default: oklch(94% 0.0064 253.83);
-  --default-foreground: oklch(21.03% 0.0059 253.83);
-  --field-background: oklch(100% 0 0);
-  --field-border: transparent;
-  --field-foreground: oklch(21.03% 0.0064 253.83);
-  --field-placeholder: oklch(55.17% 0.0128 253.83);
-  --focus: oklch(56% 0.177 253.83);
-  --foreground: oklch(21.03% 0.0064 253.83);
-  --muted: oklch(55.17% 0.0128 253.83);
-  --overlay: oklch(100% 0 0);
-  --overlay-foreground: oklch(21.03% 0.0064 253.83);
-  --scrollbar: oklch(87.1% 0.0064 253.83);
-  --segment: oklch(100% 0 0);
-  --segment-foreground: oklch(21.03% 0.0064 253.83);
-  --separator: oklch(92% 0.0064 253.83);
-  /* Darkened from custom.css's 73.29%: `text-success` is rendered directly
-     on a surface (notification-settings, attention-list) where the raw value
-     measures 2.19:1. 62.5% measures 3.31:1, holding the previous theme's
-     3.29:1 rather than regressing it. */
-  --success: oklch(62.5% 0.169 150.81);
-  --success-foreground: oklch(21.03% 0.0059 150.81);
-  /* Surfaces stay pure neutral. custom.css tints them toward the accent hue
-     (0.0032–0.0051 chroma), which washes the panes blue; the tint belongs to
-     the layout — --background, --border, --separator — not to the sheets
-     sitting on it. Zero chroma here also widens the canvas-to-pane step that
-     stands in for the missing pane border. */
-  --surface: oklch(100% 0 0);
-  --surface-foreground: oklch(21.03% 0.0064 253.83);
-  --surface-secondary: oklch(95.24% 0 0);
-  --surface-secondary-foreground: oklch(21.03% 0.0064 253.83);
-  --surface-tertiary: oklch(93.73% 0 0);
-  --surface-tertiary-foreground: oklch(21.03% 0.0064 253.83);
-  /* Taken from the export unmodified. Warning never renders as text on a
-     light surface — it appears as `bg-warning/10` with muted or
-     warning-foreground copy, and as `dark:text-warning` in dark mode only. */
-  --warning: oklch(78.19% 0.1605 72.33);
-  --warning-foreground: oklch(21.03% 0.0059 72.33);
-
-  /* Misc */
-  /* Left as foreground. This was correct when the accent was pure black (an
-     accent-colored link would have been invisible as a link); now that the
-     accent is a real hue, `var(--accent)` is likely what you want — but it is
-     not in custom.css, so it stays out of this change. */
-  --link: var(--foreground);
-  --backdrop: rgba(0, 0, 0, 0.5);
-  --skeleton-animation: shimmer;
-
-  /* Shadows. Light mode carries elevation; the dark block below flattens
-     them. Never delete the dark overrides — HeroUI's defaults would then
-     give dark mode shadows the system is designed not to have. */
-  --surface-shadow:
-    0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
-    0 0 1px 0 rgba(0, 0, 0, 0.06);
-  --overlay-shadow:
-    0 2px 8px 0 rgba(0, 0, 0, 0.06), 0 14px 28px 0 rgba(0, 0, 0, 0.08);
-  --field-shadow:
-    0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
-    0 0 1px 0 rgba(0, 0, 0, 0.06);
-
-  /* Typography — system stack. custom.css specifies var(--font-inter), but no
-     Inter face is loaded anywhere in this repo and adding a dependency or
-     font asset is out of scope, so --font-sans would resolve to nothing.
-     Swap this line once Inter is actually loaded. */
-  --font-sans:
-    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* ================================================================
-   Dark Theme
-   ================================================================ */
-.dark,
-[data-theme='dark'] {
-  color-scheme: dark;
-
-  /* Theme Colors (Dark Mode) */
-  /* custom.css repeats the light accent here with a white foreground, which
-     would flip outbound bubbles to dark-blue-with-white-text at 3.59:1 and
-     change dark-mode behavior the task did not ask to change. The accent
-     inverts across modes today — dark mode uses a light bubble with dark
-     text — so this keeps that relationship and moves it into the new hue.
-     Measured: 6.61:1 as text on a pane, 7.25:1 for bubble copy. */
-  --accent: oklch(70% 0.16 253.83);
-  --accent-foreground: oklch(16% 0.03 253.83);
-  --accent-soft-foreground: oklch(70% 0.16 253.83);
-  --background: oklch(12% 0.0064 253.83);
-  --border: oklch(28% 0.0064 253.83);
-  /* Darkened from custom.css's 59.4% so white destructive-button copy
-     clears 4.5:1 (4.35:1 -> 4.52:1). */
-  --danger: oklch(58.5% 0.199 24.63);
-  --danger-foreground: oklch(99.11% 0 0);
-  --default: oklch(27.4% 0.0064 253.83);
-  --default-foreground: oklch(99.11% 0 0);
-  --field-background: oklch(21.03% 0 0);
-  --field-border: transparent;
-  --field-foreground: oklch(99.11% 0.0064 253.83);
-  --field-placeholder: oklch(70.5% 0.0128 253.83);
-  --focus: oklch(70% 0.16 253.83);
-  --foreground: oklch(99.11% 0.0064 253.83);
-  --muted: oklch(70.5% 0.0128 253.83);
-  --overlay: oklch(21.03% 0 0);
-  --overlay-foreground: oklch(99.11% 0.0064 253.83);
-  --scrollbar: oklch(70.5% 0.0064 253.83);
-  --segment: oklch(39.64% 0 0);
-  --segment-foreground: oklch(99.11% 0.0064 253.83);
-  --separator: oklch(25% 0.0064 253.83);
-  --success: oklch(73.29% 0.196 150.81);
-  --success-foreground: oklch(21.03% 0.0059 150.81);
-  /* Neutral for the same reason as light mode: the tint is the layout's, not
-     the panes'. Against the blue-tinted canvas this reads as intent rather
-     than as a cast. */
-  --surface: oklch(21.03% 0 0);
-  --surface-foreground: oklch(99.11% 0.0064 253.83);
-  /* Recessed regions must read *below* the pane in dark, matching light, so a
-     surface lifted back up inside them (composer, selected row) reads raised.
-     custom.css's 25.7% sits above --surface and inverts that. */
-  --surface-secondary: oklch(16.5% 0 0);
-  --surface-secondary-foreground: oklch(99.11% 0.0064 253.83);
-  --surface-tertiary: oklch(27.21% 0 0);
-  --surface-tertiary-foreground: oklch(99.11% 0.0064 253.83);
-  --warning: oklch(82.03% 0.1406 76.34);
-  --warning-foreground: oklch(21.03% 0.0059 76.34);
-
-  --surface-shadow: 0 0 0 0 transparent inset;
-  --overlay-shadow: 0 0 0 0 transparent inset;
-  --field-shadow: 0 0 0 0 transparent inset;
-}
-
-/* ================================================================
-   Tailwind token mappings
-   Only tokens NOT already defined by HeroUI's shared/theme.css
-   ================================================================ */
-@theme inline {
-  --font-sans: var(--font-sans);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-focus/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+/* Astryx design tokens → Tailwind utilities (bg-surface, text-primary,
+   text-secondary, bg-accent-bg, border-border, …). Values come from the
+   Astryx theme (theme-neutral), so light/dark and theme switching resolve
+   automatically. */
+@import '@astryxdesign/core/tailwind-theme.css';
+@import 'tailwindcss/utilities.css' layer(utilities);
 
 html,
 body {
@@ -228,15 +48,5 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .unread-count-emphasis {
     animation: none;
-  }
-}
-
-/* HeroUI stacks toast content with `align-items: flex-start`, so the title slot
-   shrink-wraps its children. Our rich message notification is rendered into that
-   slot and needs the full toast width; stretch it so `w-full` resolves correctly.
-   Harmless for plain string toasts (their text stays left-aligned). */
-@layer components {
-  .toast__title {
-    align-self: stretch;
   }
 }

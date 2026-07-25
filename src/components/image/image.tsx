@@ -1,6 +1,6 @@
 import { m } from '@/paraglide/messages'
-import { Button, Skeleton } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Skeleton } from '@astryxdesign/core/Skeleton'
+import { cn } from '@/lib/cn'
 import { ImageOff, ZoomIn } from 'lucide-react'
 import {
   useContext,
@@ -118,12 +118,14 @@ export function Image({
       >
         {/* Loading skeleton */}
         {showSkeleton && !hasError && (
-          <Skeleton className="absolute inset-0 rounded-none" />
+          <span className="absolute inset-0">
+            <Skeleton width="100%" height="100%" radius="none" />
+          </span>
         )}
 
         {/* Error placeholder */}
         {hasError && (
-          <div className="bg-default text-muted absolute inset-0 flex items-center justify-center motion-safe:animate-in motion-safe:fade-in">
+          <div className="bg-muted text-secondary absolute inset-0 flex items-center justify-center motion-safe:animate-in motion-safe:fade-in">
             <ImageOff className="size-5" aria-hidden />
           </div>
         )}
@@ -154,12 +156,11 @@ export function Image({
 
         {/* Preview trigger overlay */}
         {preview && !hasError && (
-          <Button
+          <button
             ref={triggerRef}
             type="button"
-            variant="ghost"
             aria-label={m.image_open_preview()}
-            onPress={handleOpen}
+            onClick={handleOpen}
             className={cn(
               'absolute inset-0 size-auto min-h-0 rounded-none',
               'flex items-center justify-center',
@@ -176,7 +177,7 @@ export function Image({
                 'opacity-0 transition-opacity duration-200 group-hover:opacity-100 motion-reduce:transition-none',
               )}
             />
-          </Button>
+          </button>
         )}
       </div>
 

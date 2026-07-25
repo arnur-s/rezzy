@@ -1,8 +1,6 @@
-import { Button } from '@/components/button'
-import { paneStyle } from '@/components/pane'
 import { m } from '@/paraglide/messages'
-import { Alert, Skeleton } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { Button } from '@astryxdesign/core/Button'
+import { Skeleton } from '@astryxdesign/core/Skeleton'
 import type { ReactNode } from 'react'
 import { MessageThread } from './message-thread/message-thread'
 import { useInboxThreadRouteContext } from './inbox-route-context'
@@ -30,12 +28,9 @@ export function InboxConversationThread({ conversationId }: Props) {
   if (isConversationsError) {
     return (
       <ThreadStateShell>
-        <Alert status="danger">
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Title>{m.inbox_list_load_error()}</Alert.Title>
-          </Alert.Content>
-        </Alert>
+        <div className="bg-error/10 text-error rounded-lg px-4 py-3 text-sm">
+          {m.inbox_list_load_error()}
+        </div>
       </ThreadStateShell>
     )
   }
@@ -64,15 +59,19 @@ function InboxConversationUnavailable({
   return (
     <ThreadStateShell>
       <div className="max-w-sm text-center">
-        <h2 className="text-base font-semibold text-foreground">
+        <h2 className="text-base font-semibold text-primary">
           {m.inbox_thread_unavailable_title()}
         </h2>
-        <p className="mt-2 text-sm text-foreground/60">
+        <p className="text-primary/60 mt-2 text-sm">
           {m.inbox_thread_unavailable_description()}
         </p>
-        <Button className="mt-5" variant="outline" onPress={onBackToList}>
-          {m.inbox_thread_back_to_list()}
-        </Button>
+        <div className="mt-5">
+          <Button
+            label={m.inbox_thread_back_to_list()}
+            variant="secondary"
+            onClick={onBackToList}
+          />
+        </div>
       </div>
     </ThreadStateShell>
   )
@@ -80,24 +79,21 @@ function InboxConversationUnavailable({
 
 function InboxConversationThreadSkeleton() {
   return (
-    <div className={cn(paneStyle.surface, 'h-full w-full')}>
-      <div className="border-border/60 flex h-[64px] shrink-0 items-center gap-3 border-b px-3 py-3 sm:px-6">
-        <Skeleton className="size-10 rounded-full" />
+    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
+      <div className="border-border/60 flex h-16 shrink-0 items-center gap-3 border-b px-3 py-3 sm:px-6">
+        <Skeleton width={40} height={40} radius="rounded" />
         <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-4 w-40 rounded" />
-          <Skeleton className="h-3 w-28 rounded" />
+          <Skeleton width={160} height={16} radius={2} />
+          <Skeleton width={112} height={12} radius={2} />
         </div>
       </div>
-      <div
-        className={cn(
-          paneStyle.recessed,
-          'flex min-h-0 flex-1 flex-col justify-end gap-3 px-4 py-5',
-        )}
-      >
-        <Skeleton className="h-16 w-3/5 rounded-2xl" />
-        <Skeleton className="ml-auto h-20 w-2/3 rounded-2xl" />
-        <Skeleton className="h-12 w-1/2 rounded-2xl" />
-        <Skeleton className="mt-2 h-14 w-full rounded-xl" />
+      <div className="flex min-h-0 flex-1 flex-col justify-end gap-3 px-4 py-5">
+        <Skeleton width="60%" height={64} radius={4} />
+        <div className="ml-auto">
+          <Skeleton width="66%" height={80} radius={4} />
+        </div>
+        <Skeleton width="50%" height={48} radius={4} />
+        <Skeleton width="100%" height={56} radius={4} />
       </div>
     </div>
   )
@@ -105,12 +101,7 @@ function InboxConversationThreadSkeleton() {
 
 function ThreadStateShell({ children }: { children: ReactNode }) {
   return (
-    <div
-      className={cn(
-        paneStyle.surface,
-        'h-full w-full items-center justify-center px-6',
-      )}
-    >
+    <div className="flex h-full w-full flex-col items-center justify-center px-6">
       {children}
     </div>
   )

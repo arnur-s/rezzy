@@ -1,18 +1,20 @@
 import type { ChannelType } from '@/entities/channel'
 import type { MessageRow } from '@/entities/message'
 import { useIsMobile } from '@/hooks/use-is-mobile'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 import { m } from '@/paraglide/messages'
-import { paneStyle } from '@/components/pane'
-import { Button, Typography, toast } from '@heroui/react'
-import { cn } from '@heroui/styles'
-import { XIcon } from 'lucide-react'
+import { IconButton } from '@astryxdesign/core/IconButton'
+import { useToast } from '@astryxdesign/core/Toast'
+import { WifiOffIcon, XIcon } from 'lucide-react'
 
 import { TRANSCRIPT_MEASURE } from './transcript-measure'
 
 import { useSendMessage } from '../../hooks/use-messages'
 import { listPreviewFromMessage } from '../../schemas/message-metadata'
 import { CHANNEL_CAPABILITIES } from '../../utils/channel-capabilities'
+import { isPresentableError } from '../../utils/presentable-error'
 import { ChatInput } from './chat-input'
+import { cn } from '@/lib/cn'
 
 type Props = {
   workspaceId: string
@@ -38,7 +40,9 @@ export function MessageComposer({
   onCancelReply,
 }: Props) {
   const sendMessage = useSendMessage({ workspaceId })
+  const showToast = useToast()
   const isMobile = useIsMobile()
+  const isOnline = useOnlineStatus()
 
   function handleSend(text: string, file: File | null) {
     if (sendMessage.isPending) return
@@ -53,9 +57,16 @@ export function MessageComposer({
       },
       {
         onError: (error) => {
-          toast.danger(m.inbox_composer_send_error(), {
-            description:
-              error instanceof Error ? error.message : m.common_unknown_error(),
+          // Only show errors that were phrased for a person; anything else
+          // (raw Postgres, network noise) gets curated copy, logged raw.
+          if (!isPresentableError(error)) {
+            console.error('Failed to send message', error)
+          }
+          showToast({
+            body: isPresentableError(error)
+              ? error.message
+              : m.inbox_composer_send_error(),
+            type: 'error',
           })
         },
         onSuccess: () => {
@@ -74,54 +85,55 @@ export function MessageComposer({
   const replyPreview = replyTo ? listPreviewFromMessage(replyTo) : null
 
   return (
-    <div className={cn(TRANSCRIPT_MEASURE, 'shrink-0 px-4 pt-3 pb-4 sm:px-6')}>
-      {/* A deliberate work surface, not a strip on the pane edge. It owns the
-          focus indication for the textarea inside it. */}
-      <div
-        className={cn(
-          paneStyle.raised,
-          'focus-within:ring-focus/40 p-2 transition-shadow focus-within:ring-2 motion-reduce:transition-none',
-        )}
-      >
-        {replyTo ? (
-          <div className="border-border/60 bg-foreground/5 mb-2 flex items-center gap-2 rounded-lg border px-3 py-1.5">
-            <div className="flex min-w-0 flex-1 flex-col text-xs">
-              <span className="text-foreground/80 font-medium">
-                {m.inbox_reply_to({ name: replyAuthor ?? '' })}
-              </span>
-              {replyPreview ? (
-                <span className="text-foreground/60 truncate">
-                  {replyPreview}
+    <div className={cn(TRANSCRIPT_MEASURE, 'shrink-0')}>
+      <ChatInput
+        onSend={handleSend}
+        disabled={isDisabled || sendMessage.isPending}
+        blockSend={!isOnline}
+        draftKey={conversationId}
+        onCancelReply={onCancelReply}
+        placeholder={m.inbox_composer_placeholder({ channel: channelLabel })}
+        autoFocusKey={isMobile ? undefined : conversationId}
+        acceptedMimeTypes={acceptedMimeTypes}
+        drawer={
+          !isOnline || replyTo ? (
+            <>
+              {!isOnline ? (
+                <span
+                  role="status"
+                  className="text-secondary flex items-center gap-2 px-1 text-xs"
+                >
+                  <WifiOffIcon className="size-3.5 shrink-0" aria-hidden />
+                  <span>{m.inbox_composer_offline_notice()}</span>
                 </span>
               ) : null}
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-label={m.inbox_reply_cancel()}
-              onPress={() => onCancelReply?.()}
-              className="h-6 min-w-0 shrink-0 px-1"
-            >
-              <XIcon className="size-3.5" aria-hidden />
-            </Button>
-          </div>
-        ) : null}
-
-        <ChatInput
-          onSend={handleSend}
-          disabled={isDisabled || sendMessage.isPending}
-          placeholder={m.inbox_composer_placeholder()}
-          autoFocusKey={isMobile ? undefined : conversationId}
-          acceptedMimeTypes={acceptedMimeTypes}
-        />
-      </div>
-
-      <Typography.Paragraph
-        size="xs"
-        className="text-muted mt-2 px-1 text-center"
-      >
-        {m.inbox_composer_reply_via({ channel: channelLabel })}
-      </Typography.Paragraph>
+              {replyTo ? (
+                <span className="border-border/60 bg-primary/5 flex items-center gap-2 rounded-lg border px-3 py-1.5">
+                  <span className="flex min-w-0 flex-1 flex-col text-xs">
+                    <span className="text-primary/80 font-medium">
+                      {m.inbox_reply_to({ name: replyAuthor ?? '' })}
+                    </span>
+                    {replyPreview ? (
+                      <span className="text-primary/60 truncate">
+                        {replyPreview}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0">
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      label={m.inbox_reply_cancel()}
+                      onClick={() => onCancelReply?.()}
+                      icon={<XIcon className="size-3.5" aria-hidden />}
+                    />
+                  </span>
+                </span>
+              ) : null}
+            </>
+          ) : undefined
+        }
+      />
     </div>
   )
 }

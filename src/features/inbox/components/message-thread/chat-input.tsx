@@ -1,9 +1,12 @@
 import { useVoiceInput } from '@/hooks/use-voice-input'
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
-import { Button, Popover, TextArea, Tooltip, toast } from '@heroui/react'
-import { cn } from '@heroui/styles'
+import { ChatComposer } from '@astryxdesign/core/Chat'
+import { IconButton } from '@astryxdesign/core/IconButton'
+import { Popover } from '@astryxdesign/core/Popover'
+import { useToast } from '@astryxdesign/core/Toast'
 import {
   FileTextIcon,
   MicIcon,
@@ -12,7 +15,13 @@ import {
   SmileIcon,
   XIcon,
 } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  clearConversationDraft,
+  getConversationDraft,
+  setConversationDraft,
+} from '../../utils/conversation-drafts'
 import { containsEmoji } from '../../utils/emoji-text'
 import { FormattedMessageText } from '../formatted-message-text'
 
@@ -42,7 +51,7 @@ function AttachmentChip({ file, onRemove }: AttachmentChipProps) {
   }, [file, isImage])
 
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-foreground/5 px-2 py-1.5 text-xs">
+    <div className="bg-primary/5 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs">
       {isImage && previewUrl ? (
         <img
           src={previewUrl}
@@ -50,26 +59,23 @@ function AttachmentChip({ file, onRemove }: AttachmentChipProps) {
           className="size-8 rounded object-cover"
         />
       ) : (
-        <FileTextIcon className="size-4 shrink-0 text-foreground/60" />
+        <FileTextIcon className="text-primary/60 size-4 shrink-0" />
       )}
-      <span className="max-w-[160px] truncate text-foreground/70">
-        {file.name}
-      </span>
+      <span className="text-primary/70 max-w-40 truncate">{file.name}</span>
       {!isImage && (
-        <span className="text-foreground/40">
+        <span className="text-primary/40">
           {file.type.split('/')[1]?.toUpperCase()}
         </span>
       )}
-      <Button
-        size="sm"
-        variant="ghost"
-        isIconOnly
-        onPress={onRemove}
-        className="ml-auto min-w-0 shrink-0 text-foreground/40 hover:text-foreground"
-        aria-label={m.inbox_composer_remove_attachment_label()}
-      >
-        <XIcon className="size-3.5" />
-      </Button>
+      <span className="ml-auto shrink-0">
+        <IconButton
+          size="sm"
+          variant="ghost"
+          onClick={onRemove}
+          label={m.inbox_composer_remove_attachment_label()}
+          icon={<XIcon className="size-3.5" />}
+        />
+      </span>
     </div>
   )
 }
@@ -85,6 +91,20 @@ export interface ChatInputProps {
    */
   autoFocusKey?: string
   acceptedMimeTypes?: string
+  /** Extra drawer content above the input (e.g. the reply preview bar). */
+  drawer?: ReactNode
+  /**
+   * When set, the typed text is persisted per key so it survives this
+   * component unmounting (a conversation switch) and a full reload.
+   */
+  draftKey?: string
+  /** Escape unwinds the reply target before falling back to blurring. */
+  onCancelReply?: () => void
+  /**
+   * Prevents sending while keeping the field editable (e.g. offline): the
+   * draft keeps accumulating so nothing typed is lost.
+   */
+  blockSend?: boolean
 }
 
 export function ChatInput({
@@ -93,10 +113,17 @@ export function ChatInput({
   placeholder,
   autoFocusKey,
   acceptedMimeTypes = 'image/*,video/*,application/pdf',
+  drawer,
+  draftKey,
+  onCancelReply,
+  blockSend = false,
 }: ChatInputProps) {
-  const [text, setText] = useState('')
+  const [text, setText] = useState(() =>
+    draftKey ? getConversationDraft(draftKey) : '',
+  )
   const [attachment, setAttachment] = useState<File | null>(null)
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
+  const showToast = useToast()
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -121,14 +148,17 @@ export function ChatInput({
     onError: (code) => {
       if (code === 'aborted') return
       if (code === 'no-speech') {
-        toast.info(m.inbox_composer_voice_no_speech())
+        showToast({ body: m.inbox_composer_voice_no_speech(), type: 'info' })
         return
       }
       if (code === 'not-allowed' || code === 'service-not-allowed') {
-        toast.danger(m.inbox_composer_voice_permission_denied())
+        showToast({
+          body: m.inbox_composer_voice_permission_denied(),
+          type: 'error',
+        })
         return
       }
-      toast.danger(m.inbox_composer_voice_error())
+      showToast({ body: m.inbox_composer_voice_error(), type: 'error' })
     },
   })
 
@@ -145,11 +175,20 @@ export function ChatInput({
     if (el) resize(el)
   }, [text])
 
+  // Persist on every keystroke so an unmount (conversation switch) or reload
+  // never loses in-progress text.
+  useEffect(() => {
+    if (draftKey) setConversationDraft(draftKey, text)
+  }, [draftKey, text])
+
   const showInterimOverlay = isRecording && interimText.length > 0
   const showStyledMirror = showInterimOverlay || containsEmoji(text)
 
-  const canSend = (text.trim().length > 0 || attachment !== null) && !disabled
-  const showMicButton = isVoiceSupported && !canSend && !disabled
+  const isEmpty = text.trim().length === 0 && attachment === null
+  const canSend = !isEmpty && !disabled && !blockSend
+  // Mic replaces send only while the field is genuinely empty, so a blocked
+  // send (offline) still reads as a disabled send button, not a mic.
+  const showMicButton = isVoiceSupported && isEmpty && !disabled
   const showListeningHint =
     isRecording && interimText.length === 0 && text.length === 0
   const effectivePlaceholder = showListeningHint
@@ -171,16 +210,34 @@ export function ChatInput({
     textareaRef.current?.focus()
   }
 
+  // Keyboard equivalent of press-and-hold: hold Space/Enter to dictate, release
+  // to stop. Guarded against key auto-repeat re-triggering the start.
+  function handleMicKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (disabled || e.repeat) return
+    if (e.key !== ' ' && e.key !== 'Enter') return
+    e.preventDefault()
+    if (!isRecording) startRecording()
+  }
+
+  function handleMicKeyUp(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key !== ' ' && e.key !== 'Enter') return
+    e.preventDefault()
+    stopRecording()
+  }
+
+  function resetTextareaHeight() {
+    const el = textareaRef.current
+    if (el) el.style.height = ''
+  }
+
   function handleSend() {
     if (!canSend) return
     onSend(text.trim(), attachment)
     setText('')
     setAttachment(null)
-    const el = textareaRef.current
-    if (el) {
-      el.style.height = '36px'
-      el.focus()
-    }
+    if (draftKey) clearConversationDraft(draftKey)
+    resetTextareaHeight()
+    textareaRef.current?.focus()
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -193,10 +250,17 @@ export function ChatInput({
       e.preventDefault()
       handleSend()
     } else if (e.key === 'Escape') {
-      setText('')
-      setAttachment(null)
-      const el = textareaRef.current
-      if (el) el.style.height = '36px'
+      // Escape unwinds one thing at a time and never destroys typed text: drop
+      // the attachment, else cancel the reply target, else just blur.
+      if (attachment) {
+        e.preventDefault()
+        setAttachment(null)
+      } else if (onCancelReply) {
+        e.preventDefault()
+        onCancelReply()
+      } else {
+        textareaRef.current?.blur()
+      }
     }
   }
 
@@ -220,22 +284,30 @@ export function ChatInput({
     textareaRef.current?.focus()
   }
 
-  return (
-    <div className="relative">
-      <div
-        className={cn(
-          'flex flex-col gap-2',
-          disabled && 'pointer-events-none opacity-50',
-        )}
-      >
-        {attachment && (
-          <AttachmentChip
-            file={attachment}
-            onRemove={() => setAttachment(null)}
-          />
-        )}
+  const hasDrawerContent = drawer != null || attachment !== null
 
-        <div className="flex items-end gap-1">
+  return (
+    <ChatComposer
+      value={text}
+      onChange={setText}
+      onSubmit={handleSend}
+      placeholder={effectivePlaceholder}
+      isDisabled={disabled}
+      drawer={
+        hasDrawerContent ? (
+          <span className="flex flex-col gap-2">
+            {drawer}
+            {attachment ? (
+              <AttachmentChip
+                file={attachment}
+                onRemove={() => setAttachment(null)}
+              />
+            ) : null}
+          </span>
+        ) : undefined
+      }
+      input={
+        <span className="relative flex min-w-0 flex-1 items-center">
           <input
             ref={fileInputRef}
             type="file"
@@ -243,133 +315,121 @@ export function ChatInput({
             className="hidden"
             onChange={handleFileInputChange}
           />
-
-          <div className="relative flex min-w-0 flex-1 items-center">
-            {showStyledMirror && (
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm leading-6 wrap-break-word whitespace-pre-wrap"
-              >
-                <FormattedMessageText
-                  as="span"
-                  content={text}
-                  variant="composer"
-                />
-                {showInterimOverlay ? (
-                  <span className="text-foreground/40">{interimText}</span>
-                ) : null}
-              </div>
+          {showStyledMirror && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm leading-6 wrap-break-word whitespace-pre-wrap"
+            >
+              <FormattedMessageText
+                as="span"
+                content={text}
+                variant="composer"
+              />
+              {showInterimOverlay ? (
+                <span className="text-primary/40">{interimText}</span>
+              ) : null}
+            </span>
+          )}
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={text}
+            // A stable accessible name: the placeholder doubles as the visible
+            // label but mutates to "Listening…" mid-dictation, which would
+            // otherwise rename the field under a screen reader.
+            aria-label={m.inbox_composer_message_label()}
+            placeholder={effectivePlaceholder}
+            disabled={disabled}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            className={cn(
+              // Transparent: the composer surface around it is the field.
+              'h-9 min-h-9 w-full resize-none bg-transparent px-2 py-1 text-sm leading-6 shadow-none',
+              'ring-0 outline-none focus:ring-0 focus-visible:ring-0',
+              showStyledMirror && 'caret-primary text-transparent',
             )}
-            <TextArea
-              ref={textareaRef}
-              variant="secondary"
-              style={{ height: '36px', minHeight: '36px' }}
-              rows={1}
-              value={text}
-              placeholder={effectivePlaceholder}
-              disabled={disabled}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              className={cn(
-                // Transparent: the composer surface around it is the field.
-                // A filled input here would be a box inside a box.
-                'w-full bg-transparent shadow-none',
-                // The field spans the whole composer, so its own focus ring
-                // would outline the entire surface in near-black. The composer
-                // shows focus instead (focus-within, below).
-                'ring-0 outline-none focus:ring-0 focus-visible:ring-0',
-                showStyledMirror && 'caret-foreground text-transparent',
-              )}
-            />
-          </div>
-
-          {/* Input affordances group together; the send action is terminal,
-              set apart by a slightly larger gap so it reads as the commit. */}
-          <Button
+          />
+        </span>
+      }
+      headerActions={
+        <>
+          <IconButton
             size="sm"
             variant="ghost"
-            isIconOnly
             isDisabled={disabled}
-            onPress={() => fileInputRef.current?.click()}
-            aria-label={m.inbox_composer_attach_file_label()}
-          >
-            <PaperclipIcon className="size-4" />
-          </Button>
-
-          <Popover isOpen={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
-            <Popover.Trigger>
-              <Button
-                size="sm"
-                variant="ghost"
-                isIconOnly
-                isDisabled={disabled}
-                aria-label={m.inbox_composer_emoji_label()}
-              >
-                <SmileIcon className="size-4" />
-              </Button>
-            </Popover.Trigger>
-            <Popover.Content
-              className="max-w-none border-0 bg-transparent p-0 shadow-none"
-              placement="top"
-            >
-              <Popover.Dialog className="border-0 p-0 shadow-lg">
+            onClick={() => fileInputRef.current?.click()}
+            label={m.inbox_composer_attach_file_label()}
+            icon={<PaperclipIcon className="size-4" />}
+          />
+          <Popover
+            isOpen={emojiPickerOpen}
+            onOpenChange={setEmojiPickerOpen}
+            placement="above"
+            hasCloseButton={false}
+            label={m.inbox_composer_emoji_label()}
+            content={
+              emojiPickerOpen ? (
                 <Picker
                   data={data}
                   onEmojiSelect={handleEmojiSelect}
                   theme="auto"
                 />
-              </Popover.Dialog>
-            </Popover.Content>
-          </Popover>
-
-          {showMicButton ? (
-            <Tooltip>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                isIconOnly
-                isDisabled={disabled}
-                aria-label={m.inbox_composer_voice_label()}
-                aria-pressed={isRecording}
-                onPointerDown={handleMicPointerDown}
-                onPointerUp={handleMicPointerEnd}
-                onPointerCancel={handleMicPointerEnd}
-                onPointerLeave={handleMicPointerEnd}
-                onContextMenu={(e) => e.preventDefault()}
-                className={cn(
-                  'relative ml-1',
-                  isRecording && 'text-danger ring-danger/40 ring-2',
-                )}
-              >
-                {isRecording && (
-                  <span
-                    aria-hidden
-                    className="bg-danger/15 absolute inset-0 animate-ping rounded-full motion-reduce:animate-none"
-                  />
-                )}
-                <MicIcon className="relative size-4" />
-              </Button>
-              <Tooltip.Content>
-                <p>{m.inbox_composer_voice_hold_to_record()}</p>
-              </Tooltip.Content>
-            </Tooltip>
-          ) : (
-            <Button
+              ) : null
+            }
+          >
+            <IconButton
               size="sm"
-              variant="primary"
-              isIconOnly
-              isDisabled={!canSend}
-              onPress={handleSend}
-              aria-label={m.inbox_composer_send_label()}
-              className="ml-1"
-            >
-              <SendIcon className="size-4" />
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+              variant="ghost"
+              isDisabled={disabled}
+              label={m.inbox_composer_emoji_label()}
+              icon={<SmileIcon className="size-4" />}
+            />
+          </Popover>
+        </>
+      }
+      sendButton={
+        // The terminal action swaps: hold-to-record mic while the input is
+        // empty (and voice is supported), the send commit once there is
+        // something to send.
+        showMicButton ? (
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={m.inbox_composer_voice_label()}
+            aria-pressed={isRecording}
+            title={m.inbox_composer_voice_hold_to_record()}
+            onPointerDown={handleMicPointerDown}
+            onPointerUp={handleMicPointerEnd}
+            onPointerCancel={handleMicPointerEnd}
+            onPointerLeave={handleMicPointerEnd}
+            onKeyDown={handleMicKeyDown}
+            onKeyUp={handleMicKeyUp}
+            onContextMenu={(e) => e.preventDefault()}
+            className={cn(
+              'relative inline-flex size-8 items-center justify-center rounded-md text-primary/70 hover:bg-primary/5',
+              isRecording && 'text-error ring-error/40 ring-2',
+            )}
+          >
+            {isRecording && (
+              <span
+                aria-hidden
+                className="bg-error/15 absolute inset-0 animate-ping rounded-full motion-reduce:animate-none"
+              />
+            )}
+            <MicIcon className="relative size-4" />
+          </button>
+        ) : (
+          <IconButton
+            size="sm"
+            variant="primary"
+            isDisabled={!canSend}
+            onClick={handleSend}
+            label={m.inbox_composer_send_label()}
+            icon={<SendIcon className="size-4" />}
+          />
+        )
+      }
+    />
   )
 }

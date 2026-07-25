@@ -4,7 +4,7 @@ import type { ConversationStatus } from '../model/types'
 type StatusMeta = {
   status: ConversationStatus
   labelKey: () => string
-  /** HeroUI Chip color. */
+  /** Semantic status color, mapped to an Astryx Badge variant in the UI. */
   color: 'accent' | 'warning' | 'success' | 'danger' | 'default'
 }
 

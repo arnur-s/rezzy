@@ -8,7 +8,7 @@ import {
   ConnectWhatsapp,
 } from '@/features/channels/components'
 import { m } from '@/paraglide/messages'
-import { Button } from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 
@@ -73,14 +73,12 @@ function RouteComponent() {
     <div className="flex flex-col gap-6">
       <div>
         <Button
+          label={m.channels_back_to_list()}
           variant="ghost"
           size="sm"
-          className="-ml-2"
-          onPress={goBackToList}
-        >
-          <ArrowLeftIcon className="size-4" />
-          <span>{m.channels_back_to_list()}</span>
-        </Button>
+          icon={<ArrowLeftIcon className="size-4" />}
+          onClick={goBackToList}
+        />
       </div>
 
       <div>

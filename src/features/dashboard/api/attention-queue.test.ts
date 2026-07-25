@@ -52,8 +52,27 @@ describe('getAttentionQueue', () => {
     const result = await getAttentionQueue('user-1', ['w1'])
 
     expect(unreadMock.getUnreadCountsForWorkspaces).toHaveBeenCalledWith(['w1'])
-    expect(result).toHaveLength(1)
-    expect(result[0].conversationId).toBe('c1')
-    expect(result[0].reason).toBe('unread')
+    expect(result.items).toHaveLength(1)
+    expect(result.total).toBe(1)
+    expect(result.items[0].conversationId).toBe('c1')
+    expect(result.items[0].reason).toBe('unread')
+  })
+
+  it('surfaces the longest-waiting stale thread first, not the newest', async () => {
+    const days = (n: number) =>
+      new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString()
+    mockConversations([
+      { ...conversation('fresh-stale'), last_message_at: days(3) },
+      { ...conversation('old-stale'), last_message_at: days(70) },
+    ])
+    unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
+
+    const result = await getAttentionQueue('user-1', ['w1'])
+
+    expect(result.items.map((i) => i.conversationId)).toEqual([
+      'old-stale',
+      'fresh-stale',
+    ])
+    expect(result.items.every((i) => i.reason === 'stale')).toBe(true)
   })
 })

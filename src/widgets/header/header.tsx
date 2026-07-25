@@ -1,19 +1,18 @@
-import { getUserDisplayName, getUserInitials } from '@/entities/user'
+import { getUserDisplayName } from '@/entities/user'
 import { UnreadNotificationsPopover } from '@/features/notifications'
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
-import type { Theme } from '@/providers/theme-provider'
 import { useTheme } from '@/providers/theme-provider'
-import { Avatar, Button, Dropdown, Label, Separator } from '@heroui/react'
-import { cn } from '@heroui/styles'
-import { Link, useMatches, useNavigate } from '@tanstack/react-router'
+import { Avatar } from '@astryxdesign/core/Avatar'
+import { BreadcrumbItem, Breadcrumbs } from '@astryxdesign/core/Breadcrumbs'
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
+import { IconButton } from '@astryxdesign/core/IconButton'
+import { TopNav, TopNavHeading } from '@astryxdesign/core/TopNav'
+import { useMatches, useNavigate, useRouter } from '@tanstack/react-router'
 import {
-  CheckIcon,
-  ChevronRightIcon,
   MonitorIcon,
   MoonIcon,
-  PanelLeftIcon,
   SearchIcon,
   SettingsIcon,
   SunIcon,
@@ -21,14 +20,10 @@ import {
 } from 'lucide-react'
 import { useMemo } from 'react'
 
-export interface HeaderProps {
-  className?: string
-  onToggleSidebar?: () => void
-}
-
-export function Header({ className, onToggleSidebar }: HeaderProps) {
+export function Header() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const router = useRouter()
   const matches = useMatches()
 
   const workspaceId = matches.reduce<string | undefined>((found, match) => {
@@ -56,116 +51,85 @@ export function Header({ className, onToggleSidebar }: HeaderProps) {
     : ''
 
   return (
-    <header
-      className={cn(
-        // Sits on the app canvas, not on a surface: no border, no background.
-        // Separation from the panes below comes from the workspace gap.
-        'z-1 flex h-[64px] shrink-0 items-center gap-2 px-3',
-        className,
-      )}
-    >
-      <Button
-        isIconOnly
-        variant="ghost"
-        size="sm"
-        aria-label={m.sidebar_toggle_label()}
-        onPress={onToggleSidebar}
-      >
-        <PanelLeftIcon className="size-4" />
-      </Button>
-      <nav
-        aria-label={m.breadcrumbs_aria_label()}
-        className="text-muted flex min-w-0 flex-1 items-center text-sm"
-      >
-        <ol className="flex min-w-0 flex-wrap items-center gap-1">
-          {items.map((item, index) => {
-            const isLast = index === items.length - 1
-            return (
-              <li key={index} className="flex min-w-0 items-center gap-1">
-                {index > 0 ? (
-                  <ChevronRightIcon
-                    className="text-foreground/30 size-3.5 shrink-0"
-                    aria-hidden
-                  />
-                ) : null}
-                {item.link && !isLast ? (
-                  <Link
-                    to={item.link.to}
-                    params={item.link.params}
-                    className="hover:text-foreground min-w-0 truncate transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span
-                    className={cn(
-                      'min-w-0 truncate',
-                      isLast && 'text-foreground font-semibold',
-                    )}
-                    aria-current={isLast ? 'page' : undefined}
-                  >
-                    {item.label}
-                  </span>
-                )}
-              </li>
-            )
-          })}
-        </ol>
-      </nav>
+    <TopNav
+      label={m.breadcrumbs_aria_label()}
+      heading={
+        <TopNavHeading
+          logo={<BrandLogo />}
+          heading={m.sidebar_brand_label()}
+          headingHref="/"
+        />
+      }
+      startContent={
+        items.length > 0 ? (
+          <Breadcrumbs label={m.breadcrumbs_aria_label()}>
+            {items.map((item, index) => {
+              const isLast = index === items.length - 1
+              const href =
+                item.link && !isLast
+                  ? router.buildLocation({
+                      to: item.link.to,
+                      params: item.link.params ?? {},
+                    }).href
+                  : undefined
+              return (
+                <BreadcrumbItem key={index} href={href} isCurrent={isLast}>
+                  {item.label}
+                </BreadcrumbItem>
+              )
+            })}
+          </Breadcrumbs>
+        ) : undefined
+      }
+      endContent={
+        <>
+          <IconButton
+            variant="ghost"
+            size="sm"
+            label={m.header_search_label()}
+            icon={<SearchIcon className="size-4" />}
+          />
+          <UnreadNotificationsPopover workspaceId={workspaceId} />
 
-      <div className="ml-auto flex shrink-0 items-center gap-1">
-        <Button
-          isIconOnly
-          variant="ghost"
-          size="sm"
-          aria-label={m.header_search_label()}
-        >
-          <SearchIcon className="size-4" />
-        </Button>
-        <UnreadNotificationsPopover workspaceId={workspaceId} />
+          <ThemeSwitcher />
 
-        <ThemeSwitcher />
+          {user ? (
+            <DropdownMenu
+              hasChevron={false}
+              menuWidth={192}
+              button={{
+                label: m.sidebar_user_menu_label(),
+                isIconOnly: true,
+                variant: 'ghost',
+                icon: <Avatar size="sm" name={displayName} />,
+              }}
+              items={[
+                {
+                  label: m.sidebar_profile(),
+                  icon: <UserRoundIcon className="size-4" />,
+                  onClick: () => void navigate({ to: '/profile' }),
+                },
+                {
+                  label: m.sidebar_settings_label(),
+                  icon: <SettingsIcon className="size-4" />,
+                  onClick: () => void navigate({ to: '/settings' }),
+                },
+              ]}
+            />
+          ) : null}
+        </>
+      }
+    />
+  )
+}
 
-        {user ? (
-          <>
-            <Separator orientation="vertical" className="mx-1 h-6" />
-            <Dropdown>
-              <Dropdown.Trigger
-                aria-label={m.sidebar_user_menu_label()}
-                className="ring-offset-background focus-visible:ring-focus shrink-0 rounded-full outline-none focus-visible:ring-2"
-              >
-                <Avatar color="accent" size="sm" variant="soft">
-                  <Avatar.Fallback>
-                    {getUserInitials(displayName)}
-                  </Avatar.Fallback>
-                </Avatar>
-              </Dropdown.Trigger>
-              <Dropdown.Popover className="min-w-48">
-                <Dropdown.Menu
-                  onAction={(key) => {
-                    if (key === 'profile') void navigate({ to: '/profile' })
-                    if (key === 'app-settings')
-                      void navigate({ to: '/settings' })
-                  }}
-                >
-                  <Dropdown.Item id="profile" textValue={m.sidebar_profile()}>
-                    <UserRoundIcon className="size-4" />
-                    <Label>{m.sidebar_profile()}</Label>
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    id="app-settings"
-                    textValue={m.sidebar_settings_label()}
-                  >
-                    <SettingsIcon className="size-4" />
-                    <Label>{m.sidebar_settings_label()}</Label>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
-          </>
-        ) : null}
-      </div>
-    </header>
+function BrandLogo() {
+  return (
+    <span className="bg-accent-bg flex size-6 shrink-0 items-center justify-center rounded-md">
+      <span className="text-on-accent text-sm font-bold">
+        {m.sidebar_brand_label().charAt(0)}
+      </span>
+    </span>
   )
 }
 
@@ -174,38 +138,35 @@ function ThemeSwitcher() {
   const TriggerIcon = resolvedTheme === 'dark' ? MoonIcon : SunIcon
 
   return (
-    <Dropdown>
-      <Dropdown.Trigger
-        aria-label={m.header_theme_label()}
-        className="text-foreground hover:bg-accent/10 dark:hover:bg-accent/15 inline-flex size-8 shrink-0 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        <TriggerIcon className="size-4" />
-      </Dropdown.Trigger>
-      <Dropdown.Popover className="min-w-40">
-        <Dropdown.Menu onAction={(key) => setTheme(key as Theme)}>
-          <Dropdown.Item id="system" textValue={m.header_theme_system()}>
-            <MonitorIcon className="size-4" />
-            <Label className="flex-1">{m.header_theme_system()}</Label>
-            {theme === 'system' && (
-              <CheckIcon className="text-accent ml-auto size-3.5" />
-            )}
-          </Dropdown.Item>
-          <Dropdown.Item id="light" textValue={m.header_theme_light()}>
-            <SunIcon className="size-4" />
-            <Label className="flex-1">{m.header_theme_light()}</Label>
-            {theme === 'light' && (
-              <CheckIcon className="text-accent ml-auto size-3.5" />
-            )}
-          </Dropdown.Item>
-          <Dropdown.Item id="dark" textValue={m.header_theme_dark()}>
-            <MoonIcon className="size-4" />
-            <Label className="flex-1">{m.header_theme_dark()}</Label>
-            {theme === 'dark' && (
-              <CheckIcon className="text-accent ml-auto size-3.5" />
-            )}
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown>
+    <DropdownMenu
+      hasChevron={false}
+      menuWidth={160}
+      button={{
+        label: m.header_theme_label(),
+        isIconOnly: true,
+        variant: 'ghost',
+        icon: <TriggerIcon className="size-4" />,
+      }}
+      items={[
+        {
+          label: m.header_theme_system(),
+          icon: <MonitorIcon className="size-4" />,
+          isDisabled: theme === 'system',
+          onClick: () => setTheme('system'),
+        },
+        {
+          label: m.header_theme_light(),
+          icon: <SunIcon className="size-4" />,
+          isDisabled: theme === 'light',
+          onClick: () => setTheme('light'),
+        },
+        {
+          label: m.header_theme_dark(),
+          icon: <MoonIcon className="size-4" />,
+          isDisabled: theme === 'dark',
+          onClick: () => setTheme('dark'),
+        },
+      ]}
+    />
   )
 }

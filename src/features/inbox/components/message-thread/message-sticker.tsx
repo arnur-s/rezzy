@@ -1,4 +1,4 @@
-import { Skeleton } from '@heroui/react'
+import { Skeleton } from '@astryxdesign/core/Skeleton'
 import LottieDefault from 'lottie-react'
 import type { LottieComponentProps, LottieRefCurrentProps } from 'lottie-react'
 import { useEffect, useRef, useState } from 'react'
@@ -103,7 +103,7 @@ function TgsLottieSticker({
   }
 
   if (isPending) {
-    return <Skeleton className="size-full rounded-md" />
+    return <Skeleton width="100%" height="100%" radius={2} />
   }
 
   return (

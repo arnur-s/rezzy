@@ -1,4 +1,4 @@
-import { cn } from '@heroui/styles'
+import { cn } from '@/lib/cn'
 import type { ReactNode } from 'react'
 
 /**
@@ -20,14 +20,14 @@ import type { ReactNode } from 'react'
 export const paneStyle = {
   /** An elevated pane on the canvas. Owns its own clipping and scroll context. */
   surface:
-    'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg bg-surface shadow-surface md:rounded-xl',
+    'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg bg-surface shadow-md md:rounded-xl',
   /** A recessed region inside a pane. Never elevated, never shadowed. */
-  recessed: 'bg-surface-secondary',
+  recessed: 'bg-muted',
   /**
    * A deliberate work surface lifted back up inside a recessed region (the
    * composer). Borderless like a pane; the shadow and tonal step carry it.
    */
-  raised: 'rounded-xl bg-surface shadow-surface',
+  raised: 'rounded-xl bg-surface shadow-md',
   /**
    * A hairline between adjacent regions *inside* one pane — a pane header and
    * its body, say. This is the only place a line is correct: never around a

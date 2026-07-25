@@ -1,10 +1,9 @@
-import { Button } from '@/components/button'
 import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
-import { Alert } from '@heroui/react'
+import { Button } from '@astryxdesign/core/Button'
+import { ChatTranscript } from './chat-transcript'
 import { MessageThreadEmptyConversation } from './message-thread-empty-conversation'
 import { MessageThreadSkeleton } from './message-thread-skeleton'
-import { VirtualizedMessageList } from './virtualized-message-list'
 
 type Props = {
   conversationId: string
@@ -18,7 +17,7 @@ type Props = {
   onReadAnchorVisible: (lastReadMessageId: string) => void
   hasMoreOlder?: boolean
   isFetchingOlder?: boolean
-  onLoadOlder?: () => void
+  onLoadOlder?: () => Promise<unknown>
   onRetry?: () => void
   isRetrying?: boolean
   /** Bumped when the user re-selects the open conversation: jump to latest. */
@@ -26,7 +25,7 @@ type Props = {
 }
 
 /**
- * Loading / error / empty wrapper around the one virtualized transcript.
+ * Loading / error / empty wrapper around the one chat transcript.
  * Keyed by conversation so switching conversations resets all scroll state.
  */
 export function MessageList({
@@ -41,14 +40,19 @@ export function MessageList({
   onReadAnchorVisible,
   hasMoreOlder = false,
   isFetchingOlder = false,
-  onLoadOlder = () => {},
+  onLoadOlder = () => Promise.resolve(),
   onRetry,
   isRetrying = false,
   scrollToLatestNonce = 0,
 }: Props) {
   if (isLoading) {
+    // items-end: the transcript opens pinned to its latest message, so the
+    // placeholder rests against the composer where content will land.
     return (
-      <div className="flex min-h-0 w-full flex-1 items-start justify-center overflow-hidden">
+      <div className="flex min-h-0 w-full flex-1 items-end justify-center overflow-hidden">
+        <span role="status" className="sr-only">
+          {m.inbox_thread_loading()}
+        </span>
         <MessageThreadSkeleton />
       </div>
     )
@@ -57,22 +61,20 @@ export function MessageList({
   if (isError) {
     return (
       <div className="flex flex-1 items-center justify-center px-6 py-8">
-        <Alert status="danger" className="w-full max-w-md">
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Title>{m.inbox_messages_load_error()}</Alert.Title>
-          </Alert.Content>
+        <div className="bg-error/10 flex w-full max-w-md items-center justify-between gap-2 rounded-lg px-3 py-2">
+          <span className="text-error text-sm">
+            {m.inbox_messages_load_error()}
+          </span>
           {onRetry ? (
             <Button
+              label={m.common_retry()}
               size="sm"
               variant="ghost"
-              onPress={onRetry}
+              onClick={onRetry}
               isLoading={isRetrying}
-            >
-              {m.common_retry()}
-            </Button>
+            />
           ) : null}
-        </Alert>
+        </div>
       </div>
     )
   }
@@ -87,7 +89,7 @@ export function MessageList({
   }
 
   return (
-    <VirtualizedMessageList
+    <ChatTranscript
       key={conversationId}
       messages={resolvedMessages}
       contactName={contactName}
