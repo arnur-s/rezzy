@@ -30,7 +30,7 @@ export function MessageContactCard({ contacts, isOutbound }: Props) {
             <span
               className={cn(
                 'flex size-8 shrink-0 items-center justify-center rounded-full',
-                isOutbound ? 'bg-on-accent/15' : 'bg-primary/10',
+                isOutbound ? 'bg-current/15' : 'bg-primary/10',
               )}
             >
               <UserRoundIcon className="size-4" aria-hidden />
@@ -42,7 +42,7 @@ export function MessageContactCard({ contacts, isOutbound }: Props) {
                   className={cn(
                     'truncate text-xs',
                     isOutbound
-                      ? 'text-on-accent/75'
+                      ? 'text-current/75'
                       : 'text-primary/60',
                   )}
                 >
@@ -54,7 +54,7 @@ export function MessageContactCard({ contacts, isOutbound }: Props) {
                   className={cn(
                     'truncate text-xs',
                     isOutbound
-                      ? 'text-on-accent/75'
+                      ? 'text-current/75'
                       : 'text-primary/60',
                   )}
                 >

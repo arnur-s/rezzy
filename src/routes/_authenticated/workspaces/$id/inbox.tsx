@@ -1,6 +1,4 @@
 import { InboxPage } from '@/features/inbox/components/inbox-page'
-import { workspaceCrumbs } from '@/lib/breadcrumbs'
-import { m } from '@/paraglide/messages'
 import {
   Outlet,
   createFileRoute,
@@ -11,9 +9,6 @@ import { useCallback } from 'react'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/inbox')({
   component: RouteComponent,
-  staticData: {
-    crumb: (ctx) => [...workspaceCrumbs(ctx), { label: m.breadcrumbs_inbox() }],
-  },
 })
 
 function RouteComponent() {

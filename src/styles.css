@@ -9,11 +9,15 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import '@astryxdesign/core/reset.css';
 @import '@astryxdesign/core/astryx.css';
-@import '@astryxdesign/theme-neutral/theme.css';
+/* Gothic theme stylesheet, pre-built from `src/themes/gothic/gothicTheme.ts`
+   by `pnpm exec astryx theme build` (see the `theme:build` script). Shipping
+   the compiled CSS instead of letting <Theme> inject styles at runtime keeps
+   the tokens in the cascade from first paint. */
+@import './themes/gothic/theme.css';
 
 /* Astryx design tokens → Tailwind utilities (bg-surface, text-primary,
    text-secondary, bg-accent-bg, border-border, …). Values come from the
-   Astryx theme (theme-neutral), so light/dark and theme switching resolve
+   active Astryx theme, so light/dark and theme switching resolve
    automatically. */
 @import '@astryxdesign/core/tailwind-theme.css';
 @import 'tailwindcss/utilities.css' layer(utilities);

@@ -1,12 +1,10 @@
 import { NotificationSettings } from '@/features/notifications'
+import { AppearanceSettings } from '@/features/preferences'
 import { m } from '@/paraglide/messages'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/settings')({
   component: RouteComponent,
-  staticData: {
-    crumb: () => ({ label: m.breadcrumbs_settings() }),
-  },
 })
 
 function RouteComponent() {
@@ -22,7 +20,10 @@ function RouteComponent() {
       </header>
 
       {/* No bordered section: the shell's content surface is the container. */}
-      <NotificationSettings />
+      <div className="flex flex-col gap-10">
+        <AppearanceSettings />
+        <NotificationSettings />
+      </div>
     </div>
   )
 }

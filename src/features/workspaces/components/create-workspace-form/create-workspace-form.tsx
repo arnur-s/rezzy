@@ -69,7 +69,7 @@ export function CreateWorkspaceForm({ onSuccess, onCancel }: Props) {
 
   return (
     <form
-      className="flex flex-col gap-4 px-4 pt-6"
+      className="flex flex-col gap-4 px-4 pt-6 overflow-y-auto"
       onSubmit={handleSubmit(onSubmit)}
     >
       <Controller

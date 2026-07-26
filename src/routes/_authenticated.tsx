@@ -1,6 +1,10 @@
+import {
+  OnboardingStatusError,
+  resolveAppGate,
+  useOnboardingStatus,
+} from '@/features/onboarding'
 import { useAuth } from '@/providers/auth-provider'
 import { NotificationsProvider } from '@/providers/notifications-provider'
-import { Header } from '@/widgets/header'
 import { Sidebar } from '@/widgets/sidebar'
 import { AppShell } from '@astryxdesign/core/AppShell'
 import { Spinner } from '@astryxdesign/core/Spinner'
@@ -15,6 +19,7 @@ export const Route = createFileRoute('/_authenticated')({
 
 function RouteComponent() {
   const { isLoading, session } = useAuth()
+  const status = useOnboardingStatus()
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(
     () =>
@@ -26,7 +31,15 @@ function RouteComponent() {
     window.localStorage.setItem(COLLAPSED_STORAGE_KEY, String(isCollapsed))
   }, [isCollapsed])
 
-  if (isLoading) {
+  const gate = resolveAppGate({
+    isAuthLoading: isLoading,
+    hasSession: Boolean(session),
+    isStatusPending: status.isPending,
+    isStatusError: status.isError,
+    isOnboarded: status.isOnboarded,
+  })
+
+  if (gate === 'loading') {
     return (
       <div className="flex h-full items-center justify-center">
         <Spinner size="lg" />
@@ -34,17 +47,37 @@ function RouteComponent() {
     )
   }
 
-  if (!session) {
+  if (gate === 'sign-in') {
     return <Navigate to="/sign-in" />
+  }
+
+  if (gate === 'error') {
+    return (
+      <OnboardingStatusError
+        onRetry={status.refetch}
+        isRetrying={status.isRetrying}
+      />
+    )
+  }
+
+  // No workspace means onboarding never finished; the app has nothing to scope
+  // to yet.
+  if (gate === 'onboarding') {
+    return <Navigate to="/onboarding" />
   }
 
   return (
     <NotificationsProvider>
       <AppShell
         height="fill"
-        variant="elevated"
+        // 'section' rather than 'elevated': the elevated variant separates nav
+        // from content by tone alone, and the current theme resolves the canvas
+        // and the content surface to the same value, so nothing reads.
+        variant="section"
         contentPadding={0}
-        topNav={<Header />}
+        // No top bar: the nav rail carries identity, account, and notifications,
+        // and each page owns its own title. Below the mobile breakpoint AppShell
+        // renders the rail horizontally with a drawer toggle on its own.
         sideNav={
           <Sidebar
             isCollapsed={isCollapsed}

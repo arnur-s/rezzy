@@ -1,9 +1,8 @@
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
-import { Skeleton } from '@astryxdesign/core/Skeleton'
 import type { ReactNode } from 'react'
-import { MessageThread } from './message-thread/message-thread'
 import { useInboxThreadRouteContext } from './inbox-route-context'
+import { MessageThread } from './message-thread/message-thread'
 
 type Props = {
   conversationId: string
@@ -22,7 +21,7 @@ export function InboxConversationThread({ conversationId }: Props) {
   } = useInboxThreadRouteContext()
 
   if (isConversationsPending) {
-    return <InboxConversationThreadSkeleton />
+    return null
   }
 
   if (isConversationsError) {
@@ -74,28 +73,6 @@ function InboxConversationUnavailable({
         </div>
       </div>
     </ThreadStateShell>
-  )
-}
-
-function InboxConversationThreadSkeleton() {
-  return (
-    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
-      <div className="border-border/60 flex h-16 shrink-0 items-center gap-3 border-b px-3 py-3 sm:px-6">
-        <Skeleton width={40} height={40} radius="rounded" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton width={160} height={16} radius={2} />
-          <Skeleton width={112} height={12} radius={2} />
-        </div>
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col justify-end gap-3 px-4 py-5">
-        <Skeleton width="60%" height={64} radius={4} />
-        <div className="ml-auto">
-          <Skeleton width="66%" height={80} radius={4} />
-        </div>
-        <Skeleton width="50%" height={48} radius={4} />
-        <Skeleton width="100%" height={56} radius={4} />
-      </div>
-    </div>
   )
 }
 

@@ -157,8 +157,9 @@ function ReasonChip({
   label: string
 }) {
   const classes: Record<AttentionItem['reason'], string> = {
-    snoozed:
-      'bg-warning/10 text-on-warning border-warning/20 dark:text-warning',
+    // The warning token is deep on parchment and pale on ink, so it reads
+    // against its own 10% tint in both modes — no per-mode override needed.
+    snoozed: 'bg-warning/10 text-warning border-warning/20',
     unread: 'bg-accent-bg/10 text-accent border-accent/20',
     stale: 'bg-primary/[0.05] text-secondary border-primary/10',
   }

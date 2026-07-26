@@ -106,7 +106,7 @@ export function MessageMediaAttachment({
         className={cn(
           'bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-xs',
           isOutbound
-            ? 'bg-accent-muted text-on-accent/90'
+            ? 'bg-current/10 text-current/90'
             : 'text-primary/80',
         )}
       >
@@ -302,7 +302,7 @@ function DocumentFallbackCard({
     <div
       className={cn(
         'bg-muted mt-1 flex max-w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs',
-        isOutbound ? 'bg-accent-muted' : '',
+        isOutbound ? 'bg-current/10' : '',
       )}
     >
       <Icon className="size-8 shrink-0 opacity-70" aria-hidden />

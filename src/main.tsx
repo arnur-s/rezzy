@@ -1,20 +1,24 @@
+import { RouterLink } from '@/components/router-link'
 import { registerNotificationServiceWorker } from '@/features/notifications'
+import { initLocale } from '@/lib/locale'
 import { AuthProvider, useAuth } from '@/providers/auth-provider'
 import { ThemeProvider, useTheme } from '@/providers/theme-provider'
 import { queryClient } from '@/utils/query-client'
-import { RouterLink } from '@/components/router-link'
 import { LayerProvider } from '@astryxdesign/core/Layer'
 import { LinkProvider } from '@astryxdesign/core/Link'
 import { Theme } from '@astryxdesign/core/theme'
-import { neutralTheme } from '@astryxdesign/theme-neutral'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import ReactDOM from 'react-dom/client'
-import { setLocale } from './paraglide/runtime'
 import './styles.css'
+// Pre-built theme (tokens + component overrides already compiled into
+// `themes/gothic/theme.css`, imported from styles.css). Importing the built
+// module instead of the `defineTheme` source avoids runtime style injection.
+import { gothicTheme } from './themes/gothic/gothic'
 import { getRouter } from './utils/router'
 
-setLocale('en')
+// Explicit choice (cookie) wins, then the browser's language, then English.
+initLocale()
 
 // Register the notification service worker (enables Web Push handling and
 // notification clicks). This does not request notification permission.
@@ -30,7 +34,7 @@ function App() {
   const { theme } = useTheme()
 
   return (
-    <Theme theme={neutralTheme} mode={theme}>
+    <Theme theme={gothicTheme} mode={theme}>
       <LayerProvider>
         <RouterProvider
           router={router}

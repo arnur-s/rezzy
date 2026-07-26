@@ -6,21 +6,18 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 import { getMessageNotificationDetails } from '../api/notifications'
-import {
-  DEFAULT_NOTIFICATION_PREFERENCES
-  
-  
+import { showMessageNotificationToast } from '../components/message-notification'
+import type {
+  MessageNotificationRow,
+  NotificationPreferences,
 } from '../model/types'
-import type {MessageNotificationRow, NotificationPreferences} from '../model/types';
-import {
-  showMessageNotificationToast,
-} from '../components/message-notification'
+import { DEFAULT_NOTIFICATION_PREFERENCES } from '../model/types'
 import { NotificationDeduper } from '../utils/dedupe'
 import type { NotificationTarget } from '../utils/notification-navigation'
 import { parseNotificationThreadPath } from '../utils/notification-navigation'
+import { shouldPresentInApp } from '../utils/should-notify'
 import { playNotificationSound, primeNotificationSound } from '../utils/sound'
 import { createTabCoordinator } from '../utils/tab-coordinator'
-import { shouldPresentInApp } from '../utils/should-notify'
 import { useNotificationPreferences } from './use-notification-preferences'
 
 type NotificationContext = {
@@ -52,8 +49,7 @@ export function useMessageNotifications(): void {
   const openWorkspaceId = params.id ?? null
   const openConversationId = params.conversationId ?? null
 
-  const preferences =
-    preferencesQuery.data ?? DEFAULT_NOTIFICATION_PREFERENCES
+  const preferences = preferencesQuery.data ?? DEFAULT_NOTIFICATION_PREFERENCES
 
   // Latest context read by the (once-mounted) realtime callback without
   // forcing the subscription to tear down on every route/preference change.

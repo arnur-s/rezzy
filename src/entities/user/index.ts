@@ -1,1 +1,5 @@
-export { getUserDisplayName, getUserInitials } from './lib/user-display'
+export {
+  getUserDisplayName,
+  getUserInitials,
+  getUserMetadataFullName,
+} from './lib/user-display'

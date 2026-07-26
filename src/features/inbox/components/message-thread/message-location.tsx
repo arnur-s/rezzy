@@ -24,7 +24,7 @@ export function MessageLocation({ location, isOutbound }: Props) {
       rel="noreferrer noopener"
       className={cn(
         'flex items-start gap-2 rounded-lg p-1 text-sm hover:opacity-80',
-        isOutbound ? 'text-on-accent' : 'text-primary',
+        isOutbound ? 'text-current' : 'text-primary',
       )}
     >
       <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -34,7 +34,7 @@ export function MessageLocation({ location, isOutbound }: Props) {
           <span
             className={cn(
               'text-xs',
-              isOutbound ? 'text-on-accent/75' : 'text-primary/60',
+              isOutbound ? 'text-current/75' : 'text-primary/60',
             )}
           >
             {location.address}
@@ -43,7 +43,7 @@ export function MessageLocation({ location, isOutbound }: Props) {
         <span
           className={cn(
             'text-xs underline underline-offset-2',
-            isOutbound ? 'text-on-accent/75' : 'text-primary/60',
+            isOutbound ? 'text-current/75' : 'text-primary/60',
           )}
         >
           {m.inbox_location_open_map()}

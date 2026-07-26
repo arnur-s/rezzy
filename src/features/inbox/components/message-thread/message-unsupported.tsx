@@ -27,7 +27,7 @@ export function MessageUnsupported({ unsupported, messageType, isOutbound }: Pro
         <span
           className={cn(
             'italic',
-            isOutbound ? 'text-on-accent/80' : 'text-primary/70',
+            isOutbound ? 'text-current/80' : 'text-primary/70',
           )}
         >
           {label}
@@ -36,7 +36,7 @@ export function MessageUnsupported({ unsupported, messageType, isOutbound }: Pro
           <span
             className={cn(
               'truncate text-xs',
-              isOutbound ? 'text-on-accent/70' : 'text-primary/55',
+              isOutbound ? 'text-current/70' : 'text-primary/55',
             )}
           >
             {unsupported.preview}

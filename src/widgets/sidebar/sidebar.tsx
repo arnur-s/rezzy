@@ -1,34 +1,38 @@
+import { getUserDisplayName } from '@/entities/user'
 import type { Workspace } from '@/entities/workspace'
 import { resolveWorkspaceIcon } from '@/entities/workspace'
+import { UnreadNotificationsNavItem } from '@/features/notifications'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
+import { Avatar } from '@astryxdesign/core/Avatar'
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
+import type {
+  DropdownMenuButtonProps,
+  DropdownMenuOption,
+} from '@astryxdesign/core/DropdownMenu'
 import { NavHeadingMenu, NavHeadingMenuItem } from '@astryxdesign/core/NavMenu'
 import {
   SideNav,
   SideNavHeading,
   SideNavItem,
   SideNavSection,
+  useSideNavCollapse,
 } from '@astryxdesign/core/SideNav'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { useToast } from '@astryxdesign/core/Toast'
+import { useNavigate, useParams, useRouterState } from '@tanstack/react-router'
 import {
-  useNavigate,
-  useParams,
-  useRouterState,
-} from '@tanstack/react-router'
-import type { SVGProps } from 'react'
-import {
+  ChevronsUpDownIcon,
   HomeIcon,
   LayoutDashboard,
   LayoutGridIcon,
-  Loader2Icon,
   LogOutIcon,
   MessageCircleIcon,
-  PlusIcon,
   SettingsIcon,
+  UserRoundIcon,
 } from 'lucide-react'
 import { DynamicIcon } from 'lucide-react/dynamic'
 import { useMemo, useState } from 'react'
@@ -40,21 +44,22 @@ export interface SidebarProps {
   onNavigate?: () => void
 }
 
+/** Routes scoped to the person rather than to a workspace. */
+const ACCOUNT_ROUTES = ['/settings', '/profile']
+
 export function Sidebar({
   isCollapsed,
   onCollapsedChange,
   onNavigate,
 }: SidebarProps) {
   const navigate = useNavigate()
-  const showToast = useToast()
-  const { user, signOut } = useAuth()
-  const [isSigningOut, setIsSigningOut] = useState(false)
+  const { user } = useAuth()
   const [isCreateWorkspaceOpen, setIsCreateWorkspaceOpen] = useState(false)
 
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const params = useParams({ strict: false })
   const currentWorkspaceId = params.id
-  const isHomeArea = pathname === '/' || pathname === '/settings'
+  const isHomeArea = pathname === '/' || ACCOUNT_ROUTES.includes(pathname)
 
   const workspacesQuery = useWorkspaces(user?.id ?? '')
 
@@ -69,17 +74,6 @@ export function Sidebar({
 
   if (!user) return null
 
-  async function handleSignOut() {
-    try {
-      setIsSigningOut(true)
-      await signOut()
-      await navigate({ to: '/sign-in' })
-    } catch (error) {
-      setIsSigningOut(false)
-      showToast({ body: getErrorMessage(error), type: 'error' })
-    }
-  }
-
   return (
     <>
       <SideNav
@@ -89,7 +83,7 @@ export function Sidebar({
             workspaces={workspacesQuery.data ?? []}
             isLoading={workspacesQuery.isPending}
             isError={workspacesQuery.isError}
-            onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
+            // onCreateWorkspace={() => setIsCreateWorkspaceOpen(true)}
             onSelect={(workspace) => {
               onNavigate?.()
               void navigate({
@@ -104,64 +98,71 @@ export function Sidebar({
           onCollapsedChange,
           buttonLabel: m.sidebar_toggle_label(),
         }}
-        footer={
-          <SideNavItem
-            label={m.sidebar_logout()}
-            icon={isSigningOut ? SpinnerIcon : LogOutIcon}
-            isDisabled={isSigningOut}
-            onClick={() => void handleSignOut()}
-          />
-        }
+        footer={<AccountMenu onNavigate={onNavigate} />}
       >
-        {isHomeArea ? (
-          <SideNavSection title={m.sidebar_workspace_nav_aria_label()} isHeaderHidden>
-            <SideNavItem
-              label={m.sidebar_home_nav_label()}
-              icon={HomeIcon}
-              href="/"
-              isSelected={pathname === '/'}
-              onClick={onNavigate}
-            />
-            <SideNavItem
-              label={m.sidebar_settings_label()}
-              icon={SettingsIcon}
-              href="/settings"
-              isSelected={pathname === '/settings'}
-              onClick={onNavigate}
-            />
-          </SideNavSection>
-        ) : currentWorkspace ? (
-          <SideNavSection title={m.sidebar_workspace_nav_aria_label()} isHeaderHidden>
-            <SideNavItem
-              label={m.sidebar_dashboard_label()}
-              icon={LayoutDashboard}
-              href={`/workspaces/${currentWorkspace.id}`}
-              isSelected={
-                pathname === `/workspaces/${currentWorkspace.id}` ||
-                pathname === `/workspaces/${currentWorkspace.id}/`
-              }
-              onClick={onNavigate}
-            />
-            <SideNavItem
-              label={m.sidebar_inbox_label()}
-              icon={MessageCircleIcon}
-              href={`/workspaces/${currentWorkspace.id}/inbox`}
-              isSelected={pathname.startsWith(
-                `/workspaces/${currentWorkspace.id}/inbox`,
-              )}
-              onClick={onNavigate}
-            />
-            <SideNavItem
-              label={m.common_settings()}
-              icon={SettingsIcon}
-              href={`/workspaces/${currentWorkspace.id}/settings`}
-              isSelected={pathname.startsWith(
-                `/workspaces/${currentWorkspace.id}/settings`,
-              )}
-              onClick={onNavigate}
-            />
-          </SideNavSection>
-        ) : null}
+        <SideNavSection
+          title={m.sidebar_workspace_nav_aria_label()}
+          isHeaderHidden
+        >
+          {isHomeArea ? (
+            <>
+              <SideNavItem
+                label={m.sidebar_home_nav_label()}
+                icon={HomeIcon}
+                href="/"
+                isSelected={pathname === '/'}
+                onClick={onNavigate}
+              />
+              <SideNavItem
+                label={m.sidebar_settings_label()}
+                icon={SettingsIcon}
+                href="/settings"
+                isSelected={pathname === '/settings'}
+                onClick={onNavigate}
+              />
+            </>
+          ) : currentWorkspace ? (
+            <>
+              <SideNavItem
+                label={m.sidebar_dashboard_label()}
+                icon={LayoutDashboard}
+                href={`/workspaces/${currentWorkspace.id}`}
+                isSelected={
+                  pathname === `/workspaces/${currentWorkspace.id}` ||
+                  pathname === `/workspaces/${currentWorkspace.id}/`
+                }
+                onClick={onNavigate}
+              />
+              <SideNavItem
+                label={m.sidebar_inbox_label()}
+                icon={MessageCircleIcon}
+                href={`/workspaces/${currentWorkspace.id}/inbox`}
+                isSelected={pathname.startsWith(
+                  `/workspaces/${currentWorkspace.id}/inbox`,
+                )}
+                onClick={onNavigate}
+              />
+              <SideNavItem
+                label={m.common_settings()}
+                icon={SettingsIcon}
+                href={`/workspaces/${currentWorkspace.id}/settings`}
+                isSelected={pathname.startsWith(
+                  `/workspaces/${currentWorkspace.id}/settings`,
+                )}
+                onClick={onNavigate}
+              />
+            </>
+          ) : null}
+        </SideNavSection>
+
+        {/* Unread spans every workspace, so it sits apart from the nav items
+            that only describe where you currently are. */}
+        <SideNavSection
+          title={m.sidebar_activity_nav_aria_label()}
+          isHeaderHidden
+        >
+          <UnreadNotificationsNavItem workspaceId={currentWorkspaceId} />
+        </SideNavSection>
       </SideNav>
 
       <CreateWorkspaceModal
@@ -172,20 +173,126 @@ export function Sidebar({
   )
 }
 
+/**
+ * Account row in the nav footer: profile, app settings, and sign-out, grouped
+ * because all three are scoped to the person rather than to a workspace.
+ */
+function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
+  const navigate = useNavigate()
+  const showToast = useToast()
+  const { user, signOut } = useAuth()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
+  // The rail's own collapse state, not the prop: SideNav drops this context in
+  // drawer and topbar modes, so the mobile drawer keeps the expanded row even
+  // while the desktop rail is collapsed.
+  const { isCollapsed } = useSideNavCollapse()
+
+  if (!user) return null
+
+  const displayName = getUserDisplayName(user, m.sidebar_unknown_user())
+
+  function go(to: '/profile' | '/settings') {
+    setIsOpen(false)
+    onNavigate?.()
+    void navigate({ to })
+  }
+
+  async function handleSignOut() {
+    setIsOpen(false)
+    try {
+      setIsSigningOut(true)
+      await signOut()
+      await navigate({ to: '/sign-in' })
+    } catch (error) {
+      setIsSigningOut(false)
+      showToast({ body: getErrorMessage(error), type: 'error' })
+    }
+  }
+
+  const items: Array<DropdownMenuOption> = [
+    {
+      label: m.sidebar_profile(),
+      icon: <UserRoundIcon className="size-4" />,
+      onClick: () => go('/profile'),
+    },
+    {
+      label: m.sidebar_settings_label(),
+      icon: <SettingsIcon className="size-4" />,
+      onClick: () => go('/settings'),
+    },
+    // Signing out ends the session rather than moving you inside it, so it is
+    // set apart from the two routes above.
+    { type: 'divider' },
+    {
+      label: m.sidebar_logout(),
+      icon: <LogOutIcon className="size-4" />,
+      onClick: () => void handleSignOut(),
+    },
+  ]
+
+  const button: DropdownMenuButtonProps = isCollapsed
+    ? {
+        label: displayName,
+        variant: 'ghost',
+        icon: <Avatar size="xsm" name={displayName} />,
+        isIconOnly: true,
+        tooltip: displayName,
+        isDisabled: isSigningOut,
+        isLoading: isSigningOut,
+      }
+    : {
+        label: displayName,
+        variant: 'ghost',
+        isDisabled: isSigningOut,
+        isLoading: isSigningOut,
+        // Button centers its content, pads to 12px, and sets medium weight.
+        // The account row has to read as the last nav row instead: 8px inset,
+        // normal weight, and a label that grows so the chevron pins to the
+        // trailing edge. Button's label span is the only handle it exposes for
+        // that last part — it is the first child of the content wrapper here
+        // because this row passes `children` rather than `icon`.
+        className: 'px-2 font-normal [&>span>span:first-child]:grow',
+        children: (
+          <span className="flex min-w-0 items-center gap-2">
+            <Avatar size="xsm" name={displayName} />
+            <span className="truncate">{displayName}</span>
+          </span>
+        ),
+        endContent: (
+          <ChevronsUpDownIcon className="text-secondary size-4" aria-hidden />
+        ),
+      }
+
+  return (
+    <DropdownMenu
+      button={button}
+      items={items}
+      isMenuOpen={isOpen}
+      onOpenChange={setIsOpen}
+      placement="above"
+      // Expanded, the menu inherits the trigger's width so it reads as the row
+      // unfolding. Collapsed, the trigger is a 32px square and needs a floor.
+      menuWidth={isCollapsed ? 200 : undefined}
+      hasChevron={false}
+    />
+  )
+}
+
 function SidebarHeading({
   currentWorkspace,
   workspaces,
   isLoading,
   isError,
   onSelect,
-  onCreateWorkspace,
+  // onCreateWorkspace,
 }: {
   currentWorkspace: Workspace | undefined
   workspaces: Array<Workspace>
   isLoading: boolean
   isError: boolean
   onSelect: (workspace: Workspace) => void
-  onCreateWorkspace: () => void
+  // onCreateWorkspace: () => void
 }) {
   if (isLoading) {
     return <Skeleton width="100%" height={48} radius={3} />
@@ -201,6 +308,11 @@ function SidebarHeading({
 
   return (
     <SideNavHeading
+      // The product name rides above the workspace switcher rather than in its
+      // own row: one identity block, and the only route back to the home area
+      // now that the top bar is gone.
+      superheading={m.sidebar_brand_label()}
+      superheadingHref="/"
       heading={currentWorkspace?.name ?? m.sidebar_select_workspace_label()}
       icon={
         currentWorkspace ? (
@@ -224,11 +336,11 @@ function SidebarHeading({
               onClick={() => onSelect(workspace)}
             />
           ))}
-          <NavHeadingMenuItem
+          {/* <NavHeadingMenuItem
             label={m.workspaces_create_button()}
             icon={<PlusIcon className="size-4" />}
             onClick={onCreateWorkspace}
-          />
+          /> */}
         </NavHeadingMenu>
       }
     />
@@ -266,16 +378,6 @@ function WorkspaceMark({
         aria-hidden
       />
     </span>
-  )
-}
-
-function SpinnerIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <Loader2Icon
-      {...props}
-      className={cn('animate-spin', props.className)}
-      aria-hidden
-    />
   )
 }
 

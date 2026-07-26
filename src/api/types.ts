@@ -979,6 +979,13 @@ export type Database = {
           event_id: string
         }[]
       }
+      complete_onboarding: {
+        Args: { p_full_name: string; p_workspace_name: string }
+        Returns: {
+          is_new: boolean
+          workspace_id: string
+        }[]
+      }
       consume_oauth_state: {
         Args: { p_provider: string; p_state: string }
         Returns: {

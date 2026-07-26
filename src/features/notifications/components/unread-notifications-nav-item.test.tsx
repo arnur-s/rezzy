@@ -7,7 +7,7 @@ import { renderWithQueryClient } from '@/test/render'
 import { QueryClient } from '@tanstack/react-query'
 import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { UnreadNotificationsPopover } from './unread-notifications-popover'
+import { UnreadNotificationsNavItem } from './unread-notifications-nav-item'
 
 const navigateMock = vi.hoisted(() => vi.fn())
 vi.mock('@tanstack/react-router', async () => {
@@ -109,7 +109,7 @@ type Seed = {
   activeWorkspaceId?: string
 }
 
-function renderPopover(seed: Seed) {
+function renderNavItem(seed: Seed) {
   const {
     conversations,
     counts,
@@ -140,22 +140,22 @@ function renderPopover(seed: Seed) {
     )
   }
   return renderWithQueryClient(
-    <UnreadNotificationsPopover workspaceId={activeWorkspaceId} />,
+    <UnreadNotificationsNavItem workspaceId={activeWorkspaceId} />,
     { queryClient },
   )
 }
 
-describe('UnreadNotificationsPopover', () => {
+describe('UnreadNotificationsNavItem', () => {
   beforeEach(() => {
     setLocale('en', { reload: false })
   })
 
   it('hides the badge and shows the empty state when nothing is unread', async () => {
-    renderPopover({
+    renderNavItem({
       conversations: [conversationFixture('c1')],
       counts: { c1: 0 },
     })
-    const trigger = screen.getByLabelText('Notifications')
+    const trigger = screen.getByRole('button', { name: 'Notifications' })
     expect(screen.queryByText('0')).toBeNull()
 
     fireEvent.click(trigger)
@@ -164,7 +164,7 @@ describe('UnreadNotificationsPopover', () => {
   })
 
   it('caps the visible badge at 99+ while announcing the real count', async () => {
-    renderPopover({
+    renderNavItem({
       conversations: [
         conversationFixture('c1'),
         conversationFixture('c2', 'Bob'),
@@ -172,21 +172,21 @@ describe('UnreadNotificationsPopover', () => {
       counts: { c1: 70, c2: 50 },
     })
     expect(await screen.findByText('99+')).toBeTruthy()
-    expect(screen.getByLabelText('Notifications, 120 unread')).toBeTruthy()
+    expect(screen.getByLabelText('120 unread')).toBeTruthy()
   })
 
   // The bug this feature shipped with: the header is global, but the data was
   // scoped to the route's workspace, so the bell was empty on the home page.
   it('shows notifications on routes without an active workspace', async () => {
-    renderPopover({
+    renderNavItem({
       conversations: [conversationFixture('c1')],
       counts: { c1: 3 },
       activeWorkspaceId: undefined,
     })
-    expect(await screen.findByLabelText('Notifications, 3 unread')).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /Notifications/ })).toBeTruthy()
     expect(screen.getByText('3')).toBeTruthy()
 
-    fireEvent.click(screen.getByLabelText('Notifications, 3 unread'))
+    fireEvent.click(screen.getByRole('button', { name: /Notifications/ }))
     expect(await screen.findByText('Alice Johnson')).toBeTruthy()
     // No single inbox would show "all" of a cross-workspace list, so the
     // footer is withheld rather than silently picking one workspace.
@@ -196,12 +196,12 @@ describe('UnreadNotificationsPopover', () => {
   })
 
   it('offers view-all only on a workspace route', async () => {
-    renderPopover({
+    renderNavItem({
       conversations: [conversationFixture('c1')],
       counts: { c1: 3 },
       activeWorkspaceId: 'w1',
     })
-    fireEvent.click(await screen.findByLabelText('Notifications, 3 unread'))
+    fireEvent.click(await screen.findByRole('button', { name: /Notifications/ }))
     fireEvent.click(
       await screen.findByRole('button', { name: 'View all messages' }),
     )
@@ -212,7 +212,7 @@ describe('UnreadNotificationsPopover', () => {
   })
 
   it('aggregates unread across every workspace and labels each row', async () => {
-    renderPopover({
+    renderNavItem({
       conversations: [
         conversationFixture('c1'),
         conversationFixture('c2', 'Bob', { workspace_id: 'w2' }),
@@ -224,15 +224,15 @@ describe('UnreadNotificationsPopover', () => {
       ],
       activeWorkspaceId: undefined,
     })
-    expect(await screen.findByLabelText('Notifications, 5 unread')).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /Notifications/ })).toBeTruthy()
 
-    fireEvent.click(screen.getByLabelText('Notifications, 5 unread'))
+    fireEvent.click(screen.getByRole('button', { name: /Notifications/ }))
     expect(await screen.findByText('Acme Support')).toBeTruthy()
     expect(screen.getByText('Globex')).toBeTruthy()
   })
 
   it('opens a conversation in its own workspace without marking it read', async () => {
-    renderPopover({
+    renderNavItem({
       conversations: [
         conversationFixture('c2', 'Bob', { workspace_id: 'w2' }),
       ],
@@ -243,7 +243,7 @@ describe('UnreadNotificationsPopover', () => {
       ],
       activeWorkspaceId: 'w1',
     })
-    fireEvent.click(await screen.findByLabelText('Notifications, 2 unread'))
+    fireEvent.click(await screen.findByRole('button', { name: /Notifications/ }))
     fireEvent.click(
       await screen.findByRole('button', { name: /Open conversation with Bob/ }),
     )
@@ -259,7 +259,7 @@ describe('UnreadNotificationsPopover', () => {
   })
 
   it('updates the badge when the unread cache changes', async () => {
-    const { queryClient } = renderPopover({
+    const { queryClient } = renderNavItem({
       conversations: [conversationFixture('c1')],
       counts: { c1: 2 },
     })
@@ -272,21 +272,21 @@ describe('UnreadNotificationsPopover', () => {
     })
     // Query observers notify in a batched tick, not synchronously.
     expect(await screen.findByText('5')).toBeTruthy()
-    expect(screen.getByLabelText('Notifications, 5 unread')).toBeTruthy()
+    expect(screen.getByLabelText('5 unread')).toBeTruthy()
   })
 
   it('opens a single realtime channel scoped to the active workspace', () => {
-    renderPopover({ conversations: [], counts: {} })
+    renderNavItem({ conversations: [], counts: {} })
     expect(supabaseMock.channel).toHaveBeenCalledTimes(1)
     expect(supabaseMock.channel).toHaveBeenCalledWith('inbox:conversations:w1')
   })
 
   it('shows the error state with a retry action when loading fails', async () => {
     // No seeded cache: the queries run against the inert Supabase mock and reject.
-    renderWithQueryClient(<UnreadNotificationsPopover workspaceId="w1" />, {
+    renderWithQueryClient(<UnreadNotificationsNavItem workspaceId="w1" />, {
       queryClient: createSeededClient(),
     })
-    fireEvent.click(screen.getByLabelText('Notifications'))
+    fireEvent.click(screen.getByRole('button', { name: 'Notifications' }))
     expect(await screen.findByText('Could not load notifications')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
   })

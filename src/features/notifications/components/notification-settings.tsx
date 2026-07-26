@@ -1,10 +1,10 @@
+import { SettingRow, SettingsSection } from '@/components/settings-section'
 import { m } from '@/paraglide/messages'
 import { Selector } from '@astryxdesign/core/Selector'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { Switch } from '@astryxdesign/core/Switch'
 import { useToast } from '@astryxdesign/core/Toast'
 import { cn } from '@/lib/cn'
-import type { ReactNode } from 'react'
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -36,24 +36,6 @@ const PERMISSION_LABELS: Record<NotificationPermissionState, () => string> = {
   granted: () => m.settings_notifications_permission_granted(),
   denied: () => m.settings_notifications_permission_denied(),
   unsupported: () => m.settings_notifications_permission_unsupported(),
-}
-
-type SettingRowProps = {
-  label: string
-  description: string
-  control: ReactNode
-}
-
-function SettingRow({ label, description, control }: SettingRowProps) {
-  return (
-    <div className="border-border/60 flex items-start justify-between gap-4 border-t py-4 first:border-t-0">
-      <div className="min-w-0">
-        <p className="text-primary text-sm font-medium">{label}</p>
-        <p className="text-secondary mt-0.5 text-sm">{description}</p>
-      </div>
-      <div className="shrink-0">{control}</div>
-    </div>
-  )
 }
 
 function ToggleSwitch({
@@ -149,93 +131,81 @@ export function NotificationSettings() {
     !push.isSupported || push.permission === 'denied' || push.isBusy
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h3 className="text-primary text-base font-semibold">
-          {m.settings_notifications_title()}
-        </h3>
-        <p className="text-secondary mt-1 text-sm">
-          {m.settings_notifications_description()}
-        </p>
+    <SettingsSection
+      title={m.settings_notifications_title()}
+      description={m.settings_notifications_description()}
+    >
+      <SettingRow
+        label={m.settings_notifications_in_app_label()}
+        description={m.settings_notifications_in_app_description()}
+        control={
+          <ToggleSwitch
+            isSelected={preferences.inAppEnabled}
+            onChange={(value) => save({ ...preferences, inAppEnabled: value })}
+            ariaLabel={m.settings_notifications_in_app_label()}
+          />
+        }
+      />
+
+      <SettingRow
+        label={m.settings_notifications_desktop_label()}
+        description={m.settings_notifications_desktop_description()}
+        control={
+          <ToggleSwitch
+            isSelected={desktopOn}
+            onChange={handleDesktopChange}
+            isDisabled={desktopDisabled}
+            ariaLabel={m.settings_notifications_desktop_label()}
+          />
+        }
+      />
+
+      <div className="flex items-center justify-between gap-4 pl-0 text-sm">
+        <span className="text-secondary">
+          {m.settings_notifications_permission_label()}
+        </span>
+        <span
+          className={cn(
+            'font-medium',
+            push.permission === 'granted' && 'text-success',
+            push.permission === 'denied' && 'text-error',
+            (push.permission === 'default' ||
+              push.permission === 'unsupported') &&
+              'text-primary/70',
+          )}
+        >
+          {PERMISSION_LABELS[push.permission]()}
+        </span>
       </div>
 
-      <div className="flex flex-col">
-        <SettingRow
-          label={m.settings_notifications_in_app_label()}
-          description={m.settings_notifications_in_app_description()}
-          control={
-            <ToggleSwitch
-              isSelected={preferences.inAppEnabled}
-              onChange={(value) => save({ ...preferences, inAppEnabled: value })}
-              ariaLabel={m.settings_notifications_in_app_label()}
-            />
-          }
-        />
+      {push.permission === 'denied' ? (
+        <p className="text-secondary mt-1 text-xs">
+          {m.settings_notifications_permission_denied_help()}
+        </p>
+      ) : null}
+      {push.permission === 'unsupported' ? (
+        <p className="text-secondary mt-1 text-xs">
+          {m.settings_notifications_permission_unsupported_help()}
+        </p>
+      ) : null}
 
-        <SettingRow
-          label={m.settings_notifications_desktop_label()}
-          description={m.settings_notifications_desktop_description()}
-          control={
-            <ToggleSwitch
-              isSelected={desktopOn}
-              onChange={handleDesktopChange}
-              isDisabled={desktopDisabled}
-              ariaLabel={m.settings_notifications_desktop_label()}
-            />
-          }
-        />
+      <SettingRow
+        label={m.settings_notifications_sound_label()}
+        description={m.settings_notifications_sound_description()}
+        control={
+          <ToggleSwitch
+            isSelected={preferences.soundEnabled}
+            onChange={(value) => save({ ...preferences, soundEnabled: value })}
+            ariaLabel={m.settings_notifications_sound_label()}
+          />
+        }
+      />
 
-        <div className="flex items-center justify-between gap-4 pl-0 text-sm">
-          <span className="text-secondary">
-            {m.settings_notifications_permission_label()}
-          </span>
-          <span
-            className={cn(
-              'font-medium',
-              push.permission === 'granted' && 'text-success',
-              push.permission === 'denied' && 'text-error',
-              (push.permission === 'default' ||
-                push.permission === 'unsupported') &&
-                'text-primary/70',
-            )}
-          >
-            {PERMISSION_LABELS[push.permission]()}
-          </span>
-        </div>
-
-        {push.permission === 'denied' ? (
-          <p className="text-secondary mt-1 text-xs">
-            {m.settings_notifications_permission_denied_help()}
-          </p>
-        ) : null}
-        {push.permission === 'unsupported' ? (
-          <p className="text-secondary mt-1 text-xs">
-            {m.settings_notifications_permission_unsupported_help()}
-          </p>
-        ) : null}
-
-        <SettingRow
-          label={m.settings_notifications_sound_label()}
-          description={m.settings_notifications_sound_description()}
-          control={
-            <ToggleSwitch
-              isSelected={preferences.soundEnabled}
-              onChange={(value) => save({ ...preferences, soundEnabled: value })}
-              ariaLabel={m.settings_notifications_sound_label()}
-            />
-          }
-        />
-
-        <div className="border-border/60 flex items-start justify-between gap-4 border-t py-4">
-          <div className="min-w-0">
-            <p className="text-primary text-sm font-medium">
-              {m.settings_notifications_preview_label()}
-            </p>
-            <p className="text-secondary mt-0.5 text-sm">
-              {m.settings_notifications_preview_description()}
-            </p>
-          </div>
-          <div className="w-48 shrink-0">
+      <SettingRow
+        label={m.settings_notifications_preview_label()}
+        description={m.settings_notifications_preview_description()}
+        control={
+          <div className="w-48">
             <Selector
               label={m.settings_notifications_preview_label()}
               isLabelHidden
@@ -247,8 +217,8 @@ export function NotificationSettings() {
               }))}
             />
           </div>
-        </div>
-      </div>
-    </div>
+        }
+      />
+    </SettingsSection>
   )
 }

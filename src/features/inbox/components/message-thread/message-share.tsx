@@ -40,7 +40,7 @@ export function MessageShare({ share, story, messageType, isOutbound }: Props) {
           <span
             className={cn(
               'truncate text-xs',
-              isOutbound ? 'text-on-accent/75' : 'text-primary/60',
+              isOutbound ? 'text-current/75' : 'text-primary/60',
             )}
           >
             {share.title}
@@ -50,7 +50,7 @@ export function MessageShare({ share, story, messageType, isOutbound }: Props) {
           <span
             className={cn(
               'text-xs underline underline-offset-2',
-              isOutbound ? 'text-on-accent/75' : 'text-primary/60',
+              isOutbound ? 'text-current/75' : 'text-primary/60',
             )}
           >
             {m.inbox_share_open_link()}

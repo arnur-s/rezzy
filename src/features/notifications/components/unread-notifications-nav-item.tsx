@@ -1,12 +1,14 @@
+import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { Popover } from '@astryxdesign/core/Popover'
+import { SideNavItem } from '@astryxdesign/core/SideNav'
 import { useNavigate } from '@tanstack/react-router'
 import { BellIcon } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import type { RefObject } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useUnreadNotifications } from '../hooks/use-unread-notifications'
-import { capUnreadCount } from '../utils/unread-notifications'
 import { UnreadNotificationItem } from './unread-notification-item'
 import { UnreadNotificationsSkeleton } from './unread-notifications-skeleton'
 
@@ -15,10 +17,16 @@ type Props = {
   workspaceId: string | undefined
 }
 
-/** Header bell with the unread badge and the unread-conversations popover. */
-export function UnreadNotificationsPopover({ workspaceId }: Props) {
+/**
+ * Sidebar row for unread conversations, with the unread count in the trailing
+ * slot and the conversation list in a popover beside the rail.
+ */
+export function UnreadNotificationsNavItem({ workspaceId }: Props) {
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
+  // Sibling mode: the popover anchors to SideNavItem's own button rather than
+  // wrapping it in a div, which would break the nav row's full-width layout.
+  const triggerRef = useRef<HTMLElement>(null)
   const { items, totalUnread, isPending, isError, isRetrying, retry } =
     useUnreadNotifications(workspaceId)
 
@@ -71,7 +79,7 @@ export function UnreadNotificationsPopover({ workspaceId }: Props) {
           </div>
         </div>
       ) : items.length === 0 ? (
-        <div className="px-6 pt-4 pb-6 text-center">
+        <div className="px-6 pt-4 pb-6">
           <p className="text-sm font-medium">
             {m.notifications_popover_empty_title()}
           </p>
@@ -109,36 +117,38 @@ export function UnreadNotificationsPopover({ workspaceId }: Props) {
   )
 
   return (
-    <Popover
-      isOpen={isOpen}
-      onOpenChange={setIsOpen}
-      placement="below"
-      alignment="end"
-      width="min(92vw, 22rem)"
-      label={m.notifications_popover_title()}
-      content={isOpen ? content : null}
-    >
-      <span className="relative inline-flex">
-        <button
-          type="button"
-          aria-label={
-            totalUnread > 0
-              ? m.notifications_bell_with_count_aria({ count: totalUnread })
-              : m.header_notifications_label()
-          }
-          className="text-primary hover:bg-accent-bg/10 dark:hover:bg-accent-bg/15 focus-visible:ring-accent aria-expanded:bg-primary/10 inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2"
-        >
-          <BellIcon className="size-4" />
-        </button>
-        {totalUnread > 0 ? (
-          <span
-            aria-hidden="true"
-            className="bg-accent-bg text-on-accent pointer-events-none absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums"
-          >
-            {capUnreadCount(totalUnread)}
-          </span>
-        ) : null}
-      </span>
-    </Popover>
+    <>
+      <SideNavItem
+        ref={triggerRef}
+        label={m.header_notifications_label()}
+        icon={BellIcon}
+        endContent={
+          <NumericUnreadChip
+            count={totalUnread}
+            capAt99
+            aria-label={m.notifications_unread_count_aria({
+              count: totalUnread,
+            })}
+          />
+        }
+      />
+
+      <Popover
+        // Astryx types anchorRef as a non-null RefObject, but any DOM ref is
+        // null until mount. Popover reads it inside a layout effect and bails
+        // when it is empty, so the narrowing is safe.
+        anchorRef={triggerRef as RefObject<HTMLElement>}
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        placement="end"
+        alignment="start"
+        width="min(92vw, 22rem)"
+        label={m.notifications_popover_title()}
+        // The default close button is first in focus order, so autofocus lands
+        // on it and reveals it. Escape and outside click still dismiss.
+        hasCloseButton={false}
+        content={isOpen ? content : null}
+      />
+    </>
   )
 }

@@ -4,7 +4,10 @@ export function ConversationListSkeleton({ rows = 8 }: { rows?: number }) {
   return (
     <div className="flex flex-col gap-1 px-3 py-2">
       {Array.from({ length: rows }).map((_, idx) => (
-        <div key={idx} className="flex items-start gap-3 rounded-xl px-3 py-2.5">
+        <div
+          key={idx}
+          className="flex items-start gap-3 rounded-xl px-3 py-2.5"
+        >
           <span className="shrink-0">
             <Skeleton width={36} height={36} radius={3} />
           </span>

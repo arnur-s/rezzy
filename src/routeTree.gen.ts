@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PasswordResetRouteImport } from './routes/password-reset'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as InstagramCallbackRouteImport } from './routes/instagram-callback'
 import { Route as E2eMessageListRouteImport } from './routes/e2e-message-list'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -43,6 +44,11 @@ const SignInRoute = SignInRouteImport.update({
 const PasswordResetRoute = PasswordResetRouteImport.update({
   id: '/password-reset',
   path: '/password-reset',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InstagramCallbackRoute = InstagramCallbackRouteImport.update({
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
+  '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
+  '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
+  '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/'
     | '/e2e-message-list'
     | '/instagram-callback'
+    | '/onboarding'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
   to:
     | '/e2e-message-list'
     | '/instagram-callback'
+    | '/onboarding'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/e2e-message-list'
     | '/instagram-callback'
+    | '/onboarding'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   E2eMessageListRoute: typeof E2eMessageListRoute
   InstagramCallbackRoute: typeof InstagramCallbackRoute
+  OnboardingRoute: typeof OnboardingRoute
   PasswordResetRoute: typeof PasswordResetRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
@@ -299,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/password-reset'
       fullPath: '/password-reset'
       preLoaderRoute: typeof PasswordResetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/instagram-callback': {
@@ -498,6 +518,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   E2eMessageListRoute: E2eMessageListRoute,
   InstagramCallbackRoute: InstagramCallbackRoute,
+  OnboardingRoute: OnboardingRoute,
   PasswordResetRoute: PasswordResetRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,

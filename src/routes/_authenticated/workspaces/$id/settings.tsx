@@ -1,5 +1,4 @@
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
-import { workspaceCrumbs } from '@/lib/breadcrumbs'
 import { m } from '@/paraglide/messages'
 import { paneStyle } from '@/components/pane'
 import { Tab, TabList } from '@astryxdesign/core/TabList'
@@ -25,18 +24,6 @@ type SettingsNavItem = {
 export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
   {
     component: RouteComponent,
-    staticData: {
-      crumb: (ctx) => [
-        ...workspaceCrumbs(ctx),
-        {
-          label: m.breadcrumbs_workspace_settings(),
-          link: {
-            to: '/workspaces/$id/settings',
-            params: { id: ctx.params.id },
-          },
-        },
-      ],
-    },
   },
 )
 

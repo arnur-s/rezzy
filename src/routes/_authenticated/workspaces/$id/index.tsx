@@ -1,19 +1,11 @@
 import { useRecordWorkspaceVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { WorkspaceOverviewPage } from '@/features/workspaces/components/workspace-overview-page'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
-import { workspaceCrumbs } from '@/lib/breadcrumbs'
-import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/')({
   component: RouteComponent,
-  staticData: {
-    crumb: (ctx) => [
-      ...workspaceCrumbs(ctx),
-      { label: m.breadcrumbs_dashboard() },
-    ],
-  },
 })
 
 function RouteComponent() {

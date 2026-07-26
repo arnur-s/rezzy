@@ -19,6 +19,10 @@ export default [
       'src/api/types.ts',
       'src/paraglide/**',
       'src/routeTree.gen.ts',
+      // Output of `pnpm theme:build` (astryx theme build); theme sources are
+      // the .ts/.tsx files next to them.
+      'src/themes/**/*.js',
+      'src/themes/**/*.d.ts',
       'supabase/functions/**',
       'public/**',
     ],
