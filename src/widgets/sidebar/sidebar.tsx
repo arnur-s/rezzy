@@ -15,7 +15,6 @@ import type {
   DropdownMenuOption,
 } from '@astryxdesign/core/DropdownMenu'
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
-import { NavHeadingMenu, NavHeadingMenuItem } from '@astryxdesign/core/NavMenu'
 import {
   SideNav,
   SideNavHeading,
@@ -38,6 +37,7 @@ import {
   UserRoundIcon,
 } from 'lucide-react'
 import { DynamicIcon } from 'lucide-react/dynamic'
+import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
 export interface SidebarProps {
@@ -94,8 +94,30 @@ export function Sidebar({
   return (
     <>
       <SideNav
+        // Identity only. The workspace switcher used to share this row; it now
+        // sits in the nav body where it belongs — it is a destination you
+        // change, not the name of the product.
         header={
-          <SidebarHeading
+          <SideNavHeading
+            heading={m.sidebar_brand_label()}
+            headingHref="/"
+            icon={isCollapsed ? <BrandMark /> : undefined}
+          />
+        }
+        collapsible={{
+          isCollapsed,
+          onCollapsedChange,
+          buttonLabel: m.sidebar_toggle_label(),
+        }}
+        footer={<AccountMenu onNavigate={onNavigate} />}
+      >
+        <NavSectionRule />
+
+        <SideNavSection
+          title={m.sidebar_workspace_nav_aria_label()}
+          isHeaderHidden
+        >
+          <WorkspaceSwitcher
             currentWorkspace={currentWorkspace}
             workspaces={workspacesQuery.data ?? []}
             isLoading={workspacesQuery.isPending}
@@ -109,37 +131,9 @@ export function Sidebar({
               })
             }}
           />
-        }
-        collapsible={{
-          isCollapsed,
-          onCollapsedChange,
-          buttonLabel: m.sidebar_toggle_label(),
-        }}
-        footer={<AccountMenu onNavigate={onNavigate} />}
-      >
-        <SideNavSection
-          title={m.sidebar_workspace_nav_aria_label()}
-          isHeaderHidden
-        >
-          {isHomeArea ? (
-            <>
-              <SideNavItem
-                label={m.sidebar_home_nav_label()}
-                icon={HomeIcon}
-                href="/"
-                isSelected={pathname === '/'}
-                onClick={onNavigate}
-              />
-              <SideNavItem
-                label={m.sidebar_settings_label()}
-                icon={SettingsIcon}
-                href="/settings"
-                isSelected={isAccountRoute(pathname)}
-                onClick={onNavigate}
-              />
-            </>
-          ) : currentWorkspace ? (
-            <>
+
+          {currentWorkspace ? (
+            <WorkspaceItemGroup label={currentWorkspace.name}>
               <SideNavItem
                 label={m.sidebar_dashboard_label()}
                 icon={LayoutDashboard}
@@ -175,19 +169,25 @@ export function Sidebar({
                 )}
                 onClick={onNavigate}
               />
-            </>
+            </WorkspaceItemGroup>
           ) : null}
         </SideNavSection>
 
-        {/* Unread spans every workspace, so it sits apart from the nav items
-            that only describe where you currently are. The rule is skipped
-            when nothing renders above it. */}
-        {isHomeArea || currentWorkspace ? <NavSectionRule /> : null}
+        {/* Home and unread both span every workspace, so they sit apart from
+            the block above, which only describes where you currently are. */}
+        <NavSectionRule />
 
         <SideNavSection
-          title={m.sidebar_activity_nav_aria_label()}
+          title={m.sidebar_general_nav_aria_label()}
           isHeaderHidden
         >
+          <SideNavItem
+            label={m.sidebar_home_nav_label()}
+            icon={HomeIcon}
+            href="/"
+            isSelected={pathname === '/'}
+            onClick={onNavigate}
+          />
           <UnreadNotificationsNavItem workspaceId={currentWorkspaceId} />
         </SideNavSection>
       </SideNav>
@@ -322,7 +322,29 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-function SidebarHeading({
+/**
+ * Product mark. Carries the rail's identity while collapsed, where
+ * SideNavHeading drops its text — and where the wordmark alone would leave the
+ * header empty. The quiet `bg-primary/5` plate keeps it below the workspace
+ * mark in the same column: the product is a constant, the workspace is the
+ * thing you are currently inside.
+ */
+function BrandMark() {
+  return (
+    <span className="text-primary flex size-6 shrink-0 items-center justify-center leading-none font-semibold">
+      R
+    </span>
+  )
+}
+
+/**
+ * Workspace row at the head of the nav body, built on the same construction as
+ * the account row in the footer: a ghost button restyled to read as a nav row,
+ * with a chevron pinned to the trailing edge and a menu unfolding from it. The
+ * rail's two entity rows — the workspace you are in, the person you are — then
+ * bracket the navigation between them in one shared vocabulary.
+ */
+function WorkspaceSwitcher({
   currentWorkspace,
   workspaces,
   isLoading,
@@ -337,8 +359,14 @@ function SidebarHeading({
   onSelect: (workspace: Workspace) => void
   // onCreateWorkspace: () => void
 }) {
+  const [isOpen, setIsOpen] = useState(false)
+  // The rail's own collapse state, not the prop: SideNav drops this context in
+  // drawer and topbar modes, so the mobile drawer keeps the expanded row even
+  // while the desktop rail is collapsed.
+  const { isCollapsed } = useSideNavCollapse()
+
   if (isLoading) {
-    return <Skeleton width="100%" height={48} radius={3} />
+    return <Skeleton width="100%" height={32} radius={3} />
   }
 
   if (isError) {
@@ -349,44 +377,104 @@ function SidebarHeading({
     )
   }
 
+  const label = currentWorkspace?.name ?? m.sidebar_select_workspace_label()
+  const mark = currentWorkspace ? (
+    <WorkspaceMark icon={currentWorkspace.icon} isActive />
+  ) : (
+    <WorkspacesMark />
+  )
+
+  const items: Array<DropdownMenuOption> = workspaces.map((workspace) => ({
+    label: workspace.name,
+    icon: (
+      <WorkspaceMark
+        icon={workspace.icon}
+        isActive={workspace.id === currentWorkspace?.id}
+      />
+    ),
+    onClick: () => {
+      setIsOpen(false)
+      onSelect(workspace)
+    },
+  }))
+  // items.push({
+  //   label: m.workspaces_create_button(),
+  //   icon: <PlusIcon className="size-4" />,
+  //   onClick: onCreateWorkspace,
+  // })
+
+  const button: DropdownMenuButtonProps = isCollapsed
+    ? {
+        label,
+        variant: 'ghost',
+        icon: mark,
+        isIconOnly: true,
+        tooltip: label,
+      }
+    : {
+        label,
+        variant: 'ghost',
+        // Same handles as the account row: 8px inset instead of Button's 12px,
+        // and the label span grown so the chevron pins to the trailing edge.
+        // The name keeps medium weight where the account row runs normal — it
+        // is the one row that names what everything under it belongs to.
+        className: 'px-2 [&>span>span:first-child]:grow',
+        children: (
+          <span className="flex min-w-0 items-center gap-2">
+            {mark}
+            <span className="truncate font-medium">{label}</span>
+          </span>
+        ),
+        endContent: (
+          <ChevronsUpDownIcon className="text-secondary size-4" aria-hidden />
+        ),
+      }
+
   return (
-    <SideNavHeading
-      // The product name rides above the workspace switcher rather than in its
-      // own row: one identity block, and the only route back to the home area
-      // now that the top bar is gone.
-      superheading={m.sidebar_brand_label()}
-      superheadingHref="/"
-      heading={currentWorkspace?.name ?? m.sidebar_select_workspace_label()}
-      icon={
-        currentWorkspace ? (
-          <WorkspaceMark icon={currentWorkspace.icon} isActive />
-        ) : (
-          <WorkspacesMark />
-        )
-      }
-      menu={
-        <NavHeadingMenu>
-          {workspaces.map((workspace) => (
-            <NavHeadingMenuItem
-              key={workspace.id}
-              label={workspace.name}
-              icon={
-                <WorkspaceMark
-                  icon={workspace.icon}
-                  isActive={workspace.id === currentWorkspace?.id}
-                />
-              }
-              onClick={() => onSelect(workspace)}
-            />
-          ))}
-          {/* <NavHeadingMenuItem
-            label={m.workspaces_create_button()}
-            icon={<PlusIcon className="size-4" />}
-            onClick={onCreateWorkspace}
-          /> */}
-        </NavHeadingMenu>
-      }
+    <DropdownMenu
+      button={button}
+      items={items}
+      isMenuOpen={isOpen}
+      onOpenChange={setIsOpen}
+      placement="below"
+      // Expanded, the menu inherits the trigger's width so it reads as the row
+      // unfolding. Collapsed, the trigger is a 32px square and needs a floor.
+      menuWidth={isCollapsed ? 220 : undefined}
+      hasChevron={false}
     />
+  )
+}
+
+/**
+ * The selected workspace's destinations, bracketed to the switcher above them
+ * by a hairline dropped from the workspace mark's axis. The indent is what
+ * says "these belong to that workspace", so the group never has to repeat the
+ * name two rows below the row that already shows it — the name goes to the
+ * accessible group label instead. Collapsed, there is no text to indent
+ * against, so the bracket is dropped and the icons stay on the rail's axis.
+ */
+function WorkspaceItemGroup({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  const { isCollapsed } = useSideNavCollapse()
+
+  return (
+    <SideNavSection
+      title={label}
+      isHeaderHidden
+      // `ml-5` drops the rule on the workspace mark's own centre axis, so the
+      // bracket reads as descending from that plate. It runs at full
+      // `border-border` rather than the `/60` the horizontal rules use: the
+      // same alpha that divides two regions across 244px vanishes over an 80px
+      // vertical, so matching the number would not match the weight.
+      className={isCollapsed ? undefined : 'border-border ml-5 border-l pl-1.5'}
+    >
+      {children}
+    </SideNavSection>
   )
 }
 

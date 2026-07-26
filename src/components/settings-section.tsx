@@ -1,24 +1,13 @@
 import type { ReactNode } from 'react'
 
 type SettingsSectionProps = {
-  title: string
-  description: string
   children: ReactNode
 }
 
 /** A titled group of setting rows on a settings page. */
-export function SettingsSection({
-  title,
-  description,
-  children,
-}: SettingsSectionProps) {
+export function SettingsSection({ children }: SettingsSectionProps) {
   return (
-    <section className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-primary text-base font-semibold">{title}</h2>
-        <p className="text-secondary mt-1 text-sm">{description}</p>
-      </div>
-
+    <section>
       <div className="flex flex-col">{children}</div>
     </section>
   )
@@ -50,9 +39,9 @@ export function SettingRow({
       <div className="min-w-0">
         <p className="text-primary text-sm font-medium">{label}</p>
         <p className="text-secondary mt-0.5 text-sm">{description}</p>
-        {scope ? (
-          <p className="text-secondary/80 mt-1 text-xs">{scope}</p>
-        ) : null}
+        {/* No alpha step: `text-secondary/80` composites to 4.38:1 on the
+            light page. Size already separates this from the description. */}
+        {scope ? <p className="text-secondary mt-1 text-xs">{scope}</p> : null}
       </div>
       <div className="shrink-0">{control}</div>
     </div>

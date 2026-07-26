@@ -50,6 +50,9 @@ importers:
       '@tanstack/router-plugin':
         specifier: ^1.132.0
         version: 1.167.34(@tanstack/react-router@1.170.18(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(vite@8.0.10(@types/node@22.19.17)(jiti@2.6.1))
+      libphonenumber-js:
+        specifier: ^1.13.9
+        version: 1.13.9
       lottie-react:
         specifier: ^2.4.1
         version: 2.4.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -2125,6 +2128,9 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
+
+  libphonenumber-js@1.13.9:
+    resolution: {integrity: sha512-VNS5vWMM7r0P66BYv+TQJATxExEgLxN+34hfHDVhDkUsGAE4cRg0shCNSLTXNKm7nIUscC7AfB51TjxEeF7msQ==}
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -4735,6 +4741,8 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  libphonenumber-js@1.13.9: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true

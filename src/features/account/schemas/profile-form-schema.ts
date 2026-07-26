@@ -1,14 +1,7 @@
 import { m } from '@/paraglide/messages'
 import { z } from 'zod'
+import { isValidPhone, toE164 } from '../lib/phone'
 import type { ProfileIdentityInput } from '../model/types'
-
-/** Digits with the punctuation people actually type around them. */
-const PHONE_SHAPE = /^[+(\d][\d\s().-]*$/
-
-function isPlausiblePhone(value: string) {
-  if (!PHONE_SHAPE.test(value)) return false
-  return (value.match(/\d/g)?.length ?? 0) >= 3
-}
 
 // Built per render so validation messages follow the active locale, matching
 // the sign-in route and the onboarding form. Lengths mirror the column
@@ -25,11 +18,14 @@ export function createProfileFormSchema() {
       .min(1, m.profile_full_name_required())
       .max(80, m.profile_full_name_max()),
     jobTitle: z.string().trim().max(80, m.profile_job_title_max()),
+    // Validated against real numbering plans rather than a shape regex, so
+    // `+7 776 521 82 13` passes and `+7 1` does not. The length cap still
+    // applies because it mirrors the column constraint.
     phone: z
       .string()
       .trim()
       .max(32, m.profile_phone_max())
-      .refine((value) => value === '' || isPlausiblePhone(value), {
+      .refine((value) => value === '' || isValidPhone(value), {
         message: m.profile_phone_invalid(),
       }),
     timezone: z.string().trim().max(64, m.profile_timezone_max()),
@@ -51,7 +47,9 @@ export function toProfileIdentityInput(
   return {
     fullName: values.fullName.trim(),
     jobTitle: orNull(values.jobTitle),
-    phone: orNull(values.phone),
+    // E.164, so the column holds one format rather than however each member
+    // happened to type their number.
+    phone: toE164(values.phone),
     timezone: orNull(values.timezone),
   }
 }

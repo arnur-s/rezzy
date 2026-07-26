@@ -68,13 +68,13 @@ export function WorkspaceCard({ workspace, stats }: Props) {
 
       {stats ? (
         <div className="mt-3 space-y-3">
-          <p className="text-secondary text-sm">
+          {/* Spacing separates the three counts; a dot between each turned the
+              row into punctuation soup. */}
+          <p className="text-secondary flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm tabular-nums">
             <span>{m.dashboard_workspace_card_open({ count: stats.open })}</span>
-            <span className="text-primary/30 mx-1.5">·</span>
             <span>
               {m.dashboard_workspace_card_channels({ count: stats.channels })}
             </span>
-            <span className="text-primary/30 mx-1.5">·</span>
             <span>
               {m.dashboard_workspace_card_contacts({ count: stats.contacts })}
             </span>

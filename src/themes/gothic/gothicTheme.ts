@@ -227,10 +227,15 @@ export const gothicTheme = defineTheme({
     '--color-text-teal': '#174a40',
 
     // Yellow (aged gold)
+    // Text is the T15 step, not the T20 every other chip uses. The yellow ramp
+    // duplicates `#6c5010` at T20 and T25, so its "T20" sits a full step
+    // brighter than its siblings and the label landed at 4.32:1 on the chip in
+    // both modes. T15 puts it at 6.70:1, inside the 6.3-6.6 band the other
+    // chips already occupy.
     '--color-background-yellow': '#d3c490',
     '--color-border-yellow': '#b6a775',
     '--color-icon-yellow': '#876515',
-    '--color-text-yellow': '#6c5010',
+    '--color-text-yellow': '#4a3500',
 
     // =========================================================================
     // Radius — subtle rounding (original gothic)
@@ -267,6 +272,36 @@ export const gothicTheme = defineTheme({
       'inset 0px 0px 0px 1px light-dark(#87651550, #d6b56a50)',
     '--shadow-inset-error':
       'inset 0px 0px 0px 1px light-dark(#8d2d4c50, #d4485150)',
+
+    // =========================================================================
+    // Semantic type scale — the Two-Size Rule, applied to Astryx as well
+    //
+    // `typography.scale` generates every `--text-*` token off `--font-size-base`
+    // (16px here, chosen so the blackletter display sizes read large enough).
+    // That put `--text-label-size` at 16px, so every Astryx field label, and
+    // every Button label, rendered at the same size as a page `<h1>` and one
+    // step *above* the 13px body text beside it. The page title had no lead
+    // over a field label, and the only differentiated text on a form was its
+    // helper copy — the least important thing on screen.
+    //
+    // One step down puts Astryx labels on the same 13px as `text-sm` and gives
+    // 16px back to page titles alone.
+    //
+    // Two tokens deliberately keep their generated values:
+    //
+    //   --text-body-size (16px) sizes the value inside a field, and Safari on
+    //   iOS force-zooms the viewport when a focused input is under 16px. Label
+    //   and value are *meant* to differ here — the data is the loud part, its
+    //   name is the quiet part.
+    //
+    //   --text-supporting-size (13px) is field description copy. 10px is this
+    //   system's tier for timestamps, chips, and kickers — fragments, not
+    //   sentences — and a description dropped to it reads as fine print. It
+    //   separates from the 13px label by weight (400 vs 500) and by
+    //   `--color-text-secondary`, which is how this system is documented to
+    //   escalate anyway.
+    // =========================================================================
+    '--text-label-size': 'var(--font-size-sm)',
   },
 
   components: {

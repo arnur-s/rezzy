@@ -52,6 +52,7 @@
     "@tanstack/react-router-devtools": "^1.167.0",
     "@tanstack/react-virtual": "^3.14.8",
     "@tanstack/router-plugin": "^1.132.0",
+    "libphonenumber-js": "^1.13.9",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.545.0",
     "playwright": "^1.60.0",

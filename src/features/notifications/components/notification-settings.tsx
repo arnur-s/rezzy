@@ -13,15 +13,15 @@ import {
   useUpdateNotificationPreferences,
 } from '../hooks/use-notification-preferences'
 import { usePushSubscription } from '../hooks/use-push-subscription'
-import {
-  DEFAULT_NOTIFICATION_PREFERENCES,
-  MESSAGE_PREVIEW_MODES,
-  isMessagePreviewMode,
-} from '../model/types'
 import type {
   MessagePreviewMode,
   NotificationPermissionState,
   NotificationPreferences,
+} from '../model/types'
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  MESSAGE_PREVIEW_MODES,
+  isMessagePreviewMode,
 } from '../model/types'
 
 function errorDescription(error: unknown): string {
@@ -120,8 +120,7 @@ export function NotificationSettings() {
 
   const permissionGranted = push.permission === 'granted'
   const desktopOn = preferences.desktopEnabled && permissionGranted
-  const isPermissionBlocked =
-    !push.isSupported || push.permission === 'denied'
+  const isPermissionBlocked = !push.isSupported || push.permission === 'denied'
   const desktopDisabled = isPermissionBlocked || push.isBusy
 
   const permissionHelp =
@@ -133,10 +132,7 @@ export function NotificationSettings() {
 
   return (
     <div className="flex flex-col gap-10">
-      <SettingsSection
-        title={m.settings_notifications_title()}
-        description={m.settings_notifications_description()}
-      >
+      <SettingsSection>
         {preferencesQuery.isError ? (
           <Banner
             status="error"
@@ -211,16 +207,15 @@ export function NotificationSettings() {
 
       {/* Kept apart from the account preferences above: this one belongs to the
           browser, and its permission is the browser's to grant, not ours. */}
-      <SettingsSection
-        title={m.settings_notifications_device_title()}
-        description={m.settings_notifications_device_description()}
-      >
+      <SettingsSection>
         <SettingRow
           label={m.settings_notifications_desktop_label()}
           description={m.settings_notifications_desktop_description()}
           scope={m.settings_scope_this_browser()}
           control={
-            <div aria-describedby={permissionHelp ? permissionHelpId : undefined}>
+            <div
+              aria-describedby={permissionHelp ? permissionHelpId : undefined}
+            >
               <ToggleSwitch
                 isSelected={desktopOn}
                 onChange={handleDesktopChange}

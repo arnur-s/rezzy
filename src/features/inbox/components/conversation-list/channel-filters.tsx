@@ -78,7 +78,9 @@ export function ChannelFilters({
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         className={cn(
-          'flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase outline-none transition-colors',
+          // Sentence case, not small-caps: this was the only uppercase
+          // tracking-wide label left in the app.
+          'flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold outline-none transition-colors',
           'text-primary/40 hover:text-primary/70',
           'focus-visible:ring-accent focus-visible:ring-2',
         )}

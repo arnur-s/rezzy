@@ -1,10 +1,10 @@
 import { SettingRow, SettingsSection } from '@/components/settings-section'
 import { useLanguagePreference } from '@/features/account'
-import { isLocalePreference } from '@/lib/locale'
 import type { LocalePreference } from '@/lib/locale'
+import { isLocalePreference } from '@/lib/locale'
 import { m } from '@/paraglide/messages'
-import { useTheme } from '@/providers/theme-provider'
 import type { Theme } from '@/providers/theme-provider'
+import { useTheme } from '@/providers/theme-provider'
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -16,19 +16,33 @@ const THEME_OPTIONS: Array<{
   label: () => string
   icon: typeof SunIcon
 }> = [
-  { value: 'system', label: () => m.settings_appearance_mode_system(), icon: MonitorIcon },
-  { value: 'light', label: () => m.settings_appearance_mode_light(), icon: SunIcon },
-  { value: 'dark', label: () => m.settings_appearance_mode_dark(), icon: MoonIcon },
+  {
+    value: 'system',
+    label: () => m.settings_appearance_mode_system(),
+    icon: MonitorIcon,
+  },
+  {
+    value: 'light',
+    label: () => m.settings_appearance_mode_light(),
+    icon: SunIcon,
+  },
+  {
+    value: 'dark',
+    label: () => m.settings_appearance_mode_dark(),
+    icon: MoonIcon,
+  },
 ]
 
-const LANGUAGE_OPTIONS: Array<{ value: LocalePreference; label: () => string }> =
-  [
-    { value: 'auto', label: () => m.settings_appearance_language_auto() },
-    // Language names stay in their own language — a reader looking for Russian
-    // should not have to already read English to find it.
-    { value: 'en', label: () => 'English' },
-    { value: 'ru', label: () => 'Русский' },
-  ]
+const LANGUAGE_OPTIONS: Array<{
+  value: LocalePreference
+  label: () => string
+}> = [
+  { value: 'auto', label: () => m.settings_appearance_language_auto() },
+  // Language names stay in their own language — a reader looking for Russian
+  // should not have to already read English to find it.
+  { value: 'en', label: () => 'English' },
+  { value: 'ru', label: () => 'Русский' },
+]
 
 function isTheme(value: string): value is Theme {
   return value === 'system' || value === 'light' || value === 'dark'
@@ -39,10 +53,7 @@ export function AppearanceSettings() {
   const language = useLanguagePreference()
 
   return (
-    <SettingsSection
-      title={m.settings_appearance_title()}
-      description={m.settings_appearance_description()}
-    >
+    <SettingsSection>
       <SettingRow
         label={m.settings_appearance_mode_label()}
         description={m.settings_appearance_mode_description()}

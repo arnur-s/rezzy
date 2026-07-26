@@ -61,11 +61,13 @@ export function MessageReplyPreview({ quote, replyToMessageId }: Props) {
       {author ? (
         <span className="truncate font-semibold opacity-90">{author}</span>
       ) : null}
+      {/* opacity-70 floor: below it the quoted text composites onto the bubble
+          fill at under 4.5:1 in light mode (0.6 -> 4.33, 0.55 -> 3.74). */}
       {preview ? (
-        <span className="truncate opacity-60">{preview}</span>
+        <span className="truncate opacity-70">{preview}</span>
       ) : null}
       {!author && !preview ? (
-        <span className="truncate italic opacity-55">
+        <span className="truncate italic opacity-70">
           {m.inbox_reply_quoted_message()}
         </span>
       ) : null}

@@ -50,26 +50,22 @@ export function MessageThreadHeader({
         <h2 className="truncate text-sm font-semibold text-primary">
           {contactName}
         </h2>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-primary/70">
+        {/* Channel, phone, and assignee are separated by space, not dots: with
+            all three present the row carried two middots of pure decoration. */}
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-primary/70">
           {channelType ? <PlatformIcon type={channelType} size="sm" /> : null}
-          <span className={cn(channelType && 'text-primary')}>
+          <span className={cn('-ml-1', channelType && 'text-primary')}>
             {channelLabel}
           </span>
           {conversation.contact.phone ? (
-            <>
-              <span className="text-primary/30">·</span>
-              <span className="truncate">{conversation.contact.phone}</span>
-            </>
+            <span className="truncate">{conversation.contact.phone}</span>
           ) : null}
           {conversation.assigned_profile ? (
-            <>
-              <span className="text-primary/30">·</span>
-              <span className="truncate">
-                {m.inbox_assigned_to({
-                  name: conversation.assigned_profile.full_name,
-                })}
-              </span>
-            </>
+            <span className="truncate">
+              {m.inbox_assigned_to({
+                name: conversation.assigned_profile.full_name,
+              })}
+            </span>
           ) : null}
         </div>
       </div>

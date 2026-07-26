@@ -191,11 +191,10 @@ export const MessageBubble = memo(function MessageBubbleComponent({
                 )}
               >
                 <span>{formatTime(message.created_at)}</span>
-                {hasTrailingMeta ? (
-                  <span aria-hidden className="text-primary/30">
-                    ·
-                  </span>
-                ) : null}
+                {/* Inherits the footer colour instead of dimming to
+                    `text-primary/30`, which composited to 1.96:1 on the light
+                    page: a separator you cannot see does not separate. */}
+                {hasTrailingMeta ? <span aria-hidden>·</span> : null}
                 {showEdited ? (
                   <span className="italic">{m.inbox_message_edited()}</span>
                 ) : null}

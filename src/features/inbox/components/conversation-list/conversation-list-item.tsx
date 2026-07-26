@@ -52,7 +52,11 @@ function ConversationListItemImpl({
           >
             {contactName}
           </span>
-          <span className="shrink-0 text-xs text-primary/50">
+          {/* `text-secondary` rather than an alpha step of `text-primary`: the
+              alpha ramp composites ink onto parchment in light mode and lands
+              at 3.4:1, while the same alpha on the ink page passes. Only the
+              semantic token is tuned per mode. */}
+          <span className="text-secondary shrink-0 text-xs">
             {formatRelativeShort(conversation.last_message_at)}
           </span>
         </div>
@@ -64,7 +68,7 @@ function ConversationListItemImpl({
             variant="preview"
             className={cn(
               'block min-w-0 flex-1 truncate',
-              isUnread ? 'text-primary/80' : 'text-primary/55',
+              isUnread ? 'text-primary/80' : 'text-secondary',
             )}
           />
           {isUnread ? (

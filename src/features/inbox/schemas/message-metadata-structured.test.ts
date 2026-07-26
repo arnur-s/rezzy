@@ -66,13 +66,15 @@ describe('listPreviewFromMessage fallbacks', () => {
   }
 
   it('produces localized previews for the new types', () => {
-    expect(listPreviewFromMessage({ ...base, type: 'location' })).toBe('📍 Location')
-    expect(listPreviewFromMessage({ ...base, type: 'contact' })).toBe('👤 Contact')
+    expect(listPreviewFromMessage({ ...base, type: 'location' })).toBe(
+      'Location',
+    )
+    expect(listPreviewFromMessage({ ...base, type: 'contact' })).toBe('Contact')
     expect(listPreviewFromMessage({ ...base, type: 'unsupported' })).toBe(
-      '🚫 Unsupported message',
+      'Unsupported message',
     )
     expect(listPreviewFromMessage({ ...base, type: 'story_reply' })).toBe(
-      '💬 Story reply',
+      'Story reply',
     )
   })
 

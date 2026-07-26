@@ -5,7 +5,6 @@ import { cn } from '@/lib/cn'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { Link } from '@tanstack/react-router'
 import { ArrowRightIcon, CheckIcon } from 'lucide-react'
-import { Fragment } from 'react'
 
 type Segment = {
   key: string
@@ -94,39 +93,30 @@ export function HomeSummaryLine({
   }
 
   return (
-    <p className="text-secondary flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
-      {segments.map((segment, index) => (
-        <Fragment key={segment.key}>
-          {index > 0 ? (
-            <span aria-hidden="true" className="text-primary/30">
-              ·
-            </span>
-          ) : null}
-          <span
-            title={segment.hint}
-            className={cn(
-              'tabular-nums',
-              segment.emphasized && 'text-primary font-semibold',
-            )}
-          >
-            {segment.text}
-          </span>
-        </Fragment>
+    // Spacing carries the separation. Dotted segments stacked up to four
+    // middots on a busy morning, which read as decoration rather than rhythm.
+    <p className="text-secondary flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+      {segments.map((segment) => (
+        <span
+          key={segment.key}
+          title={segment.hint}
+          className={cn(
+            'tabular-nums',
+            segment.emphasized && 'text-primary font-semibold',
+          )}
+        >
+          {segment.text}
+        </span>
       ))}
       {inboxWorkspaceId ? (
-        <>
-          <span aria-hidden="true" className="text-primary/30">
-            ·
-          </span>
-          <Link
-            to="/workspaces/$id/inbox"
-            params={{ id: inboxWorkspaceId }}
-            className="text-primary inline-flex items-center gap-1 font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
-          >
-            {m.home_open_inbox()}
-            <ArrowRightIcon aria-hidden="true" className="size-3.5" />
-          </Link>
-        </>
+        <Link
+          to="/workspaces/$id/inbox"
+          params={{ id: inboxWorkspaceId }}
+          className="text-primary inline-flex items-center gap-1 font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
+        >
+          {m.home_open_inbox()}
+          <ArrowRightIcon aria-hidden="true" className="size-3.5" />
+        </Link>
       ) : null}
     </p>
   )

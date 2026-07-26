@@ -32,15 +32,6 @@ export function ProfilePage() {
   return (
     <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-6">
-        <div>
-          <h2 className="text-primary text-base font-semibold">
-            {m.profile_identity_title()}
-          </h2>
-          <p className="text-secondary mt-1 text-sm">
-            {m.profile_identity_description()}
-          </p>
-        </div>
-
         {/* A failed query does not empty the page — the form still opens on
             what auth knows, and the banner says the rest is missing. */}
         {profileQuery.isError ? (
@@ -71,7 +62,6 @@ export function ProfilePage() {
 
             <TextInput
               label={m.profile_email_label()}
-              description={m.profile_email_description()}
               value={profile.email}
               isDisabled
               disabledMessage={m.profile_email_disabled_reason()}

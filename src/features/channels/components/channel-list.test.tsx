@@ -51,8 +51,8 @@ describe('ChannelList', () => {
   })
 
   // This is where onboarding drops a brand-new workspace, so the empty state has
-  // to explain why the user is here and what it unlocks.
-  it('explains what connecting a channel unlocks when there are none', async () => {
+  // to name the channels on offer and say what connecting one does.
+  it('names the connectable channels when there are none', async () => {
     getWorkspaceChannelsMock.mockResolvedValue([])
 
     renderWithQueryClient(<ChannelList workspaceId="workspace-1" />)
@@ -62,7 +62,7 @@ describe('ChannelList', () => {
     ).toBeTruthy()
     expect(
       screen.getByText(
-        'Add a channel to start receiving customer conversations and unlock your inbox',
+        'Connect WhatsApp, Telegram, or Instagram to start receiving customer conversations in your inbox',
       ),
     ).toBeTruthy()
   })

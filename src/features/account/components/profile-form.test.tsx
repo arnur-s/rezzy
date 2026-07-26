@@ -18,13 +18,15 @@ vi.mock('../hooks/use-my-profile', () => ({
   }),
 }))
 
+// Phone is stored E.164, which is what the column now holds and what the field
+// re-groups for display.
 const PROFILE: UserProfile = {
   id: 'user-1',
   fullName: 'Ada Lovelace',
   email: 'ada@example.com',
   avatarUrl: null,
   jobTitle: 'Account manager',
-  phone: '+1 555 0100',
+  phone: '+442079460958',
   timezone: 'Europe/Berlin',
   language: 'auto',
 }
@@ -61,7 +63,8 @@ describe('ProfileForm', () => {
 
     expect(field('Full name')).toHaveProperty('value', 'Ada Lovelace')
     expect(field('Job title')).toHaveProperty('value', 'Account manager')
-    expect(field('Phone number')).toHaveProperty('value', '+1 555 0100')
+    // Stored flat, shown grouped.
+    expect(field('Phone number')).toHaveProperty('value', '+44 20 7946 0958')
   })
 
   it('leaves optional fields empty rather than filling them in', () => {
@@ -101,8 +104,49 @@ describe('ProfileForm', () => {
     fireEvent.change(field('Phone number'), { target: { value: 'call me' } })
     fireEvent.click(saveButton())
 
-    expect(await screen.findByText('Enter a valid phone number')).toBeTruthy()
+    expect(
+      await screen.findByText(/Enter the number with its country code/),
+    ).toBeTruthy()
     expect(hoisted.mutate).not.toHaveBeenCalled()
+  })
+
+  it('rejects a number that is too short for its country', async () => {
+    render(<ProfileForm profile={PROFILE} />)
+
+    // Shape alone used to be enough to pass; this is a real numbering-plan
+    // check, so a truncated GB number is caught rather than stored.
+    fireEvent.change(field('Phone number'), { target: { value: '+44 20 79' } })
+    fireEvent.click(saveButton())
+
+    expect(
+      await screen.findByText(/Enter the number with its country code/),
+    ).toBeTruthy()
+    expect(hoisted.mutate).not.toHaveBeenCalled()
+  })
+
+  it('groups the number as it is typed and stores it as E.164', async () => {
+    render(<ProfileForm profile={PROFILE} />)
+
+    fireEvent.change(field('Phone number'), {
+      target: { value: '+442079460959' },
+    })
+
+    expect(field('Phone number')).toHaveProperty('value', '+44 20 7946 0959')
+
+    fireEvent.click(saveButton())
+
+    await waitFor(() => expect(hoisted.mutate).toHaveBeenCalledTimes(1))
+    expect(hoisted.mutate.mock.calls[0][0].phone).toBe('+442079460959')
+  })
+
+  it('gives the phone field a telephone keypad and autofill', () => {
+    render(<ProfileForm profile={PROFILE} />)
+
+    const phone = field('Phone number')
+    expect(phone.getAttribute('type')).toBe('tel')
+    expect(phone.getAttribute('inputmode')).toBe('tel')
+    expect(phone.getAttribute('autocomplete')).toBe('tel')
+    expect(field('Full name').getAttribute('autocomplete')).toBe('name')
   })
 
   it('trims values and sends cleared optional fields as null', async () => {
@@ -116,7 +160,7 @@ describe('ProfileForm', () => {
     expect(hoisted.mutate.mock.calls[0][0]).toEqual({
       fullName: 'Ada L.',
       jobTitle: null,
-      phone: '+1 555 0100',
+      phone: '+442079460958',
       timezone: 'Europe/Berlin',
     })
   })

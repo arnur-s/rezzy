@@ -83,9 +83,9 @@ export function TeamNewList({
                         <span className="truncate">
                           {workspaceNameById.get(item.workspaceId)}
                         </span>
-                        <span aria-hidden="true" className="text-primary/30">
-                          ·
-                        </span>
+                        {/* Inherits the row's `text-secondary`; the old
+                            `text-primary/30` was lighter than its siblings. */}
+                        <span aria-hidden="true">·</span>
                       </>
                     ) : null}
                     <span className="tabular-nums">

@@ -14,6 +14,8 @@ import { CheckIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useUpdateMyProfile } from '../hooks/use-my-profile'
+import { useNativeInputAttrs } from '../lib/native-input-attrs'
+import { formatPhoneAsYouType, fromE164 } from '../lib/phone'
 import {
   formatTimeZoneLabel,
   formatTimeZoneOffset,
@@ -30,7 +32,8 @@ function toFormValues(profile: UserProfile): ProfileFormValues {
   return {
     fullName: profile.fullName,
     jobTitle: profile.jobTitle ?? '',
-    phone: profile.phone ?? '',
+    // Stored E.164 is one long digit run; the field shows it grouped.
+    phone: fromE164(profile.phone),
     timezone: profile.timezone ?? '',
   }
 }
@@ -64,6 +67,20 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
   )
 
   const isPending = updateProfile.isPending
+
+  // Astryx doesn't type `autocomplete`, `inputmode`, or `type="tel"`, so these
+  // ride in on the ref it forwards to the real input. Held at component level
+  // rather than inside each `Controller` render prop, which would put hook
+  // calls in a callback React may not invoke on every render.
+  const fullNameAttrs = useNativeInputAttrs({ autoComplete: 'name' })
+  const jobTitleAttrs = useNativeInputAttrs({
+    autoComplete: 'organization-title',
+  })
+  const phoneAttrs = useNativeInputAttrs({
+    autoComplete: 'tel',
+    inputMode: 'tel',
+    type: 'tel',
+  })
 
   const {
     control,
@@ -111,8 +128,8 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
         render={({ field, fieldState }) => (
           <TextInput
             label={m.profile_full_name_label()}
-            description={m.profile_full_name_description()}
             isRequired
+            ref={fullNameAttrs}
             value={field.value}
             onChange={(next) => field.onChange(next)}
             isDisabled={isPending}
@@ -131,9 +148,9 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
         render={({ field, fieldState }) => (
           <TextInput
             label={m.profile_job_title_label()}
-            description={m.profile_job_title_description()}
             placeholder={m.profile_job_title_placeholder()}
             isOptional
+            ref={jobTitleAttrs}
             value={field.value}
             onChange={(next) => field.onChange(next)}
             isDisabled={isPending}
@@ -153,10 +170,13 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
           <TextInput
             label={m.profile_phone_label()}
             description={m.profile_phone_description()}
-            placeholder="+1 555 0100"
+            placeholder={m.profile_phone_placeholder()}
             isOptional
+            ref={phoneAttrs}
             value={field.value}
-            onChange={(next) => field.onChange(next)}
+            // Masked on the way in, so the field always reads the way the
+            // number will be stored rather than however it was typed.
+            onChange={(next) => field.onChange(formatPhoneAsYouType(next))}
             isDisabled={isPending}
             status={
               fieldState.error?.message

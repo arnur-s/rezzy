@@ -50,8 +50,7 @@ function RouteComponent() {
 
   const selectedKey =
     navItems.find(
-      (item) =>
-        pathname === item.path || pathname.startsWith(`${item.path}/`),
+      (item) => pathname === item.path || pathname.startsWith(`${item.path}/`),
     )?.key ?? 'profile'
 
   return (
@@ -71,10 +70,7 @@ function RouteComponent() {
           measure, so the scrollbar rides the pane rather than the text. */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
-          <p className="text-secondary text-xs font-medium">
-            {m.account_settings_kicker()}
-          </p>
-          <p className="text-secondary mt-1 max-w-2xl text-sm">
+          <p className="text-secondary max-w-2xl text-sm">
             {m.account_settings_description()}
           </p>
 

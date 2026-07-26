@@ -4,6 +4,7 @@ import {
   ChannelTypeIcon,
   isChannelType,
 } from '@/entities/channel'
+import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
@@ -34,14 +35,15 @@ export function ChannelCard({ channel, workspaceId }: Props) {
 
   const channelType = isChannelType(channel.type) ? channel.type : null
 
-  const connectedLabel = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat(undefined, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
-    return formatter.format(new Date(channel.created_at))
-  }, [channel.created_at])
+  const connectedLabel = useMemo(
+    () =>
+      formatDate(channel.created_at, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+    [channel.created_at],
+  )
 
   const menuItems: Array<DropdownMenuOption> = [
     {

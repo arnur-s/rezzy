@@ -1,4 +1,5 @@
 import { resolveWorkspaceIcon } from '@/entities/workspace'
+import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
 import { Badge } from '@astryxdesign/core/Badge'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
@@ -22,13 +23,7 @@ function roleLabel(role: string) {
 }
 
 function formatJoinedAt(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-
-  return new Intl.DateTimeFormat(undefined, {
-    year: 'numeric',
-    month: 'long',
-  }).format(date)
+  return formatDate(value, { year: 'numeric', month: 'long' })
 }
 
 /**

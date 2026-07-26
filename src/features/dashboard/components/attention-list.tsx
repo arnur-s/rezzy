@@ -131,9 +131,9 @@ function AttentionRow({
             {workspaceName ? (
               <>
                 <span className="truncate">{workspaceName}</span>
-                <span aria-hidden="true" className="text-primary/30">
-                  ·
-                </span>
+                {/* Inherits the row's `text-secondary`; the old
+                    `text-primary/30` was lighter than the text it separates. */}
+                <span aria-hidden="true">·</span>
               </>
             ) : null}
             <span className="tabular-nums">{timestampLabel}</span>
