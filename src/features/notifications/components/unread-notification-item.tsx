@@ -45,7 +45,9 @@ export function UnreadNotificationItem({
         onClick={() => onSelect(conversation)}
         aria-label={itemLabel}
         className={cn(
-          'flex w-full cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5 text-left outline-none',
+          // px-2.5 inside the list's 6px gutter puts the avatar on the same
+          // 16px axis as the popover title.
+          'flex w-full cursor-pointer items-start gap-3 rounded-xl px-2.5 py-2 text-left outline-none',
           listItemStyle.transition,
           listItemStyle.hover,
           listItemStyle.focus,

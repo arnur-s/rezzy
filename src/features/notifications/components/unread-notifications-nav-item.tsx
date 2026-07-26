@@ -57,15 +57,15 @@ export function UnreadNotificationsNavItem({ workspaceId }: Props) {
 
   const content = (
     <div className="flex w-full flex-col overflow-hidden">
-      <p className="text-primary px-4 pt-3.5 pb-2 text-sm font-semibold">
+      <p className="text-primary px-4 pt-3 pb-1.5 text-sm font-semibold">
         {m.notifications_popover_title()}
       </p>
 
       {isPending ? (
         <UnreadNotificationsSkeleton />
       ) : isError ? (
-        <div className="px-3 pb-3">
-          <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
+        <div className="px-1.5 pb-1.5">
+          <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-2.5 py-2">
             <span className="text-error text-sm">
               {m.notifications_popover_error()}
             </span>
@@ -79,7 +79,7 @@ export function UnreadNotificationsNavItem({ workspaceId }: Props) {
           </div>
         </div>
       ) : items.length === 0 ? (
-        <div className="px-6 pt-4 pb-6">
+        <div className="px-4 pt-1 pb-5">
           <p className="text-sm font-medium">
             {m.notifications_popover_empty_title()}
           </p>
@@ -144,6 +144,13 @@ export function UnreadNotificationsNavItem({ workspaceId }: Props) {
         alignment="start"
         width="min(92vw, 22rem)"
         label={m.notifications_popover_title()}
+        // Astryx pads the popover surface by 12px, which this content already
+        // budgets for itself: a title on the 16px text axis, a recessed list
+        // whose rows lift off a 6px gutter, and a footer rule meant to span
+        // the full width. Paying it twice pushed everything inward and left
+        // the rule floating short of both edges. Clip instead, so rows and
+        // scrollbar meet the surface radius.
+        className="overflow-hidden p-0"
         // The default close button is first in focus order, so autofocus lands
         // on it and reveals it. Escape and outside click still dismiss.
         hasCloseButton={false}
