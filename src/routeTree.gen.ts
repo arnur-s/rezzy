@@ -14,12 +14,16 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PasswordResetRouteImport } from './routes/password-reset'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as InstagramCallbackRouteImport } from './routes/instagram-callback'
-import { Route as E2eMessageListRouteImport } from './routes/e2e-message-list'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_authenticated/workspaces/index'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security'
+import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
+import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedWorkspacesIdIndexRouteImport } from './routes/_authenticated/workspaces/$id/index'
 import { Route as AuthenticatedWorkspacesIdSettingsRouteImport } from './routes/_authenticated/workspaces/$id/settings'
 import { Route as AuthenticatedWorkspacesIdInboxRouteImport } from './routes/_authenticated/workspaces/$id/inbox'
@@ -56,11 +60,6 @@ const InstagramCallbackRoute = InstagramCallbackRouteImport.update({
   path: '/instagram-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const E2eMessageListRoute = E2eMessageListRouteImport.update({
-  id: '/e2e-message-list',
-  path: '/e2e-message-list',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -85,6 +84,36 @@ const AuthenticatedWorkspacesIndexRoute =
     id: '/workspaces/',
     path: '/workspaces/',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSecurityRoute =
+  AuthenticatedSettingsSecurityRouteImport.update({
+    id: '/security',
+    path: '/security',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsProfileRoute =
+  AuthenticatedSettingsProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsAppearanceRoute =
+  AuthenticatedSettingsAppearanceRouteImport.update({
+    id: '/appearance',
+    path: '/appearance',
+    getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedWorkspacesIdIndexRoute =
   AuthenticatedWorkspacesIdIndexRouteImport.update({
@@ -149,14 +178,18 @@ const AuthenticatedWorkspacesIdSettingsChannelsNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/profile': typeof AuthenticatedProfileRoute
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
+  '/settings/security': typeof AuthenticatedSettingsSecurityRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
   '/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
@@ -170,15 +203,18 @@ export interface FileRoutesByFullPath {
   '/workspaces/$id/settings/channels/': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/profile': typeof AuthenticatedProfileRoute
-  '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
+  '/settings/security': typeof AuthenticatedSettingsSecurityRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
   '/workspaces/$id': typeof AuthenticatedWorkspacesIdIndexRoute
@@ -192,15 +228,19 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/e2e-message-list': typeof E2eMessageListRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
+  '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/_authenticated/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
   '/_authenticated/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
@@ -217,7 +257,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/e2e-message-list'
     | '/instagram-callback'
     | '/onboarding'
     | '/password-reset'
@@ -225,6 +264,11 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/profile'
     | '/settings'
+    | '/settings/appearance'
+    | '/settings/notifications'
+    | '/settings/profile'
+    | '/settings/security'
+    | '/settings/'
     | '/workspaces/'
     | '/workspaces/$id/contacts'
     | '/workspaces/$id/inbox'
@@ -238,15 +282,18 @@ export interface FileRouteTypes {
     | '/workspaces/$id/settings/channels/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/e2e-message-list'
     | '/instagram-callback'
     | '/onboarding'
     | '/password-reset'
     | '/sign-in'
     | '/sign-up'
     | '/profile'
-    | '/settings'
     | '/'
+    | '/settings/appearance'
+    | '/settings/notifications'
+    | '/settings/profile'
+    | '/settings/security'
+    | '/settings'
     | '/workspaces'
     | '/workspaces/$id/contacts'
     | '/workspaces/$id'
@@ -259,7 +306,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
-    | '/e2e-message-list'
     | '/instagram-callback'
     | '/onboarding'
     | '/password-reset'
@@ -268,6 +314,11 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/_authenticated/'
+    | '/_authenticated/settings/appearance'
+    | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings/profile'
+    | '/_authenticated/settings/security'
+    | '/_authenticated/settings/'
     | '/_authenticated/workspaces/'
     | '/_authenticated/workspaces/$id/contacts'
     | '/_authenticated/workspaces/$id/inbox'
@@ -283,7 +334,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  E2eMessageListRoute: typeof E2eMessageListRoute
   InstagramCallbackRoute: typeof InstagramCallbackRoute
   OnboardingRoute: typeof OnboardingRoute
   PasswordResetRoute: typeof PasswordResetRoute
@@ -328,13 +378,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InstagramCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/e2e-message-list': {
-      id: '/e2e-message-list'
-      path: '/e2e-message-list'
-      fullPath: '/e2e-message-list'
-      preLoaderRoute: typeof E2eMessageListRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -369,6 +412,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspaces/'
       preLoaderRoute: typeof AuthenticatedWorkspacesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/security': {
+      id: '/_authenticated/settings/security'
+      path: '/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof AuthenticatedSettingsSecurityRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/profile': {
+      id: '/_authenticated/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/appearance': {
+      id: '/_authenticated/settings/appearance'
+      path: '/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof AuthenticatedSettingsAppearanceRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/workspaces/$id/': {
       id: '/_authenticated/workspaces/$id/'
@@ -443,6 +521,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
+  AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
+  AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsAppearanceRoute: AuthenticatedSettingsAppearanceRoute,
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRoute,
+  AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
+  AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+}
+
+const AuthenticatedSettingsRouteWithChildren =
+  AuthenticatedSettingsRoute._addFileChildren(
+    AuthenticatedSettingsRouteChildren,
+  )
+
 interface AuthenticatedWorkspacesIdInboxRouteChildren {
   AuthenticatedWorkspacesIdInboxConversationIdRoute: typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
   AuthenticatedWorkspacesIdInboxIndexRoute: typeof AuthenticatedWorkspacesIdInboxIndexRoute
@@ -487,7 +587,7 @@ const AuthenticatedWorkspacesIdSettingsRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedWorkspacesIndexRoute: typeof AuthenticatedWorkspacesIndexRoute
   AuthenticatedWorkspacesIdContactsRoute: typeof AuthenticatedWorkspacesIdContactsRoute
@@ -498,7 +598,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedWorkspacesIndexRoute: AuthenticatedWorkspacesIndexRoute,
   AuthenticatedWorkspacesIdContactsRoute:
@@ -516,7 +616,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  E2eMessageListRoute: E2eMessageListRoute,
   InstagramCallbackRoute: InstagramCallbackRoute,
   OnboardingRoute: OnboardingRoute,
   PasswordResetRoute: PasswordResetRoute,

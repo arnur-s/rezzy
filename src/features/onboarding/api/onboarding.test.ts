@@ -14,21 +14,17 @@ describe('completeOnboarding', () => {
     supabaseMock.rpc.mockReset()
   })
 
-  it('sends trimmed names and no user id, and unwraps the created workspace', async () => {
+  it('sends only the trimmed workspace name, and unwraps the created workspace', async () => {
     supabaseMock.rpc.mockResolvedValue({
       data: [{ is_new: true, workspace_id: 'workspace-1' }],
       error: null,
     })
 
     await expect(
-      completeOnboarding({
-        fullName: '  Ada Lovelace  ',
-        workspaceName: '  Acme Sales  ',
-      }),
+      completeOnboarding({ workspaceName: '  Acme Sales  ' }),
     ).resolves.toEqual({ isNew: true, workspaceId: 'workspace-1' })
 
     expect(supabaseMock.rpc).toHaveBeenCalledWith('complete_onboarding', {
-      p_full_name: 'Ada Lovelace',
       p_workspace_name: 'Acme Sales',
     })
   })
@@ -40,7 +36,7 @@ describe('completeOnboarding', () => {
     })
 
     await expect(
-      completeOnboarding({ fullName: 'Ada', workspaceName: 'Acme' }),
+      completeOnboarding({ workspaceName: 'Acme' }),
     ).resolves.toEqual({ isNew: false, workspaceId: 'workspace-1' })
   })
 
@@ -54,7 +50,7 @@ describe('completeOnboarding', () => {
     })
 
     await expect(
-      completeOnboarding({ fullName: 'Ada', workspaceName: 'Acme' }),
+      completeOnboarding({ workspaceName: 'Acme' }),
     ).rejects.toBeInstanceOf(OnboardingSessionExpiredError)
   })
 
@@ -63,7 +59,7 @@ describe('completeOnboarding', () => {
     supabaseMock.rpc.mockResolvedValue({ data: null, error })
 
     await expect(
-      completeOnboarding({ fullName: 'Ada', workspaceName: 'A' }),
+      completeOnboarding({ workspaceName: 'A' }),
     ).rejects.toBe(error)
   })
 
@@ -71,7 +67,7 @@ describe('completeOnboarding', () => {
     supabaseMock.rpc.mockResolvedValue({ data: [], error: null })
 
     await expect(
-      completeOnboarding({ fullName: 'Ada', workspaceName: 'Acme' }),
+      completeOnboarding({ workspaceName: 'Acme' }),
     ).rejects.toThrow('complete_onboarding returned no workspace.')
   })
 })

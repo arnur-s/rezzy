@@ -1,9 +1,9 @@
 import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
+import { Spinner } from '@astryxdesign/core/Spinner'
 import { ChatTranscript } from './chat-transcript'
 import { MessageThreadEmptyConversation } from './message-thread-empty-conversation'
-import { MessageThreadSkeleton } from './message-thread-skeleton'
 
 type Props = {
   conversationId: string
@@ -53,7 +53,8 @@ export function MessageList({
         <span role="status" className="sr-only">
           {m.inbox_thread_loading()}
         </span>
-        <MessageThreadSkeleton />
+        {/* <MessageThreadSkeleton /> */}
+        <Spinner />
       </div>
     )
   }

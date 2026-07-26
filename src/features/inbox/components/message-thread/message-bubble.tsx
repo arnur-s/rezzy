@@ -155,7 +155,8 @@ export const MessageBubble = memo(function MessageBubbleComponent({
   // record of successful delivery only.
   const showDelivery =
     isOutbound && !hasFailed && hasDeliveryIndicator(message.status)
-  const hasTrailingMeta = showEdited || showDelivery || reactions.length > 0
+  const hasTrailingMeta =
+    showEdited || showDelivery || hasFailed || reactions.length > 0
   // Runs carry one footer, but a message with state of its own always shows it.
   const showFooter = closesRun || showEdited || hasFailed || reactions.length > 0
 
@@ -170,7 +171,10 @@ export const MessageBubble = memo(function MessageBubbleComponent({
         // ChatMessage root wraps a whole same-sender run, so grouping on it
         // would reveal every message's rail at once.
         'group/msg relative',
-        hasFailed && 'ring-error/40 ring-1',
+        // A failed send is stated on the bubble itself, not only in the caption
+        // below it: the caption sits between two messages and a 1px ring on a
+        // 10%-alpha plate is not a signal anyone reads at a glance.
+        hasFailed && 'bg-error/12 ring-error/70 ring-1',
       )}
       metadata={
         showFooter ? (
@@ -178,34 +182,42 @@ export const MessageBubble = memo(function MessageBubbleComponent({
           // slot) so we own the separator and only draw it before real content.
           <ChatMessageMetadata
             footer={
+              // One caption row, never two. A second line pushed the failure
+              // notice closer to the next message than to its own bubble.
               <span
                 className={cn(
-                  'flex flex-col gap-0.5',
-                  isOutbound ? 'items-end' : 'items-start',
+                  'flex flex-wrap items-center gap-x-1 gap-y-0.5',
+                  isOutbound ? 'justify-end' : 'justify-start',
                 )}
               >
-                <span className="flex items-center gap-1">
-                  <span>{formatTime(message.created_at)}</span>
-                  {hasTrailingMeta ? (
-                    <span aria-hidden className="text-primary/30">
-                      ·
-                    </span>
-                  ) : null}
-                  {showEdited ? (
-                    <span className="italic">{m.inbox_message_edited()}</span>
-                  ) : null}
-                  {showDelivery ? (
-                    <DeliveryIndicator status={message.status} />
-                  ) : null}
-                  <MessageReactionsRow
-                    reactions={reactions}
-                    isOutbound={isOutbound}
-                  />
-                </span>
+                <span>{formatTime(message.created_at)}</span>
+                {hasTrailingMeta ? (
+                  <span aria-hidden className="text-primary/30">
+                    ·
+                  </span>
+                ) : null}
+                {showEdited ? (
+                  <span className="italic">{m.inbox_message_edited()}</span>
+                ) : null}
+                {showDelivery ? (
+                  <DeliveryIndicator status={message.status} />
+                ) : null}
+                <MessageReactionsRow
+                  reactions={reactions}
+                  isOutbound={isOutbound}
+                />
                 {hasFailed ? (
-                  <span className="text-error flex items-center gap-1">
-                    <TriangleAlertIcon className="size-3 shrink-0" aria-hidden />
-                    <span>{m.inbox_message_status_failed()}</span>
+                  <>
+                    <span
+                      role="status"
+                      className="text-error flex items-center gap-1"
+                    >
+                      <TriangleAlertIcon
+                        className="size-3 shrink-0"
+                        aria-hidden
+                      />
+                      <span>{m.inbox_message_status_failed()}</span>
+                    </span>
                     <Button
                       label={m.inbox_message_retry()}
                       size="sm"
@@ -213,8 +225,14 @@ export const MessageBubble = memo(function MessageBubbleComponent({
                       onClick={handleRetry}
                       isDisabled={retryMessage.isPending}
                       isLoading={retryMessage.isPending}
+                      // Caption scale so the remedy sits beside the problem
+                      // rather than out-shouting it at body size — but with
+                      // real padding, since 10px of text is not a hit target.
+                      // The pseudo-element grows that target on touch without
+                      // widening the caption row.
+                      className="text-error hover:bg-error/10 relative h-auto min-h-0 rounded-sm px-1.5 py-1 text-xs font-medium underline underline-offset-2 [@media(hover:none)]:after:absolute [@media(hover:none)]:after:-inset-2 [@media(hover:none)]:after:content-['']"
                     />
-                  </span>
+                  </>
                 ) : null}
               </span>
             }

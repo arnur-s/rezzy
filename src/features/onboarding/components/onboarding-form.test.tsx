@@ -1,6 +1,5 @@
 import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
-import type { User } from '@supabase/supabase-js'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OnboardingForm } from './onboarding-form'
@@ -12,35 +11,25 @@ vi.mock('@tanstack/react-router', async () => {
   return { ...actual, useNavigate: () => navigateMock }
 })
 
-const supabaseMock = vi.hoisted(() => ({
-  auth: {
-    updateUser: vi.fn(),
-  },
-  rpc: vi.fn(),
-}))
+const supabaseMock = vi.hoisted(() => ({ rpc: vi.fn() }))
 
-vi.mock('@/utils/supabase', () => ({
-  supabase: supabaseMock,
-}))
+vi.mock('@/utils/supabase', () => ({ supabase: supabaseMock }))
 
-const authMock = vi.hoisted(() => ({ user: null as User | null }))
+const workspaceNameField = /Workspace name/
 
-vi.mock('@/providers/auth-provider', () => ({
-  useAuth: () => authMock,
-}))
-
-function fillIn(name: RegExp, value: string) {
-  fireEvent.change(screen.getByRole('textbox', { name }), {
+function fillIn(value: string) {
+  fireEvent.change(screen.getByRole('textbox', { name: workspaceNameField }), {
     target: { value },
   })
 }
 
-function submit() {
-  fireEvent.click(screen.getByRole('button', { name: 'Continue to inbox' }))
+function submitButton() {
+  return screen.getByRole('button', { name: /Create workspace|Creating/ })
 }
 
-const fullNameField = /Full name/
-const workspaceNameField = /Workspace name/
+function submit() {
+  fireEvent.click(submitButton())
+}
 
 describe('OnboardingForm', () => {
   // The project's base locale is ru; these assertions read the English copy.
@@ -49,66 +38,109 @@ describe('OnboardingForm', () => {
   })
 
   beforeEach(() => {
-    authMock.user = null
     navigateMock.mockReset()
     supabaseMock.rpc.mockReset()
-    supabaseMock.auth.updateUser.mockReset()
-    supabaseMock.auth.updateUser.mockResolvedValue({ error: null })
     supabaseMock.rpc.mockResolvedValue({
       data: [{ is_new: true, workspace_id: 'workspace-1' }],
       error: null,
     })
   })
 
-  it('requires both fields before it will call the database', async () => {
+  it('asks only for the workspace name', () => {
+    renderWithQueryClient(<OnboardingForm />)
+
+    expect(screen.getAllByRole('textbox')).toHaveLength(1)
+    expect(screen.queryByLabelText(/Full name/)).toBeNull()
+  })
+
+  it('focuses the workspace name field on arrival', () => {
+    renderWithQueryClient(<OnboardingForm />)
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('textbox', { name: workspaceNameField }),
+    )
+  })
+
+  it('requires a workspace name before it will call the database', async () => {
     renderWithQueryClient(<OnboardingForm />)
 
     submit()
 
-    expect(await screen.findByText('Enter your full name')).toBeTruthy()
     expect(
-      screen.getByText('Workspace name must be at least 2 characters'),
+      await screen.findByText('Workspace name must be at least 2 characters'),
     ).toBeTruthy()
     expect(supabaseMock.rpc).not.toHaveBeenCalled()
   })
 
-  it('rejects whitespace-only names', async () => {
+  it('rejects a whitespace-only workspace name', async () => {
     renderWithQueryClient(<OnboardingForm />)
 
-    fillIn(fullNameField, '   ')
-    fillIn(workspaceNameField, '   ')
+    fillIn('   ')
     submit()
 
-    expect(await screen.findByText('Enter your full name')).toBeTruthy()
+    expect(
+      await screen.findByText('Workspace name must be at least 2 characters'),
+    ).toBeTruthy()
     expect(supabaseMock.rpc).not.toHaveBeenCalled()
   })
 
-  it('trims the submitted values and sends no user id', async () => {
+  it('trims the workspace name and sends nothing else', async () => {
     renderWithQueryClient(<OnboardingForm />)
 
-    fillIn(fullNameField, '  Ada Lovelace  ')
-    fillIn(workspaceNameField, '  Acme Sales  ')
+    fillIn('  Acme Sales  ')
     submit()
 
     await waitFor(() => {
       expect(supabaseMock.rpc).toHaveBeenCalledWith('complete_onboarding', {
-        p_full_name: 'Ada Lovelace',
         p_workspace_name: 'Acme Sales',
       })
     })
   })
 
-  it('navigates to the new workspace inbox after a successful setup', async () => {
+  it('submits on Enter', async () => {
     renderWithQueryClient(<OnboardingForm />)
 
-    fillIn(fullNameField, 'Ada Lovelace')
-    fillIn(workspaceNameField, 'Acme Sales')
+    fillIn('Acme Sales')
+    fireEvent.submit(screen.getByRole('textbox', { name: workspaceNameField }))
+
+    await waitFor(() => {
+      expect(supabaseMock.rpc).toHaveBeenCalledOnce()
+    })
+  })
+
+  // Channel setup happens in settings, so a brand-new workspace lands there
+  // rather than in an inbox that cannot receive anything yet.
+  it('sends the new workspace to its channel settings', async () => {
+    renderWithQueryClient(<OnboardingForm />)
+
+    fillIn('Acme Sales')
     submit()
 
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith({
-        to: '/workspaces/$id/inbox',
+        to: '/workspaces/$id/settings/channels',
         params: { id: 'workspace-1' },
+      })
+    })
+  })
+
+  // A repeat submission returns the workspace that already exists, so a user who
+  // refreshed mid-request still lands somewhere correct.
+  it('follows an already-created workspace to its channel settings', async () => {
+    supabaseMock.rpc.mockResolvedValue({
+      data: [{ is_new: false, workspace_id: 'workspace-existing' }],
+      error: null,
+    })
+
+    renderWithQueryClient(<OnboardingForm />)
+
+    fillIn('Acme Sales')
+    submit()
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({
+        to: '/workspaces/$id/settings/channels',
+        params: { id: 'workspace-existing' },
       })
     })
   })
@@ -123,22 +155,43 @@ describe('OnboardingForm', () => {
 
     renderWithQueryClient(<OnboardingForm />)
 
-    fillIn(fullNameField, 'Ada Lovelace')
-    fillIn(workspaceNameField, 'Acme Sales')
+    fillIn('Acme Sales')
     submit()
 
     await waitFor(() => {
-      expect(
-        screen
-          .getByRole('button', { name: 'Continue to inbox' })
-          .hasAttribute('disabled'),
-      ).toBe(true)
+      expect(submitButton().hasAttribute('disabled')).toBe(true)
     })
     expect(
       screen
-        .getByRole('textbox', { name: fullNameField })
+        .getByRole('textbox', { name: workspaceNameField })
         .hasAttribute('disabled'),
     ).toBe(true)
+
+    resolveRpc({
+      data: [{ is_new: true, workspace_id: 'workspace-1' }],
+      error: null,
+    })
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalled()
+    })
+  })
+
+  it('announces the work in progress while pending', async () => {
+    let resolveRpc: (value: unknown) => void = () => {}
+    supabaseMock.rpc.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRpc = resolve
+      }),
+    )
+
+    renderWithQueryClient(<OnboardingForm />)
+
+    fillIn('Acme Sales')
+    submit()
+
+    expect(
+      await screen.findByRole('button', { name: /Creating workspace/ }),
+    ).toBeTruthy()
 
     resolveRpc({
       data: [{ is_new: true, workspace_id: 'workspace-1' }],
@@ -159,8 +212,7 @@ describe('OnboardingForm', () => {
 
     renderWithQueryClient(<OnboardingForm />)
 
-    fillIn(fullNameField, 'Ada Lovelace')
-    fillIn(workspaceNameField, 'Acme Sales')
+    fillIn('Acme Sales')
     submit()
 
     await waitFor(() => {
@@ -181,7 +233,7 @@ describe('OnboardingForm', () => {
     })
   })
 
-  it('keeps the entered values and offers a retry when the setup fails', async () => {
+  it('keeps the entered value and offers a retry when the setup fails', async () => {
     supabaseMock.rpc.mockResolvedValue({
       data: null,
       error: { code: '08006', message: 'connection failure' },
@@ -189,19 +241,14 @@ describe('OnboardingForm', () => {
 
     renderWithQueryClient(<OnboardingForm />)
 
-    fillIn(fullNameField, 'Ada Lovelace')
-    fillIn(workspaceNameField, 'Acme Sales')
+    fillIn('Acme Sales')
     submit()
 
-    expect(await screen.findByText('Could not finish setup')).toBeTruthy()
+    expect(await screen.findByText('Could not create workspace')).toBeTruthy()
     expect(navigateMock).not.toHaveBeenCalled()
-
-    const fullName = screen.getByRole('textbox', { name: fullNameField })
-    const workspaceName = screen.getByRole('textbox', {
-      name: workspaceNameField,
-    })
-    expect(fullName).toHaveProperty('value', 'Ada Lovelace')
-    expect(workspaceName).toHaveProperty('value', 'Acme Sales')
+    expect(
+      screen.getByRole('textbox', { name: workspaceNameField }),
+    ).toHaveProperty('value', 'Acme Sales')
 
     // The failed transaction created nothing, so submitting again is a retry.
     supabaseMock.rpc.mockResolvedValue({
@@ -212,7 +259,7 @@ describe('OnboardingForm', () => {
 
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith({
-        to: '/workspaces/$id/inbox',
+        to: '/workspaces/$id/settings/channels',
         params: { id: 'workspace-2' },
       })
     })
@@ -229,8 +276,7 @@ describe('OnboardingForm', () => {
 
     renderWithQueryClient(<OnboardingForm />)
 
-    fillIn(fullNameField, 'Ada Lovelace')
-    fillIn(workspaceNameField, 'Acme Sales')
+    fillIn('Acme Sales')
     submit()
 
     expect(
@@ -238,45 +284,5 @@ describe('OnboardingForm', () => {
         'Your session expired. Sign in again to finish setup.',
       ),
     ).toBeTruthy()
-  })
-
-  it('prefills the name captured at sign-up', () => {
-    authMock.user = {
-      app_metadata: {},
-      aud: 'authenticated',
-      created_at: '2026-07-26T00:00:00.000Z',
-      id: 'user-1',
-      user_metadata: { full_name: 'Ada Lovelace' },
-    }
-
-    renderWithQueryClient(<OnboardingForm />)
-
-    expect(
-      screen.getByRole('textbox', { name: fullNameField }),
-    ).toHaveProperty('value', 'Ada Lovelace')
-  })
-
-  it('still completes setup when the auth metadata sync fails', async () => {
-    supabaseMock.auth.updateUser.mockResolvedValue({
-      error: { message: 'metadata update failed' },
-    })
-    const consoleError = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined)
-
-    renderWithQueryClient(<OnboardingForm />)
-
-    fillIn(fullNameField, 'Ada Lovelace')
-    fillIn(workspaceNameField, 'Acme Sales')
-    submit()
-
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith({
-        to: '/workspaces/$id/inbox',
-        params: { id: 'workspace-1' },
-      })
-    })
-
-    consoleError.mockRestore()
   })
 })

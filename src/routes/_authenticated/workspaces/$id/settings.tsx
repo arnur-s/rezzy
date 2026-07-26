@@ -1,8 +1,6 @@
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
-import { paneStyle } from '@/components/pane'
 import { Tab, TabList } from '@astryxdesign/core/TabList'
-import { cn } from '@/lib/cn'
 import {
   Outlet,
   createFileRoute,
@@ -77,34 +75,47 @@ function RouteComponent() {
   }
 
   return (
-    <div className={cn(paneStyle.surface, 'h-full w-full')}>
-      {/* Attached to the pane's top edge, above its scroll region. */}
-      <header className="border-border/60 shrink-0 border-b py-6">
+    // Flat and full-bleed, like every other pane: AppShell's `section` variant
+    // already draws the seam against the rail, and the theme resolves surface
+    // to the same value as the canvas, so a fill here would paint nothing while
+    // a radius would notch a corner out of the content area.
+    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
+      {/* 64px and a hairline — the shared pane-header contract, matching the
+          conversation list, the thread, and the contact panel. */}
+      <header className="border-border/60 flex h-16 shrink-0 items-center border-b">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
-          <p className="text-secondary text-xs font-medium">
-            {m.workspace_settings_kicker()}
-          </p>
-          <h1 className="mt-1 text-base font-semibold">
+          <h1 className="truncate text-base font-semibold">
             {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
           </h1>
-          <p className="text-secondary mt-1 max-w-2xl text-sm">
-            {m.workspace_settings_description()}
-          </p>
         </div>
       </header>
 
-      <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 py-6 sm:px-8 md:py-8">
-        <TabList
-          value={selectedKey}
-          onChange={(key) => handleSectionChange(key)}
-          aria-label={m.workspace_settings_sections_nav_aria_label()}
-        >
-          {navItems.map((item) => (
-            <Tab key={item.key} value={item.key} label={item.label} />
-          ))}
-        </TabList>
-        <div className="pt-8">
-          <Outlet />
+      {/* The pane owns the scroll edge-to-edge; the column inside it owns the
+          measure, so the scrollbar rides the pane rather than the text. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
+          <p className="text-secondary text-xs font-medium">
+            {m.workspace_settings_kicker()}
+          </p>
+          <p className="text-secondary mt-1 max-w-2xl text-sm">
+            {m.workspace_settings_description()}
+          </p>
+
+          <div className="pt-6">
+            <TabList
+              value={selectedKey}
+              onChange={(key) => handleSectionChange(key)}
+              aria-label={m.workspace_settings_sections_nav_aria_label()}
+            >
+              {navItems.map((item) => (
+                <Tab key={item.key} value={item.key} label={item.label} />
+              ))}
+            </TabList>
+          </div>
+
+          <div className="pt-8">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

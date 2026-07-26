@@ -1,7 +1,5 @@
-import { getUserMetadataFullName } from '@/entities/user'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
-import { useAuth } from '@/providers/auth-provider'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
 import { Card } from '@astryxdesign/core/Card'
@@ -18,7 +16,6 @@ import { createOnboardingFormSchema } from '../schemas/onboarding-form-schema'
 
 export function OnboardingForm() {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const completeOnboardingMutation = useCompleteOnboarding()
   const [hasSessionExpired, setHasSessionExpired] = useState(false)
 
@@ -27,14 +24,10 @@ export function OnboardingForm() {
     locale,
   ])
 
-  // Sign-up already collected a name; when it is present the workspace name is
-  // the first field worth typing in.
-  const signUpFullName = useMemo(() => getUserMetadataFullName(user), [user])
-
   const isPending = completeOnboardingMutation.isPending
 
   const { control, handleSubmit } = useForm<OnboardingFormValues>({
-    defaultValues: { fullName: signUpFullName, workspaceName: '' },
+    defaultValues: { workspaceName: '' },
     disabled: isPending,
     resolver: standardSchemaResolver(onboardingFormSchema),
   })
@@ -52,8 +45,10 @@ export function OnboardingForm() {
       },
       onSuccess: (result) => {
         setHasSessionExpired(false)
+        // Not the inbox: a fresh workspace has no channel, so there is nothing
+        // for it to show until one is connected.
         void navigate({
-          to: '/workspaces/$id/inbox',
+          to: '/workspaces/$id/settings/channels',
           params: { id: result.workspaceId },
         })
       },
@@ -78,34 +73,13 @@ export function OnboardingForm() {
         >
           <Controller
             control={control}
-            name="fullName"
-            render={({ field, fieldState }) => (
-              <TextInput
-                label={m.onboarding_full_name_label()}
-                placeholder={m.onboarding_full_name_placeholder()}
-                isRequired
-                hasAutoFocus={!signUpFullName}
-                value={field.value}
-                onChange={(next) => field.onChange(next)}
-                isDisabled={isPending}
-                status={
-                  fieldState.error?.message
-                    ? { type: 'error', message: fieldState.error.message }
-                    : undefined
-                }
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
             name="workspaceName"
             render={({ field, fieldState }) => (
               <TextInput
                 label={m.onboarding_workspace_name_label()}
                 placeholder={m.onboarding_workspace_name_placeholder()}
                 isRequired
-                hasAutoFocus={Boolean(signUpFullName)}
+                hasAutoFocus
                 value={field.value}
                 onChange={(next) => field.onChange(next)}
                 isDisabled={isPending}
@@ -143,7 +117,9 @@ export function OnboardingForm() {
           )}
 
           <Button
-            label={m.onboarding_submit()}
+            label={
+              isPending ? m.onboarding_submit_pending() : m.onboarding_submit()
+            }
             type="submit"
             variant="primary"
             width="100%"

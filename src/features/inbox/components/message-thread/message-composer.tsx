@@ -101,16 +101,19 @@ export function MessageComposer({
               {!isOnline ? (
                 <span
                   role="status"
-                  className="text-secondary flex items-center gap-2 px-1 text-xs"
+                  className="text-secondary flex items-center gap-2 text-xs"
                 >
                   <WifiOffIcon className="size-3.5 shrink-0" aria-hidden />
                   <span>{m.inbox_composer_offline_notice()}</span>
                 </span>
               ) : null}
               {replyTo ? (
-                <span className="border-border/60 bg-primary/5 flex items-center gap-2 rounded-lg border px-3 py-1.5">
-                  <span className="flex min-w-0 flex-1 flex-col text-xs">
-                    <span className="text-primary/80 font-medium">
+                // Same quote grammar as the sent bubble — a rule, not a plate.
+                // The drawer already sits inside the composer surface, so a
+                // bordered box here is a box inside a box.
+                <span className="border-primary/30 flex items-center gap-2 border-l-2 py-px pl-2">
+                  <span className="flex min-w-0 flex-1 flex-col gap-px text-xs">
+                    <span className="text-primary/90 font-semibold">
                       {m.inbox_reply_to({ name: replyAuthor ?? '' })}
                     </span>
                     {replyPreview ? (

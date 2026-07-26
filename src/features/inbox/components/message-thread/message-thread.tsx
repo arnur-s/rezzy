@@ -18,6 +18,7 @@ import {
 import { getFirstUnreadInboundMessageId } from '../../utils/read-cursor'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
+import type { MessageThreadContextValue } from './message-thread-context'
 import { MessageThreadProvider } from './message-thread-context'
 import { MessageThreadHeader } from './message-thread-header'
 import { ThreadScrollButton } from './thread-scroll-button'
@@ -201,6 +202,23 @@ export function MessageThread({
   // name, and avatars fall back to their neutral icon rather than a dash.
   const contactName = conversation.contact.name?.trim() || ''
 
+  const messagesById = useMemo(
+    () => new Map(messages.map((message) => [message.id, message])),
+    [messages],
+  )
+  // Memoized: every bubble consumes this context, so an inline object would
+  // re-render the whole transcript on each parent render.
+  const threadContext = useMemo<MessageThreadContextValue>(
+    () => ({
+      channelType: channelTypeResolved,
+      contactName,
+      reactionsByMessageId,
+      messagesById,
+      onReplyToMessage: setReplyTo,
+    }),
+    [channelTypeResolved, contactName, reactionsByMessageId, messagesById],
+  )
+
   return (
     <div className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden">
       <MessageThreadHeader
@@ -218,13 +236,7 @@ export function MessageThread({
           scroll-to-bottom button; it is keyed by conversation so switching
           threads resets scroll state. */}
       <div className="flex min-h-0 flex-1 flex-col">
-        <MessageThreadProvider
-          value={{
-            channelType: channelTypeResolved,
-            reactionsByMessageId,
-            onReplyToMessage: setReplyTo,
-          }}
-        >
+        <MessageThreadProvider value={threadContext}>
           <ChatLayout
             key={conversation.id}
             scrollButton={

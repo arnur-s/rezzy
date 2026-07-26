@@ -22,14 +22,13 @@ export class OnboardingSessionExpiredError extends Error {
  *
  * The RPC derives the user from auth.uid(), so no user id is sent from the
  * browser, and repeated calls return the existing workspace instead of creating
- * a second one.
+ * a second one. The display name comes from the auth metadata sign-up already
+ * captured, which is why the workspace name is the only thing sent here.
  */
 export async function completeOnboarding({
-  fullName,
   workspaceName,
 }: OnboardingFormValues): Promise<OnboardingResult> {
   const { data, error } = await supabase.rpc('complete_onboarding', {
-    p_full_name: fullName.trim(),
     p_workspace_name: workspaceName.trim(),
   })
 

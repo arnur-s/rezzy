@@ -1,6 +1,7 @@
 import { getUserDisplayName } from '@/entities/user'
 import type { Workspace } from '@/entities/workspace'
 import { resolveWorkspaceIcon } from '@/entities/workspace'
+import { useWorkspaceReadiness } from '@/features/channels/hooks/use-channels'
 import { UnreadNotificationsNavItem } from '@/features/notifications'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
@@ -8,11 +9,12 @@ import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import { Avatar } from '@astryxdesign/core/Avatar'
-import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
+import { Divider } from '@astryxdesign/core/Divider'
 import type {
   DropdownMenuButtonProps,
   DropdownMenuOption,
 } from '@astryxdesign/core/DropdownMenu'
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import { NavHeadingMenu, NavHeadingMenuItem } from '@astryxdesign/core/NavMenu'
 import {
   SideNav,
@@ -23,6 +25,7 @@ import {
 } from '@astryxdesign/core/SideNav'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { useToast } from '@astryxdesign/core/Toast'
+import { Tooltip } from '@astryxdesign/core/Tooltip'
 import { useNavigate, useParams, useRouterState } from '@tanstack/react-router'
 import {
   ChevronsUpDownIcon,
@@ -44,8 +47,14 @@ export interface SidebarProps {
   onNavigate?: () => void
 }
 
-/** Routes scoped to the person rather than to a workspace. */
-const ACCOUNT_ROUTES = ['/settings', '/profile']
+/** Route prefixes scoped to the person rather than to a workspace. */
+const ACCOUNT_ROUTE_PREFIXES = ['/settings', '/profile']
+
+function isAccountRoute(pathname: string) {
+  return ACCOUNT_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+}
 
 export function Sidebar({
   isCollapsed,
@@ -59,7 +68,7 @@ export function Sidebar({
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const params = useParams({ strict: false })
   const currentWorkspaceId = params.id
-  const isHomeArea = pathname === '/' || ACCOUNT_ROUTES.includes(pathname)
+  const isHomeArea = pathname === '/' || isAccountRoute(pathname)
 
   const workspacesQuery = useWorkspaces(user?.id ?? '')
 
@@ -71,6 +80,14 @@ export function Sidebar({
           workspacesQuery.data?.[0]),
     [workspacesQuery.data, currentWorkspaceId, isHomeArea],
   )
+
+  const readiness = useWorkspaceReadiness(currentWorkspace?.id ?? '')
+
+  // Only once readiness is known false. An unsettled or failed check leaves the
+  // item alone rather than flickering it disabled on every workspace switch —
+  // the route guard is what actually enforces the rule.
+  const isInboxLocked =
+    !readiness.isPending && !readiness.isError && !readiness.hasActiveChannel
 
   if (!user) return null
 
@@ -117,7 +134,7 @@ export function Sidebar({
                 label={m.sidebar_settings_label()}
                 icon={SettingsIcon}
                 href="/settings"
-                isSelected={pathname === '/settings'}
+                isSelected={isAccountRoute(pathname)}
                 onClick={onNavigate}
               />
             </>
@@ -133,15 +150,22 @@ export function Sidebar({
                 }
                 onClick={onNavigate}
               />
-              <SideNavItem
-                label={m.sidebar_inbox_label()}
-                icon={MessageCircleIcon}
-                href={`/workspaces/${currentWorkspace.id}/inbox`}
-                isSelected={pathname.startsWith(
-                  `/workspaces/${currentWorkspace.id}/inbox`,
-                )}
-                onClick={onNavigate}
-              />
+              <Tooltip
+                content={m.sidebar_inbox_locked_tooltip()}
+                isEnabled={isInboxLocked}
+                placement="end"
+              >
+                <SideNavItem
+                  label={m.sidebar_inbox_label()}
+                  icon={MessageCircleIcon}
+                  href={`/workspaces/${currentWorkspace.id}/inbox`}
+                  isSelected={pathname.startsWith(
+                    `/workspaces/${currentWorkspace.id}/inbox`,
+                  )}
+                  isDisabled={isInboxLocked}
+                  onClick={onNavigate}
+                />
+              </Tooltip>
               <SideNavItem
                 label={m.common_settings()}
                 icon={SettingsIcon}
@@ -156,7 +180,10 @@ export function Sidebar({
         </SideNavSection>
 
         {/* Unread spans every workspace, so it sits apart from the nav items
-            that only describe where you currently are. */}
+            that only describe where you currently are. The rule is skipped
+            when nothing renders above it. */}
+        {isHomeArea || currentWorkspace ? <NavSectionRule /> : null}
+
         <SideNavSection
           title={m.sidebar_activity_nav_aria_label()}
           isHeaderHidden
@@ -171,6 +198,20 @@ export function Sidebar({
       />
     </>
   )
+}
+
+/**
+ * Section rule inside the scrollable nav body, matched to the one SideNav draws
+ * above its footer: edge-to-edge across the rail (so it escapes the 8px inline
+ * padding), 4px of air on both sides, and gone while collapsed — the footer
+ * drops its own border there too.
+ */
+function NavSectionRule() {
+  const { isCollapsed } = useSideNavCollapse()
+
+  if (isCollapsed) return null
+
+  return <Divider className="-mx-2 my-1 w-auto" />
 }
 
 /**
@@ -192,7 +233,7 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
 
   const displayName = getUserDisplayName(user, m.sidebar_unknown_user())
 
-  function go(to: '/profile' | '/settings') {
+  function go(to: '/settings/profile' | '/settings/appearance') {
     setIsOpen(false)
     onNavigate?.()
     void navigate({ to })
@@ -214,12 +255,14 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
     {
       label: m.sidebar_profile(),
       icon: <UserRoundIcon className="size-4" />,
-      onClick: () => go('/profile'),
+      onClick: () => go('/settings/profile'),
     },
     {
+      // Straight to the preferences: Profile above already owns the identity
+      // section, so landing both entries on the same page would be a dead end.
       label: m.sidebar_settings_label(),
       icon: <SettingsIcon className="size-4" />,
-      onClick: () => go('/settings'),
+      onClick: () => go('/settings/appearance'),
     },
     // Signing out ends the session rather than moving you inside it, so it is
     // set apart from the two routes above.

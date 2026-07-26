@@ -1,10 +1,13 @@
 import { SettingRow, SettingsSection } from '@/components/settings-section'
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
+import { Banner } from '@astryxdesign/core/Banner'
+import { Button } from '@astryxdesign/core/Button'
 import { Selector } from '@astryxdesign/core/Selector'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { Switch } from '@astryxdesign/core/Switch'
 import { useToast } from '@astryxdesign/core/Toast'
-import { cn } from '@/lib/cn'
+import { useId } from 'react'
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -81,6 +84,7 @@ export function NotificationSettings() {
   const preferencesQuery = useNotificationPreferences()
   const updatePreferences = useUpdateNotificationPreferences()
   const push = usePushSubscription()
+  const permissionHelpId = useId()
 
   const preferences: NotificationPreferences =
     preferencesQuery.data ?? DEFAULT_NOTIFICATION_PREFERENCES
@@ -96,6 +100,7 @@ export function NotificationSettings() {
   async function handleDesktopChange(value: boolean) {
     if (value) {
       try {
+        // Permission is only ever requested from here — an explicit toggle.
         const subscribed = await push.subscribe()
         if (!subscribed) return
         save({ ...preferences, desktopEnabled: true })
@@ -113,112 +118,149 @@ export function NotificationSettings() {
     save({ ...preferences, previewMode: next })
   }
 
-  if (preferencesQuery.isError) {
-    return (
-      <p className="text-error text-sm">
-        {m.settings_notifications_load_error()}
-      </p>
-    )
-  }
-
-  if (preferencesQuery.isPending) {
-    return <NotificationSettingsSkeleton />
-  }
-
   const permissionGranted = push.permission === 'granted'
   const desktopOn = preferences.desktopEnabled && permissionGranted
-  const desktopDisabled =
-    !push.isSupported || push.permission === 'denied' || push.isBusy
+  const isPermissionBlocked =
+    !push.isSupported || push.permission === 'denied'
+  const desktopDisabled = isPermissionBlocked || push.isBusy
+
+  const permissionHelp =
+    push.permission === 'denied'
+      ? m.settings_notifications_permission_denied_help()
+      : push.permission === 'unsupported'
+        ? m.settings_notifications_permission_unsupported_help()
+        : null
 
   return (
-    <SettingsSection
-      title={m.settings_notifications_title()}
-      description={m.settings_notifications_description()}
-    >
-      <SettingRow
-        label={m.settings_notifications_in_app_label()}
-        description={m.settings_notifications_in_app_description()}
-        control={
-          <ToggleSwitch
-            isSelected={preferences.inAppEnabled}
-            onChange={(value) => save({ ...preferences, inAppEnabled: value })}
-            ariaLabel={m.settings_notifications_in_app_label()}
+    <div className="flex flex-col gap-10">
+      <SettingsSection
+        title={m.settings_notifications_title()}
+        description={m.settings_notifications_description()}
+      >
+        {preferencesQuery.isError ? (
+          <Banner
+            status="error"
+            title={m.settings_notifications_load_error()}
+            description={m.settings_notifications_load_error_description()}
+            endContent={
+              <Button
+                label={m.common_retry()}
+                size="sm"
+                variant="secondary"
+                isLoading={preferencesQuery.isFetching}
+                onClick={() => void preferencesQuery.refetch()}
+              />
+            }
           />
-        }
-      />
-
-      <SettingRow
-        label={m.settings_notifications_desktop_label()}
-        description={m.settings_notifications_desktop_description()}
-        control={
-          <ToggleSwitch
-            isSelected={desktopOn}
-            onChange={handleDesktopChange}
-            isDisabled={desktopDisabled}
-            ariaLabel={m.settings_notifications_desktop_label()}
-          />
-        }
-      />
-
-      <div className="flex items-center justify-between gap-4 pl-0 text-sm">
-        <span className="text-secondary">
-          {m.settings_notifications_permission_label()}
-        </span>
-        <span
-          className={cn(
-            'font-medium',
-            push.permission === 'granted' && 'text-success',
-            push.permission === 'denied' && 'text-error',
-            (push.permission === 'default' ||
-              push.permission === 'unsupported') &&
-              'text-primary/70',
-          )}
-        >
-          {PERMISSION_LABELS[push.permission]()}
-        </span>
-      </div>
-
-      {push.permission === 'denied' ? (
-        <p className="text-secondary mt-1 text-xs">
-          {m.settings_notifications_permission_denied_help()}
-        </p>
-      ) : null}
-      {push.permission === 'unsupported' ? (
-        <p className="text-secondary mt-1 text-xs">
-          {m.settings_notifications_permission_unsupported_help()}
-        </p>
-      ) : null}
-
-      <SettingRow
-        label={m.settings_notifications_sound_label()}
-        description={m.settings_notifications_sound_description()}
-        control={
-          <ToggleSwitch
-            isSelected={preferences.soundEnabled}
-            onChange={(value) => save({ ...preferences, soundEnabled: value })}
-            ariaLabel={m.settings_notifications_sound_label()}
-          />
-        }
-      />
-
-      <SettingRow
-        label={m.settings_notifications_preview_label()}
-        description={m.settings_notifications_preview_description()}
-        control={
-          <div className="w-48">
-            <Selector
-              label={m.settings_notifications_preview_label()}
-              isLabelHidden
-              value={preferences.previewMode}
-              onChange={handlePreviewChange}
-              options={MESSAGE_PREVIEW_MODES.map((mode) => ({
-                value: mode,
-                label: PREVIEW_MODE_LABELS[mode](),
-              }))}
+        ) : preferencesQuery.isPending ? (
+          <NotificationSettingsSkeleton />
+        ) : (
+          <>
+            <SettingRow
+              label={m.settings_notifications_in_app_label()}
+              description={m.settings_notifications_in_app_description()}
+              scope={m.settings_scope_account()}
+              control={
+                <ToggleSwitch
+                  isSelected={preferences.inAppEnabled}
+                  onChange={(value) =>
+                    save({ ...preferences, inAppEnabled: value })
+                  }
+                  ariaLabel={m.settings_notifications_in_app_label()}
+                />
+              }
             />
+
+            <SettingRow
+              label={m.settings_notifications_sound_label()}
+              description={m.settings_notifications_sound_description()}
+              scope={m.settings_scope_account()}
+              control={
+                <ToggleSwitch
+                  isSelected={preferences.soundEnabled}
+                  onChange={(value) =>
+                    save({ ...preferences, soundEnabled: value })
+                  }
+                  ariaLabel={m.settings_notifications_sound_label()}
+                />
+              }
+            />
+
+            <SettingRow
+              label={m.settings_notifications_preview_label()}
+              description={m.settings_notifications_preview_description()}
+              scope={m.settings_scope_account()}
+              control={
+                <div className="w-full sm:w-48">
+                  <Selector
+                    label={m.settings_notifications_preview_label()}
+                    isLabelHidden
+                    value={preferences.previewMode}
+                    onChange={handlePreviewChange}
+                    options={MESSAGE_PREVIEW_MODES.map((mode) => ({
+                      value: mode,
+                      label: PREVIEW_MODE_LABELS[mode](),
+                    }))}
+                  />
+                </div>
+              }
+            />
+          </>
+        )}
+      </SettingsSection>
+
+      {/* Kept apart from the account preferences above: this one belongs to the
+          browser, and its permission is the browser's to grant, not ours. */}
+      <SettingsSection
+        title={m.settings_notifications_device_title()}
+        description={m.settings_notifications_device_description()}
+      >
+        <SettingRow
+          label={m.settings_notifications_desktop_label()}
+          description={m.settings_notifications_desktop_description()}
+          scope={m.settings_scope_this_browser()}
+          control={
+            <div aria-describedby={permissionHelp ? permissionHelpId : undefined}>
+              <ToggleSwitch
+                isSelected={desktopOn}
+                onChange={handleDesktopChange}
+                isDisabled={desktopDisabled || preferencesQuery.isError}
+                ariaLabel={m.settings_notifications_desktop_label()}
+              />
+            </div>
+          }
+        />
+
+        <div className="border-border/60 flex flex-col gap-1 border-t py-4">
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <span className="text-secondary">
+              {m.settings_notifications_permission_label()}
+            </span>
+            <span
+              className={cn(
+                'font-medium',
+                push.permission === 'granted' && 'text-success',
+                push.permission === 'denied' && 'text-error',
+                (push.permission === 'default' ||
+                  push.permission === 'unsupported') &&
+                  'text-primary/70',
+              )}
+            >
+              {PERMISSION_LABELS[push.permission]()}
+            </span>
           </div>
-        }
-      />
-    </SettingsSection>
+
+          {permissionHelp ? (
+            <p id={permissionHelpId} className="text-secondary text-xs">
+              {permissionHelp}
+            </p>
+          ) : (
+            <p className="text-secondary text-xs">
+              {m.settings_notifications_permission_managed_help()}
+            </p>
+          )}
+        </div>
+      </SettingsSection>
+    </div>
   )
 }

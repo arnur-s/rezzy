@@ -1,409 +1,693 @@
 ---
 name: Rezzy
-description: Multi-workspace customer inbox and CRM for sales and account management teams
+description: Multi-workspace customer inbox and CRM for sales and account-management teams
 colors:
-  # Values mirror src/styles.css exactly. That file is the source of truth;
-  # if the two disagree, styles.css wins and this block is stale.
-  # Light mode
-  ink-accent: 'oklch(0 0 0)'
-  ash-canvas: 'oklch(93.5% 0 0)'
-  clean-sheet: 'oklch(100% 0 0)'
-  quiet-step: 'oklch(95.24% 0 0)'
-  graphite-text: 'oklch(21.03% 0 0)'
-  slate-muted: 'oklch(55.17% 0 0)'
-  hairline: 'oklch(90% 0 0)'
-  # Dark mode
-  midnight-ink: 'oklch(12% 0 0)'
-  charcoal-surface: 'oklch(21.03% 0 0)'
-  charcoal-step: 'oklch(16.5% 0 0)'
-  dusk-border: 'oklch(28% 0 0)'
-  snow-accent: 'oklch(0.9848 0 0)'
-  # Status (shared)
-  meadow-green: 'oklch(0.6277 0.1604 153.06)'
-  warm-amber: 'oklch(0.8446 0.1525 80.6)'
-  coral-alert: 'oklch(0.573 0.2249 21.97)'
+  # The gothic theme is the source of truth: src/themes/gothic/gothicTheme.ts,
+  # compiled to src/themes/gothic/theme.css by `pnpm theme:build`. If this block
+  # and that file disagree, the theme wins and this is stale.
+  #
+  # Every token below is a single tone. Light and dark do not use different
+  # palettes — they swap which tone plays which role. See "The Five Tones Rule".
+  #
+  # Core neutral ramp: H≈210, C=4
+  ink: '#101314' # T10 — dark-mode page, light-mode text and accent
+  charcoal: '#24292D' # T20 — dark-mode recessed step
+  slate: '#495056' # T40 — light-mode secondary text
+  fog: '#96A0AB' # T75 — dark-mode secondary text, light-mode disabled
+  mist: '#D8E2E9' # light-mode recessed step
+  parchment: '#E8F1F6' # T95 — light-mode page, dark-mode text and accent
+  vellum: '#FFFFFF' # light-mode raised card and popover
+  pitch: '#1a1d20' # dark-mode raised card
+  # Neutral chip — the one categorical that flips (secondary button, neutral badge)
+  stone-chip: '#d5dee4' # light
+  iron-chip: '#3d4248' # dark
+  # Status — deep tones on parchment, dusty pastels on ink
+  forest-moss: '#3a5e2c' # success, light
+  sage-moss: '#b3c79a' # success, dark
+  blood-crimson: '#8d2d4c' # error, light
+  dusty-rose: '#c6a6a2' # error, dark
+  deep-gold: '#6c5010' # warning, light
+  aged-gold: '#d3c490' # warning, dark
+  # Categorical chips — single-valued, self-contained plate + same-hue text
+  periwinkle-plate: '#a3b5d6'
+  periwinkle-vivid: '#1f2c54'
+  moss-plate: '#b3c79a'
+  moss-vivid: '#244023'
+  gold-plate: '#d3c490'
+  gold-vivid: '#6c5010'
+  rose-plate: '#c6a6a2'
+  rose-vivid: '#4a2520'
 typography:
+  display:
+    fontFamily: "'Manufacturing Consent', 'UnifrakturMaguntia', 'Old English Text MT', serif"
+    fontSize: '3.8125rem'
+    fontWeight: 400
+    lineHeight: 1.2459
+  heading:
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontSize: '1.9375rem'
+    fontWeight: 600
+    lineHeight: 1.4194
   title:
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-    fontSize: '0.875rem'
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontSize: '1rem'
     fontWeight: 600
     lineHeight: 1.5
   body:
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-    fontSize: '0.875rem'
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontSize: '0.8125rem'
+    fontWeight: 400
+    lineHeight: 1.5385
+  label:
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontSize: '0.625rem'
+    fontWeight: 500
+    lineHeight: 1.6
+  code:
+    fontFamily: "'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace"
+    fontSize: '1rem'
     fontWeight: 400
     lineHeight: 1.5
-  label:
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-    fontSize: '0.75rem'
-    fontWeight: 500
-    lineHeight: 1.5
-  small:
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-    fontSize: '0.6875rem'
-    fontWeight: 600
-    lineHeight: 1.4
-    letterSpacing: 'normal'
 rounded:
-  sm: '4px'
-  md: '8px'
-  lg: '12px'
-  xl: '16px'
+  none: '0.125rem'
+  inner: '0.25rem'
+  element: '0.5rem'
+  container: '0.75rem'
+  page: '1.5rem'
+  full: '9999px'
 spacing:
-  xs: '8px'
-  sm: '12px'
-  md: '16px'
-  lg: '24px'
+  '0-5': '2px'
+  '1': '4px'
+  '2': '8px'
+  '3': '12px'
+  '4': '16px'
+  '6': '24px'
+  '8': '32px'
+  '12': '48px'
 components:
   button-primary:
-    backgroundColor: '{colors.ink-accent}'
-    textColor: '{colors.snow-accent}'
-    rounded: '{rounded.sm}'
-    padding: '8px 20px'
+    backgroundColor: '{colors.ink}'
+    textColor: '{colors.parchment}'
+    rounded: '{rounded.inner}'
+    padding: '8px 12px'
+  button-secondary:
+    backgroundColor: '{colors.stone-chip}'
+    textColor: '{colors.charcoal}'
+    rounded: '{rounded.inner}'
+    padding: '8px 12px'
   button-ghost:
     backgroundColor: 'transparent'
-    textColor: '{colors.graphite-text}'
-    rounded: '{rounded.sm}'
-    padding: '8px 20px'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.inner}'
+    padding: '8px 12px'
   button-ghost-hover:
-    backgroundColor: 'color-mix(in oklab, {colors.ink-accent} 10%, transparent)'
-    textColor: '{colors.ink-accent}'
-    rounded: '{rounded.sm}'
-    padding: '8px 20px'
-  nav-item:
+    backgroundColor: 'color-mix(in srgb, {colors.ink} 5%, transparent)'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.inner}'
+    padding: '8px 12px'
+  button-destructive:
+    backgroundColor: '{colors.blood-crimson}'
+    textColor: '{colors.parchment}'
+    rounded: '{rounded.inner}'
+    padding: '8px 12px'
+  list-row:
     backgroundColor: 'transparent'
-    textColor: 'color-mix(in oklab, {colors.graphite-text} 60%, transparent)'
-    rounded: '{rounded.md}'
-    padding: '8px 12px'
-  nav-item-active:
-    backgroundColor: 'color-mix(in oklab, {colors.ink-accent} 12%, transparent)'
-    textColor: '{colors.ink-accent}'
-    rounded: '{rounded.md}'
-    padding: '8px 12px'
-  workspace-pane:
-    backgroundColor: '{colors.clean-sheet}'
-    borderColor: 'transparent'
-    rounded: '{rounded.lg}'
-    padding: '0px'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.container}'
+    padding: '10px 12px'
+  list-row-hover:
+    backgroundColor: 'color-mix(in srgb, {colors.ink} 4%, transparent)'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.container}'
+    padding: '10px 12px'
+  list-row-selected:
+    backgroundColor: 'color-mix(in srgb, {colors.ink} 10%, transparent)'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.container}'
+    padding: '10px 12px'
+  badge-info:
+    backgroundColor: '{colors.periwinkle-plate}'
+    textColor: '{colors.periwinkle-vivid}'
+    rounded: '{rounded.element}'
+    padding: '2px 6px'
+  badge-neutral:
+    backgroundColor: '{colors.stone-chip}'
+    textColor: '{colors.charcoal}'
+    rounded: '{rounded.element}'
+    padding: '2px 6px'
   input-default:
-    backgroundColor: '{colors.quiet-step}'
-    textColor: '{colors.graphite-text}'
-    rounded: '{rounded.sm}'
-    padding: '8px 12px'
+    backgroundColor: 'transparent'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.element}'
+    padding: '6px 8px'
+  card-default:
+    backgroundColor: '{colors.vellum}'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.container}'
+    padding: '12px'
+  message-bubble:
+    backgroundColor: 'color-mix(in srgb, {colors.ink} 10%, transparent)'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.container}'
+    padding: '12px'
+  pane-header:
+    backgroundColor: 'transparent'
+    textColor: '{colors.ink}'
+    height: '64px'
+    padding: '0 12px'
 ---
 
 # Design System: Rezzy
 
-## 1. Overview
+## Overview
 
-**Creative North Star: "The Calm Operator"**
+**Creative North Star: "The Ink Desk"**
 
-Rezzy is designed for the rhythm of sustained professional work. Sales reps and account managers open this tool to scan new messages, reply to leads, check contact history, and move on. The interface should feel like a well-organized desk: everything findable, nothing asserting itself. The UI does not perform — it performs for you.
+Rezzy is one page with writing on it. The authenticated shell is a single
+continuous surface — no floating cards, no stacked planes, no gutters showing a
+canvas underneath — divided only by hairline rules, the way a ruled ledger
+divides itself. Regions are established by lines and by the reading measure of
+the text inside them, not by boxes. This is the product's structural claim, and
+almost every rule below follows from it.
 
-The system is fully adaptive between light and dark modes, driven by the user's OS preference with manual override. In light mode, the palette is ash-and-white with shadow giving depth to panes. In dark mode, everything flattens: midnight ink backgrounds and tonal steps replacing shadows. The accent inverts between the two rather than staying fixed, because it is the end of the neutral ramp, not a hue. Both modes share the same restraint. Neither mode is the default because neither use-case is assumed.
+The palette is a single hue worn thin: five steps of a cool blue-gray (H≈210,
+C=4), from parchment `#E8F1F6` to ink `#101314`. Light and dark are not two
+palettes but one, with the roles reversed — the tone that writes the text on ink
+becomes the page in light mode. Because there is only one hue in the neutrals,
+chroma is genuinely informative when it appears: the ten categorical chips are
+dusty pastel plates carrying deep same-hue text, and they mark channel, status,
+and count. Nothing else is colored.
 
-Color is not rationed — it is nearly absent. The palette is pure neutral: every grey is zero-chroma, with no blue or purple cast anywhere. The accent is monochrome too — true black in light mode, near-white in dark. It marks where to act — active navigation, unread counts, the selected conversation, primary buttons — and it does so through tone alone. Chroma appears only in the three status colors, where meaning genuinely depends on hue. This is a stronger claim than a restrained palette: nothing on screen competes with the customer's own words.
-
-Structure, not color, carries the hierarchy. The authenticated shell is a base canvas with elevated panes floating on it, and that spatial relationship does the work an accent color would otherwise be asked to do.
+Type is a two-size instrument. The product runs on 13px body and 10px labels,
+with 16px reserved for page titles; hierarchy is carried by weight (400 → 500 →
+600), never by scale. Held in reserve above all of it, unused by any product
+surface, is a blackletter display face — the theme's signature, waiting for a
+marketing surface that does not exist yet. The register is calm and worked-in,
+not ceremonial: a desk you return to, not a document you admire.
 
 **Key Characteristics:**
 
-- System-adaptive theming: full light and dark support with shared token vocabulary
-- Monochrome accent: the interface has no expressive hue outside status colors
-- Layered shell: a canvas holds the sidebar; workspace content sits on panes above it
-- Tonal elevation: light mode uses shadow; dark mode uses flat tonal layering
-- Work-dense scale: 14px body, 12px labels, no display sizes — this is a tool, not a brochure
-- System typography: no loaded typeface; the interface defers to the OS font
-- Effect reserved: the dot-grid radial background appears only on auth and onboarding screens, never inside the product shell
+- One continuous surface: the shell has no canvas/pane split, and no pane has a fill, radius, gap, or shadow
+- Hairline separation: a 1px `border-border/60` rule is the only device that divides regions
+- One neutral hue: five tones of H≈210 C=4, whose roles invert between light and dark
+- Two-size type: 13px body, 10px labels, 16px page titles; weight carries hierarchy
+- Chroma is categorical: ten dusty-pastel chip triples, each self-contained with its own text color
+- Reserved blackletter: Manufacturing Consent exists at display sizes only and appears on no product surface
+- Theatrical motion tokens (150 / 350 / 800ms) against near-instant UI transitions
+- Depth has exactly two moves: recess to `bg-muted`, or raise to `bg-card`
 
-## 2. Colors: The Monochrome Palette
+## Colors
 
-No expressive color. Tone and structure carry everything except status.
+One neutral hue, ten categorical hues, and a hard rule that the neutrals carry
+structure while chroma carries meaning.
 
-### Accent
+### Primary
 
-- **Ink Accent** (light: `oklch(0 0 0)` / dark: `oklch(0.9848 0 0)`): The sole action color, and it is not a color — it is the far end of the neutral ramp, inverting between modes. Used for active navigation, unread count chips, the selected conversation row, primary buttons, focus rings, outbound message bubbles, and the brand mark. Never decorative.
-- **Accent Soft** (`color-mix(in oklab, var(--accent) 15%, transparent)`, via HeroUI's `--accent-soft`): The accent at low opacity. Tints active states on *small controls that sit on a surface* — nav items, filter chips. It is not used for selected list rows; see The Lift-Not-Fill Rule.
+The accent is not a hue. It is the far end of the neutral ramp, and it inverts
+between modes.
 
-### Neutral (Light Mode)
+- **Ink** (`#101314`, T10): The accent in light mode and the page in dark mode. As accent it takes primary buttons, active nav, links, the workspace mark, focus rings, and text at full strength (`text-primary`, `bg-accent-bg`, `text-accent`).
+- **Parchment** (`#E8F1F6`, T95): The mirror. The page in light mode and the accent in dark mode. On an accent fill the label is always `text-on-accent`, which inverts with it — never a literal tone.
 
-- **Ash Canvas** (`oklch(93.5% 0 0)`): The app canvas. The sidebar and header sit directly on it; panes float above it. Deliberately a full step below Clean Sheet: because panes carry no border, the canvas contrast *is* the pane edge.
-- **Clean Sheet** (`oklch(100% 0 0)`): Pane and surface backgrounds. The layer above the canvas.
-- **Quiet Step** (`oklch(95.24% 0 0)`, HeroUI's `--surface-secondary`): The recessed step inside a pane — the message transcript, form field fills.
-- **Graphite Text** (`oklch(21.03% 0 0)`): Primary text and icons. Zero chroma — no blue-purple cast.
-- **Slate Muted** (`oklch(55.17% 0 0)`): Secondary text, timestamps, metadata, placeholder text. Always supporting, never leading.
-- **Hairline** (`oklch(90% 0 0)`): Borders, dividers, pane edges. Visible enough to structure, invisible enough to not distract.
+Every interactive tint in the product is this accent at low alpha, expressed as
+`bg-primary/4` (hover), `bg-primary/10` (selected), `bg-primary/5` (quiet
+plates). Those percentages are the whole state vocabulary.
 
-### Neutral (Dark Mode)
+### Neutral
 
-- **Midnight Ink** (`oklch(12% 0 0)`): The app canvas in dark mode. Pure neutral near-black. Dark mode has no shadow *and* no pane border, so this token carries the entire separation between canvas and pane — it must stay well below Charcoal Surface.
-- **Charcoal Surface** (`oklch(21.03% 0 0)`): Pane backgrounds. The tonal step above Midnight Ink that replaces shadow.
-- **Charcoal Step** (`oklch(16.5% 0 0)`): The recessed step inside a pane. Sits *below* the pane, matching light mode's direction, so a surface lifted back up inside it (the composer, a selected row) reads as raised in both themes. This overrides HeroUI's default `--surface-secondary`, which sits above `--surface` and inverts the relationship.
-- **Dusk Border** (`oklch(28% 0 0)`): Separators *inside* panes only. Never around a pane.
+The full ramp, in role order. Light mode and dark mode draw from the same five
+tones and reverse their assignments.
+
+- **Ink** (`#101314`) / **Parchment** (`#E8F1F6`): Page and text. `--color-background-body`, `--color-background-surface`, and `--color-text-primary` all resolve to one of these two. The page and the text are the same two values traded back and forth.
+- **Slate** (`#495056`, T40) / **Fog** (`#96A0AB`, T75): Secondary text, timestamps, metadata, supporting copy — `text-secondary`. Slate on parchment, Fog on ink. Fog doubles as light mode's disabled tone.
+- **Mist** (`#D8E2E9`) / **Charcoal** (`#24292D`): The recessed step — `bg-muted`. Avatar and platform plates, media wells, skeletons. This is the *only* neutral that reads as a step down from the page, so it does all the recessing in the system.
+- **Vellum** (`#FFFFFF`) / **Pitch** (`#1a1d20`): The raised step — `bg-card`. Light mode runs out of room above parchment, so it raises with pure white plus a shadow; dark mode stacks a tone upward and needs no shadow. Popovers use Vellum / Charcoal.
+- **Border** (`#1013141A` / `#E8F1F61A`): The hairline — the accent at 10% alpha, not a tone of its own. Drawn in product code at `border-border/60`, which lands it near 6% against the page: present enough to divide, quiet enough to disappear when you stop looking for it.
+
+### Secondary (Categorical)
+
+Ten hues, each shipped as a self-contained triple: a dusty pastel plate
+(`bg-*-subtle`), a saturated edge (`border-*-ring`), and deep same-hue text
+(`text-*-vivid`). They are single-valued — the same chip reads correctly on
+parchment and on ink, because it carries its own foreground. The exception is
+gray, which flips, because a dark slate plate on parchment would collide with
+the ink accent and collapse primary and secondary buttons into each other.
+
+Four are reachable through product components today, via `Badge` and `Card`
+variants:
+
+- **Periwinkle Midnight** (plate `#a3b5d6`, text `#1f2c54`): `variant="info"`. Unread counts and the neutral-informational chip.
+- **Sage Moss** (plate `#b3c79a`, text `#244023`): `variant="success"`. Resolved conversations, connected channels.
+- **Aged Gold** (plate `#d3c490`, text `#6c5010`): `variant="warning"`. Pending and degraded states.
+- **Dusty Rose** (plate `#c6a6a2`, text `#4a2520`): `variant="error"`. Failed sends, disconnected channels.
+
+A plate is sized for a chip. `Banner` takes the same four hues but not the same
+fill, because it runs the full measure — see The Chip Is Not A Field Rule.
+
+Cyan, orange, pink, purple, teal, and the flipping gray exist in the theme with
+full tonal ramps and are available for data visualization and future
+categorization. They are capacity, not current vocabulary — reach for one only
+when a new dimension of meaning genuinely appears.
 
 ### Tertiary (Status)
 
-The only chroma in the system. Reserved for meaning that cannot be conveyed by tone.
+Distinct from the categorical chips: status tokens are drawn as *text* and as
+5–20% tints of themselves (`text-error`, `bg-error/10`), never as opaque plates.
+That is why they are the one place the palette carries a light/dark pair — a
+tone has to clear 4.5:1 against the page *and* against its own tint.
 
-- **Meadow Green** (`oklch(0.6277 0.1604 153.06)`): Success states, resolved conversation indicators.
-- **Warm Amber** (`oklch(0.8446 0.1525 80.6)`): Warning states.
-- **Coral Alert** (`oklch(0.573 0.2249 21.97)`): Error states, form validation, danger actions, active voice recording.
+- **Forest Moss** (`#3a5e2c`) / **Sage Moss** (`#b3c79a`): `--color-success`.
+- **Blood Crimson** (`#8d2d4c`) / **Dusty Rose** (`#c6a6a2`): `--color-error`. Form validation, failed sends, destructive fills, live voice recording. Light mode borrows rose-madder T30 rather than the red ramp's deep end, which reads brown.
+- **Deep Gold** (`#6c5010`) / **Aged Gold** (`#d3c490`): `--color-warning`.
+
+The `-muted` companions (`--color-success-muted` and friends) are fills only —
+status message wells. Dark keeps the opaque pastel; light steps up to T90, where
+the hue reads as a soft note on parchment rather than a slab. `Banner` is their
+one consumer, and info's pair (`#dde2f1` / `#a3b5d6`) is declared inside the
+banner override rather than as a token, since there is no `--color-info` for it
+to hang off and nothing else would read it.
 
 ### Named Rules
 
-**The Monochrome Rule.** There is no brand hue. If a design problem seems to need one, it is a hierarchy problem: solve it with tone, weight, spacing, or elevation. Introducing a chromatic accent would flatten the status colors, which are the only place hue currently means anything.
+**The Five Tones Rule.** The neutral system is five steps of one hue, and light
+mode inverts their roles rather than introducing new values. If a surface seems
+to need a sixth neutral, it needs a different layer or a hairline — not a new
+tone. Add one and the mode inversion stops being reversible.
 
-**The Lift-Not-Fill Rule.** In a monochrome system, tinting a selected row with the accent produces grey — the exact "generic grey block" that reads as disabled rather than chosen. So selection in a list is expressed by *elevation*: the list body is recessed, rows are transparent, and the selected row lifts to `--surface`. Small controls (nav items, filter chips) may still use a low-opacity accent tint, because they sit on a surface rather than in a recessed list.
+**The Chip Carries Its Own Text Rule.** A categorical plate is never combined
+with `text-primary`. Each hue's `-vivid` token is the only correct foreground on
+its `-subtle` plate, and the theme's `Card` and `Banner` variants rebind
+`--color-text-primary` locally so nested `Text` children inherit it. Use the
+variant; do not hand-assemble a plate.
 
-**The Mode Split Rule.** Light mode and dark mode are not the same theme inverted. Light mode uses shadow for elevation; dark mode uses tonal layering. Never apply `shadow-*` unconditionally. Trust the `--surface-shadow` token to resolve to the correct value per theme — and never delete its dark-mode override, which is what keeps dark surfaces flat.
+**The Chip Is Not A Field Rule.** A plate is calibrated for chip area. `#b3c79a`
+is right behind 10px text at 60px wide and a slab at 700px, where it outshouts
+the ink primary button beside it and inverts the page's hierarchy on a message
+that is only a confirmation. So a status surface that runs the full measure fills
+with the `-muted` well instead, and the hue stays at full strength in the icon,
+the copy, and the action — the field goes quiet, the meaning does not. Measured
+light: the well lands 1.07–1.46:1 against the page, its copy 6.2–10.5:1 against
+the well.
 
-## 3. Typography
+**The Region Rebinds The Neutral Chip Rule.** Inside a status region the neutral
+chip becomes that hue's vivid tone, so a secondary `Button` in a banner's
+`endContent` arrives as a deep same-hue chip instead of `#d5dee4` — a cool gray
+at the same tone as the well it sits on, which is a shape with no affordance.
+Rebind `--color-background-gray` / `--color-text-gray` on the region, never the
+button; that way the loudest note on a quiet well is the thing to press.
 
-**Body/Interface Font:** System UI (San Francisco on Apple, Segoe UI on Windows, Roboto on Android)
+**The Brand-Hex Exception.** Platform brand colors — Telegram `#26A5E4`,
+WhatsApp `#25D366`, Instagram `#E1306C`, in `src/entities/channel/lib/platform.ts`
+— are the only raw hex values permitted in component code, because they are
+other companies' identities and must not drift with the theme. Every other color
+comes from a token.
 
-No typeface is loaded. This is a deliberate choice: the interface defers to the user's operating system. It loads faster, feels familiar instantly, and makes no claim to personality through type. The work is the personality.
+## Typography
 
-**Character:** Functional and neutral, with weight contrast carrying all hierarchy. Size differences are modest — the scale is compressed to support information-dense screens.
+**Body / Interface Font:** Golos Text, falling back to `-apple-system,
+BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`
+**Heading Font:** Golos Text — headings match the body; only display sizes differ
+**Display Font:** Manufacturing Consent, falling back to UnifrakturMaguntia and
+Old English Text MT
+**Code Font:** JetBrains Mono, falling back to SF Mono, Monaco, Consolas
+
+Both real families are **self-hosted**: woff2 subsets live in `src/fonts` and are
+declared in `src/fonts/fonts.css`, which `src/styles.css` imports outside every
+cascade layer. No third-party request, nothing to fetch from a CDN, and the
+faces exist before the theme references them by name — the same reasoning that
+made the theme ship pre-built CSS instead of injecting styles at runtime. Naming
+a family in `gothicTheme.ts` does nothing on its own; the `@font-face` is what
+makes it real.
+
+Subsets are split by `unicode-range`, so a browser downloads only what the page
+actually contains: Latin alone is ~37 KB, Latin plus Cyrillic ~59 KB, and
+Manufacturing Consent's two files are never fetched at all while no surface uses
+a display size.
+
+**Character:** Golos Text is a Cyrillic-first humanist sans with open apertures
+and sturdy, slightly condensed forms — which is what keeps 13px legible for
+hours and gives the interface a worked-in rather than technical register. It
+replaced Fustat, the theme's original choice, for the reason recorded in The
+Cyrillic Coverage Rule below. Manufacturing Consent is the opposite register
+entirely, and that contrast is deliberate: the theme reserves its voice for a
+scale the product never uses.
 
 ### Hierarchy
 
-- **Title** (600, 0.875rem / 14px, 1.5 lh): Section headings, card titles, panel headers. Distinction comes from weight only — not from size. Used sparingly.
-- **Body** (400, 0.875rem / 14px, 1.5 lh): Conversation previews, contact names, form content, body copy. The workhorse of the interface. Line length capped at 65ch where prose runs long.
-- **Label** (500, 0.75rem / 12px, 1.5 lh): Metadata, timestamps, filter labels, form field labels. Uppercase is never used — labels are sentence case.
-- **Small** (600, 0.6875rem / 11px, tabular-nums): Unread counts, compact badges, indicator chips. Tabular figures mandatory for numeric content.
+The type scale is base 16 with a 1.25 ratio, so the steps run 10 / 13 / 16 / 20
+/ 25 / 31 / 39 / 49 / 61px. The product uses three of them.
+
+- **Display** (Manufacturing Consent, 400, 3.8125rem / 61px, 1.2459 lh): `Text type="display-1"`. Also `display-2` (49px) and `display-3` (39px). **No product surface uses these.** They are theme identity in reserve.
+- **Heading** (Golos Text, 600, 1.9375rem / 31px, 1.4194 lh): Astryx `heading-1`. Theme capacity; the shell has nothing at this scale.
+- **Title** (Golos Text, 600, 1rem / 16px, 1.5 lh): `text-base font-semibold`. Page titles — the workspace settings `h1`, empty-state headings. The largest type any authenticated screen shows.
+- **Subtitle** (Golos Text, 600, 0.8125rem / 13px, 1.5385 lh): `text-sm font-semibold`. Pane header names — the conversation's contact name, the contact panel title. Distinguished from body by weight alone.
+- **Body** (Golos Text, 400–500, 0.8125rem / 13px, 1.5385 lh): `text-sm`. The workhorse: message text, contact names, previews, form content, descriptions. Prose runs inside a `max-w-3xl` measure.
+- **Label** (Golos Text, 500, 0.625rem / 10px, 1.6 lh): `text-xs`. Timestamps, metadata, chip text, filter labels, kickers. Sentence case, always.
 
 ### Named Rules
 
-**The No-Display Rule.** There is no display size. No heading exceeds 1.125rem (18px) in the application shell. Page titles, if they exist, use title weight at body size. This is a tool, not a publication.
+**The Remapped Scale Rule.** Tailwind's size names do not mean their Tailwind
+values here. `@astryxdesign/core/tailwind-theme.css` rebinds `--text-*` to the
+theme scale, so **`text-sm` is 13px (not 14px) and `text-xs` is 10px (not
+12px)**. Never reason about a size from Tailwind's defaults, and never convert a
+design spec's px value by assuming the default scale. The same bridge rebinds
+`--spacing` to a 4px base, so `p-4` is 16px as expected — spacing is safe,
+type is not.
 
-**The Weight-First Rule.** Hierarchy is expressed through weight contrast (400 → 500 → 600), not through size steps. Don't introduce new font sizes; introduce new font weights.
+**The Two-Size Rule.** The interface runs on `text-sm` and `text-xs`. `text-base`
+is for page titles. Escalate through weight (400 → 500 → 600) and opacity
+(`text-primary/55` → `/80` → full), not through size. Introducing a fourth size
+into a shell means the hierarchy failed at weight first.
 
-## 4. Elevation
+**The Blackletter Reserve Rule.** Manufacturing Consent is bound to `display-1`,
+`display-2`, and `display-3` and nowhere else. It does not go on a page title, a
+pane header, or the brand mark. It is legible at 61px and illegible as UI, and
+holding it back is what keeps it available for a marketing surface later. It is
+Latin-only, which is acceptable *because* it is reserved — a display face that
+never renders product copy never meets a Cyrillic string.
 
-### The Three Layers
+**The Cyrillic Coverage Rule.** Any face that carries interface text must ship a
+Cyrillic subset. `baseLocale` is `ru` (`project.inlang/settings.json`), so
+Russian is the default experience, not a translation bolted on — a Latin-only
+body font leaves the primary locale in the system fallback and styles only the
+Latin strings beside it, which reads as two typefaces on one screen. This is why
+the theme's original choice, Fustat, could not stay: it ships Arabic and Latin
+and no Cyrillic. Judge a candidate body face by its `unicode-range` coverage
+before its shapes.
 
-The authenticated shell is three tonal layers. This is the structural backbone of the product and the reason it does not read as one flat sheet.
+## Layout
 
-1. **Canvas** (`--background`) — the base plane. The sidebar and header sit *directly* on it, with no surface of their own and no dividing borders. They belong to the application frame, not to the content.
-2. **Pane** (`--surface`) — workspace content floats here: the conversation list, the conversation, the details panel, the dashboard, settings. Panes are separated from the canvas and from each other by an ~8px gap, and they clip their own content.
-3. **Recessed** (`--surface-secondary`) — regions *inside* a pane that should sit back: the message transcript, form field fills. Never elevated, never shadowed.
+**The shell.** `AppShell` with `variant="section"`, `height="fill"`, and
+`contentPadding={0}` (`src/routes/_authenticated.tsx`). The nav rail is the only
+persistent chrome; there is no top bar. Below the mobile breakpoint AppShell
+turns the rail horizontal with a drawer toggle — that strip is generated, not
+authored.
 
-A fourth treatment, **Raised**, is a surface deliberately lifted back up inside a recessed region — the composer, and the selected conversation row.
+**Panes.** Inside the shell, `Layout` with `start` / `content` / `end` slots
+holds the inbox's three columns, each a `LayoutPanel` with `padding={0}`,
+`isScrollable={false}`, and `hasDivider`. A route that is a single pane composes
+the same frame inline: `flex h-full w-full min-h-0 flex-col overflow-hidden`.
+There is no pane component and no pane fill — see Elevation & Depth.
 
-The layering is theme-split by design. Light mode relies on a three-layer shadow to separate panes from the canvas. Dark mode eliminates shadows entirely and expresses depth through tonal steps — Midnight Ink to Charcoal Surface creates the same spatial relationship that shadow creates in light mode.
+**The pane header contract.** 64px (`h-16`) plus `border-b border-border/60`,
+attached to the pane's top edge. The conversation list, the thread, the contact
+panel, and workspace settings all honor those two numbers, which is what makes
+the inbox columns line up across their dividers. Horizontal padding is the
+pane's own business and varies with what the header holds — the thread runs
+`px-3 sm:px-6`, the contact panel `px-4`, the settings column `px-4 sm:px-8`.
+Height and the rule are the contract; padding is not.
 
-### Panes Have No Border
+**Scroll ownership.** Every pane owns its own scroll (`min-h-0 flex-1
+overflow-y-auto`). The shell content area never scrolls. The scroll container
+spans the pane edge to edge and the reading measure goes on a child, so the
+scrollbar rides the pane rather than the text.
 
-This is the defining rule of the shell. A pane is a rounded, borderless surface; separation comes from the canvas showing through the gap around it, plus the light-mode shadow. Outlining every pane adds a grey line to a system that is already almost entirely grey, and it makes the shell read as a diagram of boxes rather than as depth.
+**The reading measure.** `mx-auto w-full max-w-3xl` (768px), exported as
+`TRANSCRIPT_MEASURE` from
+`src/features/inbox/components/message-thread/transcript-measure.ts` and shared
+by the transcript, its loading skeleton, and the composer so all three align on
+one axis. Settings pages use the same `max-w-3xl` column with `px-4 sm:px-8`.
 
-The consequence is that **canvas contrast is load-bearing**. If `--background` drifts too close to `--surface`, pane edges dissolve and the whole structure collapses — particularly in dark mode, where there is no shadow to fall back on. Changing either token means re-checking both themes.
+**Density.** Spacing is a 4px scale (2 / 4 / 6 / 8 / 12 / 16 / 20 / 24 / 28 / 32
+/ 36 / 40 / 44 / 48px). Conversation rows are `px-3 py-2.5` with `gap-3` and
+`gap-0.5` between rows; nav rows are `px-2 py-2`; settings rows are `py-4`. The
+inbox list is user-resizable via `useResizable` (default 320px, min 200, max
+480, persisted as `inbox:list-width`) with a `ResizeHandle` in the seam.
 
-A hairline is correct in two places, and nowhere else. *Between adjacent regions inside a single pane* — a pane header and its body, a filter strip and the list below it; use `paneStyle.separator` there. And *at the sidebar's right edge*, where the rail meets the content area; see "The Rail Edge Rule." Never draw a line around a pane.
+**Responsive behavior.** Three tiers, and they are pane-count decisions, not
+reflow:
 
-### Frame Metrics
-
-- **Outer padding:** 8px around the workspace area (4px on mobile). The panes never touch the browser edge.
-- **Gap between panes:** 8px, rendered as a real grid track so it can also carry the list-resize affordance.
-- **Pane radius:** 12px (`rounded-xl`), softened to 8px on mobile.
-- **Pane clipping:** `overflow-hidden` is mandatory. Pane headers and scroll regions must round with the pane.
-- **Scroll ownership:** every pane owns its own scrolling. The workspace area itself never scrolls.
-
-### Shadow Vocabulary (Light Mode Only)
-
-- **Surface** (`0 2px 4px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.06)`): Cards, inline containers at rest. The lightest possible depth signal — barely visible, structurally meaningful.
-- **Elevated** (Tailwind `shadow-md`): Cards and interactive containers on hover. Feedback, not drama.
-- **Overlay** (`0 2px 8px rgba(0,0,0,0.06), 0 -6px 12px rgba(0,0,0,0.03), 0 14px 28px rgba(0,0,0,0.08)`): Popovers, dropdowns, tooltips, modals. The most prominent shadow in the system and still subtle.
-
-In dark mode, all three resolve to transparent or flat. Surfaces float above backgrounds via tonal step only.
+- **Mobile:** exactly one pane at a time — list, or thread, or contact. Panes never share the viewport; navigation swaps them.
+- **Tablet (below `lg`):** list plus thread. The contact panel becomes a right-side overlay sheet (`w-80 max-w-[85vw]`) over a `bg-black/50` scrim, so the thread never collapses to an unusable width.
+- **`lg` and up:** all three panes as columns, contact panel fixed at 320px.
 
 ### Named Rules
 
-**The Flat-By-Default Rule.** Surfaces are flat at rest in dark mode. Shadow appears in light mode as part of the token system, not as an expressive choice per component. If a component looks wrong in dark mode because it relies on shadow for definition, the structure is wrong — use a border or tonal background instead.
+**The Measure Rule.** The transcript, its skeleton, and the composer share one
+exported measure constant. Tailwind's `container` is wrong here — it tracks the
+breakpoint up to 1536px and lets messages sprawl across an empty page on a wide
+display. Change the measure in one place or not at all.
 
-## 5. Components
+**The Pane Owns Its Scroll Rule.** Scrolling belongs to the pane, never to the
+shell or to a wrapper around several panes. A pane that does not carry
+`min-h-0` in its flex chain will push its scroll up to an ancestor and take the
+whole shell with it.
+
+## Elevation & Depth
+
+This system is flat, and more literally than most: **`--color-background-surface`
+and `--color-background-body` resolve to the same value in both modes**
+(`#E8F1F6` light, `#101314` dark). There is no canvas-and-pane relationship to
+express. `bg-surface` paints nothing on the shell, a pane shadow has no gap to
+cast into, and a pane radius only notches a corner out of the content area. This
+is the finding that made `src/routes/_authenticated.tsx` choose AppShell's
+`section` variant over `elevated` — the elevated variant separates nav from
+content by tone alone, so against equal tones it renders nothing at all and the
+shell collapses into one undivided sheet.
+
+Depth therefore has exactly **two moves**, and both are tonal:
+
+1. **Recess** — `bg-muted` (`#D8E2E9` / `#24292D`). Avatar and platform plates, media wells, skeleton blocks, disabled fields. The only neutral that reads below the page.
+2. **Raise** — `bg-card` (`#FFFFFF` / `#1a1d20`), plus `--shadow-low` in light mode where Astryx's `Card` applies it. Auth and onboarding sheets, popovers, dialogs. Light mode has exactly one step left above parchment — white — so the tone alone cannot carry the lift and the shadow does the rest; dark stacks a real tone upward and stays flat.
+
+Everything else — every region boundary in the authenticated shell — is a
+hairline.
+
+### Shadow Vocabulary
+
+Shadows are theme tokens applied by Astryx components. Only the color slot
+switches per mode; the geometry is shared, because `light-dark()` takes colors
+rather than whole shadow lists. Light mode tints with ink at low alpha rather
+than black — pure black on parchment reads as dirt.
+
+- **`--shadow-low`** (`0 2px 4px …, 0 4px 8px …`): Cards and raised sheets at rest.
+- **`--shadow-med`** (`0 2px 4px …, 0 4px 12px …`): Hover and mid-elevation containers.
+- **`--shadow-high`** (`0 4px 6px …, 0 12px 24px …`): Popovers, dropdowns, dialogs.
+- **`--shadow-inset-hover` / `-selected`** (`inset 0 0 0 1px|2px …`): Ring-style emphasis where a real border would shift layout.
+- **`--shadow-inset-success` / `-warning` / `-error`**: Status rings on fields and cards.
+
+### Named Rules
+
+**The Surface-Equals-Page Rule.** `bg-surface` is a no-op on the shell. Do not
+reach for it to create separation, and do not add a fill to a pane expecting one
+— it paints the color that is already there. If a region must read as distinct,
+recess it with `bg-muted`, raise it with `bg-card`, or rule it with
+`border-border/60`. Restoring a floating-pane shell means first giving the
+canvas its own token below surface; until then, flat is not a style preference
+but an arithmetic fact.
+
+**The Hairline Rule.** `border-border/60` is the separation device. It is
+correct between adjacent regions inside a pane (a header and its body, a filter
+strip and the list below it), between sibling panes (`LayoutPanel hasDivider`),
+at the rail's right edge (AppShell's `section` variant), and between rows of a
+dense list. It is never a full outline around a large surface.
+
+**The Shadow-Is-Theme-Only Rule.** Component code carries no `shadow-*`
+utilities. Shadows live in `--shadow-low/med/high` and are applied by Astryx's
+`Card`, `Popover`, and `Dialog`. Two exceptions exist and both are decorative
+detail at small scale: `shadow-xs` on a reaction pill, `drop-shadow-md` on an
+image-viewer control. A `shadow-md` on hover in this system is the old
+floating-pane shell trying to come back.
+
+## Shapes
+
+The radius scale is deliberately soft at the large end and crisp at the small
+end, which inverts the usual convention: controls are tightly curved, plates and
+media are nearly circular.
+
+- **`--radius-none`** `0.125rem` / 2px — not zero. Even the "square" step has a hint of curve.
+- **`--radius-inner`** `0.25rem` / 4px — buttons resolve here (`calc(--radius-element - --spacing-1)`).
+- **`--radius-element`** `0.5rem` / 8px — fields, badges, small chips.
+- **`--radius-container`** `0.75rem` / 12px — list rows, message bubbles, cards, wells.
+- **`--radius-page`** `1.5rem` / 24px — avatar and platform plates, media frames.
+- **`--radius-full`** `9999px` — date separators, reaction pills, recording indicators.
+
+**Borders.** One width exists: `--border-width: 1px`. Borders are hairlines that
+divide, not outlines that contain. The theme's secondary button sets
+`borderWidth: 0` explicitly rather than inheriting an outline.
+
+**Clipping.** `overflow-hidden` on every pane frame is mandatory, so headers and
+scroll regions terminate at the pane edge instead of bleeding past it.
+
+### Named Rules
+
+**The Radius-Name Trap.** Tailwind's radius names are rebound to the theme
+scale, and the mapping is not one-to-one with Tailwind's defaults:
+`rounded-sm` = 4px, `rounded-md` = 8px, `rounded-lg` = 12px, and **`rounded-xl`
+= 24px, not 12px**. A spec that says "12px corner" is `rounded-lg` here.
+Reaching for `rounded-xl` because it sounds like a slightly-rounder `rounded-lg`
+doubles the radius.
+
+**The Squircle Plate.** 36–48px avatar and platform plates take `rounded-xl`
+(24px) — at that size the radius consumes most of the square and the plate reads
+as a squircle. This is the product's one recurring silhouette: a soft tinted
+plate holding a brand glyph, repeated down every list. Keep the pairing (`size-9
+rounded-xl` with a 10% brand tint) intact; a smaller radius turns it into a
+generic app icon.
+
+## Components
 
 ### Buttons
 
-Resolved and unfussy. State changes happen through opacity and tonal shift, not through scale or bounce.
+Resolved and unfussy. State is a tonal shift, never a scale or bounce.
 
-- **Shape:** Tightly curved (4px radius, via `--radius`). Controls are crisp; only the large workspace panes are softly rounded.
-- **Primary:** Accent fill, inverted text. Height 40px, padding 0 20px. `transition-colors` at 150ms ease-out. Hover reduces opacity slightly; active scales to 0.98.
-- **Ghost:** Transparent background, graphite text. On hover: 10% accent tint background, accent text. Same radius and height as primary.
-- **Focus:** 2px offset ring in the accent (`box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent)`).
-- **Loading:** Spinner (Lucide-equivalent, 16px) prepended; label and spinner visible simultaneously.
+- **Shape:** 4px, resolved as `calc(--radius-element - --spacing-1)` — the crispest step in the system, and derived rather than declared, so it tracks the element radius. Padding is 8px block / 12px inline, which computes to a ~36px control at body size.
+- **Primary:** Accent fill, `text-on-accent` label — ink-on-parchment in light, parchment-on-ink in dark. Inverts with the mode; never a literal tone.
+- **Secondary:** The neutral chip (`--color-background-gray`, `#d5dee4` / `#3d4248`) with `--color-text-gray`, no border. This is the one categorical that flips, precisely so secondary never reads as primary on parchment.
+- **Ghost:** Transparent, hover `--color-overlay-hover` (accent at 5%). The default for icon buttons and inline actions.
+- **Destructive:** `--color-error` fill with `--color-on-error` — not the red chip's text token, because the fill is a deep crimson in light and a pale dusty rose in dark and only `on-error` inverts with it.
+- **Loading:** `isLoading` keeps the label visible alongside the spinner.
 
-### Navigation Items
+### Navigation
 
-The sidebar is the product's spine. Navigation items carry the entire wayfinding system.
+The rail is the product's spine and the only persistent chrome.
 
-- **Shape:** Rounded (8px via `rounded-lg`), full-width
-- **Padding:** 8px vertical, 12px horizontal
-- **Typography:** 14px / 500 weight
-- **Inactive:** Foreground text at 60% opacity, transparent background. Hover: 10% accent tint bg, accent text.
-- **Active:** 10% accent tint background (15% in dark), accent text. Persists until route changes.
-- **Icons:** 16px Lucide icons, `shrink-0`. Gap of 10px between icon and label.
-- **Collapsed state (64px sidebar):** Icon only, centered, tooltips on hover with 300ms delay.
-- **Focus:** 2px ring in `--focus`.
-
-### Inputs and Fields
-
-Softly contained, focus-responsive.
-
-- **Shape:** 4px via `--field-radius`, matching the button radius. Fields and controls share one crisp corner; the 12px curve is reserved for panes.
-- **Background:** Surface-secondary (`oklch(95.24% 0 0)`), no border at rest
-- **Prefix/Suffix:** Icon prefixes at 16px Lucide, 60% opacity. Action suffixes (reveal, copy) use the same 16px sizing and respond to hover.
-- **Focus:** Border-color shifts to the accent; 2px ring in the accent at 20% opacity around the group.
-- **Exception:** a field already sitting on a raised surface (the composer's textarea) goes transparent instead of filled. A filled field inside a raised box is a box inside a box.
-- **Error:** Field border becomes Coral Alert; error message appears below in 12px label size.
-- **Disabled:** 50% opacity on the entire field group.
-
-### Workspace Panes
-
-The primary structural unit of the authenticated shell. Implemented as `paneStyle` / `WorkspacePane` in `src/components/pane.tsx`.
-
-- **Shape:** 12px radius (`rounded-xl`), 8px on mobile
-- **Background:** Clean Sheet (light) / Charcoal Surface (dark)
-- **Border:** none, ever. See "Panes Have No Border" above.
-- **Shadow:** Surface shadow in light; flat in dark (token-driven, never conditional in component code)
-- **Clipping:** `overflow-hidden`, always
-- **Padding:** none at the pane level. Padding belongs to the regions inside it, so headers and scroll regions can meet the pane edge.
-- **Header:** when present, 64px tall and attached to the pane's top edge with a hairline `border-b`
-- **Prohibition:** No nested panes, and no Card inside a pane. The pane *is* the container. If content seems to need its own box, it needs spacing or a recessed background instead.
-
-### Cards
-
-Cards are for the dashboard workspace grid and overlaid form sheets — not for structuring pane content.
-
-- **Shape:** 4px radius (matching `--radius`)
-- **Background:** Clean Sheet (light) / Charcoal Surface (dark)
-- **Shadow:** Surface shadow in light; flat in dark (token-driven)
-- **Border:** Hairline in light; none in dark by default
-- **Padding:** 24px internal (via Card.Header/Content/Footer structure)
-- **Hover:** Transitions to `shadow-md`. The card rises slightly.
-- **Prohibition:** No nested cards. A Card inside a Card is never correct.
-
-### Chips
-
-Used for unread message counts, conversation status, and transcript date separators.
-
-- **Unread (filled):** Accent background, inverted text, 18px height, min-width 16px, px-1, fully rounded. 10px / 600 weight, tabular-nums. Caps at "99+" when `capAt99` is enabled.
-- **Status (flat):** Transparent background, graphite text, no border, no shadow. Used when a conversation row is already active (selected state).
-- **Status labels (ConversationStatusChip):** Color-coded per status. 12px, pill shape.
-- **Date separators:** surface background, muted text, no shadow. Subtle through *color only* — never add a border or change the type size, because the transcript is virtualized and the row's measured height feeds scroll anchoring.
+- **Structure:** `SideNav` with `header`, `collapsible`, and `footer` slots. Collapse state persists to `app:sidebar-collapsed`.
+- **Heading:** the product name as a `superheading` linking to `/`, above the workspace switcher — one identity block, and the only route back to the home area now that the top bar is gone. The switcher carries a `WorkspaceMark` (24px plate, `rounded-md`, accent fill when active and `bg-accent-bg/10` when not), the workspace name, and a menu.
+- **Items:** `SideNavItem` with a 16px Lucide icon. Selection is a quiet accent fill; the same grammar as a conversation row.
+- **Sections:** area navigation first (Home/Settings off-workspace; Dashboard/Inbox/Settings inside one), then notifications in its own section — unread spans every workspace rather than describing where you are — separated by a `Divider` inset to `-mx-2 my-1` so it runs edge-to-edge across the rail. The rule disappears when collapsed, matching the footer.
+- **Disabled items:** a locked route (Inbox with no active channel) is `isDisabled` and wrapped in a `Tooltip` that explains why. It only locks once readiness is known false — an unsettled or failed check leaves the item alone rather than flickering on every workspace switch.
+- **Footer:** the account row — avatar, display name, trailing `chevrons-up-down`, opening Profile / Settings / Sign out. Styled to read as the last nav row rather than a button: `px-2 font-normal` with the label span grown so the chevron pins to the trailing edge.
 
 ### Conversation List Items
 
-The most-read surface in the application.
+The most-read surface in the product.
 
-- **Layout:** Icon (36px, rounded-xl platform avatar) + text body in a row. No card wrapping — items are direct children of a scrollable list.
-- **Typography:** Contact name at 14px / 600 weight (unread) or 500 (read). Preview at 12px, foreground at 80% (unread) or 55% (read). Timestamp at 11px / foreground at 50%.
-- **Unread state:** Name becomes semibold, preview text brightens, NumericUnreadChip appears in the trailing position.
-- **List body:** recessed, so rows can lift off it. Rows themselves are transparent.
-- **Selected:** lifted to `--surface` with the surface shadow — a card raised out of the recessed list. Not a fill; see The Lift-Not-Fill Rule. The unread chip hides (count resets visually to 0).
-- **Hover:** `bg-foreground/5`, and only on unselected rows, so hover can never override selection.
-- **Focus:** inset 2px ring in `--focus`, so it stays legible on top of either state.
+- **Layout:** a 36px platform plate (`rounded-xl`, 10% brand tint) plus a text body, `gap-3`, `px-3 py-2.5`. Direct children of a scrollable `role="listbox"` with `gap-0.5` — no card wrapping.
+- **Typography:** contact name 13px at 600 (unread) or 500 (read); preview 10px at `text-primary/80` (unread) or `/55` (read); timestamp 10px at `/50`.
+- **Unread:** name goes semibold, preview brightens, and a `NumericUnreadChip` appears in the trailing position. The chip hides on the selected row — opening a conversation resets its count visually.
+- **Selected:** `bg-primary/10` with `text-primary`, via `data-selected="true"`.
+- **Hover:** `bg-primary/4`, scoped to `data-[selected=false]` so hover can never override selection.
+- **Focus:** `ring-2 ring-accent ring-inset` — inset so it stays legible on top of either state.
 
-### Composer
+### Chips and Badges
 
-A raised work surface inside the conversation pane, not a strip attached to the pane edge.
+- **Unread counts** (`NumericUnreadChip`): Astryx `Badge`, `variant="info"` (periwinkle plate) or `"neutral"`. Caps at `99+` when `capAt99` is set. Wrapped in `role="status"` with a count-aware label.
+- **Conversation status** (`ConversationStatusChip`): `Badge` with the variant mapped from the status's semantic color — accent→info, warning→warning, success→success, danger→error, default→neutral.
+- **Channel status** and **inline metadata chips**: 10px text in a `border border-border/60 rounded-lg px-2 py-1` outline — the one place a full border is correct, because these are small and self-contained rather than large surfaces.
+- **Date separators:** `bg-muted text-secondary rounded-full px-2.5 py-0.5 text-xs font-medium`, centered between day groups. The fill is `bg-muted` and not `bg-surface`: the transcript has no background of its own, so the pill sits directly on the page, and a surface fill would paint the page colour onto the page. Measured in the browser it lands at 1.15:1 against the page in light and 1.27:1 in dark — a soft plate rather than a card. Restyle with colour only; the transcript measures row heights for scroll anchoring, so a border or size change perturbs the pin.
 
-- **Shape:** 12px radius, no border, surface background, theme-aware shadow
-- **Placement:** inside the conversation pane on the transcript's readable column, with margin around it so the recessed transcript shows through on all sides
-- **Internal padding:** 8px around the control row
-- **Field:** transparent, not filled — the composer surface is the field
-- **Focus:** the textarea's own ring is suppressed and the *composer* shows `focus-within`. A full-width field's ring would otherwise outline the whole surface in near-black.
-- **Control order:** attach, emoji, then mic-or-send. Send is terminal and set apart by a wider gap; it is the only primary-variant control in the pane.
-- **Footnote:** the "replying via {channel}" line sits *outside* the raised surface, centered, in muted 12px.
+### Inputs and Fields
 
-### Sidebar
+- **Shape:** 8px (`--radius-element`), set by the theme's `field` override.
+- **State:** Astryx `TextInput` takes a `status` object (`{ type: 'error', message }`) driven from React Hook Form's `fieldState`. Validation copy renders below the field at label size.
+- **Composer field:** transparent and borderless (`bg-transparent shadow-none`, `h-9 min-h-9 resize-none text-sm leading-6`). The composer surface *is* the field; a filled input inside it would be a box inside a box.
+- **Disabled:** driven by the form's `disabled` flag rather than per-field styling, so a submitting form locks uniformly.
 
-The navigation spine, and the only persistent chrome in the shell. There is no
-application header: the rail carries identity, navigation, notifications, and
-the account, and every page owns its own title.
+### Message Bubbles
 
-- **Width:** 260px expanded, 64px collapsed. Width transition at 200ms ease-out.
-- **Background:** none — the canvas shows through. The sidebar is never wrapped in a card or given a surface fill.
-- **Right edge:** a single hairline divider, supplied by AppShell's `section` variant. See "The Rail Edge Rule."
-- **Heading:** the product name as a superheading linking to `/`, above the workspace switcher — one identity block rather than a separate brand row. The switcher keeps its WorkspaceMark icon, workspace name, and chevron.
-- **Sections:** area navigation first (Home/Settings off-workspace; Dashboard/Inbox/Settings inside one), then notifications in its own section, because unread spans every workspace rather than describing where you are.
-- **Footer:** the account row — avatar, display name, and a trailing `chevrons-up-down`, opening a menu with Profile, Settings, and Sign out. All three are scoped to the person, not the workspace.
+Built on Astryx's `Chat` family — `ChatLayout` owns the scroll container and
+follow-on-append; `ChatMessage` wraps a same-sender run; `ChatMessageBubble`
+draws each bubble.
 
-### The Rail Edge Rule
+- **Fill:** `--color-neutral` — the accent at 10% alpha — for **both directions**. Inbound and outbound share one tint. Direction reads from alignment and from the delivery-tick row, not from color. Anything that wants to distinguish them by fill has to introduce a second tint, and that is a system change, not a component tweak.
+- **Grouping:** consecutive same-direction messages render as one run with grouped corner radii (`group="first" | "middle" | "last"`). A run shows one timestamp footer; a message carrying state of its own (edited, failed, reactions) always shows its own.
+- **Ghost variant:** media-only messages drop the bubble boundary and keep the padding, so the frame is the object.
+- **Failed:** the bubble states it — `bg-error/12 ring-1 ring-error/70` — and the caption explains it. The failure never gets a line of its own: `time · ⚠ Not sent · Retry` stays on the single footer row, because a second line sits closer to the next message than to the bubble it describes. The retry is caption-scale and underlined, with padding for a real hit target.
+- **Quoted reply:** a 2px `border-current/30` rule with the author at `font-semibold` over the quoted text at 60%, both truncated to one line. Never a plate — the bubble is already the plate, and a fill inside it is a box in a box. The loaded parent outranks the channel's quote payload for author and text, so "Quoted message" only appears when neither is resolvable; without a loaded parent the strip is inert rather than a control that silently does nothing. The composer's reply drawer uses the same rule, on the composer's 12px content column.
+- **Action rail:** a reply control parked in the transcript gutter, absolutely positioned outside the bubble, revealed on `group-hover/msg` and `group-focus-within/msg`. Anchored to the first text line (`top-2`) for text and to the middle for media or structured blocks. Zero hit target until engaged; on touch it sits permanently at 60% opacity with an expanded 44px target.
 
-The sidebar carries a hairline on its right edge, and it is the one border in
-the shell. This is a deliberate exception to "Panes Have No Border," and it
-exists because the rail is not a pane: it is the frame the panes sit in.
+### Cards
 
-Draw it with AppShell's `variant="section"`, never with a `border-right` on the
-sidebar itself. The variant sources the line from the theme's border token, so
-it tracks the palette instead of pinning a colour into component code.
+Cards are for auth and onboarding sheets and for overlaid forms — not for
+structuring shell content.
 
-The elevated variant is the alternative and separates nav from content by tone
-alone. It is correct only while the canvas and the content surface actually
-differ — when a theme resolves both to the same value, `elevated` renders
-nothing at all and the shell collapses into one flat sheet. Prefer `section`
-unless a theme's tonal step is verified in both modes.
+- **Shape:** 12px (`--radius-container`), 12px internal padding via the theme's `card` base.
+- **Background:** `bg-card` (Vellum / Pitch) with `--shadow-low` in light mode.
+- **Categorical variants:** `variant="blue"`, `"green"`, and the rest rebind `--color-text-primary` and `--color-text-secondary` locally so nested `Text` children stay readable on the pastel plate.
+- **Prohibition:** no nested cards, and no card inside a shell pane. The pane is the container; content that seems to need a box needs spacing, a rule, or a recessed background.
 
-### No Application Header
+### Ruled Row Groups
 
-The shell has no top bar. Everything a header would carry now has a better home:
-identity and navigation in the rail, notifications as a rail row with its count
-in the trailing slot, the account in the rail footer, and colour mode plus
-language in Settings under Appearance.
+The product's answer to "a list of records that is not a conversation" —
+channels, members, settings rows. Edge-to-edge rows separated by rules, with the
+group closed top and bottom:
 
-Page titles live in the page, not in chrome. A route that needs a title renders
-its own heading at title weight and body size; full-bleed routes like the inbox
-name things in their pane headers and need no page title at all. Breadcrumbs are
-not part of the system — a title bar restating the nav selection two rows away
-is duplication, not wayfinding.
+```
+divide-y divide-border/60 border-y border-border/60
+```
 
-Below the mobile breakpoint AppShell renders the rail horizontally with a drawer
-toggle. That top strip is generated by the shell, not authored — do not add a
-TopNav to recreate it.
+Rows are `py-4` with `gap-4`. Empty and error states for the group sit inside the
+same `border-y` frame so the group keeps its shape while it has nothing in it.
+`SettingRow` is the same idea per-row (`border-t border-border/60
+first:border-t-0`): label and description left, the control that changes it
+right.
 
-### Message Transcript
+### Empty and Error States
 
-- **Background:** recessed (`--surface-secondary`). Never a pattern, gradient, or dot grid.
-- **Measure:** centered, max 820px. Messages must not sprawl across a wide pane. Tailwind's `container` is wrong here — its max-width tracks the breakpoint.
-- **Alignment:** the composer and the loading skeleton share the same measure, so all three line up on one axis.
+- **In-pane:** Astryx `EmptyState` centered in the pane (`flex h-full items-center justify-center`), with a `title`, optional `description`, a muted Lucide icon at `size-8`, and an action button.
+- **Hand-composed variant:** a 64px `rounded-2xl bg-primary/5 text-primary/40` icon plate, a 16px semibold heading, and a 13px `text-primary/60` description at `max-w-xs`.
+- **Inline query errors:** `bg-error/10 rounded-lg px-3 py-2` with `text-error` copy and a ghost retry button on the trailing edge. Never a toast for a state the user can retry in place.
+- **Blocking errors:** `Banner status="error"` with a title, a description that distinguishes the recoverable case (session expired → sign in) from the generic one, and an action in `endContent`.
+- **Banner fill:** the `-muted` well at 8px (`--radius-element`), no border — a status surface at full measure is a tinted field, not a plate and not an outlined box. The icon, the title, the description, and the `endContent` chip all carry the hue's vivid tone, which is the whole of its color weight. All four statuses move together; success is not a special case.
+- **Retry semantics:** a failed readiness check renders an error with a retry — it never redirects. A failed check is not the same as a workspace with no channels, and redirecting on failure is what turns a flaky network into a loop between two routes.
 
-### Background (Auth Only)
+### Auth and Onboarding
 
-Used exclusively on sign-in and sign-up screens. Prohibited in the authenticated product shell.
+Outside the shell entirely. `bg-surface md:bg-body` on a `min-h-dvh` centering
+wrapper, holding a single `Card` at `maxWidth={448}`. The intent is that on a
+phone the form occupies the page instead of floating on it — but note that
+surface and body resolve to the same value, so the `md:` switch currently
+changes nothing and the wrapper is one flat colour at every width. It is kept as
+a record of intent, and it starts working the day the canvas gets its own token
+below surface. What actually distinguishes the sheet today is the `Card` itself:
+`bg-card` plus `--shadow-low`.
 
-Two `::before` / `::after` pseudo-elements on `.`:
+There is **no decorative background**. No dot grid, no radial gradient, no
+texture — beyond its imports, `src/styles.css` holds a cascade-layer declaration,
+two height rules, and one keyframe animation with its reduced-motion guard. Its
+imports are the Tailwind entry points, the Astryx reset and core, the pre-built
+gothic theme, the Tailwind token bridge, and `./fonts/fonts.css`. That is the
+entire hand-written stylesheet. Do not add a background to it.
 
-1. Radial gradient from Signal Blue (18% opacity) at top center, fading to transparent at 34rem
-2. Dot grid (1.6rem cells, 1px dots in hairline color at 70% opacity), radially masked at 22% opacity
+### Motion
 
-## 6. Do's and Don'ts
+The theme declares theatrical durations — `fast: 150ms`, `medium: 350ms`,
+`slow: 800ms`, ratio 0.75 — compiled to `--duration-*` tokens with min/max
+companions. Product code mostly uses Tailwind's bare `transition` on hover and
+selection, and every custom animation guards
+`motion-reduce:transition-none` / `motion-reduce:animate-none`.
+
+The one authored animation is `unread-count-emphasis` in `src/styles.css`: 280ms
+on `cubic-bezier(0.16, 1, 0.3, 1)`, scaling 0.92 → 1 and fading 0.55 → 1 from
+`transform-origin: left center`, so a count that changes draws the eye without
+moving its neighbors. It is disabled under `prefers-reduced-motion`.
+
+## Do's and Don'ts
 
 ### Do:
 
-- **Do** reserve Signal Blue for interactive signals: unread counts, active navigation, primary actions. Nowhere else.
-- **Do** use `color-mix(in oklab, var(--accent) 12%, transparent)` for active nav background tints.
-- **Do** express dark-mode elevation through tonal steps (Midnight Ink → Charcoal Surface), never through shadow.
-- **Do** use OKLCH for all color declarations; never hardcode hex equivalents alongside token references.
-- **Do** use HeroUI's token vocabulary (`--accent`, `--surface`, `--foreground`, `--border`) rather than custom properties that shadow them.
-- **Do** use the `` class pattern only on authentication and onboarding screens.
-- **Do** keep interface text at 14px or 12px; escalate through weight, not size.
-- **Do** use tabular-nums for any numeric content in chips, counts, and timestamps.
+- **Do** treat `src/themes/gothic/gothicTheme.ts` as the source of truth for every token, and run `pnpm theme:build` after changing it — that regenerates `theme.css`, `gothic.js`, and `gothic.d.ts`, and `main.tsx` imports the built module, so skipping the rebuild leaves the app on the old tokens.
+- **Do** add a self-hosted `@font-face` in `src/fonts/fonts.css` for any family the theme names, with the `unicode-range` split intact. Naming a family in the theme does not load it.
+- **Do** separate regions with `border-border/60`. It is the system's one structural device.
+- **Do** recess with `bg-muted` and raise with `bg-card`. Those are the only two tonal moves available.
+- **Do** use the Tailwind bridge names (`text-primary`, `text-secondary`, `bg-muted`, `bg-card`, `bg-accent-bg`, `text-on-accent`, `border-border`, `text-error`) rather than raw `var(--color-*)` in class strings.
+- **Do** express state as the accent at low alpha: `bg-primary/4` hover, `bg-primary/10` selected, `bg-primary/5` quiet plate.
+- **Do** put `text-on-accent` on any accent fill and `--color-on-error` on any error fill, so labels invert with their background.
+- **Do** reach for a `Badge` / `Banner` / `Card` variant to get a categorical hue, so the plate and its text arrive as a matched pair.
+- **Do** fill a full-measure status surface with the hue's `-muted` well and spend the hue on the icon, the copy, and the action. A chip plate stretched to a region is a slab.
+- **Do** keep interface text at `text-sm` (13px) or `text-xs` (10px), and escalate through weight and opacity.
+- **Do** give every pane `overflow-hidden`, its own `overflow-y-auto` scroll region, and `min-h-0` through its flex chain.
+- **Do** share `TRANSCRIPT_MEASURE` between the transcript, its skeleton, and the composer.
+- **Do** honor the 64px `h-16` pane-header contract on every pane that has a header, so the inbox columns align across their dividers.
+- **Do** guard every transition and animation with `motion-reduce:`.
 
 ### Don't:
 
-- **Don't** build generic SaaS admin layouts: grey table rows, blue primary buttons on white backgrounds, stockphoto sidebar patterns. Rezzy should be immediately distinguishable from the sea of admin templates.
-- **Don't** build cluttered enterprise CRM layouts in the style of Salesforce or HubSpot: too many columns, nested panels without clear hierarchy, screens with no discernible primary action.
-- **Don't** use gradient text (`background-clip: text` with gradient fill). Emphasis is weight and size, not decoration.
-- **Don't** use side-stripe borders (`border-left` or `border-right` greater than 1px as colored accent). Rewrite with full borders, background tints, or nothing.
-- **Don't** use glassmorphism decoratively. No blur + transparency cards outside of a purposeful, specific context.
-- **Don't** use the hero-metric template: big number, small label, gradient accent. This is an operational tool, not a pitch deck.
-- **Don't** apply shadows unconditionally across themes. Dark mode is flat by design; shadow utilities must be theme-aware.
-- **Don't** nest HeroUI Cards. A `Card` inside another `Card` is always wrong structurally, and the same holds for a Card inside a workspace pane.
-- **Don't** load a custom display typeface for branding. The system font is fast, familiar, and correct for this product's register. `--font-sans` must always resolve to a real stack.
-- **Don't** use uppercase labels or all-caps text. Labels are sentence case throughout.
-- **Don't** put a decorative pattern behind the product shell. The dot grid, radial gradients, and any texture belong to auth screens only; the transcript and every pane use flat tonal backgrounds.
-- **Don't** let panes run edge-to-edge or share a border. If two regions look joined, the gap is missing.
-- **Don't** put a border on a pane, a composer, or any other large surface. Lines belong inside panes, not around them.
-- **Don't** use a flat neutral fill (`bg-foreground/10`) for a selected list row. Recess the list and lift the row.
-- **Don't** change the box metrics of anything inside the virtualized transcript for cosmetic reasons — borders and type-size changes on message rows or date separators perturb scroll anchoring. Restyle with color.
-- **Don't** delete the dark-mode `--surface-shadow` / `--overlay-shadow` / `--field-shadow` overrides in `src/styles.css`. Without them HeroUI's defaults apply and dark mode gains shadows the system is designed not to have.
+- **Don't** assume Tailwind's default scales. `text-sm` is 13px, `text-xs` is 10px, and `rounded-xl` is 24px in this project.
+- **Don't** use `bg-surface` for separation. It resolves to the same value as the page in both modes, so it paints the colour that is already there. It remains correct for **opacity** — the contact panel carries `bg-surface` so the tablet overlay drawer is not see-through, and the auth wrapper uses it the same way — but it can never make a region read as distinct. That is what `bg-muted` and `bg-card` are for.
+- **Don't** give a pane a fill, a radius, a gap, or a shadow. The shell is one continuous surface; a pane radius notches a corner out of the content area and a pane shadow has no gap to cast into.
+- **Don't** draw a border around a large surface. Hairlines divide regions; they do not outline them.
+- **Don't** add `shadow-*` in component code. Shadows are theme tokens applied by Astryx `Card`, `Popover`, and `Dialog`.
+- **Don't** introduce a second neutral tone. The ramp is five steps of one hue and the light/dark inversion depends on that symmetry.
+- **Don't** put `text-primary` on a categorical plate. Use the hue's `-vivid` token, or the component variant that binds it.
+- **Don't** leave a secondary `Button` on a colored well. The neutral chip is a cool gray at the same tone as the well and reads as a shape, not a control — rebind `--color-background-gray` / `--color-text-gray` on the region so the action takes the hue.
+- **Don't** hardcode a hex. The only exceptions are the three platform brand colors in `src/entities/channel/lib/platform.ts`.
+- **Don't** put Manufacturing Consent on a product surface. It is bound to `display-1..3` and the shell has nothing at that scale.
+- **Don't** use uppercase or all-caps labels. Labels are sentence case throughout.
+- **Don't** nest a Card in a Card, or put a Card inside a shell pane.
+- **Don't** card-wrap dense list rows. Conversations are transparent rows in a scrollable list; records are ruled rows in a `divide-y border-y` group.
+- **Don't** change the box metrics of anything inside the transcript for cosmetic reasons — the list measures row heights for scroll anchoring, so a border or type-size change on a bubble or date separator perturbs the pin. Restyle with color.
+- **Don't** add a decorative background. `src/styles.css` has no pattern, gradient, or texture, and the auth screens do not want one.
+- **Don't** add a top bar. Identity, navigation, notifications, and the account live in the rail; color mode and language live in Settings under Appearance; every page owns its own title. Breadcrumbs restating the nav selection two rows away are duplication, not wayfinding.
+- **Don't** redirect on a failed query. Render the error with a retry — a failed check is not a known-empty result.

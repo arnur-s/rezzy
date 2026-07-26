@@ -1,6 +1,8 @@
 import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
 import type { QuoteMetadata } from '../../schemas/message-metadata'
+import { listPreviewFromMessage } from '../../schemas/message-metadata'
+import { useMessageThreadContext } from './message-thread-context'
 
 type Props = {
   quote: QuoteMetadata | null
@@ -9,19 +11,36 @@ type Props = {
 }
 
 /**
- * Compact quoted-reply strip above the bubble content. Clicking scrolls to the
- * parent bubble when it is rendered in the transcript (bubbles carry DOM ids).
- * Colors derive from currentColor so the strip stays legible inside any bubble
- * variant in both themes.
+ * The quoted parent above a reply's own content. A 2px rule marks it as
+ * someone else's words: a filled plate here would be a box inside the bubble,
+ * and the transcript has exactly one plate per message already.
+ *
+ * The loaded parent outranks the channel's quote payload — an inbound quote
+ * often carries only an external id, and a reply composed in this app carries
+ * no payload at all, which is what used to leave "Quoted message" standing in
+ * for text that was two rows up the transcript. Clicking scrolls to the
+ * parent; without a loaded parent there is nothing to scroll to, so the strip
+ * is inert rather than a control that silently does nothing.
  */
 export function MessageReplyPreview({ quote, replyToMessageId }: Props) {
-  const preview = quote?.preview ?? null
-  const author = quote?.author_name ?? null
+  const thread = useMessageThreadContext()
+  const parent = replyToMessageId
+    ? (thread?.messagesById.get(replyToMessageId) ?? null)
+    : null
+
+  const author = parent
+    ? parent.direction === 'outbound'
+      ? m.inbox_reply_quote_you()
+      : thread?.contactName || null
+    : (quote?.author_name ?? null)
+  const preview = parent
+    ? listPreviewFromMessage(parent)
+    : (quote?.preview ?? null)
 
   const handleClick = () => {
-    if (!replyToMessageId) return
+    if (!parent) return
     document
-      .getElementById(`message-${replyToMessageId}`)
+      .getElementById(`message-${parent.id}`)
       ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
   }
 
@@ -29,23 +48,24 @@ export function MessageReplyPreview({ quote, replyToMessageId }: Props) {
     <button
       type="button"
       onClick={handleClick}
-      disabled={!replyToMessageId}
+      disabled={!parent}
       className={cn(
-        'bg-current/10 mb-1.5 flex w-full min-w-0 flex-col gap-0.5 rounded-md px-2.5 py-1.5 text-left text-xs',
-        replyToMessageId && 'cursor-pointer transition-opacity hover:opacity-85',
+        'mb-1.5 flex w-full min-w-0 flex-col gap-px border-l-2 border-current/30 py-px pl-2 text-left text-xs',
+        parent &&
+          'cursor-pointer transition-colors duration-150 hover:border-current/70 motion-reduce:transition-none',
       )}
     >
       {/* An unknown author is left unstated rather than labelled: a system
           string in the author slot reads as a person named "Quoted message".
           The quoted text alone already says what is being replied to. */}
       {author ? (
-        <span className="truncate font-semibold">{author}</span>
+        <span className="truncate font-semibold opacity-90">{author}</span>
       ) : null}
       {preview ? (
-        <span className={cn('truncate', author && 'opacity-80')}>{preview}</span>
+        <span className="truncate opacity-60">{preview}</span>
       ) : null}
       {!author && !preview ? (
-        <span className="truncate opacity-80">
+        <span className="truncate italic opacity-55">
           {m.inbox_reply_quoted_message()}
         </span>
       ) : null}

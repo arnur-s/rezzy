@@ -1,4 +1,5 @@
 export { CHANNEL_META } from './lib/channel-meta'
+export { hasActiveChannel } from './lib/channel-readiness'
 export { PLATFORM_META } from './lib/platform'
 export { CHANNEL_TYPES, isChannelType } from './model/types'
 export { ChannelStatusBadge } from './ui/channel-status-badge'

@@ -1,3 +1,4 @@
+import { useSyncLanguagePreference } from '@/features/account'
 import {
   OnboardingStatusError,
   resolveAppGate,
@@ -20,6 +21,9 @@ export const Route = createFileRoute('/_authenticated')({
 function RouteComponent() {
   const { isLoading, session } = useAuth()
   const status = useOnboardingStatus()
+  // The account's language follows the user across browsers, so the server
+  // value has to reconcile with the cache the app booted from.
+  useSyncLanguagePreference()
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(
     () =>
