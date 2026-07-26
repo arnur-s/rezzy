@@ -1,6 +1,9 @@
+import { hasActiveChannel } from '@/entities/channel'
 import { m } from '@/paraglide/messages'
+import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
+import { useNavigate } from '@tanstack/react-router'
 import { PlugIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useChannels } from '../hooks/use-channels'
@@ -12,6 +15,7 @@ type Props = {
 }
 
 export function ChannelList({ workspaceId }: Props) {
+  const navigate = useNavigate()
   const channelsQuery = useChannels(workspaceId)
   const [isConnectOpen, setIsConnectOpen] = useState(false)
 
@@ -19,8 +23,34 @@ export function ChannelList({ workspaceId }: Props) {
     setIsConnectOpen(true)
   }
 
+  // The inbox is locked until this is true. Onboarding sends people here, so the
+  // page owes them the way onward once they have earned it — without navigating
+  // for them, since connecting a second provider is a reasonable next step.
+  const isInboxReady = hasActiveChannel(channelsQuery.data)
+
   return (
     <div className="flex flex-col gap-6">
+      {isInboxReady && (
+        <Banner
+          status="success"
+          title={m.channels_ready_title()}
+          description={m.channels_ready_description()}
+          endContent={
+            <Button
+              label={m.channels_ready_open_inbox()}
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                void navigate({
+                  to: '/workspaces/$id/inbox',
+                  params: { id: workspaceId },
+                })
+              }
+            />
+          }
+        />
+      )}
+
       <header className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">{m.channels_list_title()}</h2>

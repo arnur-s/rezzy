@@ -69,7 +69,9 @@ function renderBubble(
 ) {
   const value: MessageThreadContextValue = {
     channelType: 'telegram',
+    contactName: 'Alina',
     reactionsByMessageId: new Map(),
+    messagesById: new Map(),
     onReplyToMessage: null,
     ...thread,
   }
@@ -209,7 +211,7 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
     )
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
     // Failure is stated in words, not left to a status glyph.
-    expect(screen.getByText('Failed')).toBeTruthy()
+    expect(screen.getByText('Not sent')).toBeTruthy()
   })
 
   it('leaves the quoted author unstated rather than labelling it', () => {
@@ -221,6 +223,42 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
     )
     expect(screen.getByText('original text')).toBeTruthy()
     expect(screen.queryByText('Quoted message')).toBeNull()
+  })
+
+  it('quotes the loaded parent when the reply carries no quote payload', () => {
+    const parent = messageRow({ id: 'parent-1', content: 'Can you resend it?' })
+    renderBubble(
+      messageRow({ id: 'msg-2', reply_to_message_id: 'parent-1' }),
+      { messagesById: new Map([[parent.id, parent]]), contactName: 'Alina' },
+    )
+    expect(screen.getByText('Can you resend it?')).toBeTruthy()
+    expect(screen.getByText('Alina')).toBeTruthy()
+    expect(screen.queryByText('Quoted message')).toBeNull()
+  })
+
+  it('attributes a quoted outbound parent to the operator, not the contact', () => {
+    const parent = messageRow({
+      id: 'parent-1',
+      direction: 'outbound',
+      content: 'Invoice is on its way',
+    })
+    renderBubble(
+      messageRow({ id: 'msg-2', reply_to_message_id: 'parent-1' }),
+      { messagesById: new Map([[parent.id, parent]]), contactName: 'Alina' },
+    )
+    expect(screen.getByText('You')).toBeTruthy()
+    expect(screen.queryByText('Alina')).toBeNull()
+  })
+
+  it('inerts the quote strip when the parent is not loaded', () => {
+    renderBubble(
+      messageRow({
+        reply_to_message_id: 'parent-1',
+        metadata: { quote: { external_id: '55', preview: 'original text' } },
+      }),
+    )
+    const strip = screen.getByText('original text').closest('button')
+    expect(strip?.hasAttribute('disabled')).toBe(true)
   })
 })
 

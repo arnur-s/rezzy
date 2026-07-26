@@ -743,6 +743,10 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          job_title: string | null
+          language: string
+          phone: string | null
+          timezone: string | null
           updated_at: string
         }
         Insert: {
@@ -751,6 +755,10 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          job_title?: string | null
+          language?: string
+          phone?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
@@ -759,6 +767,10 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          job_title?: string | null
+          language?: string
+          phone?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -980,7 +992,7 @@ export type Database = {
         }[]
       }
       complete_onboarding: {
-        Args: { p_full_name: string; p_workspace_name: string }
+        Args: { p_workspace_name: string }
         Returns: {
           is_new: boolean
           workspace_id: string

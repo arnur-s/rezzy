@@ -18,7 +18,9 @@
  * is `gray`, which has to flip, because it is the neutral chip and the
  * secondary button and a dark slate would collide with the ink accent.
  *
- * Uses Manufacturing Consent for headings and Fustat for body text.
+ * Uses Manufacturing Consent for display sizes and Golos Text for body text.
+ * Both are self-hosted in `src/fonts` and declared in `src/fonts/fonts.css`;
+ * naming a family here does nothing on its own.
  */
 
 import {defineSyntaxTheme, defineTheme} from '@astryxdesign/core/theme';
@@ -59,15 +61,19 @@ export const gothicTheme = defineTheme({
     // base 16 / ratio 1.25 — larger scale so the (optically small) blackletter
     // display sizes read large enough to carry the theme.
     scale: {base: 16, ratio: 1.25},
+    // Golos Text rather than Fustat: `baseLocale` is `ru`, and Fustat ships
+    // Arabic + Latin with no Cyrillic subset, so it would have left the default
+    // locale in the system fallback while styling only Latin strings. Golos
+    // Text carries both scripts.
     body: {
-      family: 'Fustat',
+      family: 'Golos Text',
       fallbacks:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     },
-    // Headings (h1-h6) use Fustat to match the body — Manufacturing Consent
+    // Headings (h1-h6) use Golos Text to match the body — Manufacturing Consent
     // is reserved for display sizes only (see component overrides below).
     heading: {
-      family: 'Fustat',
+      family: 'Golos Text',
       fallbacks:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       weights: {3: 'bold', 4: 'bold'},
@@ -316,33 +322,58 @@ export const gothicTheme = defineTheme({
       },
     },
 
+    // A banner is the one status surface that runs the full measure, and the
+    // categorical plates are sized for a chip: `#b3c79a` is right at 60px and a
+    // slab at 700px, where it outshouts the ink primary button beside it. So the
+    // fill is the `-muted` well — light drops to T90, dark keeps the opaque
+    // pastel it already reads as. The hue survives at full strength in the icon,
+    // the text, and the action chip; only the field goes quiet.
+    //
+    // Every status also rebinds the neutral chip, because a secondary Button in
+    // `endContent` would otherwise land as `#d5dee4` — a cool gray at the same
+    // tone as the well it sits on, which is a shape without an affordance. The
+    // vivid tone fills it instead, so the loudest note on the banner is the
+    // thing you are meant to press.
     banner: {
       base: {
         borderRadius: 'var(--radius-element)',
       },
+      // Info has no status token to draw a well from (`--color-accent-muted` is
+      // ink at 12.5%, a neutral wash, and blue is info's hue here), so the pair
+      // is declared locally at the same T90 / opaque-pastel steps as the other
+      // three rather than promoted to a global token nothing else would use.
       'status:info': {
-        backgroundColor: 'var(--color-background-blue)',
+        '--color-banner-info-well': 'light-dark(#dde2f1, #a3b5d6)',
+        backgroundColor: 'var(--color-banner-info-well)',
         '--color-text-primary': 'var(--color-text-blue)',
         '--color-text-secondary': 'var(--color-text-blue)',
         '--color-accent': 'var(--color-text-blue)',
+        '--color-background-gray': 'var(--color-text-blue)',
+        '--color-text-gray': 'var(--color-banner-info-well)',
       },
       'status:success': {
-        backgroundColor: 'var(--color-background-green)',
+        backgroundColor: 'var(--color-success-muted)',
         '--color-text-primary': 'var(--color-text-green)',
         '--color-text-secondary': 'var(--color-text-green)',
         '--color-success': 'var(--color-text-green)',
+        '--color-background-gray': 'var(--color-text-green)',
+        '--color-text-gray': 'var(--color-success-muted)',
       },
       'status:warning': {
-        backgroundColor: 'var(--color-background-yellow)',
+        backgroundColor: 'var(--color-warning-muted)',
         '--color-text-primary': 'var(--color-text-yellow)',
         '--color-text-secondary': 'var(--color-text-yellow)',
         '--color-warning': 'var(--color-text-yellow)',
+        '--color-background-gray': 'var(--color-text-yellow)',
+        '--color-text-gray': 'var(--color-warning-muted)',
       },
       'status:error': {
-        backgroundColor: 'var(--color-background-red)',
+        backgroundColor: 'var(--color-error-muted)',
         '--color-text-primary': 'var(--color-text-red)',
         '--color-text-secondary': 'var(--color-text-red)',
         '--color-error': 'var(--color-text-red)',
+        '--color-background-gray': 'var(--color-text-red)',
+        '--color-text-gray': 'var(--color-error-muted)',
       },
     },
 

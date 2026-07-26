@@ -1,8 +1,6 @@
 import { SettingRow, SettingsSection } from '@/components/settings-section'
-import {
-  applyLocalePreference,
-  getLocalePreference,
-} from '@/lib/locale'
+import { useLanguagePreference } from '@/features/account'
+import { isLocalePreference } from '@/lib/locale'
 import type { LocalePreference } from '@/lib/locale'
 import { m } from '@/paraglide/messages'
 import { useTheme } from '@/providers/theme-provider'
@@ -12,7 +10,6 @@ import {
   SegmentedControlItem,
 } from '@astryxdesign/core/SegmentedControl'
 import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-react'
-import { useState } from 'react'
 
 const THEME_OPTIONS: Array<{
   value: Theme
@@ -37,21 +34,9 @@ function isTheme(value: string): value is Theme {
   return value === 'system' || value === 'light' || value === 'dark'
 }
 
-function isLocalePreference(value: string): value is LocalePreference {
-  return LANGUAGE_OPTIONS.some((option) => option.value === value)
-}
-
 export function AppearanceSettings() {
   const { theme, setTheme } = useTheme()
-  // Changing the language reloads the page, so this state only has to survive
-  // the moment between the click and the reload (or a no-op re-pin).
-  const [language, setLanguage] = useState<LocalePreference>(getLocalePreference)
-
-  function handleLanguageChange(next: string) {
-    if (!isLocalePreference(next)) return
-    setLanguage(next)
-    applyLocalePreference(next)
-  }
+  const language = useLanguagePreference()
 
   return (
     <SettingsSection
@@ -61,6 +46,7 @@ export function AppearanceSettings() {
       <SettingRow
         label={m.settings_appearance_mode_label()}
         description={m.settings_appearance_mode_description()}
+        scope={m.settings_scope_this_device()}
         control={
           <SegmentedControl
             size="sm"
@@ -85,12 +71,16 @@ export function AppearanceSettings() {
       <SettingRow
         label={m.settings_appearance_language_label()}
         description={m.settings_appearance_language_description()}
+        scope={m.settings_scope_account()}
         control={
           <SegmentedControl
             size="sm"
-            value={language}
-            onChange={handleLanguageChange}
+            value={language.preference}
+            onChange={(next) => {
+              if (isLocalePreference(next)) language.select(next)
+            }}
             label={m.settings_appearance_language_label()}
+            isDisabled={language.isPending || language.isLoading}
           >
             {LANGUAGE_OPTIONS.map((option) => (
               <SegmentedControlItem

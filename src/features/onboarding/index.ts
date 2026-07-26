@@ -5,9 +5,15 @@ export { OnboardingStatusError } from './components/onboarding-status-error'
 export { useCompleteOnboarding } from './hooks/use-complete-onboarding'
 export { useOnboardingStatus } from './hooks/use-onboarding-status'
 export type { OnboardingStatus } from './hooks/use-onboarding-status'
-export { resolveAppGate, resolveOnboardingGate } from './lib/onboarding-gate'
+export {
+  resolveAppGate,
+  resolveInboxGate,
+  resolveOnboardingGate,
+} from './lib/onboarding-gate'
 export type {
   AppGate,
+  InboxGate,
+  InboxGateInput,
   OnboardingGate,
   OnboardingGateInput,
 } from './lib/onboarding-gate'

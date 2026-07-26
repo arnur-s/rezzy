@@ -12,7 +12,5 @@ export const Route = createRootRouteWithContext<{
 })
 
 function RootComponent() {
-  // Toasts render through Astryx's LayerProvider (wired in main.tsx); no
-  // viewport element is needed here.
   return <Outlet />
 }

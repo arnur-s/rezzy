@@ -8,7 +8,15 @@ import { createContext, useContext } from 'react'
  */
 export type MessageThreadContextValue = {
   channelType: ChannelType
+  /** The other party's display name, for attributing a quoted inbound message. */
+  contactName: string
   reactionsByMessageId: Map<string, Array<MessageReactionRow>>
+  /**
+   * Loaded messages by id. A reply quotes its parent's real author and text
+   * from here: channel quote metadata often carries only an external id, and a
+   * reply composed in-app carries no quote payload at all.
+   */
+  messagesById: Map<string, MessageRow>
   onReplyToMessage: ((message: MessageRow) => void) | null
 }
 

@@ -295,7 +295,10 @@ export function ChatInput({
       isDisabled={disabled}
       drawer={
         hasDrawerContent ? (
-          <span className="flex flex-col gap-2">
+          // px-3 puts drawer content on the composer's own content column
+          // (the field box starts 12px in), so the dock reads as one stack
+          // instead of a reply strip hanging off its left edge.
+          <span className="flex flex-col gap-2 px-3">
             {drawer}
             {attachment ? (
               <AttachmentChip

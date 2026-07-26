@@ -3,10 +3,17 @@ import type { Session, User } from '@supabase/supabase-js'
 import type { ReactNode } from 'react'
 import { supabase } from '@/utils/supabase'
 
+/**
+ * `'others'` ends every session except this one, so the local session survives
+ * it. The default stays Supabase's own `'global'`, which is what the sidebar
+ * logout has always done.
+ */
+export type SignOutScope = 'global' | 'local' | 'others'
+
 export type AuthContextValue = {
   isLoading: boolean
   session: Session | null
-  signOut: () => Promise<void>
+  signOut: (scope?: SignOutScope) => Promise<void>
   user: User | null
 }
 
@@ -49,14 +56,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       isLoading,
       session,
-      signOut: async () => {
-        const { error } = await supabase.auth.signOut()
+      signOut: async (scope?: SignOutScope) => {
+        const { error } = await supabase.auth.signOut(
+          scope ? { scope } : undefined,
+        )
 
         if (error) {
           throw error
         }
 
-        setSession(null)
+        // 'others' leaves this session signed in, so clearing it here would
+        // sign the user out of the device they are looking at.
+        if (scope !== 'others') {
+          setSession(null)
+        }
       },
       user: session?.user ?? null,
     }),

@@ -5,6 +5,12 @@
    Sequence comes from @astryxdesign/core/src/tailwind-theme.css. */
 @layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
 
+/* Self-hosted woff2 subsets for the families the gothic theme names. Imported
+   outside every layer on purpose: @font-face registers a family globally rather
+   than participating in the cascade, and the faces must exist before the theme
+   references them by name. */
+@import './fonts/fonts.css';
+
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/preflight.css' layer(base);
 @import '@astryxdesign/core/reset.css';

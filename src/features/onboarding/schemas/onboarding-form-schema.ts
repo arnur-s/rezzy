@@ -6,11 +6,6 @@ import { z } from 'zod'
 // the same values server-side.
 export function createOnboardingFormSchema() {
   return z.object({
-    fullName: z
-      .string()
-      .trim()
-      .min(1, m.onboarding_full_name_required())
-      .max(80, m.onboarding_full_name_max()),
     workspaceName: z
       .string()
       .trim()

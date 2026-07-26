@@ -1,3 +1,4 @@
+import { hasActiveChannel } from '@/entities/channel'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   activateChannel,
@@ -20,6 +21,42 @@ export function useChannels(workspaceId: string) {
     queryKey: channelQueryKeys.list(workspaceId),
     enabled: !!workspaceId,
   })
+}
+
+export type WorkspaceReadiness = {
+  /** True once the workspace has a channel that can receive conversations. */
+  hasActiveChannel: boolean
+  isError: boolean
+  isPending: boolean
+  isRetrying: boolean
+  refetch: () => void
+}
+
+/**
+ * Whether the workspace's inbox is usable yet.
+ *
+ * Selects over the channel list rather than querying separately: it shares
+ * `channelQueryKeys.list`, so it costs no extra request and every existing
+ * channel mutation already invalidates it. Connecting, disconnecting, deleting
+ * and switching workspaces all recompute readiness with no further wiring.
+ */
+export function useWorkspaceReadiness(workspaceId: string): WorkspaceReadiness {
+  const query = useQuery({
+    queryFn: () => getWorkspaceChannels(workspaceId),
+    queryKey: channelQueryKeys.list(workspaceId),
+    enabled: !!workspaceId,
+    select: hasActiveChannel,
+  })
+
+  return {
+    hasActiveChannel: query.data ?? false,
+    isError: query.isError,
+    isPending: query.isPending,
+    isRetrying: query.isRefetching,
+    refetch: () => {
+      void query.refetch()
+    },
+  }
 }
 
 export function useCreateTelegramChannel(workspaceId: string) {
