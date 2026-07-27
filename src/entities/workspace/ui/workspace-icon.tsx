@@ -59,6 +59,14 @@ export type WorkspaceIconProps = {
 }
 
 export function WorkspaceIcon({ className, name }: WorkspaceIconProps) {
-  const Icon = WORKSPACE_ICON_COMPONENTS[resolveWorkspaceIcon(name)]
-  return <Icon className={className} aria-hidden />
+  const resolved = resolveWorkspaceIcon(name)
+  const Icon = WORKSPACE_ICON_COMPONENTS[resolved]
+  return (
+    // `data-workspace-icon` names which glyph was resolved. Browser checks can
+    // then assert this specific icon rather than counting every svg on the page,
+    // which the surrounding design-system chrome would drown out. It is also the
+    // failure mode worth catching: the DynamicIcon this replaced rendered a
+    // blank square rather than throwing, so "nothing drew" has to be observable.
+    <Icon className={className} data-workspace-icon={resolved} aria-hidden />
+  )
 }
