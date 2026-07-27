@@ -11,21 +11,27 @@
  *           connection. This is what a user feels.
  *
  * Usage:
- *   node scripts/route-budget.mjs dev    # against `pnpm dev` on :3000
- *   node scripts/route-budget.mjs prod   # against `vite preview` on :3411
+ *   pnpm perf:routes        # dev, against `pnpm dev` on :3000
+ *   pnpm build && pnpm perf:routes:prod   # prod, serves dist/ itself
  *
- * For a trustworthy dev number, start the server with `--force`. Vite serves
- * partially re-optimized dependencies while it rebuilds its cache, which
- * inflates the request count for reasons unrelated to the app's imports.
+ * For a trustworthy dev number, start the dev server with `--force`. Vite
+ * serves partially re-optimized dependencies while it rebuilds its cache,
+ * which inflates the request count for reasons unrelated to the app's imports.
  *
  * Exits non-zero if a budget is exceeded, so this can gate a regression.
  */
+import process from 'node:process'
 import { chromium } from 'playwright'
+import { hasBuild, serveDist } from './serve-dist.mjs'
 
 const MODE = process.argv[2] === 'prod' ? 'prod' : 'dev'
+const PREVIEW_PORT = 4174
 const BASE =
   process.env.BASE_URL ??
-  (MODE === 'prod' ? 'http://127.0.0.1:3411' : 'http://127.0.0.1:3000')
+  (MODE === 'prod'
+    ? `http://127.0.0.1:${PREVIEW_PORT}`
+    : 'http://127.0.0.1:3000')
+const OWNS_SERVER = MODE === 'prod' && !process.env.BASE_URL
 
 /**
  * Budgets chosen just above the values measured after removing the
@@ -45,60 +51,73 @@ const THROTTLE = {
   latency: 40,
 }
 
+if (OWNS_SERVER && !hasBuild()) {
+  console.error('No dist/ build found. Run `pnpm build` first.')
+  process.exit(1)
+}
+
+const server = OWNS_SERVER ? await serveDist(PREVIEW_PORT) : null
 const browser = await chromium.launch()
-const page = await browser.newContext().then((c) => c.newPage())
-const cdp = await page.context().newCDPSession(page)
-await cdp.send('Network.enable')
-if (MODE === 'prod') await cdp.send('Network.emulateNetworkConditions', THROTTLE)
 
-const urlByRequest = new Map()
-let files = []
+let boot
+try {
+  const page = await browser.newContext().then((c) => c.newPage())
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Network.enable')
+  if (MODE === 'prod') await cdp.send('Network.emulateNetworkConditions', THROTTLE)
 
-cdp.on('Network.requestWillBeSent', (e) => urlByRequest.set(e.requestId, e.request.url))
-cdp.on('Network.loadingFinished', (e) => {
-  const url = urlByRequest.get(e.requestId)
-  if (!url || (!url.includes('.js') && !url.includes('/src/'))) return
-  files.push([url.replace(BASE, ''), e.encodedDataLength])
-})
+  const urlByRequest = new Map()
+  let files = []
 
-function measure(label, wall) {
-  const bytes = files.reduce((sum, [, n]) => sum + n, 0)
-  const result = { label, wall, count: files.length, kb: bytes / 1024, files: [...files] }
-  files = []
-  return result
-}
+  cdp.on('Network.requestWillBeSent', (e) =>
+    urlByRequest.set(e.requestId, e.request.url),
+  )
+  cdp.on('Network.loadingFinished', (e) => {
+    const url = urlByRequest.get(e.requestId)
+    if (!url || (!url.includes('.js') && !url.includes('/src/'))) return
+    files.push([url.replace(BASE, ''), e.encodedDataLength])
+  })
 
-function print(r) {
-  console.log(`\n=== ${r.label} ===`)
-  console.log(`  wall ${r.wall.toFixed(0)}ms | ${r.count} requests | ${r.kb.toFixed(0)} kB JS`)
-  for (const [name, len] of [...r.files].sort((a, b) => b[1] - a[1]).slice(0, 6)) {
-    console.log(`    ${(len / 1024).toFixed(1).padStart(7)} kB  ${name.slice(0, 84)}`)
+  const measure = (label, wall) => {
+    const bytes = files.reduce((sum, [, n]) => sum + n, 0)
+    const result = { label, wall, count: files.length, kb: bytes / 1024, files: [...files] }
+    files = []
+    return result
   }
+
+  const print = (r) => {
+    console.log(`\n=== ${r.label} ===`)
+    console.log(`  wall ${r.wall.toFixed(0)}ms | ${r.count} requests | ${r.kb.toFixed(0)} kB JS`)
+    for (const [name, len] of [...r.files].sort((a, b) => b[1] - a[1]).slice(0, 6)) {
+      console.log(`    ${(len / 1024).toFixed(1).padStart(7)} kB  ${name.slice(0, 84)}`)
+    }
+  }
+
+  console.log(`mode: ${MODE}  base: ${BASE}`)
+
+  let t = performance.now()
+  await page.goto(BASE, { waitUntil: 'networkidle' })
+  boot = measure(`cold load -> ${new URL(page.url()).pathname}`, performance.now() - t)
+  print(boot)
+
+  // A route change should cost only its own new modules. Public routes exercise
+  // the same lazy-route machinery without needing credentials.
+  for (const name of [/sign up|создать|регист/i, /sign in|войти/i]) {
+    const link = page.getByRole('link', { name }).first()
+    if (!(await link.count())) continue
+    const from = new URL(page.url()).pathname
+    t = performance.now()
+    await link.click()
+    await page
+      .waitForFunction((p) => location.pathname !== p, from, { timeout: 10_000 })
+      .catch(() => {})
+    await page.waitForLoadState('networkidle')
+    print(measure(`${from} -> ${new URL(page.url()).pathname}`, performance.now() - t))
+  }
+} finally {
+  await browser.close()
+  server?.close()
 }
-
-console.log(`mode: ${MODE}  base: ${BASE}`)
-
-let t = performance.now()
-await page.goto(BASE, { waitUntil: 'networkidle' })
-const boot = measure(`cold load -> ${new URL(page.url()).pathname}`, performance.now() - t)
-print(boot)
-
-// A route change should cost only its own new modules. Public routes exercise
-// the same lazy-route machinery without needing credentials.
-for (const name of [/sign up|создать|регист/i, /sign in|войти/i]) {
-  const link = page.getByRole('link', { name }).first()
-  if (!(await link.count())) continue
-  const from = new URL(page.url()).pathname
-  t = performance.now()
-  await link.click()
-  await page
-    .waitForFunction((p) => location.pathname !== p, from, { timeout: 10_000 })
-    .catch(() => {})
-  await page.waitForLoadState('networkidle')
-  print(measure(`${from} -> ${new URL(page.url()).pathname}`, performance.now() - t))
-}
-
-await browser.close()
 
 const failures = []
 if (MODE === 'dev' && boot.count > BUDGETS.dev.bootRequests) {

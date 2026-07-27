@@ -19,6 +19,7 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "perf:routes": "node scripts/route-budget.mjs dev",
     "perf:routes:prod": "node scripts/route-budget.mjs prod",
+    "perf:chunks": "node scripts/chunk-report.mjs",
     "smoke": "node scripts/smoke.mjs",
     "build": "vite build",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
