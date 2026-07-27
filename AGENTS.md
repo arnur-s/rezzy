@@ -172,6 +172,41 @@ All user-facing text must use Paraglide/Inlang.
 - Do not manually edit generated files under `src/paraglide`.
 - Run the existing compile/typecheck scripts after message changes.
 
+`baseLocale` is `ru`, so Russian is the primary experience rather than a
+translation of the English. Treat a defect that only shows in Russian as a
+product defect, not a localization chore.
+
+- **Counted strings must be plural variants.** Russian takes three forms
+  (`one` / `few` / `many`), so `{count} каналов` is wrong for 1, 2 and 21. Use
+  the message-format variant syntax; never branch on the count in TypeScript,
+  because no ternary yields three forms. `src/lib/message-plurals.test.ts` pins
+  the expected form per bucket.
+- **Zod schemas that carry messages must be factories.** Zod reads its messages
+  when the schema is constructed, so a module-level constant freezes whichever
+  locale was active on first import. Export `createXSchema()` and call it
+  through `useLocalizedSchema`.
+- **Never hardcode user-facing English**, including in validation messages and
+  API-layer fallbacks. `pnpm i18n:audit` fails on both this and on key parity,
+  undefined keys, and placeholder mismatches between locales.
+- **Astryx is English-only.** It ships no Russian catalogue, and a few of its
+  strings (`isRequired` / `isOptional` on `Field`) are hardcoded past its own
+  translator. Prefer the app's catalogue: see `src/lib/field-label.ts`.
+- **Size controls for the longer language.** Russian runs 15-30% longer than
+  English, so a width tuned to the English copy truncates the base locale. Add
+  a budget in `src/lib/message-lengths.test.ts` for any string inside a
+  fixed-width control.
+
+Useful i18n commands:
+
+```bash
+pnpm i18n:audit   # key parity, undefined keys, placeholders, hardcoded English
+pnpm i18n:shots   # screenshots every route in both locales (needs pnpm build)
+```
+
+jsdom has no layout, so overflow and truncation are invisible to the unit
+suite. For copy or layout changes, run `pnpm build && pnpm i18n:shots` and read
+the Russian screenshots.
+
 ## Supabase
 
 - Treat files in `supabase/migrations` as the database history and source of truth.
@@ -219,6 +254,7 @@ pnpm test
 pnpm build
 pnpm verify
 pnpm test:db
+pnpm i18n:audit
 ```
 
 Use `pnpm verify` for broad or release-sensitive changes when practical. For documentation-only changes, review the diff and verify referenced paths and commands; a full application build is not required.
