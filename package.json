@@ -25,6 +25,7 @@
     "smoke": "node scripts/smoke.mjs",
     "check:password-reset": "node scripts/password-reset-check.mjs",
     "check:overflow": "node scripts/overflow-check.mjs",
+    "check:mobile-nav": "node scripts/mobile-nav-check.mjs",
     "build": "vite build",
     "verify": "pnpm typecheck && pnpm i18n:audit && pnpm lint && pnpm test && pnpm build",
     "dev": "vite dev --port 3000 --open --host",

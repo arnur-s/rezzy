@@ -86,18 +86,19 @@ function RouteComponent() {
           <Sidebar
             isCollapsed={isCollapsed}
             onCollapsedChange={setIsCollapsed}
+            onNavigate={() => setIsMobileNavOpen(false)}
           />
         }
+        // No `content`: AppShell renders that slot raw, outside its drawer
+        // chrome, so passing a second <Sidebar> laid a full copy of the rail
+        // into the page flow below the inbox on every phone-width load — two
+        // brand marks and two nav trees stacked down the screen. Left empty,
+        // AppShell reuses the `sideNav` above and wraps it in the drawer
+        // itself. `onNavigate` closes that drawer after a tap; on the desktop
+        // rail it is a no-op.
         mobileNav={{
           isOpen: isMobileNavOpen,
           onOpenChange: setIsMobileNavOpen,
-          content: (
-            <Sidebar
-              isCollapsed={false}
-              onCollapsedChange={() => {}}
-              onNavigate={() => setIsMobileNavOpen(false)}
-            />
-          ),
         }}
       >
         <Outlet />

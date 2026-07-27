@@ -264,6 +264,7 @@ layout and does not run the real bundle:
 pnpm build && pnpm smoke                  # every route renders, no console errors
 pnpm build && pnpm check:password-reset   # the reset flow, both halves, both locales
 pnpm build && pnpm check:overflow         # overflowing nav scrolls itself, at phone width
+pnpm build && pnpm check:mobile-nav       # the rail stays in its drawer at phone width
 pnpm build && pnpm i18n:shots             # screenshots of every route in both locales
 ```
 
