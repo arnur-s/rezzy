@@ -279,7 +279,7 @@
   "inbox_message_status_failed": "Не отправлено",
   "inbox_assigned_to": "Назначено: {name}",
   "inbox_empty_select_conversation_title": "Выберите диалог",
-  "inbox_empty_select_conversation_description": "Выберите диалог, чтобы прочитать его и ответить",
+  "inbox_empty_select_conversation_description": "Здесь откроются сообщения, профиль клиента и поле для ответа.",
   "inbox_thread_unavailable_title": "Диалог недоступен",
   "inbox_thread_unavailable_description": "Возможно, диалог удалён, перенесён или к нему больше нет доступа.",
   "inbox_thread_empty_title": "Сообщений пока нет",
@@ -819,5 +819,7 @@
   "contacts_empty_description": "Данные, заметки и история — рядом с каждым диалогом во входящих.",
   "contacts_empty_open_inbox": "Открыть входящие",
   "field_required": "Обязательно",
-  "field_optional": "Необязательно"
+  "field_optional": "Необязательно",
+  "inbox_empty_no_conversations_title": "Диалогов пока нет",
+  "inbox_empty_no_conversations_description": "Когда клиент напишет в подключённый канал, диалог откроется здесь."
 }

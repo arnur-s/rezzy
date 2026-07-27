@@ -279,7 +279,7 @@
   "inbox_message_status_failed": "Not sent",
   "inbox_assigned_to": "Assigned to {name}",
   "inbox_empty_select_conversation_title": "Pick a conversation",
-  "inbox_empty_select_conversation_description": "Choose a conversation to read it and reply",
+  "inbox_empty_select_conversation_description": "Its messages, the contact behind it, and your reply box open here.",
   "inbox_thread_unavailable_title": "Conversation unavailable",
   "inbox_thread_unavailable_description": "This conversation may have been deleted, moved, or you may no longer have access.",
   "inbox_thread_empty_title": "No messages yet",
@@ -793,5 +793,7 @@
   "contacts_empty_description": "Contact details, notes, and history live beside each conversation in the inbox.",
   "contacts_empty_open_inbox": "Open inbox",
   "field_required": "Required",
-  "field_optional": "Optional"
+  "field_optional": "Optional",
+  "inbox_empty_no_conversations_title": "No conversations yet",
+  "inbox_empty_no_conversations_description": "When a customer writes in on a connected channel, the conversation opens here."
 }
