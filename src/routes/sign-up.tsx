@@ -1,3 +1,4 @@
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { Button } from '@astryxdesign/core/Button'
@@ -19,13 +20,19 @@ export const Route = createFileRoute('/sign-up')({
   component: RouteComponent,
 })
 
-const signUpFormSchema = z.object({
-  email: z.email('Enter a valid email address.'),
-  fullName: z.string().trim().min(1, 'Full name is required.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
-})
+// Built per locale rather than held as a module constant: Zod reads its
+// messages when the schema is constructed, so a constant froze whichever
+// language happened to be active on first import — English, for a Russian
+// interface.
+function createSignUpFormSchema() {
+  return z.object({
+    email: z.email(m.auth_sign_in_email_invalid()),
+    fullName: z.string().trim().min(1, m.auth_sign_up_full_name_required()),
+    password: z.string().min(8, m.auth_sign_in_password_min()),
+  })
+}
 
-type SignUpFormValues = z.infer<typeof signUpFormSchema>
+type SignUpFormValues = z.infer<ReturnType<typeof createSignUpFormSchema>>
 
 const defaultValues: SignUpFormValues = {
   email: '',
@@ -105,11 +112,12 @@ function RouteComponent() {
   })
 
   const isFormDisabled = signUpMutation.isPending
+  const schema = useLocalizedSchema(createSignUpFormSchema)
 
   const { control, handleSubmit } = useForm<SignUpFormValues>({
     defaultValues,
     disabled: isFormDisabled,
-    resolver: standardSchemaResolver(signUpFormSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   function onSubmit(values: SignUpFormValues) {

@@ -1,4 +1,5 @@
 import { WorkspaceIconPicker } from '@/entities/workspace'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import { Button } from '@astryxdesign/core/Button'
@@ -38,11 +39,12 @@ export function CreateWorkspaceForm({ onSuccess, onCancel }: Props) {
   })
 
   const isFormDisabled = createWorkspaceMutation.isPending || !userId
+  const schema = useLocalizedSchema(createWorkspaceFormSchema)
 
   const { control, handleSubmit } = useForm<CreateWorkspaceFormValues>({
     defaultValues: createWorkspaceDefaultValues,
     disabled: isFormDisabled,
-    resolver: standardSchemaResolver(createWorkspaceFormSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   function onSubmit(values: CreateWorkspaceFormValues) {

@@ -1,4 +1,5 @@
 import { ChannelTypeIcon } from '@/entities/channel'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
@@ -23,8 +24,8 @@ import {
 } from '../lib/whatsapp-embedded-signup'
 import type { WhatsappChannelFormValues } from '../schemas/channel-form-schemas'
 import {
+  createWhatsappChannelSchema,
   whatsappChannelDefaultValues,
-  whatsappChannelSchema,
 } from '../schemas/channel-form-schemas'
 import type { WhatsappConnectionTarget } from '../types/whatsapp-connection-target'
 
@@ -98,6 +99,7 @@ export function ConnectWhatsappForm({
   const isConfigured = isWhatsappEmbeddedSignupConfigured()
   const isSecure = isSecureContextForFbLogin()
   const canConnect = isConfigured && isSecure
+  const schema = useLocalizedSchema(createWhatsappChannelSchema)
 
   const {
     control,
@@ -106,7 +108,7 @@ export function ConnectWhatsappForm({
   } = useForm<WhatsappChannelFormValues>({
     defaultValues: whatsappChannelDefaultValues,
     disabled: isConnecting,
-    resolver: standardSchemaResolver(whatsappChannelSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   // Keep the parent in sync with unsaved-changes state and always clear it on

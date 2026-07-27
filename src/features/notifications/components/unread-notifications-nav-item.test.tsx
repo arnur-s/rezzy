@@ -2,6 +2,7 @@ import type { ConversationWithRelations } from '@/entities/conversation'
 import type { Workspace } from '@/entities/workspace'
 import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
 import { workspaceQueryKeys } from '@/features/workspaces/api/workspaces'
+import { m } from '@/paraglide/messages'
 import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
 import { QueryClient } from '@tanstack/react-query'
@@ -159,7 +160,9 @@ describe('UnreadNotificationsNavItem', () => {
     expect(screen.queryByText('0')).toBeNull()
 
     fireEvent.click(trigger)
-    expect(await screen.findByText("You're all caught up")).toBeTruthy()
+    expect(
+      await screen.findByText(m.notifications_popover_empty_title()),
+    ).toBeTruthy()
     expect(screen.queryByText('Alice Johnson')).toBeNull()
   })
 
@@ -172,7 +175,10 @@ describe('UnreadNotificationsNavItem', () => {
       counts: { c1: 70, c2: 50 },
     })
     expect(await screen.findByText('99+')).toBeTruthy()
-    expect(screen.getByLabelText('120 unread')).toBeTruthy()
+    // The cap is visual only; the announced count stays exact and plural-aware.
+    expect(
+      screen.getByLabelText(m.notifications_unread_count_aria({ count: 120 })),
+    ).toBeTruthy()
   })
 
   // The bug this feature shipped with: the header is global, but the data was
@@ -272,7 +278,9 @@ describe('UnreadNotificationsNavItem', () => {
     })
     // Query observers notify in a batched tick, not synchronously.
     expect(await screen.findByText('5')).toBeTruthy()
-    expect(screen.getByLabelText('5 unread')).toBeTruthy()
+    expect(
+      screen.getByLabelText(m.notifications_unread_count_aria({ count: 5 })),
+    ).toBeTruthy()
   })
 
   it('opens a single realtime channel scoped to the active workspace', () => {

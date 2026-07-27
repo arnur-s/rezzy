@@ -1,5 +1,5 @@
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
-import { getLocale } from '@/paraglide/runtime'
 import { supabase } from '@/utils/supabase'
 import { Button } from '@astryxdesign/core/Button'
 import { Card } from '@astryxdesign/core/Card'
@@ -13,7 +13,6 @@ import {
   createFileRoute,
   useNavigate,
 } from '@tanstack/react-router'
-import { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -39,8 +38,7 @@ function RouteComponent() {
   const navigate = useNavigate()
   const showToast = useToast()
 
-  const locale = getLocale()
-  const loginFormSchema = useMemo(() => createLoginFormSchema(), [locale])
+  const loginFormSchema = useLocalizedSchema(createLoginFormSchema)
 
   const signInMutation = useMutation({
     mutationFn: async (data: LoginForm) => {

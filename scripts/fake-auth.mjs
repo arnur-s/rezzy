@@ -65,7 +65,7 @@ const CHANNEL = {
  * Fixtures keyed by the table each request targets. Anything unmatched returns
  * an empty list, which every list view in the app renders as an empty state.
  */
-const TABLE_FIXTURES = {
+const tableFixtures = (language) => ({
   workspaces: [WORKSPACE],
   workspace_members: [
     {
@@ -84,18 +84,26 @@ const TABLE_FIXTURES = {
       full_name: 'Smoke Tester',
       avatar_url: null,
       phone: null,
-      language: 'en',
+      // The app treats the profile row as authoritative for language and
+      // reloads the page to reconcile the local cookie against it, so a caller
+      // that wants a specific locale has to say so here — setting the cookie
+      // alone gets overwritten on the first profile fetch.
+      language,
     },
   ],
-}
+})
 
 /**
  * Installs the fake session and API stubs on a Playwright page.
  *
  * Must run before the first navigation: the app reads the session during boot,
  * so seeding it afterwards would let the auth gate bounce to /sign-in first.
+ *
+ * `language` is the preference on the fake profile row: 'en', 'ru', or 'auto'.
  */
-export async function installFakeAuth(page, baseUrl) {
+export async function installFakeAuth(page, baseUrl, { language = 'en' } = {}) {
+  const fixtures = tableFixtures(language)
+
   await page.addInitScript(
     ({ ref, session }) => {
       window.localStorage.setItem(
@@ -128,7 +136,7 @@ export async function installFakeAuth(page, baseUrl) {
 
     if (url.pathname.startsWith('/rest/v1/')) {
       const table = url.pathname.replace('/rest/v1/', '').split('?')[0]
-      return json(TABLE_FIXTURES[table] ?? [])
+      return json(fixtures[table] ?? [])
     }
 
     if (url.pathname.startsWith('/storage/v1/')) return json({ signedUrl: '' })

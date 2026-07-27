@@ -1,5 +1,6 @@
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
+import { fieldLabel } from '@/lib/field-label'
 import { m } from '@/paraglide/messages'
-import { getLocale } from '@/paraglide/runtime'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
 import { Card } from '@astryxdesign/core/Card'
@@ -7,7 +8,7 @@ import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { useNavigate } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { OnboardingSessionExpiredError } from '../api/onboarding'
 import { useCompleteOnboarding } from '../hooks/use-complete-onboarding'
@@ -19,10 +20,7 @@ export function OnboardingForm() {
   const completeOnboardingMutation = useCompleteOnboarding()
   const [hasSessionExpired, setHasSessionExpired] = useState(false)
 
-  const locale = getLocale()
-  const onboardingFormSchema = useMemo(() => createOnboardingFormSchema(), [
-    locale,
-  ])
+  const onboardingFormSchema = useLocalizedSchema(createOnboardingFormSchema)
 
   const isPending = completeOnboardingMutation.isPending
 
@@ -76,9 +74,13 @@ export function OnboardingForm() {
             name="workspaceName"
             render={({ field, fieldState }) => (
               <TextInput
-                label={m.onboarding_workspace_name_label()}
+                // Astryx's `isRequired` prints the literal English word
+                // "Required" beside the label, so the marker is written from
+                // the app's catalogue instead. This is the form's only field
+                // and submission is blocked without it, so the visible marker
+                // carries the requirement on its own here.
+                label={fieldLabel(m.onboarding_workspace_name_label(), 'required')}
                 placeholder={m.onboarding_workspace_name_placeholder()}
-                isRequired
                 hasAutoFocus
                 value={field.value}
                 onChange={(next) => field.onChange(next)}

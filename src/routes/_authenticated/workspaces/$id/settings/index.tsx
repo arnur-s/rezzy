@@ -5,6 +5,7 @@ import {
 } from '@/features/workspaces/hooks/use-workspaces'
 import type { CreateWorkspaceFormValues } from '@/features/workspaces/schemas/workspace-form-schema'
 import { createWorkspaceFormSchema } from '@/features/workspaces/schemas/workspace-form-schema'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import { Button } from '@astryxdesign/core/Button'
@@ -36,6 +37,7 @@ function RouteComponent() {
   const updateWorkspaceMutation = useUpdateWorkspace(userId ?? '')
 
   const isFormDisabled = updateWorkspaceMutation.isPending
+  const schema = useLocalizedSchema(createWorkspaceFormSchema)
 
   const {
     control,
@@ -48,7 +50,7 @@ function RouteComponent() {
       icon: undefined,
       name: '',
     },
-    resolver: standardSchemaResolver(createWorkspaceFormSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   const lastSyncedWorkspaceIdRef = useRef<string | null>(null)

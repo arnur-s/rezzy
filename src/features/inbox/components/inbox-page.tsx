@@ -137,6 +137,13 @@ export function InboxPage({
   })
 
   const showContact = isContactPanelOpen && selectedConversation !== null
+  // Only once the list has actually resolved: mid-load, "nothing here" would
+  // be a claim the app cannot yet make.
+  const hasNoConversations =
+    !conversationsQuery.isPending &&
+    !conversationsQuery.isError &&
+    conversationsQuery.data.length === 0
+
   const threadContext = useMemo<InboxThreadRouteContextValue>(
     () => ({
       workspaceId,
@@ -145,6 +152,7 @@ export function InboxPage({
       selectedConversationId,
       isConversationsPending: conversationsQuery.isPending,
       isConversationsError: conversationsQuery.isError,
+      hasNoConversations,
       onBackToList,
       onToggleContactPanel: handleToggleContactPanel,
       scrollToLatestNonce,
@@ -156,6 +164,7 @@ export function InboxPage({
       selectedConversationId,
       conversationsQuery.isPending,
       conversationsQuery.isError,
+      hasNoConversations,
       onBackToList,
       handleToggleContactPanel,
       scrollToLatestNonce,

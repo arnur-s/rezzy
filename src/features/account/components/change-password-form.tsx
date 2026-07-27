@@ -1,11 +1,11 @@
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
-import { getLocale } from '@/paraglide/runtime'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { CheckIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useChangePassword } from '../hooks/use-account-security'
 import { createPasswordFormSchema } from '../schemas/password-form-schema'
@@ -21,8 +21,7 @@ export function ChangePasswordForm({
   const changePassword = useChangePassword()
   const [hasChanged, setHasChanged] = useState(false)
 
-  const locale = getLocale()
-  const schema = useMemo(() => createPasswordFormSchema(), [locale])
+  const schema = useLocalizedSchema(createPasswordFormSchema)
 
   const isPending = changePassword.isPending
 

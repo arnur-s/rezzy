@@ -1,4 +1,5 @@
 import type { Channel } from '@/entities/channel'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog'
@@ -9,7 +10,7 @@ import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useUpdateChannelName } from '../hooks/use-channels'
 import type { EditChannelNameFormValues } from '../schemas/channel-form-schemas'
-import { editChannelNameSchema } from '../schemas/channel-form-schemas'
+import { createEditChannelNameSchema } from '../schemas/channel-form-schemas'
 
 type Props = {
   channel: Channel
@@ -26,11 +27,12 @@ export function EditChannelNameModal({
 }: Props) {
   const showToast = useToast()
   const updateChannelMutation = useUpdateChannelName(workspaceId)
+  const schema = useLocalizedSchema(createEditChannelNameSchema)
 
   const { control, handleSubmit, reset } = useForm<EditChannelNameFormValues>({
     defaultValues: { name: channel.name ?? '' },
     disabled: updateChannelMutation.isPending,
-    resolver: standardSchemaResolver(editChannelNameSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   useEffect(() => {

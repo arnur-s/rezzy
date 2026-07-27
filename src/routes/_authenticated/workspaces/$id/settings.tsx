@@ -101,7 +101,11 @@ function RouteComponent() {
             {m.workspace_settings_description()}
           </p>
 
-          <div className="pt-6">
+          {/* Same construction as the account settings tabs: TabList lays its
+              tabs in a row but does not scroll them, and a longer translation
+              or a fourth section would push the last one off a phone screen
+              with no way to reach it. See `src/routes/_authenticated/settings.tsx`. */}
+          <div className="-mx-4 overflow-x-auto px-4 pt-6 sm:-mx-8 sm:px-8">
             <TabList
               value={selectedKey}
               onChange={(key) => handleSectionChange(key)}

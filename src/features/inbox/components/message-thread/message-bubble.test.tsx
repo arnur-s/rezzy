@@ -1,4 +1,5 @@
 import type { MessageReactionRow, MessageRow } from '@/entities/message'
+import { m } from '@/paraglide/messages'
 import { setLocale } from '@/paraglide/runtime'
 import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -142,7 +143,7 @@ describe('MessageBubble structured types', () => {
       }),
     )
     expect(
-      screen.getByText("This message type isn't supported yet"),
+      screen.getByText(m.inbox_unsupported_message()),
     ).toBeTruthy()
     expect(screen.getByText('Lunch?')).toBeTruthy()
   })

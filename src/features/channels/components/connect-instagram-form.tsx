@@ -1,4 +1,5 @@
 import { ChannelTypeIcon } from '@/entities/channel'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
@@ -22,8 +23,8 @@ import {
 } from '../lib/instagram-oauth'
 import type { InstagramChannelFormValues } from '../schemas/channel-form-schemas'
 import {
+  createInstagramChannelSchema,
   instagramChannelDefaultValues,
-  instagramChannelSchema,
 } from '../schemas/channel-form-schemas'
 import type { InstagramConnectionTarget } from '../types/instagram-connection-target'
 
@@ -95,6 +96,7 @@ export function ConnectInstagramForm({
   const isConfigured = isInstagramOAuthConfigured()
   const isSecure = isSecureContextForInstagramLogin()
   const canConnect = isConfigured && isSecure
+  const schema = useLocalizedSchema(createInstagramChannelSchema)
 
   const {
     control,
@@ -103,7 +105,7 @@ export function ConnectInstagramForm({
   } = useForm<InstagramChannelFormValues>({
     defaultValues: instagramChannelDefaultValues,
     disabled: isConnecting,
-    resolver: standardSchemaResolver(instagramChannelSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   useEffect(() => {

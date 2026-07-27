@@ -8,6 +8,11 @@ type InboxThreadRouteContextValue = {
   selectedConversationId: string | null
   isConversationsPending: boolean
   isConversationsError: boolean
+  /**
+   * True once the list has loaded and holds nothing. The empty thread pane
+   * uses it to stop inviting a choice from an empty list.
+   */
+  hasNoConversations: boolean
   onBackToList: () => void
   onToggleContactPanel: () => void
   /** Bumped when the user re-selects the already-open conversation. */

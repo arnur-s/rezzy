@@ -1,5 +1,6 @@
 import { isChannelType } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
+import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { getUnreadCountsForWorkspaces } from './unread-counts'
 
@@ -97,7 +98,10 @@ export async function getAttentionQueue(
       conversationId: raw.id,
       workspaceId: raw.workspace_id,
       contactId: raw.contact_id,
-      contactName: raw.contact.name?.trim() || 'Untitled contact',
+      // Channels do not always send a display name; the row still has to be
+      // openable, so it gets a localized stand-in rather than an English
+      // literal baked into the data layer.
+      contactName: raw.contact.name?.trim() || m.contact_unnamed(),
       contactAvatarUrl: raw.contact.avatar_url,
       channelType: isChannelType(raw.channel.type) ? raw.channel.type : null,
       channelName: raw.channel.name,
@@ -185,7 +189,7 @@ export async function getTeamNewQueue(
     items.push({
       conversationId: raw.id,
       workspaceId: raw.workspace_id,
-      contactName: raw.contact.name?.trim() || 'Untitled contact',
+      contactName: raw.contact.name?.trim() || m.contact_unnamed(),
       channelType: isChannelType(raw.channel.type) ? raw.channel.type : null,
       timestamp: raw.last_message_at,
     })

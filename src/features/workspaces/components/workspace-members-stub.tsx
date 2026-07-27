@@ -1,3 +1,4 @@
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Badge } from '@astryxdesign/core/Badge'
@@ -118,20 +119,38 @@ type ProfileLite = {
 } | null
 
 function MemberRow({ profile, role }: { profile: ProfileLite; role: string }) {
-  const displayName = useMemo(() => {
+  // Null when the row has no real name to show, so the placeholder can be kept
+  // out of `Avatar`: it derives initials from whatever string it is handed, and
+  // initialing "Без имени" printed "БИ" — a plausible-looking monogram for a
+  // person who has none.
+  const knownName = useMemo(() => {
     if (profile?.full_name?.trim()) return profile.full_name.trim()
     if (profile?.email?.trim()) return profile.email.trim()
-    return m.workspace_settings_members_unknown_user()
+    return null
   }, [profile])
+
+  const displayName = knownName ?? m.workspace_settings_members_unknown_user()
 
   const email = profile?.email ?? ''
   const roleLabel = getRoleLabel(role)
 
   return (
     <div className="flex min-h-16 items-center gap-3 py-3">
-      <Avatar name={displayName} src={profile?.avatar_url ?? undefined} size="sm" />
+      <Avatar
+        name={knownName ?? undefined}
+        src={profile?.avatar_url ?? undefined}
+        size="sm"
+      />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{displayName}</p>
+        <p
+          className={cn(
+            'truncate text-sm font-medium',
+            // The placeholder is a statement about missing data, not a name.
+            !knownName && 'text-secondary italic',
+          )}
+        >
+          {displayName}
+        </p>
         {email && <p className="text-secondary truncate text-xs">{email}</p>}
       </div>
       <Badge variant="neutral" label={roleLabel} />

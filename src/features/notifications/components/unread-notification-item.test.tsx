@@ -1,4 +1,5 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
+import { m } from '@/paraglide/messages'
 import { setLocale } from '@/paraglide/runtime'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -71,7 +72,12 @@ describe('UnreadNotificationItem', () => {
     expect(screen.getByText('Alice Johnson')).toBeTruthy()
     expect(screen.getByText('See you tomorrow')).toBeTruthy()
     expect(screen.getByTestId('platform-icon')).toBeTruthy()
-    expect(screen.getByLabelText('3 unread')).toBeTruthy()
+    // Read from the catalogue rather than pinned as a literal: the label is
+    // plural-sensitive, so a hardcoded string here would assert only the arm
+    // this fixture happens to hit.
+    expect(
+      screen.getByLabelText(m.inbox_unread_aria_label({ count: 3 })),
+    ).toBeTruthy()
   })
 
   it('falls back safely when the contact name and preview are missing', () => {

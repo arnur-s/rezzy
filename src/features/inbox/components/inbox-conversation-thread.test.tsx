@@ -79,6 +79,9 @@ function renderThread({
         selectedConversationId: conversationId,
         isConversationsPending,
         isConversationsError,
+        // This suite always opens a specific thread, so the list is never the
+        // empty case the flag describes.
+        hasNoConversations: false,
         onBackToList,
         onToggleContactPanel,
         scrollToLatestNonce: 0,
