@@ -791,5 +791,7 @@
   "password_reset_update_success": "Password updated",
   "contacts_empty_title": "No contact directory yet",
   "contacts_empty_description": "Contact details, notes, and history live beside each conversation in the inbox.",
-  "contacts_empty_open_inbox": "Open inbox"
+  "contacts_empty_open_inbox": "Open inbox",
+  "field_required": "Required",
+  "field_optional": "Optional"
 }

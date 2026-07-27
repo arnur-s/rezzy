@@ -817,5 +817,7 @@
   "password_reset_update_success": "Пароль обновлён",
   "contacts_empty_title": "Списка контактов пока нет",
   "contacts_empty_description": "Данные, заметки и история — рядом с каждым диалогом во входящих.",
-  "contacts_empty_open_inbox": "Открыть входящие"
+  "contacts_empty_open_inbox": "Открыть входящие",
+  "field_required": "Обязательно",
+  "field_optional": "Необязательно"
 }

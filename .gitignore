@@ -13,6 +13,8 @@ __unconfig*
 todos.json
 # Dev-server output, when redirected to a file for debugging.
 *.log
+# Output of scripts/copy-screenshots.mjs.
+.screenshots/
 # heroui-agents-md
 .heroui-docs/
 full-schema.sql

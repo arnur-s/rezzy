@@ -21,6 +21,15 @@ type Props = {
   isRetrying?: boolean
   /** Present when the user has exactly one workspace. */
   inboxWorkspaceId: string | null
+  /**
+   * True when the summary line above has already reported the all-clear.
+   *
+   * The two read the same data, so at zero they said the same thing twice
+   * within 100px — under the greeting, then again as this section's heading
+   * plus its own empty state. When the summary is speaking, this section stays
+   * quiet; when the summary failed to load, it speaks for itself.
+   */
+  isSummaryAllClear?: boolean
 }
 
 export function AttentionList({
@@ -32,12 +41,16 @@ export function AttentionList({
   onRetry,
   isRetrying = false,
   inboxWorkspaceId,
+  isSummaryAllClear = false,
 }: Props) {
   const workspaceNameById = useMemo(() => {
     const map = new Map<string, string>()
     for (const w of workspaces) map.set(w.id, w.name)
     return map
   }, [workspaces])
+
+  const isEmpty = !isLoading && !isError && items.length === 0
+  if (isEmpty && isSummaryAllClear) return null
 
   return (
     <section aria-labelledby="home-attention-title" className="space-y-3">

@@ -1,4 +1,5 @@
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
+import { fieldLabel } from '@/lib/field-label'
 import { m } from '@/paraglide/messages'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
@@ -73,9 +74,13 @@ export function OnboardingForm() {
             name="workspaceName"
             render={({ field, fieldState }) => (
               <TextInput
-                label={m.onboarding_workspace_name_label()}
+                // Astryx's `isRequired` prints the literal English word
+                // "Required" beside the label, so the marker is written from
+                // the app's catalogue instead. This is the form's only field
+                // and submission is blocked without it, so the visible marker
+                // carries the requirement on its own here.
+                label={fieldLabel(m.onboarding_workspace_name_label(), 'required')}
                 placeholder={m.onboarding_workspace_name_placeholder()}
-                isRequired
                 hasAutoFocus
                 value={field.value}
                 onChange={(next) => field.onChange(next)}

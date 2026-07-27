@@ -1,3 +1,4 @@
+import { fieldLabel } from '@/lib/field-label'
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { Banner } from '@astryxdesign/core/Banner'
@@ -71,7 +72,13 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
   // ride in on the ref it forwards to the real input. Held at component level
   // rather than inside each `Controller` render prop, which would put hook
   // calls in a callback React may not invoke on every render.
-  const fullNameAttrs = useNativeInputAttrs({ autoComplete: 'name' })
+  // `aria-required` rides in on the ref because Astryx's `isRequired` also
+  // prints the English word "Required" beside the label; `fieldLabel` writes
+  // that marker from the app's own catalogue instead.
+  const fullNameAttrs = useNativeInputAttrs({
+    autoComplete: 'name',
+    required: true,
+  })
   const jobTitleAttrs = useNativeInputAttrs({
     autoComplete: 'organization-title',
   })
@@ -126,8 +133,7 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
         name="fullName"
         render={({ field, fieldState }) => (
           <TextInput
-            label={m.profile_full_name_label()}
-            isRequired
+            label={fieldLabel(m.profile_full_name_label(), 'required')}
             ref={fullNameAttrs}
             value={field.value}
             onChange={(next) => field.onChange(next)}
@@ -146,9 +152,8 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
         name="jobTitle"
         render={({ field, fieldState }) => (
           <TextInput
-            label={m.profile_job_title_label()}
+            label={fieldLabel(m.profile_job_title_label(), 'optional')}
             placeholder={m.profile_job_title_placeholder()}
-            isOptional
             ref={jobTitleAttrs}
             value={field.value}
             onChange={(next) => field.onChange(next)}
@@ -167,10 +172,9 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
         name="phone"
         render={({ field, fieldState }) => (
           <TextInput
-            label={m.profile_phone_label()}
+            label={fieldLabel(m.profile_phone_label(), 'optional')}
             description={m.profile_phone_description()}
             placeholder={m.profile_phone_placeholder()}
-            isOptional
             ref={phoneAttrs}
             value={field.value}
             // Masked on the way in, so the field always reads the way the
@@ -195,10 +199,9 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
 
           return (
             <Typeahead
-              label={m.profile_timezone_label()}
+              label={fieldLabel(m.profile_timezone_label(), 'optional')}
               description={m.profile_timezone_description()}
               placeholder={m.profile_timezone_placeholder()}
-              isOptional
               hasEntriesOnFocus
               debounceMs={0}
               searchSource={timeZoneSource}

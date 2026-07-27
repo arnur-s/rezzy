@@ -43,6 +43,18 @@ function RouteComponent() {
   const workspaces = workspacesQuery.data ?? []
   const inboxWorkspaceId = workspaces.length === 1 ? workspaces[0].id : null
 
+  // The summary line and the attention list read the same numbers, so at zero
+  // they both render an all-clear. Only the summary should say it.
+  const homeStats = homeStatsQuery.data
+  const isSummaryAllClear =
+    !homeStatsQuery.isPending &&
+    !homeStatsQuery.isError &&
+    homeStats !== undefined &&
+    homeStats.unreadAssigned === 0 &&
+    homeStats.openAssigned === 0 &&
+    homeStats.snoozedWaking === 0 &&
+    homeStats.staleAssigned === 0
+
   // Each section owns its loading and failure honestly; the page-level gate
   // covers only the workspace list every section depends on.
   return (
@@ -82,6 +94,7 @@ function RouteComponent() {
             onRetry={() => void attentionQuery.refetch()}
             isRetrying={attentionQuery.isRefetching}
             inboxWorkspaceId={inboxWorkspaceId}
+            isSummaryAllClear={isSummaryAllClear}
           />
 
           <TeamNewList
