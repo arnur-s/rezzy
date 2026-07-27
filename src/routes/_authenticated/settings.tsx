@@ -74,10 +74,17 @@ function RouteComponent() {
             {m.account_settings_description()}
           </p>
 
-          {/* One nav for both breakpoints: TabList scrolls horizontally when
-              the labels outgrow the viewport, and carries the selected state
-              itself. */}
-          <div className="pt-6">
+          {/*
+            One nav for both breakpoints. TabList lays its tabs out in a row but
+            does not scroll them: at 390px the Russian labels need 421px in a
+            358px column, so "Безопасность" was clipped off the screen with no
+            way to reach it. The scroll container is ours.
+
+            `-mx-4 px-4` lets the row bleed to the pane edges while its first
+            and last tabs keep the page's own inset, so a scrolled tab does not
+            sit flush against the viewport edge.
+          */}
+          <div className="-mx-4 overflow-x-auto px-4 pt-6 sm:-mx-8 sm:px-8">
             <TabList
               value={selectedKey}
               onChange={(key) => {

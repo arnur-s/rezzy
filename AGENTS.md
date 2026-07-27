@@ -263,11 +263,15 @@ layout and does not run the real bundle:
 ```bash
 pnpm build && pnpm smoke                  # every route renders, no console errors
 pnpm build && pnpm check:password-reset   # the reset flow, both halves, both locales
+pnpm build && pnpm check:overflow         # overflowing nav scrolls itself, at phone width
 pnpm build && pnpm i18n:shots             # screenshots of every route in both locales
 ```
 
-Run the flow checks when touching auth, and read the Russian screenshots when
-touching copy or layout.
+Run the flow checks when touching auth, the overflow check when touching
+navigation or label copy, and read the Russian screenshots when touching copy
+or layout. `pnpm i18n:shots` covers both locales, both colour modes, and phone
+as well as desktop width, because the narrow viewport is where longer copy runs
+out of room first.
 
 Use `pnpm verify` for broad or release-sensitive changes when practical. For documentation-only changes, review the diff and verify referenced paths and commands; a full application build is not required.
 

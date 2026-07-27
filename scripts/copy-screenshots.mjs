@@ -1,14 +1,17 @@
 /**
- * Screenshots the authenticated routes in both locales so the copy changes can
- * be read as rendered, not just as JSON.
+ * Screenshots every route in both locales, both colour modes, and at desktop
+ * and phone width, so copy can be read as rendered rather than as JSON.
  *
- * Unit tests assert individual strings; they cannot see a Russian sentence
- * overflowing a button, a two-line label where English fits on one, or a plural
- * form that is grammatically right and typographically wrong. This drives the
- * real bundle with the same fake session the smoke check uses.
+ * Unit tests assert individual strings. They cannot see a Russian sentence
+ * overflowing its button, a label that wraps to two lines where English fits on
+ * one, or a control sized to the shorter language. jsdom has no layout at all,
+ * so this is the only check that can. Russian runs 15-30% longer than English,
+ * and the narrow viewport is where that difference actually breaks something.
  *
- * Usage: pnpm build && node scripts/copy-screenshots.mjs
- * Output: .screenshots/<locale>/<route>.png
+ * Drives the real bundle with the same fake session the smoke check uses.
+ *
+ * Usage: pnpm build && pnpm i18n:shots
+ * Output: .screenshots/<locale>-<mode>-<width>/<route>.png
  */
 import { WORKSPACE_ID, installFakeAuth } from './fake-auth.mjs'
 import { hasBuild, serveDist } from './serve-dist.mjs'
@@ -21,6 +24,14 @@ const PORT = 4174
 const BASE = process.env.BASE_URL ?? `http://127.0.0.1:${PORT}`
 const OWNS_SERVER = !process.env.BASE_URL
 const OUT_DIR = '.screenshots'
+
+/** Desktop, and the narrow width where longer copy runs out of room first. */
+const VIEWPORTS = [
+  { name: 'desktop', width: 1440, height: 900 },
+  { name: 'phone', width: 390, height: 844 },
+]
+
+const MODES = ['light', 'dark']
 
 const ROUTES = [
   ['home', '/'],
@@ -53,31 +64,38 @@ const browser = await chromium.launch()
 
 try {
   for (const locale of ['ru', 'en']) {
-    const dir = path.join(OUT_DIR, locale)
-    mkdirSync(dir, { recursive: true })
+    for (const mode of MODES) {
+      for (const viewport of VIEWPORTS) {
+        const label = `${locale}-${mode}-${viewport.name}`
+        const dir = path.join(OUT_DIR, label)
+        mkdirSync(dir, { recursive: true })
 
-    const context = await browser.newContext({
-      viewport: { width: 1440, height: 900 },
-      locale,
-    })
-    const page = await context.newPage()
-    await installFakeAuth(page, BASE, { language: locale })
-    // Paraglide resolves the locale from its own cookie before React mounts,
-    // and `initLocale` memoizes the result, so the cookie is what actually
-    // pins the render language. The Playwright `locale` option only covers the
-    // browser-language fallback.
-    await context.addCookies([
-      { name: 'PARAGLIDE_LOCALE', value: locale, url: BASE },
-    ])
+        const context = await browser.newContext({
+          viewport: { width: viewport.width, height: viewport.height },
+          locale,
+          colorScheme: mode,
+        })
+        const page = await context.newPage()
+        await installFakeAuth(page, BASE, { language: locale })
+        // Paraglide resolves the locale from its own cookie before React
+        // mounts and memoizes the result, so the cookie is what actually pins
+        // the render language; Playwright's `locale` only feeds the
+        // browser-language fallback. The theme provider follows the OS
+        // preference by default, which `colorScheme` sets.
+        await context.addCookies([
+          { name: 'PARAGLIDE_LOCALE', value: locale, url: BASE },
+        ])
 
-    for (const [name, route] of ROUTES) {
-      await page.goto(BASE + route, { waitUntil: 'networkidle' })
-      await page.waitForTimeout(500)
-      await page.screenshot({ path: path.join(dir, `${name}.png`) })
-      console.log(`${locale}  ${route}`)
+        for (const [name, route] of ROUTES) {
+          await page.goto(BASE + route, { waitUntil: 'networkidle' })
+          await page.waitForTimeout(400)
+          await page.screenshot({ path: path.join(dir, `${name}.png`) })
+        }
+        console.log(`${label}: ${ROUTES.length} routes`)
+
+        await context.close()
+      }
     }
-
-    await context.close()
   }
 } finally {
   await browser.close()
