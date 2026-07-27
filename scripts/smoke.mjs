@@ -10,9 +10,9 @@
  * Usage: `pnpm build && pnpm smoke`
  * Point BASE_URL at an already-running server to skip the built-in one.
  */
-import process from 'node:process'
-import { chromium } from 'playwright'
 import { hasBuild, serveDist } from './serve-dist.mjs'
+import { chromium } from 'playwright'
+import process from 'node:process'
 
 const PORT = 4173
 const BASE = process.env.BASE_URL ?? `http://127.0.0.1:${PORT}`

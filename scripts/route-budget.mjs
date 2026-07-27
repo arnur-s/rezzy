@@ -20,9 +20,9 @@
  *
  * Exits non-zero if a budget is exceeded, so this can gate a regression.
  */
-import process from 'node:process'
-import { chromium } from 'playwright'
 import { hasBuild, serveDist } from './serve-dist.mjs'
+import { chromium } from 'playwright'
+import process from 'node:process'
 
 const MODE = process.argv[2] === 'prod' ? 'prod' : 'dev'
 const PREVIEW_PORT = 4174
@@ -37,6 +37,15 @@ const OWNS_SERVER = MODE === 'prod' && !process.env.BASE_URL
  * Budgets chosen just above the values measured after removing the
  * `lucide-react/dynamic` barrel and lazy-loading emoji-mart and lottie. They
  * are ceilings to catch a regression, not targets to fill.
+ *
+ * The dev budget counts dependency requests, excluding paraglide's per-message
+ * modules: it compiles one ES module per message and the dev server serves each
+ * separately, so counting them would make the budget track translation work
+ * rather than imports. A barrel import lands in node_modules, which is counted.
+ *
+ * Measure from a cold `--force` start for the cleanest number: Vite serves
+ * partially re-optimized dependencies while it rebuilds its cache. For scale,
+ * the `lucide-react/dynamic` barrel this replaced cost 1908 requests in total.
  */
 const BUDGETS = {
   dev: { bootRequests: 500 },
@@ -80,14 +89,29 @@ try {
 
   const measure = (label, wall) => {
     const bytes = files.reduce((sum, [, n]) => sum + n, 0)
-    const result = { label, wall, count: files.length, kb: bytes / 1024, files: [...files] }
+    // The budget counts dependency requests only. Paraglide compiles one module
+    // per message and the dev server serves each separately, so its count moves
+    // with the size of the message catalogue rather than with anything about
+    // imports; counting it would make the budget track translation work. A
+    // barrel import lands in node_modules, which is exactly what is counted.
+    const depCount = files.filter(([name]) => !name.includes('/paraglide/')).length
+    const result = {
+      label,
+      wall,
+      count: files.length,
+      depCount,
+      kb: bytes / 1024,
+      files: [...files],
+    }
     files = []
     return result
   }
 
   const print = (r) => {
     console.log(`\n=== ${r.label} ===`)
-    console.log(`  wall ${r.wall.toFixed(0)}ms | ${r.count} requests | ${r.kb.toFixed(0)} kB JS`)
+    console.log(
+      `  wall ${r.wall.toFixed(0)}ms | ${r.count} requests (${r.depCount} excluding i18n) | ${r.kb.toFixed(0)} kB JS`,
+    )
     for (const [name, len] of [...r.files].sort((a, b) => b[1] - a[1]).slice(0, 6)) {
       console.log(`    ${(len / 1024).toFixed(1).padStart(7)} kB  ${name.slice(0, 84)}`)
     }
@@ -120,8 +144,10 @@ try {
 }
 
 const failures = []
-if (MODE === 'dev' && boot.count > BUDGETS.dev.bootRequests) {
-  failures.push(`boot made ${boot.count} module requests, budget ${BUDGETS.dev.bootRequests}`)
+if (MODE === 'dev' && boot.depCount > BUDGETS.dev.bootRequests) {
+  failures.push(
+    `boot made ${boot.depCount} dependency requests, budget ${BUDGETS.dev.bootRequests}`,
+  )
 }
 if (MODE === 'prod' && boot.kb > BUDGETS.prod.bootKb) {
   failures.push(`boot transferred ${boot.kb.toFixed(0)} kB, budget ${BUDGETS.prod.bootKb} kB`)
@@ -130,6 +156,15 @@ if (MODE === 'prod' && boot.kb > BUDGETS.prod.bootKb) {
 if (failures.length) {
   console.error('\nBUDGET EXCEEDED:')
   for (const f of failures) console.error('  ' + f)
+  if (MODE === 'dev') {
+    // Worth saying out loud: a stale optimizer cache produces this same
+    // failure, and chasing it as an app regression wastes real time.
+    console.error(
+      '\nIf the dev server has been running across dependency or import changes,\n' +
+        'restart it with `--force` and re-measure before treating this as a\n' +
+        'regression: Vite serves partially re-optimized deps while it rebuilds.',
+    )
+  }
   process.exit(1)
 }
 console.log('\nWithin budget.')
