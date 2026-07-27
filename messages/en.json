@@ -39,10 +39,10 @@
   "auth_sign_in_email_invalid": "Enter a valid email address",
   "auth_sign_in_password_min": "Password must be at least 8 characters",
   "auth_sign_in_forgot_password_label": "Forgot password?",
-  "auth_sign_in_signing_in": "Signing in.",
+  "auth_sign_in_signing_in": "Signing in…",
   "auth_sign_in_signed_in_successfully": "Signed in successfully",
   "auth_sign_in_failed_to_sign_in": "Failed to sign in, check your email and password",
-  "auth_sign_in_dont_have_an_account_label": "Don't have an account?",
+  "auth_sign_in_dont_have_an_account_label": "Don’t have an account?",
   "auth_sign_up_welcome": "Create your account",
   "auth_sign_up_description": "Enter your information to create an account",
   "auth_sign_up_full_name_label": "Full name",
@@ -67,20 +67,20 @@
   "onboarding_error_description": "Nothing was created. Check your connection and try again.",
   "onboarding_error_session_expired": "Your session expired. Sign in again to finish setup.",
   "onboarding_status_error_title": "Could not check your workspaces",
-  "inbox_readiness_error_title": "Could not check this workspace's channels",
+  "inbox_readiness_error_title": "Couldn’t check this workspace’s channels",
   "sidebar_inbox_locked_tooltip": "Connect a channel to open the inbox.",
   "workspaces_load_error_title": "Could not load workspaces",
   "workspaces_create_button": "Create workspace",
   "workspaces_create_error_title": "Could not create workspace",
-  "workspaces_create_modal_title": "Create workspace",
-  "workspaces_name_placeholder": "Workspace name",
+  "workspaces_create_modal_title": "Create a workspace",
+  "workspaces_name_placeholder": "Acme Sales",
   "workspaces_create_success": "Workspace created",
   "workspaces_icon_label": "Icon",
   "workspaces_name_label": "Name",
   "workspaces_name_helper": "Pick a clear name for this workspace",
   "workspaces_description_label": "Description",
   "workspaces_description_helper": "Briefly describe what this workspace is for",
-  "workspaces_description_placeholder": "Workspace description",
+  "workspaces_description_placeholder": "Inbound sales for the EU region",
   "workspace_settings_kicker": "Workspace",
   "workspace_settings_loading_title": "Workspace settings",
   "workspace_settings_description": "Manage how this workspace looks, who can access it, and where messages flow in from",
@@ -100,7 +100,7 @@
   "workspace_settings_members_empty": "No members yet",
   "workspace_settings_members_unknown_user": "Workspace member",
   "workspace_settings_members_invite_title": "Invite by email",
-  "workspace_settings_members_invite_description": "Send an invite link to a teammate. We will email them a one-click join link",
+  "workspace_settings_members_invite_description": "Email a teammate a link that adds them to this workspace",
   "workspace_settings_members_invite_email_label": "Email address",
   "workspace_settings_members_invite_email_placeholder": "teammate@example.com",
   "workspace_settings_members_invite_action": "Send invite",
@@ -149,7 +149,7 @@
   "channels_connect_title": "Connect a channel",
   "channels_connect_description": "Pick where conversations should arrive from. Each workspace can have multiple channels",
   "channels_coming_soon": "Coming soon",
-  "channels_coming_soon_body": "We are still building this integration. Pick another channel for now or check back later",
+  "channels_coming_soon_body": "This integration isn’t ready yet. Connect another channel for now",
   "channels_connect_discard_title": "Discard channel setup?",
   "channels_connect_discard_description": "You have unsaved changes. If you close now, the details you entered will be lost",
   "channels_connect_discard_confirm": "Discard changes",
@@ -169,9 +169,9 @@
   "channels_telegram_token_helper": "Open @BotFather on Telegram, run /newbot, then paste the token it gives you",
   "channels_telegram_submit": "Connect Telegram",
   "channels_telegram_create_success": "Bot connected successfully",
-  "channels_telegram_error_invalid_token": "Invalid bot token. Please check and try again",
+  "channels_telegram_error_invalid_token": "That bot token isn’t valid. Check it and try again",
   "channels_telegram_error_duplicate": "This bot is already connected to your workspace",
-  "channels_telegram_error_forbidden": "You don't have permission to add channels",
+  "channels_telegram_error_forbidden": "You don’t have permission to add channels",
   "channels_telegram_error_unauthorized": "Your session expired. Sign in again and retry",
   "channels_whatsapp_form_title": "Connect WhatsApp Business",
   "channels_whatsapp_form_subtitle": "Sign in with Facebook to link your WhatsApp Business number",
@@ -181,7 +181,7 @@
   "channels_whatsapp_create_success": "WhatsApp connected successfully",
   "channels_whatsapp_reconnect_title": "Reconnect WhatsApp",
   "channels_whatsapp_reconnect_form_title": "Refresh WhatsApp access",
-  "channels_whatsapp_reconnect_form_subtitle": "Sign in again to replace this channel's credentials. Conversations and history stay unchanged",
+  "channels_whatsapp_reconnect_form_subtitle": "Sign in again to replace this channel’s credentials. Conversations and history stay unchanged",
   "channels_whatsapp_reconnect_cta": "Reconnect with Facebook",
   "channels_whatsapp_reconnect_manual_link": "Use API credentials instead",
   "channels_whatsapp_reconnect_manual_title": "Update API credentials",
@@ -191,16 +191,16 @@
   "channels_whatsapp_reconnect_error_title": "Could not reconnect WhatsApp",
   "channels_whatsapp_reconnect_discard_title": "Discard new credentials?",
   "channels_whatsapp_reconnect_discard_description": "The credentials you entered will be lost. Your currently stored credentials will remain unchanged",
-  "channels_whatsapp_not_configured": "WhatsApp sign-in isn't configured yet. Add the Meta app credentials to enable it",
+  "channels_whatsapp_not_configured": "WhatsApp sign-in isn’t configured yet. Add the Meta app credentials to enable it",
   "channels_whatsapp_requires_https": "Facebook blocks sign-in on http pages, including localhost. Open this app over https to connect WhatsApp",
-  "channels_whatsapp_error_invalid": "Could not verify your WhatsApp sign-in. Please try again",
+  "channels_whatsapp_error_invalid": "Couldn’t verify your WhatsApp sign-in. Try again",
   "channels_whatsapp_error_missing_permission": "The token needs whatsapp_business_messaging and must belong to this Meta app",
   "channels_whatsapp_error_phone_mismatch": "Use the same phone number ID and the WhatsApp Business Account that owns it. Add a new channel for another number",
   "channels_whatsapp_error_duplicate": "This WhatsApp number is already connected to your workspace",
-  "channels_whatsapp_error_forbidden": "You don't have permission to add channels",
+  "channels_whatsapp_error_forbidden": "You don’t have permission to add channels",
   "channels_whatsapp_error_unauthorized": "Your session expired. Sign in again and retry",
   "channels_whatsapp_error_sdk": "Could not load Facebook sign-in. Check your connection and try again",
-  "channels_whatsapp_error_login": "Facebook sign-in didn't complete. Allow pop-ups for this site and try again",
+  "channels_whatsapp_error_login": "Facebook sign-in didn’t complete. Allow pop-ups for this site and try again",
   "channels_whatsapp_manual_link": "Connect with API credentials instead",
   "channels_whatsapp_manual_title": "Connect with API credentials",
   "channels_whatsapp_manual_subtitle": "Paste the credentials from your Meta app under WhatsApp → API Setup",
@@ -212,7 +212,7 @@
   "channels_whatsapp_access_token_helper": "A permanent system user token with whatsapp_business_messaging and whatsapp_business_management. Temporary tokens from API Setup expire after 24 hours",
   "channels_whatsapp_waba_id_label": "WhatsApp Business Account ID (optional)",
   "channels_whatsapp_waba_id_helper": "Needed to receive incoming messages. Without it you can send, but the webhook must be subscribed manually",
-  "channels_whatsapp_error_timeout": "WhatsApp sign-in didn't complete. Please try again",
+  "channels_whatsapp_error_timeout": "WhatsApp sign-in didn’t complete. Try again",
   "channels_instagram_form_title": "Connect Instagram",
   "channels_instagram_form_subtitle": "Receive and reply to Instagram direct messages in your inbox",
   "channels_instagram_reconnect_title": "Reconnect Instagram",
@@ -220,27 +220,27 @@
   "channels_instagram_reconnect_form_subtitle": "Re-authorize the same account to keep receiving messages. Conversations and history stay unchanged",
   "channels_instagram_name_placeholder": "e.g. Support",
   "channels_instagram_name_helper": "Optional. A label to identify this channel",
-  "channels_instagram_requirement": "You need an Instagram Business or Creator account. Personal accounts can't receive messages through the API",
+  "channels_instagram_requirement": "You need an Instagram Business or Creator account. Personal accounts can’t receive messages through the API",
   "channels_instagram_connect_cta": "Connect Instagram",
   "channels_instagram_reconnect_cta": "Reconnect Instagram",
   "channels_instagram_create_success": "Instagram connected successfully",
   "channels_instagram_reconnect_success": "Instagram reconnected successfully",
   "channels_instagram_reconnect_error_title": "Could not reconnect Instagram",
   "channels_instagram_reconnect_discard_title": "Discard reconnection?",
-  "channels_instagram_reconnect_discard_description": "You'll cancel reconnecting this Instagram account. Your currently stored credentials remain unchanged",
-  "channels_instagram_not_configured": "Instagram sign-in isn't configured yet. Add the Meta app credentials to enable it",
+  "channels_instagram_reconnect_discard_description": "This cancels reconnecting the account. Your stored credentials stay unchanged",
+  "channels_instagram_not_configured": "Instagram sign-in isn’t configured yet. Add the Meta app credentials to enable it",
   "channels_instagram_requires_https": "Instagram blocks sign-in on http pages, including localhost. Open this app over https to connect Instagram",
-  "channels_instagram_error_invalid_code": "Could not verify your Instagram sign-in. Please try again",
-  "channels_instagram_error_missing_permission": "Instagram messaging access wasn't granted. Reconnect and allow messaging when prompted",
+  "channels_instagram_error_invalid_code": "Couldn’t verify your Instagram sign-in. Try again",
+  "channels_instagram_error_missing_permission": "Instagram messaging access wasn’t granted. Reconnect and allow messaging when prompted",
   "channels_instagram_error_not_professional": "Connect an Instagram Business or Creator account to receive messages",
-  "channels_instagram_error_account_mismatch": "That's a different Instagram account. Create a new channel instead of reconnecting",
+  "channels_instagram_error_account_mismatch": "That’s a different Instagram account. Create a new channel instead of reconnecting",
   "channels_instagram_error_duplicate": "This Instagram account is already connected",
-  "channels_instagram_error_state_mismatch": "This sign-in link is invalid or has expired. Please try again",
-  "channels_instagram_error_forbidden": "You don't have permission to add channels",
+  "channels_instagram_error_state_mismatch": "This sign-in link has expired. Start the connection again",
+  "channels_instagram_error_forbidden": "You don’t have permission to add channels",
   "channels_instagram_error_unauthorized": "Your session expired. Sign in again and retry",
   "channels_instagram_error_popup_blocked": "Allow pop-ups for this site, then try connecting again",
-  "channels_instagram_error_timeout": "Instagram sign-in didn't complete. Please try again",
-  "channels_instagram_error_oauth": "Instagram sign-in failed. Please try again",
+  "channels_instagram_error_timeout": "Instagram sign-in didn’t complete. Try again",
+  "channels_instagram_error_oauth": "Instagram sign-in failed. Try again",
   "instagram_callback_title": "Connecting Instagram…",
   "instagram_callback_body": "You can close this window",
   "channels_email_connect_cta": "Connect Gmail",
@@ -279,7 +279,7 @@
   "inbox_message_status_failed": "Not sent",
   "inbox_assigned_to": "Assigned to {name}",
   "inbox_empty_select_conversation_title": "Pick a conversation",
-  "inbox_empty_select_conversation_description": "Open a thread from the list on the left to start replying",
+  "inbox_empty_select_conversation_description": "Choose a conversation to read it and reply",
   "inbox_thread_unavailable_title": "Conversation unavailable",
   "inbox_thread_unavailable_description": "This conversation may have been deleted, moved, or you may no longer have access.",
   "inbox_thread_empty_title": "No messages yet",
@@ -287,7 +287,7 @@
   "inbox_thread_empty_description_no_name": "Send the first message to start the conversation",
   "inbox_composer_placeholder": "Message via {channel}",
   "inbox_composer_message_label": "Message",
-  "inbox_composer_offline_notice": "You're offline. Reconnect to send.",
+  "inbox_composer_offline_notice": "You’re offline. Reconnect to send.",
   "inbox_composer_send_button": "Send",
   "inbox_composer_send_error": "Could not send message",
   "inbox_composer_attach_file_label": "Attach file",
@@ -304,9 +304,21 @@
   "inbox_messages_loading_older": "Loading earlier messages",
   "inbox_thread_loading": "Loading messages",
   "inbox_unread_messages_divider": "Unread messages",
-  "inbox_new_messages_button": "New messages",
-  "inbox_new_messages_button_one": "1 new message",
-  "inbox_new_messages_button_many": "{count} new messages",
+  "inbox_new_messages_button": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} new message",
+        "countPlural=*": "{count} new messages"
+      }
+    }
+  ],
   "inbox_thread_show_contact": "Show contact profile",
   "inbox_thread_hide_contact": "Hide contact profile",
   "inbox_thread_back_to_list": "Back to conversations",
@@ -342,7 +354,21 @@
   "inbox_media_download": "Download",
   "inbox_media_sticker_tgs_hint": "Animated Telegram sticker (.tgs). Download to open",
   "inbox_media_document_fallback_name": "File",
-  "inbox_unread_aria_label": "{count} unread",
+  "inbox_unread_aria_label": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} unread message",
+        "countPlural=*": "{count} unread messages"
+      }
+    }
+  ],
   "inbox_channel_inactive_error": "Channel is inactive. Activate it in settings before sending messages",
   "dashboard_page_kicker": "Home",
   "dashboard_page_title": "Your workspaces",
@@ -351,12 +377,68 @@
   "dashboard_empty_title": "No workspaces yet",
   "dashboard_empty_description": "Create your first workspace to start receiving conversations",
   "dashboard_empty_cta": "Create workspace",
-  "dashboard_workspace_card_open": "{count} open",
-  "dashboard_workspace_card_channels": "{count} channels",
-  "dashboard_workspace_card_contacts": "{count} contacts",
+  "dashboard_workspace_card_open": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} open",
+        "countPlural=*": "{count} open"
+      }
+    }
+  ],
+  "dashboard_workspace_card_channels": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} channel",
+        "countPlural=*": "{count} channels"
+      }
+    }
+  ],
+  "dashboard_workspace_card_contacts": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} contact",
+        "countPlural=*": "{count} contacts"
+      }
+    }
+  ],
   "dashboard_workspace_card_no_activity": "No activity yet",
   "dashboard_workspace_card_last_message": "Last message {when}",
-  "dashboard_workspace_card_unread_aria": "{count} unread",
+  "dashboard_workspace_card_unread_aria": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} unread message",
+        "countPlural=*": "{count} unread messages"
+      }
+    }
+  ],
   "dashboard_relative_just_now": "just now",
   "dashboard_relative_minutes": "{count}m ago",
   "dashboard_relative_hours": "{count}h ago",
@@ -369,26 +451,97 @@
   "home_greeting_afternoon": "Good afternoon",
   "home_greeting_evening": "Good evening",
   "home_greeting_night": "Working late",
-  "home_summary_unread": "{count} unread",
-  "home_summary_open": "{count} open assigned to you",
-  "home_summary_waking": "{count} due back soon",
+  "home_summary_unread": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} unread",
+        "countPlural=*": "{count} unread"
+      }
+    }
+  ],
+  "home_summary_open": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} open assigned to you",
+        "countPlural=*": "{count} open assigned to you"
+      }
+    }
+  ],
+  "home_summary_waking": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} due back soon",
+        "countPlural=*": "{count} due back soon"
+      }
+    }
+  ],
   "home_summary_waking_hint": "Snoozed conversations due back within 24 hours",
-  "home_summary_stale": "{count} going stale",
-  "home_summary_stale_hint": "No reply sent for over 2 days",
+  "home_summary_stale": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} going stale",
+        "countPlural=*": "{count} going stale"
+      }
+    }
+  ],
+  "home_summary_stale_hint": "Waiting on a reply for more than 2 days",
   "home_summary_all_clear": "All clear. Nothing assigned to you needs attention right now",
-  "home_summary_error": "Couldn't load your numbers",
+  "home_summary_error": "Couldn’t load your summary",
   "home_open_inbox": "Open inbox",
   "home_attention_title": "Needs your attention",
   "home_attention_error": "Couldn't load your queue",
-  "home_attention_showing_top": "Showing the {count} most urgent of {total}",
-  "home_attention_empty_title": "Good job!",
-  "home_attention_empty_description": "Nothing waiting on you right now",
+  "home_attention_showing_top": [
+    {
+      "declarations": [
+        "input count",
+        "input total",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "Showing the most urgent of {total}",
+        "countPlural=*": "Showing the {count} most urgent of {total}"
+      }
+    }
+  ],
+  "home_attention_empty_title": "You’re all caught up",
+  "home_attention_empty_description": "Nothing assigned to you needs a reply",
   "home_attention_reason_snoozed": "Due back",
   "home_attention_reason_snoozed_hint": "Snooze ended. This conversation is due back now",
   "home_attention_reason_unread": "Unread",
-  "home_attention_reason_unread_hint": "New messages you haven't read yet",
-  "home_attention_reason_stale": "Stale",
-  "home_attention_reason_stale_hint": "No reply sent for over 2 days",
+  "home_attention_reason_unread_hint": "New messages you haven’t read yet",
+  "home_attention_reason_stale": "No reply",
+  "home_attention_reason_stale_hint": "Waiting on a reply for more than 2 days",
   "home_attention_waking_now": "due back now",
   "home_team_new_title": "New for the team",
   "home_team_new_hint": "Recent conversations nobody has picked up yet",
@@ -397,13 +550,27 @@
   "home_workspaces_stats_error": "Couldn't load workspace activity",
   "sidebar_home_nav_label": "Home",
   "sidebar_workspaces_section_label": "Workspaces",
-  "sidebar_workspace_unread_dot_aria": "{count} unread",
-  "not_found_title": "404",
+  "sidebar_workspace_unread_dot_aria": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} unread message",
+        "countPlural=*": "{count} unread messages"
+      }
+    }
+  ],
+  "not_found_title": "Page not found",
   "workspace_overview_empty_title": "Nothing here yet",
-  "workspace_overview_empty_description": "The workspace dashboard is under construction. Your conversations live in the inbox.",
+  "workspace_overview_empty_description": "This workspace has no overview yet. Your conversations are in the inbox.",
   "workspace_overview_open_inbox": "Open inbox",
-  "not_found_description": "Page not found",
-  "not_found_go_home_link": "Go to home",
+  "not_found_description": "The page you followed doesn’t exist, or it moved.",
+  "not_found_go_home_link": "Back to home",
   "image_open_preview": "Open image preview",
   "image_preview_label": "Image preview",
   "image_preview_close": "Close preview",
@@ -425,10 +592,24 @@
   "notifications_preview_sticker": "Sticker",
   "notifications_open_thread": "Open thread",
   "notifications_show_full_message": "Show full message",
-  "notifications_unread_count_aria": "{count} unread",
+  "notifications_unread_count_aria": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} unread message",
+        "countPlural=*": "{count} unread messages"
+      }
+    }
+  ],
   "notifications_item_open_aria": "Open conversation with {name}",
   "notifications_popover_title": "Unread messages",
-  "notifications_popover_empty_title": "You're all caught up",
+  "notifications_popover_empty_title": "You’re all caught up",
   "notifications_popover_empty_description": "New unread messages will appear here",
   "notifications_popover_error": "Could not load notifications",
   "notifications_view_all": "View all messages",
@@ -494,7 +675,7 @@
   "inbox_share_story_reply": "Story reply",
   "inbox_share_story_mention": "Story mention",
   "inbox_share_open_link": "Open link",
-  "inbox_unsupported_message": "This message type isn't supported yet",
+  "inbox_unsupported_message": "This message type isn’t supported yet",
   "inbox_attachment_failed": "Attachment failed to load",
   "account_settings_title": "Account",
   "account_settings_description": "Your profile and how Rezzy works for you. Workspace settings live inside each workspace.",
@@ -584,5 +765,31 @@
   "security_sign_out_others_action": "Sign out other sessions",
   "security_sign_out_others_confirm_title": "Sign out of other sessions?",
   "security_sign_out_others_confirm_description": "Every other device and browser signed in to this account will be signed out. This one stays signed in.",
-  "security_sign_out_others_success": "Other sessions signed out"
+  "security_sign_out_others_success": "Other sessions signed out",
+  "validation_name_min": "Use at least 2 characters",
+  "validation_name_optional_min": "Use at least 2 characters, or leave it empty",
+  "validation_name_max": "Use 80 characters or fewer",
+  "validation_description_max": "Use 240 characters or fewer",
+  "validation_required": "Fill this in",
+  "validation_digits_only": "Digits only",
+  "workspaces_icon_required": "Pick an icon",
+  "channels_telegram_token_invalid": "A bot token looks like 123456789:AA... — copy the whole line from @BotFather",
+  "auth_sign_up_full_name_required": "Enter your name",
+  "contact_unnamed": "Unnamed contact",
+  "password_reset_request_title": "Reset your password",
+  "password_reset_request_description": "Enter the email you sign in with. We’ll send a link that lets you set a new password.",
+  "password_reset_request_submit": "Send the link",
+  "password_reset_request_pending": "Sending…",
+  "password_reset_sent_title": "Check your email",
+  "password_reset_sent_description": "If {email} has an account, a reset link is on its way. It expires in an hour.",
+  "password_reset_sent_resend": "Send it again",
+  "password_reset_back_to_sign_in": "Back to sign in",
+  "password_reset_request_error": "Couldn’t send the link. Try again in a moment.",
+  "password_reset_update_title": "Choose a new password",
+  "password_reset_update_description": "This link signs you in once so you can set a new password.",
+  "password_reset_update_submit": "Save the password",
+  "password_reset_update_success": "Password updated",
+  "contacts_empty_title": "No contact directory yet",
+  "contacts_empty_description": "Contact details, notes, and history live beside each conversation in the inbox.",
+  "contacts_empty_open_inbox": "Open inbox"
 }

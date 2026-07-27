@@ -1,5 +1,5 @@
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
-import { getLocale } from '@/paraglide/runtime'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
@@ -57,8 +57,7 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
   const updateProfile = useUpdateMyProfile()
   const [hasSaved, setHasSaved] = useState(false)
 
-  const locale = getLocale()
-  const schema = useMemo(() => createProfileFormSchema(), [locale])
+  const schema = useLocalizedSchema(createProfileFormSchema)
 
   const timeZoneItems = useTimeZoneItems()
   const timeZoneSource = useMemo(

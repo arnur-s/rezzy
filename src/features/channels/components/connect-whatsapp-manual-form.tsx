@@ -1,4 +1,5 @@
 import { ChannelTypeIcon } from '@/entities/channel'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
@@ -15,8 +16,8 @@ import {
 } from '../hooks/use-channels'
 import type { WhatsappManualChannelFormValues } from '../schemas/channel-form-schemas'
 import {
+  createWhatsappManualChannelSchema,
   whatsappManualChannelDefaultValues,
-  whatsappManualChannelSchema,
 } from '../schemas/channel-form-schemas'
 import type { WhatsappConnectionTarget } from '../types/whatsapp-connection-target'
 
@@ -66,6 +67,7 @@ export function ConnectWhatsappManualForm({
     target.kind === 'reconnect'
       ? reconnectChannelMutation.isPending
       : createChannelMutation.isPending
+  const schema = useLocalizedSchema(createWhatsappManualChannelSchema)
 
   const {
     control,
@@ -74,7 +76,7 @@ export function ConnectWhatsappManualForm({
   } = useForm<WhatsappManualChannelFormValues>({
     defaultValues: whatsappManualChannelDefaultValues,
     disabled: isPending,
-    resolver: standardSchemaResolver(whatsappManualChannelSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   useEffect(() => {

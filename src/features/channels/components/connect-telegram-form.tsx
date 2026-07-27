@@ -1,4 +1,5 @@
 import { ChannelTypeIcon } from '@/entities/channel'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
@@ -11,8 +12,8 @@ import { ChannelConnectError } from '../api/channels'
 import { useCreateTelegramChannel } from '../hooks/use-channels'
 import type { TelegramChannelFormValues } from '../schemas/channel-form-schemas'
 import {
+  createTelegramChannelSchema,
   telegramChannelDefaultValues,
-  telegramChannelSchema,
 } from '../schemas/channel-form-schemas'
 
 type Props = {
@@ -39,6 +40,7 @@ export function ConnectTelegramForm({
   const navigate = useNavigate()
   const showToast = useToast()
   const createChannelMutation = useCreateTelegramChannel(workspaceId)
+  const schema = useLocalizedSchema(createTelegramChannelSchema)
 
   const {
     control,
@@ -47,7 +49,7 @@ export function ConnectTelegramForm({
   } = useForm<TelegramChannelFormValues>({
     defaultValues: telegramChannelDefaultValues,
     disabled: createChannelMutation.isPending,
-    resolver: standardSchemaResolver(telegramChannelSchema),
+    resolver: standardSchemaResolver(schema),
   })
 
   // Keep the parent in sync with unsaved-changes state and always clear it on

@@ -11,6 +11,8 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+# Dev-server output, when redirected to a file for debugging.
+*.log
 # heroui-agents-md
 .heroui-docs/
 full-schema.sql

@@ -1,9 +1,284 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
+import { m } from '@/paraglide/messages'
+import { supabase } from '@/utils/supabase'
+import { Banner } from '@astryxdesign/core/Banner'
+import { Button } from '@astryxdesign/core/Button'
+import { Card } from '@astryxdesign/core/Card'
+import { Text } from '@astryxdesign/core/Text'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { useMutation } from '@tanstack/react-query'
+import {
+  Link as RouterLink,
+  createFileRoute,
+  useNavigate,
+} from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { createPasswordFormSchema } from '@/features/account/schemas/password-form-schema'
+import type { PasswordFormValues } from '@/features/account/schemas/password-form-schema'
 
 export const Route = createFileRoute('/password-reset')({
   component: RouteComponent,
 })
 
+function createRequestSchema() {
+  return z.object({ email: z.email(m.auth_sign_in_email_invalid()) })
+}
+
+type RequestFormValues = z.infer<ReturnType<typeof createRequestSchema>>
+
+/**
+ * Two states behind one URL, because that is what Supabase's recovery flow
+ * hands us: arriving cold, this is the "email me a link" form; arriving from
+ * the emailed link, Supabase has already exchanged the token for a session and
+ * fired `PASSWORD_RECOVERY`, so the same route becomes "set a new password".
+ *
+ * Splitting them across two routes would mean the recovery link had to carry
+ * the distinction in its redirect URL, and any user who reloaded the page would
+ * land on a form that no longer applied to their session.
+ */
 function RouteComponent() {
-  return <div>Hello "/password-reset"!</div>
+  const [isRecovering, setIsRecovering] = useState(false)
+
+  useEffect(() => {
+    // The event fires while the module is still mounting on a cold load, so the
+    // current session is checked too rather than relying on the event alone.
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setIsRecovering(true)
+    })
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  return isRecovering ? <SetNewPassword /> : <RequestResetLink />
+}
+
+function AuthCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-surface md:bg-body flex min-h-dvh items-center justify-center px-4">
+      <Card variant="default" maxWidth={448} width="100%">
+        {children}
+      </Card>
+    </div>
+  )
+}
+
+function RequestResetLink() {
+  const schema = useLocalizedSchema(createRequestSchema)
+  const [sentTo, setSentTo] = useState<string | null>(null)
+
+  const requestReset = useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/password-reset`,
+      })
+      if (error) throw error
+      return email
+    },
+    onSuccess: (email) => setSentTo(email),
+  })
+
+  const { control, handleSubmit } = useForm<RequestFormValues>({
+    defaultValues: { email: '' },
+    disabled: requestReset.isPending,
+    resolver: standardSchemaResolver(schema),
+  })
+
+  if (sentTo) {
+    return (
+      <AuthCard>
+        <div className="flex flex-col gap-1">
+          <Text as="p" size="lg" weight="semibold">
+            {m.password_reset_sent_title()}
+          </Text>
+          <Text as="p" type="supporting">
+            {m.password_reset_sent_description({ email: sentTo })}
+          </Text>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3">
+          <Button
+            label={m.password_reset_sent_resend()}
+            variant="secondary"
+            width="100%"
+            isLoading={requestReset.isPending}
+            onClick={() => requestReset.mutate(sentTo)}
+          />
+          <RouterLink
+            to="/sign-in"
+            className="text-accent text-center text-sm underline"
+          >
+            {m.password_reset_back_to_sign_in()}
+          </RouterLink>
+        </div>
+      </AuthCard>
+    )
+  }
+
+  return (
+    <AuthCard>
+      <div className="flex flex-col gap-1">
+        <Text as="p" size="lg" weight="semibold">
+          {m.password_reset_request_title()}
+        </Text>
+        <Text as="p" type="supporting">
+          {m.password_reset_request_description()}
+        </Text>
+      </div>
+
+      <form
+        className="mt-6 flex flex-col gap-4"
+        onSubmit={handleSubmit((values) => requestReset.mutate(values.email))}
+      >
+        {requestReset.isError ? (
+          <Banner status="error" title={m.password_reset_request_error()} />
+        ) : null}
+
+        <Controller
+          control={control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.common_email()}
+              type="email"
+              placeholder={m.common_email_placeholder()}
+              hasAutoFocus
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={requestReset.isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <Button
+          label={
+            requestReset.isPending
+              ? m.password_reset_request_pending()
+              : m.password_reset_request_submit()
+          }
+          type="submit"
+          variant="primary"
+          width="100%"
+          isLoading={requestReset.isPending}
+        />
+
+        <RouterLink
+          to="/sign-in"
+          className="text-accent text-center text-sm underline"
+        >
+          {m.password_reset_back_to_sign_in()}
+        </RouterLink>
+      </form>
+    </AuthCard>
+  )
+}
+
+function SetNewPassword() {
+  const navigate = useNavigate()
+  const showToast = useToast()
+  const schema = useLocalizedSchema(createPasswordFormSchema)
+
+  const updatePassword = useMutation({
+    mutationFn: async (password: string) => {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      showToast({ body: m.password_reset_update_success(), type: 'info' })
+      void navigate({ to: '/' })
+    },
+  })
+
+  const { control, handleSubmit } = useForm<PasswordFormValues>({
+    defaultValues: { password: '', confirmPassword: '' },
+    disabled: updatePassword.isPending,
+    resolver: standardSchemaResolver(schema),
+  })
+
+  return (
+    <AuthCard>
+      <div className="flex flex-col gap-1">
+        <Text as="p" size="lg" weight="semibold">
+          {m.password_reset_update_title()}
+        </Text>
+        <Text as="p" type="supporting">
+          {m.password_reset_update_description()}
+        </Text>
+      </div>
+
+      <form
+        className="mt-6 flex flex-col gap-4"
+        onSubmit={handleSubmit((values) =>
+          updatePassword.mutate(values.password),
+        )}
+      >
+        {updatePassword.isError ? (
+          <Banner
+            status="error"
+            title={m.security_password_error_title()}
+            description={m.security_password_error_description()}
+          />
+        ) : null}
+
+        <Controller
+          control={control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.security_password_new_label()}
+              description={m.security_password_new_description()}
+              type="password"
+              hasAutoFocus
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={updatePassword.isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="confirmPassword"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.security_password_confirm_label()}
+              type="password"
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={updatePassword.isPending}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <Button
+          label={
+            updatePassword.isPending
+              ? m.security_password_submit_pending()
+              : m.password_reset_update_submit()
+          }
+          type="submit"
+          variant="primary"
+          width="100%"
+          isLoading={updatePassword.isPending}
+        />
+      </form>
+    </AuthCard>
+  )
 }

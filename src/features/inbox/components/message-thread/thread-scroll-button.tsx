@@ -79,12 +79,10 @@ export function ThreadScrollButton({ messages, currentUserId }: Props) {
   }, [messages, currentUserId, scrollContainerRef])
 
   const count = pendingMessageIds.length
-  const label =
-    count === 1
-      ? m.inbox_new_messages_button_one()
-      : count > 1
-        ? m.inbox_new_messages_button_many({ count })
-        : undefined
+  // Plural selection belongs to the message catalogue, not to a ternary here:
+  // Russian needs three forms (1 / 2-4 / 5-20) and no two-branch conditional
+  // can produce them.
+  const label = count > 0 ? m.inbox_new_messages_button({ count }) : undefined
 
   const handleClick = () => {
     const el = scrollContainerRef?.current
