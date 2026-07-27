@@ -20,6 +20,7 @@
  *
  * Exits non-zero if a budget is exceeded, so this can gate a regression.
  */
+import { WORKSPACE_ID, installFakeAuth } from './fake-auth.mjs'
 import { hasBuild, serveDist } from './serve-dist.mjs'
 import { chromium } from 'playwright'
 import process from 'node:process'
@@ -137,6 +138,64 @@ try {
       .catch(() => {})
     await page.waitForLoadState('networkidle')
     print(measure(`${from} -> ${new URL(page.url()).pathname}`, performance.now() - t))
+  }
+
+  // The navigations users actually make are behind the auth gate. A fake
+  // session (scripts/fake-auth.mjs) reaches them without credentials, so the
+  // cost of moving between the dashboard, inbox and settings is measured
+  // rather than assumed from the public routes.
+  const authPage = await browser.newContext().then((c) => c.newPage())
+  const authCdp = await authPage.context().newCDPSession(authPage)
+  await authCdp.send('Network.enable')
+  if (MODE === 'prod') await authCdp.send('Network.emulateNetworkConditions', THROTTLE)
+  authCdp.on('Network.requestWillBeSent', (e) =>
+    urlByRequest.set(e.requestId, e.request.url),
+  )
+  authCdp.on('Network.loadingFinished', (e) => {
+    const url = urlByRequest.get(e.requestId)
+    if (!url || (!url.includes('.js') && !url.includes('/src/'))) return
+    files.push([url.replace(BASE, ''), e.encodedDataLength])
+  })
+
+  await installFakeAuth(authPage, BASE)
+  // One full load to boot the app, then navigate within it. `page.goto` would
+  // reload the document every time and report a cold load rather than the
+  // incremental cost of a route change, which is the thing being measured.
+  await authPage.goto(`${BASE}/`, { waitUntil: 'networkidle' })
+  await authPage.waitForTimeout(600)
+
+  /**
+   * Clicks a real in-app link, which is the only way to get a router
+   * navigation. Injecting a synthetic anchor instead triggers a full document
+   * load, which would report a cold boot and hide the number being measured.
+   */
+  async function clickAuthLink(href) {
+    const link = authPage.locator(`a[href="${href}"]`).first()
+    if (!(await link.count())) return false
+    const from = new URL(authPage.url()).pathname
+    files = []
+    const t0 = performance.now()
+    await link.click()
+    await authPage
+      .waitForFunction((p) => location.pathname !== p, from, { timeout: 10_000 })
+      .catch(() => {})
+    await authPage.waitForLoadState('networkidle')
+    print(measure(`auth ${from} -> ${new URL(authPage.url()).pathname}`, performance.now() - t0))
+    return true
+  }
+
+  // The rail is present on every authenticated page, so these are the moves a
+  // user actually makes.
+  for (const href of [
+    `/workspaces/${WORKSPACE_ID}`,
+    `/workspaces/${WORKSPACE_ID}/inbox`,
+    `/workspaces/${WORKSPACE_ID}/settings`,
+    `/workspaces/${WORKSPACE_ID}`,
+    '/',
+  ]) {
+    if (new URL(authPage.url()).pathname === href) continue
+    const clicked = await clickAuthLink(href)
+    if (!clicked) console.log(`  (skipped ${href}: no in-app link on this page)`)
   }
 } finally {
   await browser.close()
