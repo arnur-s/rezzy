@@ -1,0 +1,47 @@
+import { describe, expect, it } from 'vitest'
+import { WORKSPACE_CURATED_ICONS } from '@/entities/workspace/lib/workspace-icons'
+import {
+  createWorkspaceDefaultValues,
+  createWorkspaceFormSchema,
+} from './workspace-form-schema'
+
+/**
+ * Icon validation moved from "any of ~1600 Lucide names" to the curated set,
+ * which is both cheaper and stricter. These pin the new contract: the form can
+ * only produce an icon the app is able to draw.
+ */
+describe('createWorkspaceFormSchema', () => {
+  it.each(WORKSPACE_CURATED_ICONS)('accepts the curated icon %s', (icon) => {
+    const result = createWorkspaceFormSchema.safeParse({ name: 'Sales', icon })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a Lucide icon outside the curated set', () => {
+    // A real Lucide name, but not one this app ships a component for. The old
+    // schema accepted it and rendered a blank square.
+    const result = createWorkspaceFormSchema.safeParse({
+      name: 'Sales',
+      icon: 'banana',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('allows the icon to be omitted', () => {
+    const result = createWorkspaceFormSchema.safeParse({ name: 'Sales' })
+    expect(result.success).toBe(true)
+  })
+
+  it('still enforces the name minimum', () => {
+    expect(createWorkspaceFormSchema.safeParse({ name: 'a' }).success).toBe(
+      false,
+    )
+  })
+
+  it('ships defaults that satisfy its own schema', () => {
+    const result = createWorkspaceFormSchema.safeParse({
+      ...createWorkspaceDefaultValues,
+      name: 'Sales',
+    })
+    expect(result.success).toBe(true)
+  })
+})

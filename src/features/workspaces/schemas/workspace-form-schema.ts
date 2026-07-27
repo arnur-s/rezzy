@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { WORKSPACE_CURATED_ICONS } from '@/entities/workspace'
+// Imported from the leaf module rather than the entity barrel: the barrel also
+// exports the icon components, which would drag 16 React components and an
+// IconButton into every module that merely validates a form.
+import { WORKSPACE_CURATED_ICONS } from '@/entities/workspace/lib/workspace-icons'
 
 /**
  * Icon validation runs against the curated set, not all ~1600 Lucide names.
@@ -7,7 +10,7 @@ import { WORKSPACE_CURATED_ICONS } from '@/entities/workspace'
  * `iconNames` lives in the same module as `lucide-react/dynamic`'s import map,
  * so validating against it pulled every icon into the bundle — 158 kB gzip, on
  * every route, to check a string. The curated list is also the stricter rule:
- * only icons the picker offers and the app can draw are accepted.
+ * only icons the picker offers and the app can actually draw are accepted.
  */
 export const createWorkspaceFormSchema = z.object({
   description: z
