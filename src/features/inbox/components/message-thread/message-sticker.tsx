@@ -1,18 +1,10 @@
 import { Skeleton } from '@astryxdesign/core/Skeleton'
-import LottieDefault from 'lottie-react'
-import type { LottieComponentProps, LottieRefCurrentProps } from 'lottie-react'
-import { useEffect, useRef, useState } from 'react'
+import type { LottieRefCurrentProps } from 'lottie-react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTgsAnimation } from '../../hooks/use-tgs-animation'
 import type { MessageMediaMetadata } from '../../schemas/message-metadata'
-
-// Some bundlers (Vite pre-bundling of CJS-published packages) deliver the
-// default export wrapped as `{ default: Component }`. Unwrap defensively so
-// `<Lottie />` is always the actual component.
-type LottieComponent = (props: LottieComponentProps) => React.ReactElement
-const Lottie: LottieComponent =
-  (LottieDefault as unknown as { default?: LottieComponent }).default ??
-  LottieDefault
+import { LazyLottie } from './lazy-lottie'
 
 const STICKER_MAX_PX = 192
 const STICKER_FALLBACK_SQUARE = 160
@@ -108,12 +100,14 @@ function TgsLottieSticker({
 
   return (
     <div ref={containerRef} className="size-full">
-      <Lottie
-        lottieRef={lottieRef}
-        animationData={data}
-        loop
-        autoplay={inView}
-      />
+      <Suspense fallback={<Skeleton width="100%" height="100%" radius={2} />}>
+        <LazyLottie
+          lottieRef={lottieRef}
+          animationData={data}
+          loop
+          autoplay={inView}
+        />
+      </Suspense>
     </div>
   )
 }

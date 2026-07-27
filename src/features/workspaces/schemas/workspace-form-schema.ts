@@ -1,21 +1,21 @@
-import {  iconNames } from 'lucide-react/dynamic'
 import { z } from 'zod'
-import type {IconName} from 'lucide-react/dynamic';
+import { WORKSPACE_CURATED_ICONS } from '@/entities/workspace'
 
-const iconNameSet = new Set<string>(iconNames)
-
+/**
+ * Icon validation runs against the curated set, not all ~1600 Lucide names.
+ *
+ * `iconNames` lives in the same module as `lucide-react/dynamic`'s import map,
+ * so validating against it pulled every icon into the bundle — 158 kB gzip, on
+ * every route, to check a string. The curated list is also the stricter rule:
+ * only icons the picker offers and the app can draw are accepted.
+ */
 export const createWorkspaceFormSchema = z.object({
   description: z
     .string()
     .trim()
     .max(240, 'Keep the description under 240 characters.')
     .optional(),
-  icon: z
-    .custom<IconName>(
-      (value) => typeof value === 'string' && iconNameSet.has(value),
-      'Pick a workspace icon.',
-    )
-    .optional(),
+  icon: z.enum(WORKSPACE_CURATED_ICONS, 'Pick a workspace icon.').optional(),
   name: z
     .string()
     .trim()

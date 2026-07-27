@@ -1,4 +1,4 @@
-import { WorkspaceIconPicker } from '@/entities/workspace'
+import { WorkspaceIconPicker, resolveWorkspaceIcon  } from '@/entities/workspace'
 import {
   useUpdateWorkspace,
   useWorkspace,
@@ -16,7 +16,7 @@ import { TextInput } from '@astryxdesign/core/TextInput'
 import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { createFileRoute } from '@tanstack/react-router'
-import type { IconName } from 'lucide-react/dynamic'
+
 import { useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
@@ -60,7 +60,7 @@ function RouteComponent() {
     const workspaceChanged = lastSyncedWorkspaceIdRef.current !== workspaceId
     const values: CreateWorkspaceFormValues = {
       description: row.description ?? '',
-      icon: (row.icon as IconName | null) ?? undefined,
+      icon: resolveWorkspaceIcon(row.icon),
       name: row.name,
     }
 
@@ -98,7 +98,7 @@ function RouteComponent() {
           })
           reset({
             description: workspace.description ?? '',
-            icon: (workspace.icon as IconName | null) ?? undefined,
+            icon: resolveWorkspaceIcon(workspace.icon),
             name: workspace.name,
           })
         },

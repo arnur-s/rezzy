@@ -1,8 +1,6 @@
 import { useVoiceInput } from '@/hooks/use-voice-input'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
-import data from '@emoji-mart/data'
-import Picker from '@emoji-mart/react'
 import { ChatComposer } from '@astryxdesign/core/Chat'
 import { IconButton } from '@astryxdesign/core/IconButton'
 import { Popover } from '@astryxdesign/core/Popover'
@@ -24,6 +22,7 @@ import {
 } from '../../utils/conversation-drafts'
 import { containsEmoji } from '../../utils/emoji-text'
 import { FormattedMessageText } from '../formatted-message-text'
+import { EmojiPicker } from './emoji-picker'
 
 const MAX_HEIGHT = 24 * 5 // 5 lines × 24px line-height
 
@@ -373,11 +372,7 @@ export function ChatInput({
             label={m.inbox_composer_emoji_label()}
             content={
               emojiPickerOpen ? (
-                <Picker
-                  data={data}
-                  onEmojiSelect={handleEmojiSelect}
-                  theme="auto"
-                />
+                <EmojiPicker onEmojiSelect={handleEmojiSelect} />
               ) : null
             }
           >

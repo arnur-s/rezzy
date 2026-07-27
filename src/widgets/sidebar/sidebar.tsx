@@ -1,6 +1,6 @@
 import { getUserDisplayName } from '@/entities/user'
 import type { Workspace } from '@/entities/workspace'
-import { resolveWorkspaceIcon } from '@/entities/workspace'
+import { WorkspaceIcon } from '@/entities/workspace'
 import { useWorkspaceReadiness } from '@/features/channels/hooks/use-channels'
 import { UnreadNotificationsNavItem } from '@/features/notifications'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
@@ -36,7 +36,6 @@ import {
   SettingsIcon,
   UserRoundIcon,
 } from 'lucide-react'
-import { DynamicIcon } from 'lucide-react/dynamic'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -503,11 +502,7 @@ function WorkspaceMark({
           : 'bg-accent-bg/10 text-accent',
       )}
     >
-      <DynamicIcon
-        name={resolveWorkspaceIcon(icon)}
-        className="size-3.5"
-        aria-hidden
-      />
+      <WorkspaceIcon name={icon} className="size-3.5" />
     </span>
   )
 }

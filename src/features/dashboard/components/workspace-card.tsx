@@ -1,7 +1,7 @@
 import { CHANNEL_META } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
-import { resolveWorkspaceIcon } from '@/entities/workspace'
+import { WorkspaceIcon } from '@/entities/workspace'
 import type { Workspace } from '@/entities/workspace'
 import type { WorkspaceDashboardStats } from '@/features/dashboard/api/dashboard-stats'
 import { m } from '@/paraglide/messages'
@@ -9,7 +9,6 @@ import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import { Card } from '@astryxdesign/core/Card'
 import { cn } from '@/lib/cn'
 import { Link } from '@tanstack/react-router'
-import { DynamicIcon } from 'lucide-react/dynamic'
 
 type Props = {
   workspace: Workspace
@@ -38,10 +37,7 @@ export function WorkspaceCard({ workspace, stats }: Props) {
             aria-hidden="true"
             className="bg-accent-bg/10 text-accent flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-semibold"
           >
-            <DynamicIcon
-              name={resolveWorkspaceIcon(workspace.icon)}
-              className="size-4"
-            />
+            <WorkspaceIcon name={workspace.icon} className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-semibold">

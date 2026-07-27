@@ -1,9 +1,8 @@
-import { resolveWorkspaceIcon } from '@/entities/workspace'
+import { WorkspaceIcon } from '@/entities/workspace'
 import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
 import { Badge } from '@astryxdesign/core/Badge'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
-import { DynamicIcon } from 'lucide-react/dynamic'
 import { useMyMemberships } from '../hooks/use-my-memberships'
 import type { AccountMembership } from '../model/types'
 
@@ -79,11 +78,7 @@ function MembershipRow({ membership }: { membership: AccountMembership }) {
   return (
     <li className="flex min-h-16 items-center gap-3 py-3">
       <span className="bg-accent-bg/10 text-accent flex size-8 shrink-0 items-center justify-center rounded-md">
-        <DynamicIcon
-          name={resolveWorkspaceIcon(membership.workspaceIcon)}
-          className="size-4"
-          aria-hidden
-        />
+        <WorkspaceIcon name={membership.workspaceIcon} className="size-4" />
       </span>
 
       <div className="min-w-0 flex-1">
