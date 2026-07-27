@@ -187,7 +187,12 @@ export function NotificationSettings() {
               description={m.settings_notifications_preview_description()}
               scope={m.settings_scope_account()}
               control={
-                <div className="w-full sm:w-48">
+                // `sm:w-48` was cut to fit the English options and truncated
+                // the Russian ones ("Показывать сообще…"). A minimum plus a
+                // ceiling lets the control take the width its own longest
+                // label needs, in whichever language it is rendering, without
+                // crowding the description beside it.
+                <div className="w-full sm:w-auto sm:min-w-48 sm:max-w-xs">
                   <Selector
                     label={m.settings_notifications_preview_label()}
                     isLabelHidden

@@ -630,7 +630,7 @@
   "settings_notifications_sound_description": "Play a sound for new message notifications.",
   "settings_notifications_preview_label": "Message preview",
   "settings_notifications_preview_description": "Control how much of a message appears in notifications.",
-  "settings_notifications_preview_full_label": "Show full message",
+  "settings_notifications_preview_full_label": "Full message",
   "settings_notifications_preview_full_description": "Sender name and a preview of the message.",
   "settings_notifications_preview_sender_label": "Sender only",
   "settings_notifications_preview_sender_description": "Sender name with a generic “New message” label.",

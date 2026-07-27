@@ -656,7 +656,7 @@
   "settings_notifications_sound_description": "Воспроизводить звук для уведомлений о новых сообщениях.",
   "settings_notifications_preview_label": "Предпросмотр сообщения",
   "settings_notifications_preview_description": "Сколько текста показывать в уведомлении.",
-  "settings_notifications_preview_full_label": "Показывать сообщение полностью",
+  "settings_notifications_preview_full_label": "Полностью",
   "settings_notifications_preview_full_description": "Имя отправителя и предпросмотр сообщения.",
   "settings_notifications_preview_sender_label": "Только отправитель",
   "settings_notifications_preview_sender_description": "Имя отправителя с общей пометкой «Новое сообщение».",
