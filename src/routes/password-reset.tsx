@@ -1,4 +1,5 @@
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
+import { isPasswordRecoveryLink } from '@/lib/password-recovery'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { Banner } from '@astryxdesign/core/Banner'
@@ -41,11 +42,17 @@ type RequestFormValues = z.infer<ReturnType<typeof createRequestSchema>>
  * land on a form that no longer applied to their session.
  */
 function RouteComponent() {
-  const [isRecovering, setIsRecovering] = useState(false)
+  // Seeded from the URL rather than only from the event. Supabase consumes the
+  // recovery fragment during boot and emits `PASSWORD_RECOVERY` from a
+  // `setTimeout(…, 0)`; this route is code-split, so it subscribes strictly
+  // after that fires and would otherwise never see it — leaving someone who
+  // just clicked the emailed link staring at the "email me a link" form.
+  const [isRecovering, setIsRecovering] = useState(isPasswordRecoveryLink)
 
   useEffect(() => {
-    // The event fires while the module is still mounting on a cold load, so the
-    // current session is checked too rather than relying on the event alone.
+    // Still subscribed: the URL snapshot covers the cold load, and this covers
+    // a recovery that resolves after mount (e.g. the PKCE code exchange, which
+    // reports the recovery type only through the event).
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setIsRecovering(true)
     })

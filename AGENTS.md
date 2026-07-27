@@ -257,6 +257,18 @@ pnpm test:db
 pnpm i18n:audit
 ```
 
+Some failures are only reachable in a real browser, because jsdom has no
+layout and does not run the real bundle:
+
+```bash
+pnpm build && pnpm smoke                  # every route renders, no console errors
+pnpm build && pnpm check:password-reset   # the reset flow, both halves, both locales
+pnpm build && pnpm i18n:shots             # screenshots of every route in both locales
+```
+
+Run the flow checks when touching auth, and read the Russian screenshots when
+touching copy or layout.
+
 Use `pnpm verify` for broad or release-sensitive changes when practical. For documentation-only changes, review the diff and verify referenced paths and commands; a full application build is not required.
 
 If a command cannot run because required services, credentials, or local tooling are unavailable, report that clearly instead of claiming success.

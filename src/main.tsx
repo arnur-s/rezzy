@@ -1,6 +1,9 @@
 import { RouterLink } from '@/components/router-link'
 import { registerNotificationServiceWorker } from '@/features/notifications'
 import { initLocale } from '@/lib/locale'
+// Imported before the Supabase client is constructed: it reads the recovery
+// marker out of the URL, and Supabase strips the fragment as it boots.
+import '@/lib/password-recovery'
 import { AuthProvider, useAuth } from '@/providers/auth-provider'
 import { ThemeProvider, useTheme } from '@/providers/theme-provider'
 import { queryClient } from '@/utils/query-client'

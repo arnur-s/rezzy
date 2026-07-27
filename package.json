@@ -23,6 +23,7 @@
     "perf:routes:prod": "node scripts/route-budget.mjs prod",
     "perf:chunks": "node scripts/chunk-report.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "check:password-reset": "node scripts/password-reset-check.mjs",
     "build": "vite build",
     "verify": "pnpm typecheck && pnpm i18n:audit && pnpm lint && pnpm test && pnpm build",
     "dev": "vite dev --port 3000 --open --host",
