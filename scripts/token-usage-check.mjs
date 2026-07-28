@@ -99,6 +99,26 @@ function definedTokens() {
   return { colors, others }
 }
 
+/**
+ * Blanks out comments, preserving line count and offsets.
+ *
+ * Prose is not markup, and scanning it produces false positives that are worse
+ * than useless: a theme file describing its "from-scratch OKLCH palette" was
+ * reported as writing a `from-scratch` gradient utility, which fails the check
+ * with no way to satisfy it short of rewording an English sentence. Comments
+ * emit no classes, so the only honest thing to read is the code.
+ *
+ * Line structure is kept so reported line numbers still point at the right
+ * place.
+ */
+function stripComments(code) {
+  return code
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, lead) =>
+      lead + ' '.repeat(m.length - lead.length),
+    )
+}
+
 /** Every color-prefixed utility written in `src`, with the file that writes it. */
 function usedColorUtilities() {
   const used = new Map()
@@ -111,7 +131,7 @@ function usedColorUtilities() {
         continue
       }
       if (!/\.tsx?$/.test(entry)) continue
-      const code = readFileSync(full, 'utf8')
+      const code = stripComments(readFileSync(full, 'utf8'))
       const lines = code.split('\n')
 
       lines.forEach((line, i) => {
