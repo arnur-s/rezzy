@@ -2,6 +2,7 @@ import type { ChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { sortConversationsByActivity } from '@/entities/conversation'
 import type { MessageRow } from '@/entities/message'
+import { useInvalidateDashboard } from '@/features/dashboard/hooks/use-invalidate-dashboard'
 import {
   useInfiniteQuery,
   useMutation,
@@ -88,6 +89,7 @@ export function useMarkConversationReadToMessage({
   userId: string | null
 }) {
   const queryClient = useQueryClient()
+  const invalidateDashboard = useInvalidateDashboard()
   const conversationsKey = inboxQueryKeys.conversations(workspaceId)
 
   return useMutation({
@@ -126,11 +128,15 @@ export function useMarkConversationReadToMessage({
         },
       )
     },
+    // Advancing the read cursor is what actually clears unread for this agent,
+    // so home's unread count and its "unread" attention rows both move with it.
+    onSettled: invalidateDashboard,
   })
 }
 
 export function useSendMessage({ workspaceId }: { workspaceId: string }) {
   const queryClient = useQueryClient()
+  const invalidateDashboard = useInvalidateDashboard()
 
   return useMutation({
     mutationFn: (variables: {
@@ -260,6 +266,9 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
         },
       )
     },
+    // Replying refreshes last_message_at, which is what home's staleness
+    // threshold reads, and can claim an unassigned thread for this agent.
+    onSettled: invalidateDashboard,
   })
 }
 

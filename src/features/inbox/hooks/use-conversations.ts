@@ -2,6 +2,7 @@ import type {
   ConversationStatus,
   ConversationWithRelations,
 } from '@/entities/conversation'
+import { useInvalidateDashboard } from '@/features/dashboard/hooks/use-invalidate-dashboard'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getWorkspaceConversations,
@@ -29,6 +30,7 @@ export function useConversationsSearch(workspaceId: string, searchQuery: string)
 
 export function useMarkConversationRead(workspaceId: string) {
   const queryClient = useQueryClient()
+  const invalidateDashboard = useInvalidateDashboard()
   const unreadKey = inboxQueryKeys.unreadCountsForWorkspace(workspaceId)
 
   return useMutation({
@@ -56,11 +58,17 @@ export function useMarkConversationRead(workspaceId: string) {
         queryClient.setQueryData(key, data)
       }
     },
+    // Home's summary and attention queue are derived from this conversation's
+    // read state. onSettled rather than onSuccess, so a rolled-back failure also
+    // re-syncs home instead of leaving it agreeing with an optimistic zero that
+    // never reached the server.
+    onSettled: invalidateDashboard,
   })
 }
 
 export function useUpdateConversationStatus(workspaceId: string) {
   const queryClient = useQueryClient()
+  const invalidateDashboard = useInvalidateDashboard()
   const key = inboxQueryKeys.conversations(workspaceId)
 
   return useMutation({
@@ -91,5 +99,8 @@ export function useUpdateConversationStatus(workspaceId: string) {
         queryClient.setQueryData(key, context.snapshot)
       }
     },
+    // open/snoozed/closed decides whether a conversation appears in home's
+    // summary and attention queue at all.
+    onSettled: invalidateDashboard,
   })
 }

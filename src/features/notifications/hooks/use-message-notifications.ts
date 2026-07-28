@@ -1,3 +1,4 @@
+import { dashboardQueryKeys } from '@/features/dashboard/api/dashboard-stats'
 import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
 import { useAuth } from '@/providers/auth-provider'
 import { supabase } from '@/utils/supabase'
@@ -154,6 +155,11 @@ export function useMessageNotifications(): void {
     // active workspace already has useConversationsRealtime merging its rows,
     // so re-fetching its list here would only duplicate that work.
     const syncUnreadCaches = (row: MessageNotificationRow) => {
+      // Home aggregates across every workspace, so a new message changes its
+      // counts wherever it landed — including the workspace currently open,
+      // whose early return below covers only the inbox's own caches.
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all })
+
       if (row.workspace_id === contextRef.current.openWorkspaceId) return
       void queryClient.invalidateQueries({
         queryKey: inboxQueryKeys.unreadCountsForWorkspace(row.workspace_id),
