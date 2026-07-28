@@ -227,8 +227,23 @@ Do not manually edit:
 - `src/routeTree.gen.ts`
 - `src/paraglide/**`
 - `src/api/types.ts`
+- `src/generated/**`
 
 Change their source inputs and regenerate them with the repository scripts.
+
+### Astryx atomic class names
+
+Astryx compiles with StyleX, so its selectors are hashed atomic classes
+(`.x1k6wstc`) that are a build output of the dependency, not a supported API.
+Never write one into `src/styles.css` by hand: it stops matching silently on the
+next upgrade. If a declaration inside Astryx has to be overridden, derive the
+selector from the installed `astryx.css` in a generator, as
+`scripts/font-floor-build.mjs` does for the 12px readable floor.
+
+```bash
+pnpm astryx:font-floor   # regenerate after upgrading @astryxdesign/core
+pnpm check:font-floor    # fails when the generated file drifts (part of pnpm verify)
+```
 
 ## Test Account
 
