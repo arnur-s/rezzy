@@ -2,8 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { THEME_STORAGE_KEY, ThemeProvider, useTheme } from './theme-provider'
 
-// This environment provides no localStorage; the same Map-backed stub the
-// recently-viewed store's tests use stands in for it.
+// This environment provides no localStorage; a Map-backed stub stands in for
+// it.
 const storageEntries = new Map<string, string>()
 const localStorageMock: Storage = {
   get length() {

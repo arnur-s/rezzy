@@ -5,7 +5,6 @@ import {
 } from '@/entities/channel'
 import { isConversationStatus } from '@/entities/conversation'
 import type { ConversationWithRelations } from '@/entities/conversation'
-import { useRecordContactVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Button } from '@astryxdesign/core/Button'
@@ -41,12 +40,6 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
   const status = isConversationStatus(conversation.status)
     ? conversation.status
     : 'open'
-
-  useRecordContactVisit(
-    conversation.contact.id,
-    contactName !== '—' ? contactName : undefined,
-    workspaceId,
-  )
 
   return (
     <aside

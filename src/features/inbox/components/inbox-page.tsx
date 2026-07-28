@@ -1,5 +1,3 @@
-import { useRecordWorkspaceVisit } from '@/features/dashboard/hooks/use-record-recent-visit'
-import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useIsLg } from '@/hooks/use-is-lg'
 import { useIsMobile } from '@/hooks/use-is-mobile'
@@ -40,10 +38,6 @@ export function InboxPage({
 
   const conversationsQuery = useConversations(workspaceId)
   const unreadCountsQuery = useWorkspaceUnreadCounts(workspaceId, senderId)
-
-  const workspacesQuery = useWorkspaces(senderId ?? undefined)
-  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
-  useRecordWorkspaceVisit(workspaceId, workspace?.name, workspace?.icon)
 
   const [primaryFilter, setPrimaryFilter] = useState<InboxPrimaryFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
