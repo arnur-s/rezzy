@@ -30,8 +30,12 @@ export type DashboardStats = {
   perWorkspace: Array<WorkspaceDashboardStats>
 }
 
+/** See home-stats: Supabase truncates at max_rows silently rather than erroring. */
+const ROW_LIMIT = 1001
+
 export async function getDashboardStats(
   workspaceIds: Array<string>,
+  unreadCounts?: Promise<Map<string, number>>,
 ): Promise<DashboardStats> {
   if (workspaceIds.length === 0) {
     return {
@@ -45,16 +49,19 @@ export async function getDashboardStats(
       supabase
         .from('conversations')
         .select('id, workspace_id, status, last_message_at')
-        .in('workspace_id', workspaceIds),
+        .in('workspace_id', workspaceIds)
+        .limit(ROW_LIMIT),
       supabase
         .from('channels')
         .select('workspace_id, type')
-        .in('workspace_id', workspaceIds),
+        .in('workspace_id', workspaceIds)
+        .limit(ROW_LIMIT),
       supabase
         .from('contacts')
         .select('workspace_id')
-        .in('workspace_id', workspaceIds),
-      getUnreadCountsForWorkspaces(workspaceIds),
+        .in('workspace_id', workspaceIds)
+        .limit(ROW_LIMIT),
+      unreadCounts ?? getUnreadCountsForWorkspaces(workspaceIds),
     ])
 
   if (conversationsResult.error) throw conversationsResult.error

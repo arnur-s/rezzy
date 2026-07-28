@@ -1,3 +1,5 @@
+import { mockQueryBuilder } from '@/test/supabase-query-mock'
+import type { QueryBuilderMock } from '@/test/supabase-query-mock'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getHomeStats } from './home-stats'
 
@@ -20,11 +22,11 @@ type ConversationRow = {
   last_message_at: string | null
 }
 
+let lastQuery: QueryBuilderMock<Array<ConversationRow>>
+
 function mockConversations(rows: Array<ConversationRow>) {
-  const inFn = vi.fn().mockResolvedValue({ data: rows, error: null })
-  const eq = vi.fn().mockReturnValue({ in: inFn })
-  const select = vi.fn().mockReturnValue({ eq })
-  supabaseMock.from.mockReturnValue({ select })
+  lastQuery = mockQueryBuilder(rows)
+  supabaseMock.from.mockReturnValue(lastQuery)
 }
 
 const recent = new Date(Date.now() - 60 * 60 * 1000).toISOString()
@@ -95,5 +97,34 @@ describe('getHomeStats', () => {
     const result = await getHomeStats('user-1', ['w1'])
 
     expect(result.snoozedWaking).toBe(1)
+  })
+
+  it('leaves the closed backlog in the database and bounds the response', async () => {
+    // Closed conversations cannot contribute to any of these numbers, and
+    // Supabase truncates at max_rows silently, so an unbounded select would
+    // return quietly wrong counts once a workspace matured.
+    mockConversations([])
+    unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
+
+    await getHomeStats('user-1', ['w1'])
+
+    expect(lastQuery.argsFor('in')).toEqual(['workspace_id', ['w1']])
+    expect(
+      lastQuery.calls.filter(([name]) => name === 'in'),
+    ).toContainEqual(['in', 'status', ['open', 'snoozed']])
+    const limit = lastQuery.argsFor('limit')?.[0]
+    expect(typeof limit).toBe('number')
+    expect(limit).toBeGreaterThan(1000)
+  })
+
+  it('reuses a shared unread map instead of fetching its own', async () => {
+    // Three home queries need the same map; refetching it per query was three
+    // identical RPCs on every load.
+    mockConversations([])
+    const shared = Promise.resolve(new Map<string, number>())
+
+    await getHomeStats('user-1', ['w1'], shared)
+
+    expect(unreadMock.getUnreadCountsForWorkspaces).not.toHaveBeenCalled()
   })
 })

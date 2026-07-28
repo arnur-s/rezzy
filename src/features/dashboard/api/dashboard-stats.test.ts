@@ -1,3 +1,5 @@
+import { mockQueryBuilder } from '@/test/supabase-query-mock'
+import type { QueryBuilderMock } from '@/test/supabase-query-mock'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDashboardStats } from './dashboard-stats'
 
@@ -13,10 +15,19 @@ vi.mock('./unread-counts', () => ({
   getUnreadCountsForWorkspaces: unreadMock.getUnreadCountsForWorkspaces,
 }))
 
-function terminalIn(rows: Array<unknown>) {
-  const inFn = vi.fn().mockResolvedValue({ data: rows, error: null })
-  const select = vi.fn().mockReturnValue({ in: inFn })
-  return { select }
+const queries = new Map<string, QueryBuilderMock<Array<unknown>>>()
+
+/** Routes each table to its own recording builder. */
+function mockTables(tables: Record<string, Array<unknown>>) {
+  queries.clear()
+  for (const [table, rows] of Object.entries(tables)) {
+    queries.set(table, mockQueryBuilder(rows))
+  }
+  supabaseMock.from.mockImplementation((table: string) => {
+    const query = queries.get(table)
+    if (!query) throw new Error(`Unexpected table: ${table}`)
+    return query
+  })
 }
 
 describe('getDashboardStats', () => {
@@ -34,12 +45,7 @@ describe('getDashboardStats', () => {
     const channels = [{ workspace_id: 'w1', type: 'whatsapp' }]
     const contacts = [{ workspace_id: 'w1' }, { workspace_id: 'w1' }]
 
-    supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'conversations') return terminalIn(conversations)
-      if (table === 'channels') return terminalIn(channels)
-      if (table === 'contacts') return terminalIn(contacts)
-      throw new Error(`Unexpected table: ${table}`)
-    })
+    mockTables({ conversations, channels, contacts })
     // c1 has 2 unread, c3 has 10 unread for this agent; c2 is read (absent).
     unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(
       new Map([
@@ -56,5 +62,30 @@ describe('getDashboardStats', () => {
     expect(w1?.unread).toBe(12)
     expect(w1?.open).toBe(2)
     expect(result.aggregate.unread).toBe(12)
+  })
+
+  it('bounds every table read so a large workspace cannot silently truncate', async () => {
+    mockTables({ conversations: [], channels: [], contacts: [] })
+    unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
+
+    await getDashboardStats(['w1'])
+
+    for (const [table, query] of queries) {
+      const limit = query.argsFor('limit')?.[0]
+      expect({ table, isNumber: typeof limit === 'number' }).toEqual({
+        table,
+        isNumber: true,
+      })
+      expect(limit).toBeGreaterThan(1000)
+    }
+  })
+
+  it('reuses a shared unread map instead of fetching its own', async () => {
+    mockTables({ conversations: [], channels: [], contacts: [] })
+    const shared = Promise.resolve(new Map<string, number>())
+
+    await getDashboardStats(['w1'], shared)
+
+    expect(unreadMock.getUnreadCountsForWorkspaces).not.toHaveBeenCalled()
   })
 })

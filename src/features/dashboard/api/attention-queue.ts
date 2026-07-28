@@ -10,6 +10,13 @@ import { getUnreadCountsForWorkspaces } from './unread-counts'
 
 const MAX_ITEMS = 10
 
+/**
+ * Supabase truncates at `max_rows` (1000) silently, so an unbounded select
+ * returns a wrong answer rather than a slow one. The status filter below keeps
+ * the live set far under this in practice; the ceiling is the backstop.
+ */
+const ROW_LIMIT = 1001
+
 export type AttentionReason = 'snoozed' | 'unread' | 'stale'
 
 export type AttentionItem = {
@@ -80,16 +87,24 @@ type Row = {
 export async function getAttentionQueue(
   userId: string,
   workspaceIds: Array<string>,
+  unreadCounts?: Promise<Map<string, number>>,
 ): Promise<AttentionQueue> {
   if (workspaceIds.length === 0) return { items: [], total: 0 }
 
+  // Only open and snoozed conversations can qualify for any attention reason,
+  // so the closed backlog stays in the database. Ordering by recency means that
+  // if the ceiling below is ever reached, what survives is the live edge of the
+  // queue rather than an arbitrary slice.
   const [conversationsResult, unreadByConversation] = await Promise.all([
     supabase
       .from('conversations')
       .select(ATTENTION_SELECT)
       .eq('assigned_to', userId)
-      .in('workspace_id', workspaceIds),
-    getUnreadCountsForWorkspaces(workspaceIds),
+      .in('workspace_id', workspaceIds)
+      .in('status', ['open', 'snoozed'])
+      .order('last_message_at', { ascending: false, nullsFirst: false })
+      .limit(ROW_LIMIT),
+    unreadCounts ?? getUnreadCountsForWorkspaces(workspaceIds),
   ])
 
   if (conversationsResult.error) throw conversationsResult.error

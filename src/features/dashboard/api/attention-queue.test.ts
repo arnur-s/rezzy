@@ -1,3 +1,5 @@
+import { mockQueryBuilder } from '@/test/supabase-query-mock'
+import type { QueryBuilderMock } from '@/test/supabase-query-mock'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAttentionQueue } from './attention-queue'
 
@@ -13,11 +15,11 @@ vi.mock('./unread-counts', () => ({
   getUnreadCountsForWorkspaces: unreadMock.getUnreadCountsForWorkspaces,
 }))
 
+let lastQuery: QueryBuilderMock<Array<unknown>>
+
 function mockConversations(rows: Array<unknown>) {
-  const inFn = vi.fn().mockResolvedValue({ data: rows, error: null })
-  const eq = vi.fn().mockReturnValue({ in: inFn })
-  const select = vi.fn().mockReturnValue({ eq })
-  supabaseMock.from.mockReturnValue({ select })
+  lastQuery = mockQueryBuilder(rows)
+  supabaseMock.from.mockReturnValue(lastQuery)
 }
 
 const recent = new Date(Date.now() - 60 * 60 * 1000).toISOString()
@@ -76,5 +78,34 @@ describe('getAttentionQueue', () => {
       'fresh-stale',
     ])
     expect(result.items.every((i) => i.reason === 'stale')).toBe(true)
+  })
+
+  it('asks only for live conversations, newest first, under a row ceiling', async () => {
+    // Closed threads can never qualify for an attention reason, and Supabase
+    // truncates at max_rows silently. Ordering means that if the ceiling is
+    // ever reached, what survives is the live edge rather than a random slice.
+    mockConversations([])
+    unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
+
+    await getAttentionQueue('user-1', ['w1'])
+
+    expect(lastQuery.calls.filter(([name]) => name === 'in')).toContainEqual([
+      'in',
+      'status',
+      ['open', 'snoozed'],
+    ])
+    expect(lastQuery.argsFor('order')?.[0]).toBe('last_message_at')
+    const limit = lastQuery.argsFor('limit')?.[0]
+    expect(typeof limit).toBe('number')
+    expect(limit).toBeGreaterThan(1000)
+  })
+
+  it('reuses a shared unread map instead of fetching its own', async () => {
+    mockConversations([])
+    const shared = Promise.resolve(new Map<string, number>())
+
+    await getAttentionQueue('user-1', ['w1'], shared)
+
+    expect(unreadMock.getUnreadCountsForWorkspaces).not.toHaveBeenCalled()
   })
 })
