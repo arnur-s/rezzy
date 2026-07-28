@@ -8,7 +8,7 @@ import { useAuth } from '@/providers/auth-provider'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ConversationWithRelations } from '@/entities/conversation'
-import { Layout, LayoutPanel } from '@astryxdesign/core/Layout'
+import { AppPane } from '@/components/app-pane'
 import { ResizeHandle, useResizable } from '@astryxdesign/core/Resizable'
 import { useConversations, useConversationsSearch } from '../hooks/use-conversations'
 import { useWorkspaceUnreadCounts } from '../hooks/use-unread-counts'
@@ -205,66 +205,69 @@ export function InboxPage({
   )
 
   // Mobile shows exactly one pane at a time; panes never share the viewport.
+  // The shell's `AppPaneGroup` drops its gutter below `md`, so that single
+  // pane is full-bleed and the canvas is not visible at all at this width.
   if (isMobile) {
     return (
-      <div className="flex h-full min-h-0 w-full">
-        {mobilePane === 'list' ? conversationListNode : null}
-        {mobilePane === 'thread' ? threadNode : null}
-        {mobilePane === 'contact' && selectedConversation ? (
-          <ContactPanel
-            workspaceId={workspaceId}
-            conversation={selectedConversation}
-            onClose={handleCloseContactPanel}
-          />
+      <>
+        {mobilePane === 'list' ? (
+          <AppPane label={m.inbox_conversation_list_aria_label()}>
+            {conversationListNode}
+          </AppPane>
         ) : null}
-      </div>
+        {mobilePane === 'thread' ? <AppPane>{threadNode}</AppPane> : null}
+        {mobilePane === 'contact' && selectedConversation ? (
+          <AppPane label={m.inbox_contact_panel_title()}>
+            <ContactPanel
+              workspaceId={workspaceId}
+              conversation={selectedConversation}
+              onClose={handleCloseContactPanel}
+            />
+          </AppPane>
+        ) : null}
+      </>
     )
   }
 
   return (
     <>
-      <Layout
-        height="fill"
-        start={
-          <>
-            <LayoutPanel
-              padding={0}
-              isScrollable={false}
-              hasDivider
-              label={m.inbox_conversation_list_aria_label()}
-              resizable={listResize.props}
-            >
-              {conversationListNode}
-            </LayoutPanel>
-            <ResizeHandle
-              direction="horizontal"
-              resizable={listResize.props}
-              label={m.inbox_conversation_list_resize_label()}
-            />
-          </>
-        }
-        content={threadNode}
-        end={
-          selectedConversation && showContactAsPane ? (
-            <LayoutPanel
-              padding={0}
-              isScrollable={false}
-              hasDivider
-              width={320}
-              label={m.inbox_contact_panel_title()}
-            >
-              <ContactPanel
-                workspaceId={workspaceId}
-                conversation={selectedConversation}
-                onClose={handleCloseContactPanel}
-              />
-            </LayoutPanel>
-          ) : undefined
-        }
+      <AppPane
+        label={m.inbox_conversation_list_aria_label()}
+        width={listResize.size}
+      >
+        {conversationListNode}
+      </AppPane>
+
+      {/* The handle lives in the seam rather than on a pane edge: with no
+          divider it takes zero width and contributes only a hit area, so what
+          the user grabs is the gutter itself. `-mx-1` absorbs the second gap
+          the pane group would otherwise put around it, keeping this seam the
+          same width as every other one. */}
+      <ResizeHandle
+        className="-mx-1"
+        direction="horizontal"
+        resizable={listResize.props}
+        pillPlacement="center"
+        isAlwaysVisible={false}
+        label={m.inbox_conversation_list_resize_label()}
       />
 
+      <AppPane>{threadNode}</AppPane>
+
+      {selectedConversation && showContactAsPane ? (
+        <AppPane label={m.inbox_contact_panel_title()} width={320}>
+          <ContactPanel
+            workspaceId={workspaceId}
+            conversation={selectedConversation}
+            onClose={handleCloseContactPanel}
+          />
+        </AppPane>
+      ) : null}
+
       {/* Details overlay for tablet widths: a right-side sheet over the thread,
-          matching the mobile sidebar pattern. */}
+          matching the mobile sidebar pattern. Inset from the viewport by the
+          same gutter the docked panes use, so the sheet reads as the same kind
+          of object arriving from the edge rather than as a full-height slab. */}
       {selectedConversation && showContactAsOverlay ? (
         <div className="fixed inset-0 z-50">
           <button
@@ -276,13 +279,15 @@ export function InboxPage({
           <div
             role="dialog"
             aria-label={m.inbox_contact_panel_title()}
-            className="absolute inset-y-0 right-0 h-full w-80 max-w-[85vw]"
+            className="absolute inset-y-0 right-0 flex h-full w-80 max-w-[85vw] md:p-2"
           >
-            <ContactPanel
-              workspaceId={workspaceId}
-              conversation={selectedConversation}
-              onClose={handleCloseContactPanel}
-            />
+            <AppPane>
+              <ContactPanel
+                workspaceId={workspaceId}
+                conversation={selectedConversation}
+                onClose={handleCloseContactPanel}
+              />
+            </AppPane>
           </div>
         </div>
       ) : null}

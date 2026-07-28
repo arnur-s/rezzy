@@ -6,6 +6,7 @@ import {
 } from '@/features/onboarding'
 import { useAuth } from '@/providers/auth-provider'
 import { NotificationsProvider } from '@/providers/notifications-provider'
+import { AppPaneGroup } from '@/components/app-pane'
 import { Sidebar } from '@/widgets/sidebar'
 import { AppShell } from '@astryxdesign/core/AppShell'
 import { Spinner } from '@astryxdesign/core/Spinner'
@@ -74,10 +75,18 @@ function RouteComponent() {
     <NotificationsProvider>
       <AppShell
         height="fill"
-        // 'section' rather than 'elevated': the elevated variant separates nav
-        // from content by tone alone, and the current theme resolves the canvas
-        // and the content surface to the same value, so nothing reads.
-        variant="section"
+        // 'wash' rather than 'section' or 'elevated': the shell is a canvas
+        // with elevated panes inset into it, so the rail and the content area
+        // both take the canvas tone and the panes lift off it. `section` draws
+        // a hairline down the rail's edge, which is the flat shell's
+        // separation device and reads as a stray line once the seam is a
+        // gutter. `elevated` is closer, but it owns the corner treatment
+        // itself and rounds only the content area's top-start corner, which is
+        // not the shape of a pane.
+        variant="wash"
+        // The gutter belongs to `AppPaneGroup`, which every authenticated
+        // route composes. Two sources of inset would double the seam on any
+        // route that also nests a group.
         contentPadding={0}
         // No top bar: the nav rail carries identity, account, and notifications,
         // and each page owns its own title. Below the mobile breakpoint AppShell
@@ -101,7 +110,12 @@ function RouteComponent() {
           onOpenChange: setIsMobileNavOpen,
         }}
       >
-        <Outlet />
+        {/* The canvas lives here rather than in each route, so the gutter is
+            one value in one place and a new route cannot forget it. Routes
+            contribute `AppPane`s; the group owns the space between them. */}
+        <AppPaneGroup>
+          <Outlet />
+        </AppPaneGroup>
       </AppShell>
     </NotificationsProvider>
   )

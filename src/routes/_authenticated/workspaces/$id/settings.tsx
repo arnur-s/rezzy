@@ -1,3 +1,4 @@
+import { AppPane } from '@/components/app-pane'
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { Tab, TabList } from '@astryxdesign/core/TabList'
@@ -74,11 +75,8 @@ function RouteComponent() {
   }
 
   return (
-    // Flat and full-bleed, like every other pane: AppShell's `section` variant
-    // already draws the seam against the rail, and the theme resolves surface
-    // to the same value as the canvas, so a fill here would paint nothing while
-    // a radius would notch a corner out of the content area.
-    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
+    // One pane on the canvas, same construction as the account settings pane.
+    <AppPane>
       {/* 64px and a hairline — the shared pane-header contract, matching the
           conversation list, the thread, and the contact panel. */}
       <header className="border-border/60 flex h-14 shrink-0 items-center border-b">
@@ -118,6 +116,6 @@ function RouteComponent() {
           </div>
         </div>
       </div>
-    </div>
+    </AppPane>
   )
 }

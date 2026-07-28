@@ -1,3 +1,4 @@
+import { AppPane } from '@/components/app-pane'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
@@ -10,7 +11,7 @@ export function WorkspaceOverviewPage() {
   const workspaceId = params.id
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
+    <AppPane className="items-center justify-center">
       <EmptyState
         icon={<LayoutDashboard className="text-secondary size-8" />}
         title={m.workspace_overview_empty_title()}
@@ -30,6 +31,6 @@ export function WorkspaceOverviewPage() {
           ) : undefined
         }
       />
-    </div>
+    </AppPane>
   )
 }

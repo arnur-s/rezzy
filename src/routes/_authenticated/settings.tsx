@@ -1,3 +1,4 @@
+import { AppPane } from '@/components/app-pane'
 import { m } from '@/paraglide/messages'
 import { Tab, TabList } from '@astryxdesign/core/TabList'
 import {
@@ -54,9 +55,10 @@ function RouteComponent() {
     )?.key ?? 'profile'
 
   return (
-    // Flat and full-bleed, matching the workspace settings pane: AppShell's
-    // `section` variant already draws the seam against the rail.
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+    // One pane on the canvas. The rule below the header is intra-pane, marking
+    // the boundary between the fixed title and the region that scrolls under
+    // it; the seam against the nav rail is the gutter, not a border.
+    <AppPane>
       {/* 64px and a hairline — the shared pane-header contract. */}
       <header className="border-border/60 flex h-16 shrink-0 items-center border-b">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
@@ -104,6 +106,6 @@ function RouteComponent() {
           </div>
         </div>
       </div>
-    </div>
+    </AppPane>
   )
 }

@@ -1,3 +1,4 @@
+import { AppPane } from '@/components/app-pane'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
@@ -22,7 +23,7 @@ function RouteComponent() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
+    <AppPane className="items-center justify-center">
       <EmptyState
         icon={<UsersRoundIcon className="text-secondary size-8" />}
         title={m.contacts_empty_title()}
@@ -40,6 +41,6 @@ function RouteComponent() {
           />
         }
       />
-    </div>
+    </AppPane>
   )
 }

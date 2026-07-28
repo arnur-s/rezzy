@@ -1,3 +1,4 @@
+import { AppPane } from '@/components/app-pane'
 import { Loader } from '@/components/loader'
 import { AttentionList } from '@/features/dashboard/components/attention-list'
 import { DashboardHeader } from '@/features/dashboard/components/dashboard-header'
@@ -56,89 +57,94 @@ export function DashboardPage() {
   // `isFetching`) keeps refetches from flashing the empty or wrong layout.
   return (
     <>
-      {workspacesQuery.isError ? (
-        <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 md:py-8">
-          <SectionError
-            message={m.dashboard_load_error_title()}
-            onRetry={() => void workspacesQuery.refetch()}
-            isRetrying={workspacesQuery.isRefetching}
-          />
-        </div>
-      ) : workspacesQuery.isPending ? (
-        <Loader size="lg" />
-      ) : workspaces.length === 0 ? (
-        <HomeEmptyState onCreate={() => setIsCreateOpen(true)} />
-      ) : user ? (
-        <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6 sm:px-6 md:py-8">
-          <DashboardHeader
-            user={user}
-            stats={homeStatsQuery.data}
-            isPending={homeStatsQuery.isPending}
-            isError={homeStatsQuery.isError}
-            onRetry={() => void homeStatsQuery.refetch()}
-            isRetrying={homeStatsQuery.isRefetching}
-            inboxWorkspaceId={inboxWorkspaceId}
-          />
-
-          <AttentionList
-            items={attentionQuery.data?.items ?? []}
-            total={attentionQuery.data?.total ?? 0}
-            workspaces={workspaces}
-            isLoading={attentionQuery.isPending}
-            isError={attentionQuery.isError}
-            onRetry={() => void attentionQuery.refetch()}
-            isRetrying={attentionQuery.isRefetching}
-            inboxWorkspaceId={inboxWorkspaceId}
-            isSummaryAllClear={isSummaryAllClear}
-          />
-
-          <UnassignedList
-            items={unassignedQuery.data ?? []}
-            workspaces={workspaces}
-            isPending={unassignedQuery.isPending}
-            isError={unassignedQuery.isError}
-            onRetry={() => void unassignedQuery.refetch()}
-            isRetrying={unassignedQuery.isRefetching}
-          />
-
-          {workspaces.length === 1 ? (
-            <SingleWorkspaceSummary
-              workspace={workspaces[0]}
-              stats={
-                dashboardStatsQuery.data?.perWorkspace.find(
-                  (s) => s.workspaceId === workspaces[0].id,
-                ) ?? null
-              }
-              statsPending={dashboardStatsQuery.isPending}
-              statsError={dashboardStatsQuery.isError}
-              onRetryStats={() => void dashboardStatsQuery.refetch()}
-              isRetryingStats={dashboardStatsQuery.isRefetching}
-              onCreate={() => setIsCreateOpen(true)}
+      {/* The whole page is one pane: home is a single reading column, so the
+          canvas frames it rather than dividing it. The scroll lives on the
+          pane so the scrollbar rides the pane's edge, not the viewport's. */}
+      <AppPane className="overflow-y-auto">
+        {workspacesQuery.isError ? (
+          <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 md:py-8">
+            <SectionError
+              message={m.dashboard_load_error_title()}
+              onRetry={() => void workspacesQuery.refetch()}
+              isRetrying={workspacesQuery.isRefetching}
             />
-          ) : (
-            <section
-              aria-labelledby="home-workspaces-title"
-              className="space-y-3"
-            >
-              <h2
-                id="home-workspaces-title"
-                className="text-primary text-sm font-semibold"
-              >
-                {m.home_workspaces_section_title()}
-              </h2>
-              <WorkspaceGrid
-                workspaces={workspaces}
-                stats={dashboardStatsQuery.data?.perWorkspace ?? []}
+          </div>
+        ) : workspacesQuery.isPending ? (
+          <Loader size="lg" />
+        ) : workspaces.length === 0 ? (
+          <HomeEmptyState onCreate={() => setIsCreateOpen(true)} />
+        ) : user ? (
+          <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6 sm:px-6 md:py-8">
+            <DashboardHeader
+              user={user}
+              stats={homeStatsQuery.data}
+              isPending={homeStatsQuery.isPending}
+              isError={homeStatsQuery.isError}
+              onRetry={() => void homeStatsQuery.refetch()}
+              isRetrying={homeStatsQuery.isRefetching}
+              inboxWorkspaceId={inboxWorkspaceId}
+            />
+
+            <AttentionList
+              items={attentionQuery.data?.items ?? []}
+              total={attentionQuery.data?.total ?? 0}
+              workspaces={workspaces}
+              isLoading={attentionQuery.isPending}
+              isError={attentionQuery.isError}
+              onRetry={() => void attentionQuery.refetch()}
+              isRetrying={attentionQuery.isRefetching}
+              inboxWorkspaceId={inboxWorkspaceId}
+              isSummaryAllClear={isSummaryAllClear}
+            />
+
+            <UnassignedList
+              items={unassignedQuery.data ?? []}
+              workspaces={workspaces}
+              isPending={unassignedQuery.isPending}
+              isError={unassignedQuery.isError}
+              onRetry={() => void unassignedQuery.refetch()}
+              isRetrying={unassignedQuery.isRefetching}
+            />
+
+            {workspaces.length === 1 ? (
+              <SingleWorkspaceSummary
+                workspace={workspaces[0]}
+                stats={
+                  dashboardStatsQuery.data?.perWorkspace.find(
+                    (s) => s.workspaceId === workspaces[0].id,
+                  ) ?? null
+                }
                 statsPending={dashboardStatsQuery.isPending}
                 statsError={dashboardStatsQuery.isError}
                 onRetryStats={() => void dashboardStatsQuery.refetch()}
                 isRetryingStats={dashboardStatsQuery.isRefetching}
                 onCreate={() => setIsCreateOpen(true)}
               />
-            </section>
-          )}
-        </div>
-      ) : null}
+            ) : (
+              <section
+                aria-labelledby="home-workspaces-title"
+                className="space-y-3"
+              >
+                <h2
+                  id="home-workspaces-title"
+                  className="text-primary text-sm font-semibold"
+                >
+                  {m.home_workspaces_section_title()}
+                </h2>
+                <WorkspaceGrid
+                  workspaces={workspaces}
+                  stats={dashboardStatsQuery.data?.perWorkspace ?? []}
+                  statsPending={dashboardStatsQuery.isPending}
+                  statsError={dashboardStatsQuery.isError}
+                  onRetryStats={() => void dashboardStatsQuery.refetch()}
+                  isRetryingStats={dashboardStatsQuery.isRefetching}
+                  onCreate={() => setIsCreateOpen(true)}
+                />
+              </section>
+            )}
+          </div>
+        ) : null}
+      </AppPane>
 
       {/* Astryx Dialog is controlled and must be mounted before isOpen flips;
           the icon picker gates its own heavy content instead. */}

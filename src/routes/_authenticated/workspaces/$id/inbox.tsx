@@ -1,3 +1,4 @@
+import { AppPane } from '@/components/app-pane'
 import { Loader } from '@/components/loader'
 import { useWorkspaceReadiness } from '@/features/channels/hooks/use-channels'
 import { InboxPage } from '@/features/inbox/components/inbox-page'
@@ -58,7 +59,11 @@ function RouteComponent() {
   }, [navigate, workspaceId])
 
   if (gate === 'loading') {
-    return <Loader size="lg" />
+    return (
+      <AppPane>
+        <Loader size="lg" />
+      </AppPane>
+    )
   }
 
   if (gate === 'sign-in') {
@@ -71,10 +76,12 @@ function RouteComponent() {
 
   if (gate === 'error') {
     return (
-      <InboxReadinessError
-        onRetry={readiness.refetch}
-        isRetrying={readiness.isRetrying}
-      />
+      <AppPane>
+        <InboxReadinessError
+          onRetry={readiness.refetch}
+          isRetrying={readiness.isRetrying}
+        />
+      </AppPane>
     )
   }
 
@@ -90,15 +97,16 @@ function RouteComponent() {
     )
   }
 
+  // No wrapper: `InboxPage` returns the panes themselves, and they have to be
+  // direct children of the shell's pane group for the gutter to fall between
+  // them. A column wrapper here would collapse all three into one row cell.
   return (
-    <div className="flex flex-1 h-full min-h-0 flex-col">
-      <InboxPage
-        workspaceId={workspaceId}
-        selectedConversationId={selectedConversationId}
-        onSelectConversation={handleSelectConversation}
-        onBackToList={handleBackToList}
-        threadSlot={<Outlet />}
-      />
-    </div>
+    <InboxPage
+      workspaceId={workspaceId}
+      selectedConversationId={selectedConversationId}
+      onSelectConversation={handleSelectConversation}
+      onBackToList={handleBackToList}
+      threadSlot={<Outlet />}
+    />
   )
 }

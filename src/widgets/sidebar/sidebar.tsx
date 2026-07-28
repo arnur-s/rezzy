@@ -9,7 +9,6 @@ import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import { Avatar } from '@astryxdesign/core/Avatar'
-import { Divider } from '@astryxdesign/core/Divider'
 import type {
   DropdownMenuButtonProps,
   DropdownMenuOption,
@@ -110,8 +109,6 @@ export function Sidebar({
         }}
         footer={<AccountMenu onNavigate={onNavigate} />}
       >
-        <NavSectionRule />
-
         <SideNavSection
           title={m.sidebar_workspace_nav_aria_label()}
           isHeaderHidden
@@ -173,9 +170,10 @@ export function Sidebar({
         </SideNavSection>
 
         {/* Home and unread both span every workspace, so they sit apart from
-            the block above, which only describes where you currently are. */}
-        <NavSectionRule />
-
+            the block above, which only describes where you currently are. The
+            separation is SideNav's own section spacing: a rule here would be
+            the third horizontal line in a rail that the shell now separates
+            with a gutter. */}
         <SideNavSection
           title={m.sidebar_general_nav_aria_label()}
           isHeaderHidden
@@ -197,20 +195,6 @@ export function Sidebar({
       />
     </>
   )
-}
-
-/**
- * Section rule inside the scrollable nav body, matched to the one SideNav draws
- * above its footer: edge-to-edge across the rail (so it escapes the 8px inline
- * padding), 4px of air on both sides, and gone while collapsed — the footer
- * drops its own border there too.
- */
-function NavSectionRule() {
-  const { isCollapsed } = useSideNavCollapse()
-
-  if (isCollapsed) return null
-
-  return <Divider className="-mx-2 my-1 w-auto" />
 }
 
 /**
