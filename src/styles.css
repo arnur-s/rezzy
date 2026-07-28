@@ -19,7 +19,7 @@
    by `pnpm exec astryx theme build` (see the `theme:build` script). Shipping
    the compiled CSS instead of letting <Theme> inject styles at runtime keeps
    the tokens in the cascade from first paint. */
-@import './themes/gothic/theme.css';
+/* @import './themes/gothic/theme.css'; */
 
 /* Astryx design tokens → Tailwind utilities (bg-surface, text-primary,
    text-secondary, bg-accent-bg, border-border, …). Values come from the

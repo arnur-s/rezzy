@@ -17,8 +17,10 @@ import './styles.css'
 // Pre-built theme (tokens + component overrides already compiled into
 // `themes/gothic/theme.css`, imported from styles.css). Importing the built
 // module instead of the `defineTheme` source avoids runtime style injection.
-import { gothicTheme } from './themes/gothic/gothic'
+// import { gothicTheme } from './themes/gothic/gothic'
 import { getRouter } from './utils/router'
+
+import { neutralTheme } from './themes/neutral/neutralTheme'
 
 // Explicit choice (cookie) wins, then the browser's language, then English.
 initLocale()
@@ -37,7 +39,7 @@ function App() {
   const { theme } = useTheme()
 
   return (
-    <Theme theme={gothicTheme} mode={theme}>
+    <Theme theme={neutralTheme} mode={theme}>
       <LayerProvider>
         <RouterProvider
           router={router}
