@@ -1,10 +1,13 @@
 import { isChannelType } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
+import {
+  isSnoozeElapsed,
+  isStale,
+} from '@/features/dashboard/lib/attention-rules'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { getUnreadCountsForWorkspaces } from './unread-counts'
 
-const STALE_THRESHOLD_HOURS = 48
 const MAX_ITEMS = 10
 
 export type AttentionReason = 'snoozed' | 'unread' | 'stale'
@@ -93,7 +96,6 @@ export async function getAttentionQueue(
 
   const { data } = conversationsResult
   const now = Date.now()
-  const staleThreshold = now - STALE_THRESHOLD_HOURS * 60 * 60 * 1000
 
   const items: Array<AttentionItem> = []
 
@@ -114,11 +116,8 @@ export async function getAttentionQueue(
       preview: raw.last_message_preview?.trim() || null,
     }
 
-    if (
-      raw.status === 'snoozed' &&
-      raw.snoozed_until &&
-      Date.parse(raw.snoozed_until) <= now
-    ) {
+    if (isSnoozeElapsed(raw, now)) {
+      // The guard narrowed snoozed_until to non-null.
       items.push({ ...base, reason: 'snoozed', timestamp: raw.snoozed_until })
       continue
     }
@@ -132,11 +131,8 @@ export async function getAttentionQueue(
       continue
     }
 
-    if (
-      raw.status === 'open' &&
-      raw.last_message_at &&
-      Date.parse(raw.last_message_at) < staleThreshold
-    ) {
+    if (isStale(raw, now)) {
+      // The guard narrowed last_message_at to non-null.
       items.push({ ...base, reason: 'stale', timestamp: raw.last_message_at })
     }
   }

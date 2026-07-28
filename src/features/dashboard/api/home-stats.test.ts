@@ -65,4 +65,35 @@ describe('getHomeStats', () => {
     expect(result.openAssigned).toBe(3)
     expect(result.unreadAssigned).toBe(1)
   })
+
+  it('does not count an open-ended snooze as due back soon', async () => {
+    // A snooze with no due date was previously counted as waking, so the
+    // summary claimed work the attention list could never show, and the
+    // all-clear was unreachable while any such row existed.
+    mockConversations([
+      { id: 'c1', status: 'snoozed', snoozed_until: null, last_message_at: recent },
+    ])
+    unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
+
+    const result = await getHomeStats('user-1', ['w1'])
+
+    expect(result.snoozedWaking).toBe(0)
+  })
+
+  it('counts a snooze that is already due back', async () => {
+    const elapsed = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    mockConversations([
+      {
+        id: 'c1',
+        status: 'snoozed',
+        snoozed_until: elapsed,
+        last_message_at: recent,
+      },
+    ])
+    unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
+
+    const result = await getHomeStats('user-1', ['w1'])
+
+    expect(result.snoozedWaking).toBe(1)
+  })
 })

@@ -1,8 +1,9 @@
+import {
+  isSnoozeDueSoon,
+  isStale,
+} from '@/features/dashboard/lib/attention-rules'
 import { supabase } from '@/utils/supabase'
 import { getUnreadCountsForWorkspaces } from './unread-counts'
-
-const SNOOZE_HORIZON_HOURS = 24
-const STALE_THRESHOLD_HOURS = 48
 
 export type HomeStats = {
   unreadAssigned: number
@@ -38,29 +39,24 @@ export async function getHomeStats(
 
   const { data } = conversationsResult
   const now = Date.now()
-  const snoozeHorizon = now + SNOOZE_HORIZON_HOURS * 60 * 60 * 1000
-  const staleThreshold = now - STALE_THRESHOLD_HOURS * 60 * 60 * 1000
 
   let unreadAssigned = 0
   let openAssigned = 0
   let snoozedWaking = 0
   let staleAssigned = 0
 
+  // The predicates are shared with the attention list, so the number the
+  // summary reports and the rows the list shows cannot describe different
+  // conversations.
   for (const row of data) {
     if (row.status === 'open') {
       openAssigned += 1
       if ((unreadByConversation.get(row.id) ?? 0) > 0) unreadAssigned += 1
-      if (row.last_message_at && Date.parse(row.last_message_at) < staleThreshold) {
-        staleAssigned += 1
-      }
+      if (isStale(row, now)) staleAssigned += 1
       continue
     }
 
-    if (row.status === 'snoozed') {
-      if (!row.snoozed_until || Date.parse(row.snoozed_until) <= snoozeHorizon) {
-        snoozedWaking += 1
-      }
-    }
+    if (isSnoozeDueSoon(row, now)) snoozedWaking += 1
   }
 
   return { unreadAssigned, openAssigned, snoozedWaking, staleAssigned }
