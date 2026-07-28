@@ -83,7 +83,7 @@ export function HomeSummaryLine({
       <p className="flex items-center gap-2 text-sm">
         <span
           aria-hidden="true"
-          className="bg-success-soft text-success flex size-5 shrink-0 items-center justify-center rounded-full"
+          className="bg-success/12 text-success flex size-5 shrink-0 items-center justify-center rounded-full"
         >
           <CheckIcon className="size-3" />
         </span>

@@ -194,7 +194,7 @@ function EmptyState() {
     <div className="flex items-center gap-3 py-2">
       <span
         aria-hidden="true"
-        className="bg-success-soft text-success flex size-8 shrink-0 items-center justify-center rounded-full"
+        className="bg-success/12 text-success flex size-8 shrink-0 items-center justify-center rounded-full"
       >
         <CheckIcon className="size-4" />
       </span>

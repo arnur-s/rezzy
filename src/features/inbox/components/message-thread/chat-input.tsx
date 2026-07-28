@@ -62,7 +62,7 @@ function AttachmentChip({ file, onRemove }: AttachmentChipProps) {
       )}
       <span className="text-primary/70 max-w-40 truncate">{file.name}</span>
       {!isImage && (
-        <span className="text-primary/40">
+        <span className="text-secondary">
           {file.type.split('/')[1]?.toUpperCase()}
         </span>
       )}
@@ -328,7 +328,7 @@ export function ChatInput({
                 variant="composer"
               />
               {showInterimOverlay ? (
-                <span className="text-primary/40">{interimText}</span>
+                <span className="text-secondary">{interimText}</span>
               ) : null}
             </span>
           )}

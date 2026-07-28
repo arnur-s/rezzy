@@ -117,7 +117,7 @@ export function MessageMediaAttachment({
           />
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="font-medium wrap-break-word">{displayName}</p>
-            <p className="text-primary/55">{m.inbox_media_unavailable()}</p>
+            <p className="text-secondary">{m.inbox_media_unavailable()}</p>
           </div>
         </div>
       </div>
@@ -310,7 +310,7 @@ function DocumentFallbackCard({
         <p className="truncate font-medium" title={displayName}>
           {displayName}
         </p>
-        {meta ? <p className="truncate text-primary/55">{meta}</p> : null}
+        {meta ? <p className="text-secondary truncate">{meta}</p> : null}
       </div>
       <a
         href={downloadUrl}

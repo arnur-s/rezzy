@@ -89,7 +89,7 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
             <p className="text-primary mt-3 text-base font-semibold">
               {contactName}
             </p>
-            <p className="mt-0.5 text-xs text-primary/55">
+            <p className="text-secondary mt-0.5 text-xs">
               {contactQuery.data?.phone ||
                 conversation.contact.phone ||
                 m.inbox_contact_panel_phone_empty()}
@@ -105,7 +105,7 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {channelTypes.length === 0 ? (
-                  <span className="text-xs text-primary/55">—</span>
+                  <span className="text-secondary text-xs">—</span>
                 ) : (
                   channelTypes.map((type) => (
                     <span

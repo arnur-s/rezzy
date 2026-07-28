@@ -81,7 +81,7 @@ export function ChannelFilters({
           // Sentence case, not small-caps: this was the only uppercase
           // tracking-wide label left in the app.
           'flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold outline-none transition-colors',
-          'text-primary/40 hover:text-primary/70',
+          'text-secondary hover:text-primary',
           'focus-visible:ring-accent focus-visible:ring-2',
         )}
       >
@@ -139,7 +139,7 @@ export function ChannelFilters({
                                 'focus-visible:ring-2 focus-visible:ring-accent',
                                 isChActive
                                   ? 'bg-primary/10 text-primary'
-                                  : 'text-primary/50 hover:bg-primary/5 hover:text-primary',
+                                  : 'text-secondary hover:bg-primary/5 hover:text-primary',
                               )}
                             >
                               <span className="flex-1 truncate text-left">

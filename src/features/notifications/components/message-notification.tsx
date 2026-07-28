@@ -62,7 +62,7 @@ export function MessageNotification({ details, previewMode, onOpen }: Props) {
           <span className="text-primary min-w-0 flex-1 truncate text-sm font-semibold">
             {preview.title}
           </span>
-          <span className="text-primary/50 shrink-0 text-xs tabular-nums">
+          <span className="text-secondary shrink-0 text-xs tabular-nums">
             {formatRelativeShort(details.createdAt)}
           </span>
         </div>

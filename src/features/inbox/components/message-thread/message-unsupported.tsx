@@ -36,7 +36,7 @@ export function MessageUnsupported({ unsupported, messageType, isOutbound }: Pro
           <span
             className={cn(
               'truncate text-xs',
-              isOutbound ? 'text-current/70' : 'text-primary/55',
+              isOutbound ? 'text-current/70' : 'text-secondary',
             )}
           >
             {unsupported.preview}

@@ -38,6 +38,37 @@ body {
   height: 100dvh;
 }
 
+/* The 12px floor, for the sizes a theme token cannot reach.
+ *
+ * `gothicTheme.ts` clamps the `--font-size-*` scale, which covers every size
+ * that comes from a token. It cannot cover a size a component computes for
+ * itself: Astryx's `Avatar` derives its initials from the avatar's pixel size
+ * (`size * 0.4`) and writes the result to an inline `--x-fontSize`, so the
+ * account row's `xsm` avatar drew "ST" at 8px and no change to the scale could
+ * lift it. `Table`'s sort indicator has a literal `font-size: 10px` in the
+ * shipped stylesheet for the same reason.
+ *
+ * `max()` keeps this a floor rather than an override: a large avatar keeps its
+ * proportional initials (48px `xl` still computes 19.2px) and only the ones
+ * below 12px are raised. Both rules name the Astryx class that owns the
+ * problem, so nothing else in the document is resized.
+ *
+ * Astryx generates those class names, so they can change when the dependency
+ * is upgraded. `pnpm check:font-size` measures the rendered result on every
+ * route in both locales and both modes, so a rename shows up as a failing
+ * check rather than as text that quietly shrinks again. */
+@layer components {
+  /* Avatar initials: font-size: var(--x-fontSize), set inline per instance. */
+  .xdmh292 {
+    font-size: max(0.75rem, var(--x-fontSize));
+  }
+
+  /* Table sort indicator: a literal font-size: 10px in astryx.css. */
+  .x1k6wstc {
+    font-size: max(0.75rem, 10px);
+  }
+}
+
 @keyframes unread-count-emphasis {
   from {
     opacity: 0.55;

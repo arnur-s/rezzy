@@ -74,7 +74,7 @@ export function UnreadNotificationItem({
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-primary">
               {contactName}
             </span>
-            <span className="shrink-0 text-xs text-primary/50 tabular-nums">
+            <span className="text-secondary shrink-0 text-xs tabular-nums">
               {timestamp}
             </span>
           </div>
@@ -92,7 +92,7 @@ export function UnreadNotificationItem({
             />
           </div>
           {workspaceName ? (
-            <span className="mt-0.5 block truncate text-xs text-primary/50">
+            <span className="text-secondary mt-0.5 block truncate text-xs">
               {workspaceName}
             </span>
           ) : null}

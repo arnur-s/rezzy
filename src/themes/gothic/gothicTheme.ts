@@ -139,20 +139,56 @@ export const gothicTheme = defineTheme({
     '--color-background-inverted': ['#101314', '#E8F1F6'],
 
     // Status / Sentiment — the dusty pastels are the dark voice. The app draws
-    // these as text and as 5–20% tints of themselves (`bg-error/10 text-error`),
+    // these as text and as 5–15% tints of themselves (`bg-error/10 text-error`),
     // so the light value has to clear 4.5:1 against parchment *and* against its
-    // own tint: hence the deep T25–T30 steps.
-    '--color-success': ['#3a5e2c', '#b3c79a'], // forest moss / sage moss
-    // Light error borrows rose madder T30: the red ramp is a desaturated rose,
-    // and its deep end reads as brown rather than as a warning.
-    '--color-error': ['#8d2d4c', '#c6a6a2'], // blood crimson / dusty rose
-    '--color-warning': ['#6c5010', '#d3c490'], // deep gold / aged gold
+    // own tint.
+    //
+    // Those two constraints pull opposite ways, and the first pass resolved the
+    // conflict in the wrong direction twice:
+    //
+    //   Too dark. The tones were solved against a 20% tint, which no code
+    //   draws — `bg-*/5`, `/10`, `/12`, and `/15` are the only alphas in `src`.
+    //   Buying headroom for an alpha that does not exist cost about 1.5 tone
+    //   steps and landed all three at 6.5–7.0:1 on a page that needs 4.5:1. On
+    //   parchment that is not "readable", it is heavy: a validation message
+    //   arrived at nearly the weight of the ink body text beside it, so an
+    //   ordinary form error read as a system failure. These sit near 5.5:1
+    //   instead — inside AA with margin, the 12% tint still at 4.6–4.7:1, and
+    //   about a step and a half of weight handed back to the page.
+    //
+    //   Too gray. Once a tone is drawn at 10% alpha, chroma matters more than
+    //   lightness, and the first pass left it low enough that the page won:
+    //   `#8d2d4c` at 10% over parchment composites to C=0.011 h=298, against a
+    //   page that is itself C=0.012 h=232. The error well came out a cool
+    //   lavender-gray with no red in it, which is why an inline error strip read
+    //   as a disabled row rather than as a problem. Raising chroma (0.087 →
+    //   0.100 success, 0.132 → 0.150 error, 0.085 → 0.100 warning) keeps the
+    //   hue alive through the composite while the lighter tone keeps it quiet.
+    //
+    // Hues are unchanged, so each tone still belongs to its family in
+    // `gothicPalettes`. `scripts/theme-contrast.mjs` asserts every ratio named
+    // here, the tint band included, so a future edit cannot quietly trade one
+    // of these constraints away again.
+    '--color-success': ['#406a30', '#b3c79a'], // forest moss / sage moss
+    // Light error stays in the rose-madder family: the red ramp is a
+    // desaturated rose, and its deep end reads as brown rather than as a
+    // warning.
+    '--color-error': ['#a83658', '#c6a6a2'], // blood crimson / dusty rose
+    '--color-warning': ['#7c5a03', '#d3c490'], // deep gold / aged gold
     // `-muted` is only ever a fill (status message wells). Dark keeps the
-    // opaque pastel; light steps up to T90, where the same hue reads as a soft
-    // note on parchment instead of a slab.
-    '--color-success-muted': ['#dde6d4', '#b3c79a'],
-    '--color-error-muted': ['#dec2bc', '#c6a6a2'],
-    '--color-warning-muted': ['#f0e8d6', '#d3c490'],
+    // opaque pastel; light steps up to about T90, where the same hue reads as a
+    // soft note on parchment instead of a slab.
+    //
+    // The three light wells are now matched in lightness (L≈90.5%). They were
+    // not: success sat at L=91.3% and warning at L=93.2%, but error at L=83.6%
+    // — a full tone step heavier than its siblings. Weight is what a banner
+    // signals with, so the same "here is a status" surface shouted in red and
+    // whispered in gold, and the heavier red skewed brown as it darkened. One
+    // lightness across all three puts the meaning in the hue and none of it in
+    // the weight, which is the rule the dark half already keeps.
+    '--color-success-muted': ['#d4e6ce', '#b3c79a'],
+    '--color-error-muted': ['#f7d6dc', '#c6a6a2'],
+    '--color-warning-muted': ['#ecdec4', '#d3c490'],
 
     // Border
     '--color-border': ['#1013141A', '#E8F1F61A'],
@@ -206,7 +242,16 @@ export const gothicTheme = defineTheme({
     '--color-background-pink': '#c89aab',
     '--color-border-pink': '#aa7d8e',
     '--color-icon-pink': '#8d2d4c',
-    '--color-text-pink': '#71223c',
+    // Text is the T15 step for the same reason yellow's is, and the defect is
+    // the same one: the pink ramp is not monotonic. Its T20 (`#71223c`, L=38.3%)
+    // is *lighter* than its T25 (`#572235`, L=33.5%), so the step every other
+    // chip reads as "deep same-hue text" is, on this one hue, a mid tone. Pink
+    // also carries the second-darkest plate in the set (L=73.4%, against
+    // 77–82% for its siblings), and the two together put the label at 4.34:1 —
+    // under AA on a 10px `Badge`. T15 lands it at 6.71:1, inside the 5.2–6.7
+    // band the other nine chips already occupy. The ramp itself is corrected
+    // below, so the two agree.
+    '--color-text-pink': '#3a131e',
 
     // Purple (muted plum)
     '--color-background-purple': '#b29bc4',
@@ -302,6 +347,37 @@ export const gothicTheme = defineTheme({
     //   escalate anyway.
     // =========================================================================
     '--text-label-size': 'var(--font-size-sm)',
+
+    // =========================================================================
+    // The 12px floor
+    //
+    // `typography.scale` is base 16 / ratio 1.25, which generates 10.24px at
+    // `xs` and then 8.19 / 6.55 / 5.24px at `2xs`, `3xs`, and `4xs`. The
+    // product runs its whole metadata tier — timestamps, previews, chip labels,
+    // filter labels, the failed-send caption — on `xs`, so 10px was not an edge
+    // case in this UI, it was the second most common size on screen (67 `text-xs`
+    // call sites against 85 `text-sm`).
+    //
+    // 10px is below the floor for interface text. iOS Safari treats sub-16px
+    // inputs as a zoom trigger, Android's accessibility guidance puts 12sp at
+    // the bottom of the legible range, and Golos Text is a Cyrillic-first face
+    // whose descenders and soft signs are the first things to go — which the
+    // default locale reads on every screen.
+    //
+    // So the ramp is clamped rather than rescaled. Rescaling (raising `base`,
+    // or flattening the ratio) would move every size in the system, including
+    // the display sizes the blackletter face is tuned for. Clamping moves only
+    // the steps that were below the floor and leaves `sm`, `base`, and
+    // everything above untouched.
+    //
+    // The four sub-`sm` steps all resolve to 12px, so they are one step now.
+    // That is the point: this is a floor, not a scale. `2xs`, `3xs`, and `4xs`
+    // are Astryx capacity that no product surface reaches for by name, and any
+    // component that does reach for one lands on the floor instead of below it.
+    '--font-size-xs': '0.75rem',
+    '--font-size-2xs': '0.75rem',
+    '--font-size-3xs': '0.75rem',
+    '--font-size-4xs': '0.75rem',
   },
 
   components: {
@@ -378,7 +454,12 @@ export const gothicTheme = defineTheme({
       // is declared locally at the same T90 / opaque-pastel steps as the other
       // three rather than promoted to a global token nothing else would use.
       'status:info': {
-        '--color-banner-info-well': 'light-dark(#dde2f1, #a3b5d6)',
+        // Matched to the other three wells in light (L≈90.5%, C≈0.035) so all
+        // four banners carry the same weight and differ only in hue. It was
+        // `#dde2f1`, which is the blue ramp's own T90 — a step lighter and
+        // barely half the chroma of its siblings, so the info banner read as a
+        // faint gray band next to a distinctly rose error one.
+        '--color-banner-info-well': 'light-dark(#d5e0f4, #a3b5d6)',
         backgroundColor: 'var(--color-banner-info-well)',
         '--color-text-primary': 'var(--color-text-blue)',
         '--color-text-secondary': 'var(--color-text-blue)',
@@ -640,7 +721,10 @@ export const gothicPalettes = {
     5: '#22060e',
     10: '#2e0c16',
     15: '#3a131e',
-    20: '#71223c',
+    // T20 was `#71223c` (L=38.3%), which is lighter than T25 (L=33.5%) and
+    // broke the one invariant a tonal ramp has. `#481a2a` restores the order
+    // (L≈29.5%, between T15's 25.2% and T25's 33.5%) and keeps the hue.
+    20: '#481a2a',
     25: '#572235',
     30: '#8d2d4c',
     35: '#9b3358',

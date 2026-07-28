@@ -22,11 +22,11 @@ colors:
   stone-chip: '#d5dee4' # light
   iron-chip: '#3d4248' # dark
   # Status — deep tones on parchment, dusty pastels on ink
-  forest-moss: '#3a5e2c' # success, light
+  forest-moss: '#406a30' # success, light
   sage-moss: '#b3c79a' # success, dark
-  blood-crimson: '#8d2d4c' # error, light
+  blood-crimson: '#a83658' # error, light
   dusty-rose: '#c6a6a2' # error, dark
-  deep-gold: '#6c5010' # warning, light
+  deep-gold: '#7c5a03' # warning, light
   aged-gold: '#d3c490' # warning, dark
   # Categorical chips — single-valued, self-contained plate + same-hue text
   periwinkle-plate: '#a3b5d6'
@@ -60,7 +60,7 @@ typography:
     lineHeight: 1.5385
   label:
     fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-    fontSize: '0.625rem'
+    fontSize: '0.75rem'
     fontWeight: 500
     lineHeight: 1.6
   code:
@@ -178,9 +178,10 @@ chroma is genuinely informative when it appears: the ten categorical chips are
 dusty pastel plates carrying deep same-hue text, and they mark channel, status,
 and count. Nothing else is colored.
 
-Type is a two-size instrument. The product runs on 13px body and 10px labels,
+Type is a two-size instrument. The product runs on 13px body and 12px labels,
 with 16px reserved for page titles; hierarchy is carried by weight (400 → 500 →
-600), never by scale. Held in reserve above all of it, unused by any product
+600), never by scale. 12px is a floor as much as a step: the generated scale
+continues down to 10px and below, and the theme clamps every step under it. Held in reserve above all of it, unused by any product
 surface, is a blackletter display face — the theme's signature, waiting for a
 marketing surface that does not exist yet. The register is calm and worked-in,
 not ceremonial: a desk you return to, not a document you admire.
@@ -190,7 +191,7 @@ not ceremonial: a desk you return to, not a document you admire.
 - One continuous surface: the shell has no canvas/pane split, and no pane has a fill, radius, gap, or shadow
 - Hairline separation: a 1px `border-border/60` rule is the only device that divides regions
 - One neutral hue: five tones of H≈210 C=4, whose roles invert between light and dark
-- Two-size type: 13px body, 10px labels, 16px page titles; weight carries hierarchy
+- Two-size type: 13px body, 12px labels, 16px page titles; weight carries hierarchy
 - Chroma is categorical: ten dusty-pastel chip triples, each self-contained with its own text color
 - Reserved blackletter: Manufacturing Consent exists at display sizes only and appears on no product surface
 - Theatrical motion tokens (150 / 350 / 800ms) against near-instant UI transitions
@@ -274,6 +275,26 @@ mode inverts their roles rather than introducing new values. If a surface seems
 to need a sixth neutral, it needs a different layer or a hairline — not a new
 tone. Add one and the mode inversion stops being reversible.
 
+**The Status Tone Is Solved, Not Chosen Rule.** The light status tones carry two
+constraints that pull against each other: each has to clear 4.5:1 on parchment
+*and* stay readable on a 10-12% tint of itself. Solving for a tint alpha the code
+does not draw is what made the first pass heavy — it targeted 20%, which appears
+nowhere in `src`, and paid about 1.5 tone steps for it, landing all three near
+6.5-7.0:1 where an ordinary form error read as a system failure.
+
+Chroma is the other half, and it matters more than lightness once a tone is
+composited at 10% alpha. `#8d2d4c` at 10% over parchment lands at C=0.011 against
+a page that is itself C=0.012, so the error well came out lavender-gray with no
+red in it. A status tint has to out-chroma the page or it is not a status tint.
+
+The three `-muted` wells are matched in lightness (L≈90.5%) so a banner signals
+with hue alone. They were not: error sat a full tone step below its siblings,
+which is why the same surface shouted in red and whispered in gold.
+
+`pnpm check:contrast` asserts every ratio above and reads the tint alphas out of
+`src` rather than assuming them, so a new `bg-error/25` is checked the moment it
+is written.
+
 **The Chip Carries Its Own Text Rule.** A categorical plate is never combined
 with `text-primary`. Each hue's `-vivid` token is the only correct foreground on
 its `-subtle` plate, and the theme's `Card` and `Banner` variants rebind
@@ -281,7 +302,7 @@ its `-subtle` plate, and the theme's `Card` and `Banner` variants rebind
 variant; do not hand-assemble a plate.
 
 **The Chip Is Not A Field Rule.** A plate is calibrated for chip area. `#b3c79a`
-is right behind 10px text at 60px wide and a slab at 700px, where it outshouts
+is right behind 12px text at 60px wide and a slab at 700px, where it outshouts
 the ink primary button beside it and inverts the page's hierarchy on a message
 that is only a confirmation. So a status surface that runs the full measure fills
 with the `-muted` well instead, and the hue stays at full strength in the icon,
@@ -335,24 +356,44 @@ scale the product never uses.
 ### Hierarchy
 
 The type scale is base 16 with a 1.25 ratio, so the steps run 10 / 13 / 16 / 20
-/ 25 / 31 / 39 / 49 / 61px. The product uses three of them.
+/ 25 / 31 / 39 / 49 / 61px, and the theme clamps the bottom of that ramp to 12px.
+The product uses three steps.
 
 - **Display** (Manufacturing Consent, 400, 3.8125rem / 61px, 1.2459 lh): `Text type="display-1"`. Also `display-2` (49px) and `display-3` (39px). **No product surface uses these.** They are theme identity in reserve.
 - **Heading** (Golos Text, 600, 1.9375rem / 31px, 1.4194 lh): Astryx `heading-1`. Theme capacity; the shell has nothing at this scale.
 - **Title** (Golos Text, 600, 1rem / 16px, 1.5 lh): `text-base font-semibold`. Page titles — the workspace settings `h1`, empty-state headings. The largest type any authenticated screen shows.
 - **Subtitle** (Golos Text, 600, 0.8125rem / 13px, 1.5385 lh): `text-sm font-semibold`. Pane header names — the conversation's contact name, the contact panel title. Distinguished from body by weight alone.
 - **Body** (Golos Text, 400–500, 0.8125rem / 13px, 1.5385 lh): `text-sm`. The workhorse: message text, contact names, previews, form content, descriptions. Prose runs inside a `max-w-3xl` measure.
-- **Label** (Golos Text, 500, 0.625rem / 10px, 1.6 lh): `text-xs`. Timestamps, metadata, chip text, filter labels, kickers. Sentence case, always.
+- **Label** (Golos Text, 500, 0.75rem / 12px, 1.6 lh): `text-xs`. Timestamps, metadata, chip text, filter labels, kickers. Sentence case, always. This is the smallest type the product renders anywhere — see The 12px Floor Rule.
 
 ### Named Rules
 
 **The Remapped Scale Rule.** Tailwind's size names do not mean their Tailwind
 values here. `@astryxdesign/core/tailwind-theme.css` rebinds `--text-*` to the
-theme scale, so **`text-sm` is 13px (not 14px) and `text-xs` is 10px (not
-12px)**. Never reason about a size from Tailwind's defaults, and never convert a
+theme scale, so **`text-sm` is 13px, not 14px**. `text-xs` is 12px, which
+matches Tailwind's default by coincidence rather than by inheritance: the
+generated step is 10.24px and the theme's floor raises it. Never reason about a size from Tailwind's defaults, and never convert a
 design spec's px value by assuming the default scale. The same bridge rebinds
 `--spacing` to a 4px base, so `p-4` is 16px as expected — spacing is safe,
 type is not.
+
+**The 12px Floor Rule.** Nothing in this product renders below 12px. The
+generated scale does not stop there — base 16 at ratio 1.25 produces 10.24px at
+`xs` and continues to 8.19, 6.55, and 5.24px at `2xs`, `3xs`, and `4xs` — so
+the theme clamps all four steps to `0.75rem` rather than rescaling, which would
+move the display sizes the blackletter face is tuned for. The four sub-`sm`
+steps are therefore one step: that is what makes it a floor and not a scale.
+
+Two sizes are outside a token's reach and are floored in `src/styles.css`
+instead. Astryx's `Avatar` computes its initials from the avatar's pixel size
+(`size * 0.4`) and writes an inline `--x-fontSize`, which drew the account row's
+`xsm` avatar at 8px; `Table`'s sort indicator carries a literal
+`font-size: 10px`. Both use `max()`, so larger avatars keep their proportional
+initials and only the ones below the floor are lifted.
+
+`pnpm check:font-size` measures the rendered result on every route in both
+locales, both modes, and both widths, which is the only check that can see a
+size hardcoded inside a dependency.
 
 **The Two-Size Rule.** The interface runs on `text-sm` and `text-xs`. `text-base`
 is for page titles. Escalate through weight (400 → 500 → 600) and opacity
@@ -556,7 +597,7 @@ The rail is the product's spine and the only persistent chrome.
 The most-read surface in the product.
 
 - **Layout:** a 36px platform plate (`rounded-xl`, 10% brand tint) plus a text body, `gap-3`, `px-3 py-2.5`. Direct children of a scrollable `role="listbox"` with `gap-0.5` — no card wrapping.
-- **Typography:** contact name 13px at 600 (unread) or 500 (read); preview 10px at `text-primary/80` (unread) or `/55` (read); timestamp 10px at `/50`.
+- **Typography:** contact name 13px at 600 (unread) or 500 (read); preview 12px at `text-primary/80` (unread) or `text-secondary` (read); timestamp 12px at `text-secondary`.
 - **Unread:** name goes semibold, preview brightens, and a `NumericUnreadChip` appears in the trailing position. The chip hides on the selected row — opening a conversation resets its count visually.
 - **Selected:** `bg-primary/10` with `text-primary`, via `data-selected="true"`.
 - **Hover:** `bg-primary/4`, scoped to `data-[selected=false]` so hover can never override selection.
@@ -566,7 +607,7 @@ The most-read surface in the product.
 
 - **Unread counts** (`NumericUnreadChip`): Astryx `Badge`, `variant="info"` (periwinkle plate) or `"neutral"`. Caps at `99+` when `capAt99` is set. Wrapped in `role="status"` with a count-aware label.
 - **Conversation status** (`ConversationStatusChip`): `Badge` with the variant mapped from the status's semantic color — accent→info, warning→warning, success→success, danger→error, default→neutral.
-- **Channel status** and **inline metadata chips**: 10px text in a `border border-border/60 rounded-lg px-2 py-1` outline — the one place a full border is correct, because these are small and self-contained rather than large surfaces.
+- **Channel status** and **inline metadata chips**: 12px text in a `border border-border/60 rounded-lg px-2 py-1` outline — the one place a full border is correct, because these are small and self-contained rather than large surfaces.
 - **Date separators:** `bg-muted text-secondary rounded-full px-2.5 py-0.5 text-xs font-medium`, centered between day groups. The fill is `bg-muted` and not `bg-surface`: the transcript has no background of its own, so the pill sits directly on the page, and a surface fill would paint the page colour onto the page. Measured in the browser it lands at 1.15:1 against the page in light and 1.27:1 in dark — a soft plate rather than a card. Restyle with colour only; the transcript measures row heights for scroll anchoring, so a border or size change perturbs the pin.
 
 ### Inputs and Fields
@@ -668,7 +709,8 @@ moving its neighbors. It is disabled under `prefers-reduced-motion`.
 - **Do** put `text-on-accent` on any accent fill and `--color-on-error` on any error fill, so labels invert with their background.
 - **Do** reach for a `Badge` / `Banner` / `Card` variant to get a categorical hue, so the plate and its text arrive as a matched pair.
 - **Do** fill a full-measure status surface with the hue's `-muted` well and spend the hue on the icon, the copy, and the action. A chip plate stretched to a region is a slab.
-- **Do** keep interface text at `text-sm` (13px) or `text-xs` (10px), and escalate through weight and opacity.
+- **Do** keep interface text at `text-sm` (13px) or `text-xs` (12px), and escalate through weight and opacity.
+- **Do** reach for `text-secondary` when copy needs to recede. `text-primary/55` is 5.55:1 in dark but 3.97:1 in light, so an opacity step tuned in one mode can be under AA in the other; `/70` is the lowest rung that clears both.
 - **Do** give every pane `overflow-hidden`, its own `overflow-y-auto` scroll region, and `min-h-0` through its flex chain.
 - **Do** share `TRANSCRIPT_MEASURE` between the transcript, its skeleton, and the composer.
 - **Do** honor the 64px `h-16` pane-header contract on every pane that has a header, so the inbox columns align across their dividers.
@@ -676,7 +718,8 @@ moving its neighbors. It is disabled under `prefers-reduced-motion`.
 
 ### Don't:
 
-- **Don't** assume Tailwind's default scales. `text-sm` is 13px, `text-xs` is 10px, and `rounded-xl` is 24px in this project.
+- **Don't** assume Tailwind's default scales. `text-sm` is 13px and `rounded-xl` is 24px in this project.
+- **Don't** introduce a size below 12px, and don't reach for `text-2xs`, `text-3xs`, or `text-4xs` expecting a smaller step — the theme clamps all three to the floor.
 - **Don't** use `bg-surface` for separation. It resolves to the same value as the page in both modes, so it paints the colour that is already there. It remains correct for **opacity** — the contact panel carries `bg-surface` so the tablet overlay drawer is not see-through, and the auth wrapper uses it the same way — but it can never make a region read as distinct. That is what `bg-muted` and `bg-card` are for.
 - **Don't** give a pane a fill, a radius, a gap, or a shadow. The shell is one continuous surface; a pane radius notches a corner out of the content area and a pane shadow has no gap to cast into.
 - **Don't** draw a border around a large surface. Hairlines divide regions; they do not outline them.
