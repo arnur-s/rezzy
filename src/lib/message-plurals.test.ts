@@ -63,8 +63,12 @@ describe('ru counted messages agree with their number', () => {
   it('declines the home summary segments', () => {
     expect(m.home_summary_open({ count: 1 }, ru)).toBe('1 открытый на вас')
     expect(m.home_summary_open({ count: 4 }, ru)).toBe('4 открытых на вас')
-    expect(m.home_summary_waking({ count: 1 }, ru)).toBe('1 скоро вернётся')
-    expect(m.home_summary_waking({ count: 5 }, ru)).toBe('5 скоро вернутся')
+    expect(m.home_summary_waking({ count: 1 }, ru)).toBe(
+      '1 отложенный скоро вернётся',
+    )
+    expect(m.home_summary_waking({ count: 5 }, ru)).toBe(
+      '5 отложенных скоро вернутся',
+    )
     expect(m.home_summary_stale({ count: 1 }, ru)).toBe('1 ждёт ответа')
     expect(m.home_summary_stale({ count: 6 }, ru)).toBe('6 ждут ответа')
   })

@@ -29,6 +29,7 @@ function conversation(id: string) {
     contact_id: `contact-${id}`,
     status: 'open',
     last_message_at: recent,
+    last_message_preview: 'Latest customer message',
     snoozed_until: null,
     channel: { id: 'ch1', type: 'whatsapp', name: 'Sales WhatsApp' },
     contact: { id: `contact-${id}`, name: 'Jane Doe', avatar_url: null },
@@ -56,6 +57,7 @@ describe('getAttentionQueue', () => {
     expect(result.total).toBe(1)
     expect(result.items[0].conversationId).toBe('c1')
     expect(result.items[0].reason).toBe('unread')
+    expect(result.items[0].preview).toBe('Latest customer message')
   })
 
   it('surfaces the longest-waiting stale thread first, not the newest', async () => {

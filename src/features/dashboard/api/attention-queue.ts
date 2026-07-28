@@ -20,6 +20,8 @@ export type AttentionItem = {
   reason: AttentionReason
   /** ISO timestamp relevant to the reason (snoozed_until for snoozed, last_message_at otherwise). */
   timestamp: string
+  /** Latest message preview, when the channel recorded one. */
+  preview: string | null
 }
 
 export type AttentionQueue = {
@@ -29,21 +31,23 @@ export type AttentionQueue = {
   total: number
 }
 
-export type TeamNewItem = {
+export type UnassignedItem = {
   conversationId: string
   workspaceId: string
   contactName: string
   channelType: ChannelType | null
   /** ISO timestamp of the latest message. */
   timestamp: string
+  /** Latest message preview, when the channel recorded one. */
+  preview: string | null
 }
 
 export const attentionQueueQueryKeys = {
   all: ['dashboard', 'attention'] as const,
   forUser: (userId: string, workspaceIds: Array<string>) =>
     ['dashboard', 'attention', userId, [...workspaceIds].sort()] as const,
-  teamNew: (workspaceIds: Array<string>) =>
-    ['dashboard', 'attention', 'team-new', [...workspaceIds].sort()] as const,
+  unassigned: (workspaceIds: Array<string>) =>
+    ['dashboard', 'attention', 'unassigned', [...workspaceIds].sort()] as const,
 }
 
 const ATTENTION_SELECT = `
@@ -52,6 +56,7 @@ const ATTENTION_SELECT = `
   contact_id,
   status,
   last_message_at,
+  last_message_preview,
   snoozed_until,
   channel:channels!inner(id, type, name),
   contact:contacts!inner(id, name, avatar_url)
@@ -63,6 +68,7 @@ type Row = {
   contact_id: string
   status: string
   last_message_at: string | null
+  last_message_preview: string | null
   snoozed_until: string | null
   channel: { id: string; type: string; name: string } | null
   contact: { id: string; name: string | null; avatar_url: string | null } | null
@@ -105,6 +111,7 @@ export async function getAttentionQueue(
       contactAvatarUrl: raw.contact.avatar_url,
       channelType: isChannelType(raw.channel.type) ? raw.channel.type : null,
       channelName: raw.channel.name,
+      preview: raw.last_message_preview?.trim() || null,
     }
 
     if (
@@ -160,15 +167,16 @@ export async function getAttentionQueue(
   return { items: items.slice(0, MAX_ITEMS), total: items.length }
 }
 
-const TEAM_NEW_LIMIT = 5
+const UNASSIGNED_LIMIT = 5
 
 /**
  * Unassigned open conversations with the most recent inbound activity —
- * "what just arrived for the team" as opposed to "what's aging on my plate".
+ * "what just arrived that nobody picked up" as opposed to "what's aging on my
+ * plate".
  */
-export async function getTeamNewQueue(
+export async function getUnassignedQueue(
   workspaceIds: Array<string>,
-): Promise<Array<TeamNewItem>> {
+): Promise<Array<UnassignedItem>> {
   if (workspaceIds.length === 0) return []
 
   const { data, error } = await supabase
@@ -179,11 +187,11 @@ export async function getTeamNewQueue(
     .in('workspace_id', workspaceIds)
     .not('last_message_at', 'is', null)
     .order('last_message_at', { ascending: false })
-    .limit(TEAM_NEW_LIMIT)
+    .limit(UNASSIGNED_LIMIT)
 
   if (error) throw error
 
-  const items: Array<TeamNewItem> = []
+  const items: Array<UnassignedItem> = []
   for (const raw of data as Array<Row>) {
     if (!raw.contact || !raw.channel || !raw.last_message_at) continue
     items.push({
@@ -192,6 +200,7 @@ export async function getTeamNewQueue(
       contactName: raw.contact.name?.trim() || m.contact_unnamed(),
       channelType: isChannelType(raw.channel.type) ? raw.channel.type : null,
       timestamp: raw.last_message_at,
+      preview: raw.last_message_preview?.trim() || null,
     })
   }
   return items

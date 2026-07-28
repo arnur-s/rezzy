@@ -1,7 +1,7 @@
 import {
   attentionQueueQueryKeys,
   getAttentionQueue,
-  getTeamNewQueue,
+  getUnassignedQueue,
 } from '@/features/dashboard/api/attention-queue'
 import { useQuery } from '@tanstack/react-query'
 
@@ -16,10 +16,10 @@ export function useAttentionQueue(
   })
 }
 
-export function useTeamNewQueue(workspaceIds: Array<string>) {
+export function useUnassignedQueue(workspaceIds: Array<string>) {
   return useQuery({
-    queryFn: () => getTeamNewQueue(workspaceIds),
-    queryKey: attentionQueueQueryKeys.teamNew(workspaceIds),
+    queryFn: () => getUnassignedQueue(workspaceIds),
+    queryKey: attentionQueueQueryKeys.unassigned(workspaceIds),
     enabled: workspaceIds.length > 0,
   })
 }

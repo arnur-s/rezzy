@@ -507,10 +507,10 @@
         "countPlural"
       ],
       "match": {
-        "countPlural=one": "{count} скоро вернётся",
-        "countPlural=few": "{count} скоро вернутся",
-        "countPlural=many": "{count} скоро вернутся",
-        "countPlural=*": "{count} скоро вернутся"
+        "countPlural=one": "{count} отложенный скоро вернётся",
+        "countPlural=few": "{count} отложенных скоро вернутся",
+        "countPlural=many": "{count} отложенных скоро вернутся",
+        "countPlural=*": "{count} отложенных скоро вернутся"
       }
     }
   ],
@@ -565,10 +565,12 @@
   "home_attention_reason_stale": "Без ответа",
   "home_attention_reason_stale_hint": "Ждёт вашего ответа больше 2 дней",
   "home_attention_waking_now": "пора вернуться",
-  "home_team_new_title": "Новое для команды",
-  "home_team_new_hint": "Новые диалоги, которые никто пока не взял",
-  "home_team_new_error": "Не удалось загрузить новые диалоги",
+  "home_unassigned_title": "Без исполнителя",
+  "home_unassigned_hint": "Открытые диалоги, которые никто пока не взял",
+  "home_unassigned_error": "Не удалось загрузить диалоги без исполнителя",
   "home_workspaces_section_title": "Ваши пространства",
+  "home_workspace_section_title": "Ваше пространство",
+  "home_workspace_manage": "Управлять пространством",
   "home_workspaces_stats_error": "Не удалось загрузить активность по пространствам",
   "sidebar_home_nav_label": "Главная",
   "sidebar_workspaces_section_label": "Пространства",

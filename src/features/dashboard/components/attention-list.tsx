@@ -1,13 +1,13 @@
-import { PlatformIcon } from '@/entities/channel'
 import type { Workspace } from '@/entities/workspace'
 import type { AttentionItem } from '@/features/dashboard/api/attention-queue'
+import { DashboardConversationRow } from '@/features/dashboard/components/dashboard-conversation-row'
 import { SectionError } from '@/features/dashboard/components/section-error'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
 import { m } from '@/paraglide/messages'
 import { List } from '@/components/list'
 import { cn } from '@/lib/cn'
 import { Link } from '@tanstack/react-router'
-import { CheckIcon, ChevronRightIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
 type Props = {
@@ -49,6 +49,9 @@ export function AttentionList({
     return map
   }, [workspaces])
 
+  // A user with one workspace does not need every row to repeat its name.
+  const showWorkspaceName = workspaces.length > 1
+
   const isEmpty = !isLoading && !isError && items.length === 0
   if (isEmpty && isSummaryAllClear) return null
 
@@ -75,10 +78,29 @@ export function AttentionList({
         <>
           <List size="md">
             {items.map((item) => (
-              <AttentionRow
+              <DashboardConversationRow
                 key={item.conversationId}
-                item={item}
-                workspaceName={workspaceNameById.get(item.workspaceId)}
+                conversationId={item.conversationId}
+                workspaceId={item.workspaceId}
+                contactName={item.contactName}
+                channelType={item.channelType}
+                preview={item.preview}
+                timestampLabel={
+                  item.reason === 'snoozed'
+                    ? getSnoozeLabel(item.timestamp)
+                    : formatRelativeTime(item.timestamp)
+                }
+                workspaceName={
+                  showWorkspaceName
+                    ? workspaceNameById.get(item.workspaceId)
+                    : undefined
+                }
+                chip={
+                  <ReasonChip
+                    reason={item.reason}
+                    label={getReasonLabel(item.reason)}
+                  />
+                }
               />
             ))}
           </List>
@@ -102,63 +124,6 @@ export function AttentionList({
         </>
       )}
     </section>
-  )
-}
-
-function AttentionRow({
-  item,
-  workspaceName,
-}: {
-  item: AttentionItem
-  workspaceName: string | undefined
-}) {
-  const reasonLabel = getReasonLabel(item.reason)
-  const timestampLabel =
-    item.reason === 'snoozed'
-      ? getSnoozeLabel(item.timestamp)
-      : formatRelativeTime(item.timestamp)
-
-  return (
-    <List.Item className="-mx-2">
-      <Link
-        to="/workspaces/$id/inbox/$conversationId"
-        params={{
-          id: item.workspaceId,
-          conversationId: item.conversationId,
-        }}
-      >
-        {item.channelType ? (
-          <PlatformIcon type={item.channelType} size="md" withPlate />
-        ) : (
-          <span className="bg-muted size-9 shrink-0 rounded-xl" />
-        )}
-
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-sm">
-            <span className="text-primary truncate font-semibold">
-              {item.contactName}
-            </span>
-            <ReasonChip reason={item.reason} label={reasonLabel} />
-          </p>
-          <p className="text-secondary mt-0.5 flex items-center gap-1.5 truncate text-xs">
-            {workspaceName ? (
-              <>
-                <span className="truncate">{workspaceName}</span>
-                {/* Inherits the row's `text-secondary`; the old
-                    `text-primary/30` was lighter than the text it separates. */}
-                <span aria-hidden="true">·</span>
-              </>
-            ) : null}
-            <span className="tabular-nums">{timestampLabel}</span>
-          </p>
-        </div>
-
-        <ChevronRightIcon
-          aria-hidden="true"
-          className="text-secondary/70 size-4 shrink-0"
-        />
-      </Link>
-    </List.Item>
   )
 }
 

@@ -491,8 +491,8 @@
         "countPlural"
       ],
       "match": {
-        "countPlural=one": "{count} due back soon",
-        "countPlural=*": "{count} due back soon"
+        "countPlural=one": "{count} snoozed due back soon",
+        "countPlural=*": "{count} snoozed due back soon"
       }
     }
   ],
@@ -543,10 +543,12 @@
   "home_attention_reason_stale": "No reply",
   "home_attention_reason_stale_hint": "Waiting on a reply for more than 2 days",
   "home_attention_waking_now": "due back now",
-  "home_team_new_title": "New for the team",
-  "home_team_new_hint": "Recent conversations nobody has picked up yet",
-  "home_team_new_error": "Couldn't load new team conversations",
+  "home_unassigned_title": "Unassigned",
+  "home_unassigned_hint": "Open conversations nobody has picked up yet",
+  "home_unassigned_error": "Couldn't load unassigned conversations",
   "home_workspaces_section_title": "Your workspaces",
+  "home_workspace_section_title": "Your workspace",
+  "home_workspace_manage": "Manage workspace",
   "home_workspaces_stats_error": "Couldn't load workspace activity",
   "sidebar_home_nav_label": "Home",
   "sidebar_workspaces_section_label": "Workspaces",

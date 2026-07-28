@@ -3,8 +3,7 @@ import { m } from '@/paraglide/messages'
 import { SectionError } from '@/features/dashboard/components/section-error'
 import { cn } from '@/lib/cn'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
-import { Link } from '@tanstack/react-router'
-import { ArrowRightIcon, CheckIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
 
 type Segment = {
   key: string
@@ -19,14 +18,13 @@ type Props = {
   isError: boolean
   onRetry: () => void
   isRetrying?: boolean
-  /** Present when the user has exactly one workspace, so the line can offer a direct door. */
-  inboxWorkspaceId: string | null
 }
 
 /**
- * The personal numbers as one quiet sentence under the greeting. Zeros do not
- * render; the all-clear collapses to a single line; loading and failure are
- * their own honest states instead of fake zeros.
+ * The personal numbers as separate operational states under the greeting.
+ * Zeros do not render; the all-clear collapses to a single line; loading and
+ * failure are their own honest states instead of fake zeros. The inbox door
+ * itself lives in the header's primary button, not here.
  */
 export function HomeSummaryLine({
   stats,
@@ -34,7 +32,6 @@ export function HomeSummaryLine({
   isError,
   onRetry,
   isRetrying = false,
-  inboxWorkspaceId,
 }: Props) {
   if (isPending) {
     return (
@@ -108,16 +105,6 @@ export function HomeSummaryLine({
           {segment.text}
         </span>
       ))}
-      {inboxWorkspaceId ? (
-        <Link
-          to="/workspaces/$id/inbox"
-          params={{ id: inboxWorkspaceId }}
-          className="text-primary inline-flex items-center gap-1 font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
-        >
-          {m.home_open_inbox()}
-          <ArrowRightIcon aria-hidden="true" className="size-3.5" />
-        </Link>
-      ) : null}
     </p>
   )
 }
