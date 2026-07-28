@@ -21,12 +21,28 @@ export type QueryBuilderMock<T> = PromiseLike<Result<T>> & {
   argsFor: (method: string) => Array<unknown> | undefined
 }
 
+/**
+ * A PostgrestError shaped the way supabase-js declares it, so tests can hand a
+ * failure to `mockQueryBuilder` without restating its five required fields.
+ */
+export function postgrestError(message = 'mock query failed'): PostgrestError {
+  return {
+    message,
+    details: '',
+    hint: '',
+    code: 'MOCK',
+    name: 'PostgrestError',
+    toJSON() {
+      return { message, details: '', hint: '', code: 'MOCK' }
+    },
+  } as PostgrestError
+}
+
 export function mockQueryBuilder<T>(
-  data: T,
+  data: T | ((calls: Array<[string, ...Array<unknown>]>) => T),
   error: PostgrestError | null = null,
 ): QueryBuilderMock<T> {
   const calls: Array<[string, ...Array<unknown>]> = []
-  const result: Result<T> = { data, error }
 
   const target = {
     calls,
@@ -36,7 +52,14 @@ export function mockQueryBuilder<T>(
     then<TResult>(
       onFulfilled?: (value: Result<T>) => TResult | PromiseLike<TResult>,
     ) {
-      return Promise.resolve(result).then(onFulfilled)
+      // Resolved at await time, not at construction, so a resolver can branch
+      // on the filters the caller actually applied. One table is often read by
+      // several queries that differ only by filter.
+      const rows =
+        typeof data === 'function'
+          ? (data as (c: typeof calls) => T)(calls)
+          : data
+      return Promise.resolve({ data: rows, error }).then(onFulfilled)
     },
   }
 
