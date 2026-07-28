@@ -163,12 +163,17 @@ components:
 
 **Creative North Star: "The Ink Desk"**
 
-Rezzy is one page with writing on it. The authenticated shell is a single
-continuous surface — no floating cards, no stacked planes, no gutters showing a
-canvas underneath — divided only by hairline rules, the way a ruled ledger
-divides itself. Regions are established by lines and by the reading measure of
-the text inside them, not by boxes. This is the product's structural claim, and
-almost every rule below follows from it.
+Rezzy is a desk with sheets laid on it. The authenticated shell is a canvas, and
+each region of the app is an elevated pane inset into it: the conversation list,
+the thread, the contact panel, a settings page. What separates two regions is
+the canvas showing between them, not a line drawn across them. This is the
+product's structural claim, and almost every rule below follows from it.
+
+Hairlines still exist, but they were demoted. A rule now marks a boundary
+*inside* a pane — a header from the body that scrolls under it, a row from the
+next row. It is no longer what tells you where one region ends and another
+begins; the gutter does that. A pane carrying both a shadow and an outline reads
+as a card drawn on top of a card, so panes have no border at all.
 
 The palette is a single hue worn thin: five steps of a cool blue-gray (H≈210,
 C=4), from parchment `#E8F1F6` to ink `#101314`. Light and dark are not two
@@ -188,8 +193,8 @@ not ceremonial: a desk you return to, not a document you admire.
 
 **Key Characteristics:**
 
-- One continuous surface: the shell has no canvas/pane split, and no pane has a fill, radius, gap, or shadow
-- Hairline separation: a 1px `border-border/60` rule is the only device that divides regions
+- Canvas and panes: the shell is a canvas, each region is an inset pane with a fill, a radius, a gap, and a shadow
+- Gutter separation: the canvas showing between panes is what divides regions; hairlines rule only *within* a pane
 - One neutral hue: five tones of H≈210 C=4, whose roles invert between light and dark
 - Two-size type: 13px body, 12px labels, 16px page titles; weight carries hierarchy
 - Chroma is categorical: ten dusty-pastel chip triples, each self-contained with its own text color
@@ -418,22 +423,40 @@ before its shapes.
 
 ## Layout
 
-**The shell.** `AppShell` with `variant="section"`, `height="fill"`, and
-`contentPadding={0}` (`src/routes/_authenticated.tsx`). The nav rail is the only
-persistent chrome; there is no top bar. Below the mobile breakpoint AppShell
-turns the rail horizontal with a drawer toggle — that strip is generated, not
-authored.
+**The shell.** `AppShell` with `variant="wash"`, `height="fill"`, and
+`contentPadding={0}` (`src/routes/_authenticated.tsx`). The rail and the content
+area both take the canvas tone; the panes lift off it. `section` is wrong here
+because it draws a hairline down the rail's edge, which reads as a stray line
+once the seam is a gutter, and `elevated` is wrong because it owns the corner
+treatment itself and rounds only the content area's top-start corner. The nav
+rail is the only persistent chrome; there is no top bar. Below the mobile
+breakpoint AppShell turns the rail horizontal with a drawer toggle — that strip
+is generated, not authored.
 
-**Panes.** Inside the shell, `Layout` with `start` / `content` / `end` slots
-holds the inbox's three columns, each a `LayoutPanel` with `padding={0}`,
-`isScrollable={false}`, and `hasDivider`. A route that is a single pane composes
-the same frame inline: `flex h-full w-full min-h-0 flex-col overflow-hidden`.
-There is no pane component and no pane fill — see Elevation & Depth.
+**Panes.** `AppPaneGroup` and `AppPane` (`src/components/app-pane.tsx`). The
+group is the canvas and owns the gutter (`md:gap-2 md:p-2`, an 8px seam); the
+pane carries the fill, the radius, the lift, and the scroll containment. The
+group is mounted once, in the shell root, so a route contributes panes and can
+never forget the inset. The inbox contributes three sibling panes; a
+single-pane route contributes one. `contentPadding={0}` on AppShell is what
+keeps the two from doubling the seam.
+
+A pane has no padding of its own. Its children — a 64px header, a scroll
+region, a composer — each own their insets, and a pane-level pad would double
+them. `overflow-hidden` on the pane is structural rather than cosmetic: it is
+what clips a child's square corners to the pane's radius, so a header rule or a
+selected row stops at the curve instead of poking through it.
+
+Below `md` the frame is dropped entirely. A phone has no room to spend on a
+gutter, so panes go full-bleed and the canvas stops being visible — which is why
+the radius, the shadow, and the inset are all `md:`-prefixed.
 
 **The pane header contract.** 64px (`h-16`) plus `border-b border-border/60`,
-attached to the pane's top edge. The conversation list, the thread, the contact
-panel, and workspace settings all honor those two numbers, which is what makes
-the inbox columns line up across their dividers. Horizontal padding is the
+attached to the pane's top edge. That rule is intra-pane: it separates the fixed
+title from the region that scrolls under it, not one pane from the next. The
+conversation list, the thread, the contact panel, and workspace settings all
+honor those two numbers, which is what makes the inbox columns line up across
+the gutters between them. Horizontal padding is the
 pane's own business and varies with what the header holds — the thread runs
 `px-3 sm:px-6`, the contact panel `px-4`, the settings column `px-4 sm:px-8`.
 Height and the rule are the contract; padding is not.
@@ -453,13 +476,17 @@ one axis. Settings pages use the same `max-w-3xl` column with `px-4 sm:px-8`.
 / 36 / 40 / 44 / 48px). Conversation rows are `px-3 py-2.5` with `gap-3` and
 `gap-0.5` between rows; nav rows are `px-2 py-2`; settings rows are `py-4`. The
 inbox list is user-resizable via `useResizable` (default 320px, min 200, max
-480, persisted as `inbox:list-width`) with a `ResizeHandle` in the seam.
+480, persisted as `inbox:list-width`) with a `ResizeHandle` in the seam. The
+handle runs without `hasDivider`, so it takes zero width and contributes only a
+hit area: what the user grabs is the gutter itself. `-mx-1` absorbs the second
+gap the group would otherwise put around it, keeping that seam the same width
+as every other one.
 
 **Responsive behavior.** Three tiers, and they are pane-count decisions, not
 reflow:
 
 - **Mobile:** exactly one pane at a time — list, or thread, or contact. Panes never share the viewport; navigation swaps them.
-- **Tablet (below `lg`):** list plus thread. The contact panel becomes a right-side overlay sheet (`w-80 max-w-[85vw]`) over a `bg-black/50` scrim, so the thread never collapses to an unusable width.
+- **Tablet (below `lg`):** list plus thread. The contact panel becomes a right-side overlay sheet (`w-80 max-w-[85vw]`) over a `bg-black/50` scrim, so the thread never collapses to an unusable width. The sheet is itself an `AppPane` inset by the same gutter the docked panes use, so it reads as the same kind of object arriving from the edge rather than as a full-height slab.
 - **`lg` and up:** all three panes as columns, contact panel fixed at 320px.
 
 ### Named Rules
@@ -476,23 +503,32 @@ whole shell with it.
 
 ## Elevation & Depth
 
-This system is flat, and more literally than most: **`--color-background-surface`
-and `--color-background-body` resolve to the same value in both modes**
-(`#E8F1F6` light, `#101314` dark). There is no canvas-and-pane relationship to
-express. `bg-surface` paints nothing on the shell, a pane shadow has no gap to
-cast into, and a pane radius only notches a corner out of the content area. This
-is the finding that made `src/routes/_authenticated.tsx` choose AppShell's
-`section` variant over `elevated` — the elevated variant separates nav from
-content by tone alone, so against equal tones it renders nothing at all and the
-shell collapses into one undivided sheet.
+The shell's depth is arithmetic before it is styling: **`--color-background-body`
+(canvas) and `--color-background-surface` (pane) must resolve to different
+values.** Under the neutral theme they do — `#f1f1f1` / `#ffffff` in light,
+`#1b1b1b` / `#262626` in dark — and that difference is the entire reason a pane
+reads as an object rather than as more page.
 
-Depth therefore has exactly **two moves**, and both are tonal:
+This is worth stating as a constraint rather than a description, because it is
+invisible to every cheap check. A theme that collapses the two still renders,
+still typechecks, still passes the unit suite; the app just quietly becomes one
+flat sheet with unexplained gaps in it. `pnpm check:shell-elevation` asserts it
+against the built page in both modes, along with the gutter being real space and
+the phone breakpoint dropping the frame. An earlier theme did collapse them, and
+the shell was rebuilt around hairlines as a result — so this is a live failure
+mode, not a hypothetical one.
+
+In dark mode `--shadow-low` also carries a 1px inset rim. That rim, not the drop
+shadow, is what gives a pane an edge against a dark canvas, where a soft shadow
+alone reads as nothing.
+
+Inside a pane, depth has **two further moves**, both tonal:
 
 1. **Recess** — `bg-muted` (`#D8E2E9` / `#24292D`). Avatar and platform plates, media wells, skeleton blocks, disabled fields. The only neutral that reads below the page.
 2. **Raise** — `bg-card` (`#FFFFFF` / `#1a1d20`), plus `--shadow-low` in light mode where Astryx's `Card` applies it. Auth and onboarding sheets, popovers, dialogs. Light mode has exactly one step left above parchment — white — so the tone alone cannot carry the lift and the shadow does the rest; dark stacks a real tone upward and stays flat.
 
-Everything else — every region boundary in the authenticated shell — is a
-hairline.
+Region boundaries in the authenticated shell are gutters. Hairlines remain for
+boundaries *within* a pane.
 
 ### Shadow Vocabulary
 
@@ -509,26 +545,29 @@ than black — pure black on parchment reads as dirt.
 
 ### Named Rules
 
-**The Surface-Equals-Page Rule.** `bg-surface` is a no-op on the shell. Do not
-reach for it to create separation, and do not add a fill to a pane expecting one
-— it paints the color that is already there. If a region must read as distinct,
-recess it with `bg-muted`, raise it with `bg-card`, or rule it with
-`border-border/60`. Restoring a floating-pane shell means first giving the
-canvas its own token below surface; until then, flat is not a style preference
-but an arithmetic fact.
+**The Surface-Above-Canvas Rule.** `bg-surface` must paint something against
+`bg-body`. A theme is free to choose the two tones, but not to make them equal:
+the shell's entire structure rests on that gap, and collapsing it removes every
+region boundary in the app at once. `pnpm check:shell-elevation` enforces this.
 
-**The Hairline Rule.** `border-border/60` is the separation device. It is
-correct between adjacent regions inside a pane (a header and its body, a filter
-strip and the list below it), between sibling panes (`LayoutPanel hasDivider`),
-at the rail's right edge (AppShell's `section` variant), and between rows of a
-dense list. It is never a full outline around a large surface.
+**The Gutter Rule.** The canvas showing between panes is what separates regions.
+It is owned by `AppPaneGroup` in one place, so the seam is one value everywhere
+and a route cannot hand-roll its own. A pane never carries a border: a shadow
+and an outline together read as a card drawn on top of a card.
 
-**The Shadow-Is-Theme-Only Rule.** Component code carries no `shadow-*`
+**The Hairline Rule.** `border-border/60` rules *within* a pane — a header and
+the body that scrolls under it, a filter strip and its list, one row of a dense
+list and the next. It is not used between panes, where the gutter does the work,
+and it is never a full outline around a large surface.
+
+**The Shadow-Is-Theme-Only Rule.** Component code carries no ad hoc `shadow-*`
 utilities. Shadows live in `--shadow-low/med/high` and are applied by Astryx's
-`Card`, `Popover`, and `Dialog`. Two exceptions exist and both are decorative
-detail at small scale: `shadow-xs` on a reaction pill, `drop-shadow-md` on an
-image-viewer control. A `shadow-md` on hover in this system is the old
-floating-pane shell trying to come back.
+`Card`, `Popover`, and `Dialog`, or by `AppPane`, which maps `shadow-sm` to
+`--shadow-low` — one lift, applied in one file, shared by every pane. Two small
+exceptions exist and both are decorative detail at small scale: `shadow-xs` on a
+reaction pill, `drop-shadow-md` on an image-viewer control. An ad hoc
+`shadow-md` on hover is still wrong: the pane vocabulary has exactly one
+elevation, and a second one competing with it makes the frame read as unstable.
 
 ## Shapes
 
@@ -668,13 +707,12 @@ right.
 ### Auth and Onboarding
 
 Outside the shell entirely. `bg-surface md:bg-body` on a `min-h-dvh` centering
-wrapper, holding a single `Card` at `maxWidth={448}`. The intent is that on a
-phone the form occupies the page instead of floating on it — but note that
-surface and body resolve to the same value, so the `md:` switch currently
-changes nothing and the wrapper is one flat colour at every width. It is kept as
-a record of intent, and it starts working the day the canvas gets its own token
-below surface. What actually distinguishes the sheet today is the `Card` itself:
-`bg-card` plus `--shadow-low`.
+wrapper, holding a single `Card` at `maxWidth={448}`. On a phone the wrapper
+takes the card's own tone, so the form occupies the page; from `md` up it drops
+to the canvas and the card floats on it. That switch was inert for as long as
+surface and body resolved to the same value, and it started working again the
+day the canvas got its own token — the same arithmetic the shell's panes depend
+on, in a place with no panes.
 
 There is **no decorative background**. No dot grid, no radial gradient, no
 texture — beyond its imports, `src/styles.css` holds a cascade-layer declaration,
@@ -702,7 +740,7 @@ moving its neighbors. It is disabled under `prefers-reduced-motion`.
 
 - **Do** treat `src/themes/gothic/gothicTheme.ts` as the source of truth for every token, and run `pnpm theme:build` after changing it — that regenerates `theme.css`, `gothic.js`, and `gothic.d.ts`, and `main.tsx` imports the built module, so skipping the rebuild leaves the app on the old tokens.
 - **Do** add a self-hosted `@font-face` in `src/fonts/fonts.css` for any family the theme names, with the `unicode-range` split intact. Naming a family in the theme does not load it.
-- **Do** separate regions with `border-border/60`. It is the system's one structural device.
+- **Do** separate sibling regions with the canvas gutter — compose `AppPane`s and let `AppPaneGroup` own the space between them. Rule *within* a pane with `border-border/60`.
 - **Do** recess with `bg-muted` and raise with `bg-card`. Those are the only two tonal moves available.
 - **Do** use the Tailwind bridge names (`text-primary`, `text-secondary`, `bg-muted`, `bg-card`, `bg-accent-bg`, `text-on-accent`, `border-border`, `text-error`) rather than raw `var(--color-*)` in class strings.
 - **Do** express state as the accent at low alpha: `bg-primary/4` hover, `bg-primary/10` selected, `bg-primary/5` quiet plate.
@@ -713,24 +751,25 @@ moving its neighbors. It is disabled under `prefers-reduced-motion`.
 - **Do** reach for `text-secondary` when copy needs to recede. `text-primary/55` is 5.55:1 in dark but 3.97:1 in light, so an opacity step tuned in one mode can be under AA in the other; `/70` is the lowest rung that clears both.
 - **Do** give every pane `overflow-hidden`, its own `overflow-y-auto` scroll region, and `min-h-0` through its flex chain.
 - **Do** share `TRANSCRIPT_MEASURE` between the transcript, its skeleton, and the composer.
-- **Do** honor the 64px `h-16` pane-header contract on every pane that has a header, so the inbox columns align across their dividers.
+- **Do** honor the 64px `h-16` pane-header contract on every pane that has a header, so the inbox columns align across the gutters between them.
 - **Do** guard every transition and animation with `motion-reduce:`.
 
 ### Don't:
 
 - **Don't** assume Tailwind's default scales. `text-sm` is 13px and `rounded-xl` is 24px in this project.
 - **Don't** introduce a size below 12px, and don't reach for `text-2xs`, `text-3xs`, or `text-4xs` expecting a smaller step — the theme clamps all three to the floor.
-- **Don't** use `bg-surface` for separation. It resolves to the same value as the page in both modes, so it paints the colour that is already there. It remains correct for **opacity** — the contact panel carries `bg-surface` so the tablet overlay drawer is not see-through, and the auth wrapper uses it the same way — but it can never make a region read as distinct. That is what `bg-muted` and `bg-card` are for.
-- **Don't** give a pane a fill, a radius, a gap, or a shadow. The shell is one continuous surface; a pane radius notches a corner out of the content area and a pane shadow has no gap to cast into.
-- **Don't** draw a border around a large surface. Hairlines divide regions; they do not outline them.
-- **Don't** add `shadow-*` in component code. Shadows are theme tokens applied by Astryx `Card`, `Popover`, and `Dialog`.
+- **Don't** hand-roll a pane. Use `AppPane`, so the fill, the radius, the lift, the scroll containment, and the phone-width full-bleed arrive together and stay in one file.
+- **Don't** give a pane a border. It already carries a shadow, and an outline on top of that reads as a card drawn on a card.
+- **Don't** put a hairline between two panes. The gutter is the separation there; a rule as well says the same thing twice.
+- **Don't** let a theme collapse `background-surface` into `background-body`. Every pane in the app goes invisible at once and nothing but `pnpm check:shell-elevation` will tell you.
+- **Don't** add ad hoc `shadow-*` in component code. Shadows are theme tokens applied by Astryx `Card`, `Popover`, and `Dialog`, and by `AppPane` for the one pane elevation.
 - **Don't** introduce a second neutral tone. The ramp is five steps of one hue and the light/dark inversion depends on that symmetry.
 - **Don't** put `text-primary` on a categorical plate. Use the hue's `-vivid` token, or the component variant that binds it.
 - **Don't** leave a secondary `Button` on a colored well. The neutral chip is a cool gray at the same tone as the well and reads as a shape, not a control — rebind `--color-background-gray` / `--color-text-gray` on the region so the action takes the hue.
 - **Don't** hardcode a hex. The only exceptions are the three platform brand colors in `src/entities/channel/lib/platform.ts`.
 - **Don't** put Manufacturing Consent on a product surface. It is bound to `display-1..3` and the shell has nothing at that scale.
 - **Don't** use uppercase or all-caps labels. Labels are sentence case throughout.
-- **Don't** nest a Card in a Card, or put a Card inside a shell pane.
+- **Don't** nest a Card in a Card, or put a Card inside a shell pane. The pane is already the raised object; a card on it is a second elevation competing with the first.
 - **Don't** card-wrap dense list rows. Conversations are transparent rows in a scrollable list; records are ruled rows in a `divide-y border-y` group.
 - **Don't** change the box metrics of anything inside the transcript for cosmetic reasons — the list measures row heights for scroll anchoring, so a border or type-size change on a bubble or date separator perturbs the pin. Restyle with color.
 - **Don't** add a decorative background. `src/styles.css` has no pattern, gradient, or texture, and the auth screens do not want one.
