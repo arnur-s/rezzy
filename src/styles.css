@@ -45,6 +45,25 @@
    on every route. */
 @import './generated/astryx-font-floor.css';
 
+/* No rule above the account row.
+
+   SideNav draws a hairline across the top of its footer zone, which separates
+   the account row from the navigation above it. The rail already separates its
+   regions by the gutter SideNavSection provides, so the line is a third
+   horizontal rule in a column that reads fine without one — and unlike the
+   workspace bracket, it spans the full width and cuts the person off from the
+   product rather than grouping anything.
+
+   The footer zone is Astryx's own element, so it takes no props and carries no
+   stable class: `:has()` reaches it from the account row instead, which tags
+   itself `sidebar-account-row` for exactly this. Both the desktop rail and the
+   mobile drawer render the same zone, so one rule covers both. */
+@layer components {
+  :is(nav, dialog) *:has(> .sidebar-account-row) {
+    border-top: none;
+  }
+}
+
 html,
 body {
   height: 100%;

@@ -28,6 +28,7 @@
     "check:password-reset": "node scripts/password-reset-check.mjs",
     "check:overflow": "node scripts/overflow-check.mjs",
     "check:mobile-nav": "node scripts/mobile-nav-check.mjs",
+    "check:sidebar-rule": "node scripts/sidebar-rule-check.mjs",
     "check:shell-elevation": "node scripts/shell-elevation-check.mjs",
     "check:contrast": "node scripts/theme-contrast.mjs",
     "check:tokens": "node scripts/token-usage-check.mjs",

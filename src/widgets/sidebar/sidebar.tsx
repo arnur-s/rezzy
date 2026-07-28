@@ -266,6 +266,9 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         tooltip: displayName,
         isDisabled: isSigningOut,
         isLoading: isSigningOut,
+        // Marker only, carries no styles of its own. `.sidebar-account-row` in
+        // src/styles.css uses it to reach SideNav's footer zone.
+        className: 'sidebar-account-row',
       }
     : {
         label: displayName,
@@ -278,7 +281,11 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         // trailing edge. Button's label span is the only handle it exposes for
         // that last part — it is the first child of the content wrapper here
         // because this row passes `children` rather than `icon`.
-        className: 'px-2 font-normal [&>span>span:first-child]:grow',
+        //
+        // `sidebar-account-row` is a marker with no styles of its own; see
+        // src/styles.css.
+        className:
+          'sidebar-account-row px-2 font-normal [&>span>span:first-child]:grow',
         children: (
           <span className="flex min-w-0 items-center gap-2">
             <Avatar size="xsm" name={displayName} />
