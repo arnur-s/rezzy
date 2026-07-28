@@ -18,7 +18,6 @@ type SettingsNavItem = {
   label: string
 }
 
-
 export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
   {
     component: RouteComponent,
@@ -82,7 +81,7 @@ function RouteComponent() {
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
       {/* 64px and a hairline — the shared pane-header contract, matching the
           conversation list, the thread, and the contact panel. */}
-      <header className="border-border/60 flex h-16 shrink-0 items-center border-b">
+      <header className="border-border/60 flex h-14 shrink-0 items-center border-b">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
           <h1 className="truncate text-base font-semibold">
             {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
@@ -97,15 +96,12 @@ function RouteComponent() {
           <p className="text-secondary text-xs font-medium">
             {m.workspace_settings_kicker()}
           </p>
-          <p className="text-secondary mt-1 max-w-2xl text-sm">
-            {m.workspace_settings_description()}
-          </p>
 
           {/* Same construction as the account settings tabs: TabList lays its
               tabs in a row but does not scroll them, and a longer translation
               or a fourth section would push the last one off a phone screen
               with no way to reach it. See `src/routes/_authenticated/settings.tsx`. */}
-          <div className="-mx-4 overflow-x-auto px-4 pt-6 sm:-mx-8 sm:px-8">
+          <div className="-mx-4 px-4 pt-6 sm:-mx-8 sm:px-8">
             <TabList
               value={selectedKey}
               onChange={(key) => handleSectionChange(key)}

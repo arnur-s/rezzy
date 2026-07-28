@@ -105,7 +105,10 @@ const EN = {
 
   // "Could not" / "Couldn't" were split across the catalogue at random. The
   // account area already contracts; the rest now matches it.
-  home_summary_error: ["Couldn't load your numbers", 'Couldn’t load your summary'],
+  home_summary_error: [
+    "Couldn't load your numbers",
+    'Couldn’t load your summary',
+  ],
   common_unknown_error: ['Something went wrong', 'Something went wrong'],
 
   // Please-try-again is filler in an interface: the retry affordance is the
@@ -176,7 +179,10 @@ const EN = {
 
   // 404 pages that shout "404" bury the one useful sentence under a number.
   not_found_title: ['404', 'Page not found'],
-  not_found_description: ['Page not found', 'The page you followed doesn’t exist, or it moved.'],
+  not_found_description: [
+    'Page not found',
+    'The page you followed doesn’t exist, or it moved.',
+  ],
   not_found_go_home_link: ['Go to home', 'Back to home'],
 
   // "Signing in." with a full stop was a typo for the ellipsis every other
@@ -185,10 +191,6 @@ const EN = {
 
   // Placeholders should look like the answer, not restate the label.
   workspaces_name_placeholder: ['Workspace name', 'Acme Sales'],
-  workspaces_description_placeholder: [
-    'Workspace description',
-    'Inbound sales for the EU region',
-  ],
 
   // Two keys, one screen, same word: the modal title and the page heading.
   workspaces_create_modal_title: ['Create workspace', 'Create a workspace'],
@@ -236,7 +238,10 @@ const RU = {
     'Авторизуйте тот же аккаунт заново, чтобы продолжать получать сообщения. Переписки и история сохранятся',
     'Войдите в тот же аккаунт заново, чтобы сообщения приходили дальше. Диалоги и история сохранятся',
   ],
-  inbox_primary_filter_aria_label: ['Фильтровать переписки', 'Фильтровать диалоги'],
+  inbox_primary_filter_aria_label: [
+    'Фильтровать переписки',
+    'Фильтровать диалоги',
+  ],
   inbox_empty_select_conversation_description: [
     'Откройте сообщение из списка слева, чтобы начать переписку',
     'Выберите диалог, чтобы прочитать его и ответить',
@@ -289,7 +294,10 @@ const RU = {
     'Не удалось загрузить рабочие пространства',
     'Не удалось загрузить пространства',
   ],
-  workspaces_create_button: ['Создать рабочее пространство', 'Создать пространство'],
+  workspaces_create_button: [
+    'Создать рабочее пространство',
+    'Создать пространство',
+  ],
   workspaces_create_error_title: [
     'Не удалось создать рабочее пространство',
     'Не удалось создать пространство',
@@ -298,11 +306,13 @@ const RU = {
     'Создание рабочего пространства',
     'Новое пространство',
   ],
-  workspaces_create_success: ['Рабочее пространство создано', 'Пространство создано'],
-  workspaces_name_placeholder: ['Название рабочего пространства', 'Отдел продаж'],
-  workspaces_description_placeholder: [
-    'Описание рабочего пространства',
-    'Входящие заявки по России',
+  workspaces_create_success: [
+    'Рабочее пространство создано',
+    'Пространство создано',
+  ],
+  workspaces_name_placeholder: [
+    'Название рабочего пространства',
+    'Отдел продаж',
   ],
   workspaces_name_helper: [
     'Введите название для вашего рабочего пространства',
@@ -358,7 +368,10 @@ const RU = {
     'Создайте пространство, чтобы начать получать сообщения',
   ],
   dashboard_empty_cta: ['Создать рабочее пространство', 'Создать пространство'],
-  dashboard_empty_title: ['Пока нет рабочих пространств', 'Пока нет пространств'],
+  dashboard_empty_title: [
+    'Пока нет рабочих пространств',
+    'Пока нет пространств',
+  ],
   dashboard_page_title: ['Ваши рабочие пространства', 'Ваши пространства'],
   dashboard_page_description: [
     'Активность во всех ваших рабочих пространствах',
@@ -385,7 +398,10 @@ const RU = {
     'Дашборд рабочего пространства ещё в разработке. Все диалоги находятся во входящих.',
     'Сводки по пространству пока нет. Все диалоги — во входящих.',
   ],
-  sidebar_select_workspace_label: ['Выбрать рабочее пространство', 'Выбрать пространство'],
+  sidebar_select_workspace_label: [
+    'Выбрать рабочее пространство',
+    'Выбрать пространство',
+  ],
   sidebar_inbox_locked_tooltip: [
     'Подключите канал, чтобы открыть входящие.',
     'Подключите канал — тогда откроются входящие',
@@ -411,7 +427,10 @@ const RU = {
     'Нет подключения. Восстановите связь, чтобы отправить.',
     'Нет сети. Сообщение отправится, когда связь вернётся.',
   ],
-  inbox_composer_voice_label: ['Удерживайте для диктовки', 'Удерживайте, чтобы диктовать'],
+  inbox_composer_voice_label: [
+    'Удерживайте для диктовки',
+    'Удерживайте, чтобы диктовать',
+  ],
   inbox_composer_voice_hold_to_record: [
     'Удерживайте для записи',
     'Удерживайте, чтобы диктовать',
@@ -439,7 +458,10 @@ const RU = {
     'Всё чисто. Назначенные на вас диалоги внимания не требуют',
     'Всё разобрано — ни один диалог не ждёт вашего ответа',
   ],
-  home_summary_error: ['Не удалось загрузить показатели', 'Не удалось загрузить сводку'],
+  home_summary_error: [
+    'Не удалось загрузить показатели',
+    'Не удалось загрузить сводку',
+  ],
   home_summary_stale_hint: [
     'Без вашего ответа больше 2 дней',
     'Ждут вашего ответа больше 2 дней',
@@ -587,7 +609,10 @@ const RU = {
     'Например, Отдел продаж',
     'Например, «Отдел продаж»',
   ],
-  channels_instagram_name_placeholder: ['напр. Поддержка', 'Например, «Поддержка»'],
+  channels_instagram_name_placeholder: [
+    'напр. Поддержка',
+    'Например, «Поддержка»',
+  ],
   channels_instagram_name_helper: [
     'Необязательно. Название для этого канала',
     'Необязательно — чтобы отличать этот канал от других',
@@ -618,7 +643,10 @@ const RU = {
     'Этот тип сообщения пока не поддерживается',
     'Такие сообщения пока не поддерживаются',
   ],
-  inbox_messages_loading_older: ['Загрузка более ранних сообщений', 'Загружаем историю'],
+  inbox_messages_loading_older: [
+    'Загрузка более ранних сообщений',
+    'Загружаем историю',
+  ],
   notifications_popover_empty_description: [
     'Новые непрочитанные сообщения появятся здесь',
     'Новые сообщения появятся здесь',
@@ -634,7 +662,8 @@ const RU = {
 /** Keys present in en.json but absent from ru.json. */
 const MISSING_RU = {
   profile_identity_title: 'О вас',
-  profile_identity_description: 'Это видят коллеги во всех ваших пространствах.',
+  profile_identity_description:
+    'Это видят коллеги во всех ваших пространствах.',
 }
 
 function apply(path, replacements, additions = {}) {

@@ -80,8 +80,8 @@
   "workspaces_name_helper": "По нему вы найдёте пространство в списке",
   "workspaces_description_label": "Описание",
   "workspaces_description_helper": "Коротко — чем занимается эта команда",
-  "workspaces_description_placeholder": "Входящие заявки по России",
-  "workspace_settings_kicker": "Пространство",
+  "workspaces_description_placeholder": "Описание рабочего пространства",
+  "workspace_settings_kicker": "Настройки пространства",
   "workspace_settings_loading_title": "Настройки пространства",
   "workspace_settings_description": "Название и иконка, участники и каналы связи",
   "workspace_settings_general_label": "Общие",
@@ -306,13 +306,8 @@
   "inbox_unread_messages_divider": "Непрочитанные сообщения",
   "inbox_new_messages_button": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} новое сообщение",
         "countPlural=few": "{count} новых сообщения",
@@ -358,13 +353,8 @@
   "inbox_media_document_fallback_name": "Файл",
   "inbox_unread_aria_label": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} непрочитанное сообщение",
         "countPlural=few": "{count} непрочитанных сообщения",
@@ -383,13 +373,8 @@
   "dashboard_empty_cta": "Создать пространство",
   "dashboard_workspace_card_open": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} открытый",
         "countPlural=few": "{count} открытых",
@@ -400,13 +385,8 @@
   ],
   "dashboard_workspace_card_channels": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} канал",
         "countPlural=few": "{count} канала",
@@ -417,13 +397,8 @@
   ],
   "dashboard_workspace_card_contacts": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} контакт",
         "countPlural=few": "{count} контакта",
@@ -436,13 +411,8 @@
   "dashboard_workspace_card_last_message": "Последнее сообщение {when}",
   "dashboard_workspace_card_unread_aria": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} непрочитанное сообщение",
         "countPlural=few": "{count} непрочитанных сообщения",
@@ -465,13 +435,8 @@
   "home_greeting_night": "Доброй ночи",
   "home_summary_unread": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} непрочитанный",
         "countPlural=few": "{count} непрочитанных",
@@ -482,13 +447,8 @@
   ],
   "home_summary_open": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} открытый на вас",
         "countPlural=few": "{count} открытых на вас",
@@ -499,13 +459,8 @@
   ],
   "home_summary_waking": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} отложенный скоро вернётся",
         "countPlural=few": "{count} отложенных скоро вернутся",
@@ -517,13 +472,8 @@
   "home_summary_waking_hint": "Вернутся из отложенных в ближайшие сутки",
   "home_summary_stale": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} ждёт ответа",
         "countPlural=few": "{count} ждут ответа",
@@ -545,9 +495,7 @@
         "input total",
         "local countPlural = count: plural"
       ],
-      "selectors": [
-        "countPlural"
-      ],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "Показан самый срочный из {total}",
         "countPlural=few": "Показаны {count} самых срочных из {total}",
@@ -576,13 +524,8 @@
   "sidebar_workspaces_section_label": "Пространства",
   "sidebar_workspace_unread_dot_aria": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} непрочитанное сообщение",
         "countPlural=few": "{count} непрочитанных сообщения",
@@ -620,13 +563,8 @@
   "notifications_show_full_message": "Показать сообщение полностью",
   "notifications_unread_count_aria": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} непрочитанное сообщение",
         "countPlural=few": "{count} непрочитанных сообщения",

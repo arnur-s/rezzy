@@ -80,8 +80,8 @@
   "workspaces_name_helper": "Pick a clear name for this workspace",
   "workspaces_description_label": "Description",
   "workspaces_description_helper": "Briefly describe what this workspace is for",
-  "workspaces_description_placeholder": "Inbound sales for the EU region",
-  "workspace_settings_kicker": "Workspace",
+  "workspaces_description_placeholder": "Workspace description",
+  "workspace_settings_kicker": "Workspace settings",
   "workspace_settings_loading_title": "Workspace settings",
   "workspace_settings_description": "Manage how this workspace looks, who can access it, and where messages flow in from",
   "workspace_settings_general_label": "General",
@@ -306,13 +306,8 @@
   "inbox_unread_messages_divider": "Unread messages",
   "inbox_new_messages_button": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} new message",
         "countPlural=*": "{count} new messages"
@@ -356,13 +351,8 @@
   "inbox_media_document_fallback_name": "File",
   "inbox_unread_aria_label": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} unread message",
         "countPlural=*": "{count} unread messages"
@@ -379,13 +369,8 @@
   "dashboard_empty_cta": "Create workspace",
   "dashboard_workspace_card_open": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} open",
         "countPlural=*": "{count} open"
@@ -394,13 +379,8 @@
   ],
   "dashboard_workspace_card_channels": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} channel",
         "countPlural=*": "{count} channels"
@@ -409,13 +389,8 @@
   ],
   "dashboard_workspace_card_contacts": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} contact",
         "countPlural=*": "{count} contacts"
@@ -426,13 +401,8 @@
   "dashboard_workspace_card_last_message": "Last message {when}",
   "dashboard_workspace_card_unread_aria": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} unread message",
         "countPlural=*": "{count} unread messages"
@@ -453,13 +423,8 @@
   "home_greeting_night": "Working late",
   "home_summary_unread": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} unread",
         "countPlural=*": "{count} unread"
@@ -468,13 +433,8 @@
   ],
   "home_summary_open": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} open assigned to you",
         "countPlural=*": "{count} open assigned to you"
@@ -483,13 +443,8 @@
   ],
   "home_summary_waking": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} snoozed due back soon",
         "countPlural=*": "{count} snoozed due back soon"
@@ -499,13 +454,8 @@
   "home_summary_waking_hint": "Snoozed conversations due back within 24 hours",
   "home_summary_stale": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} going stale",
         "countPlural=*": "{count} going stale"
@@ -525,9 +475,7 @@
         "input total",
         "local countPlural = count: plural"
       ],
-      "selectors": [
-        "countPlural"
-      ],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "Showing the most urgent of {total}",
         "countPlural=*": "Showing the {count} most urgent of {total}"
@@ -554,13 +502,8 @@
   "sidebar_workspaces_section_label": "Workspaces",
   "sidebar_workspace_unread_dot_aria": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} unread message",
         "countPlural=*": "{count} unread messages"
@@ -596,13 +539,8 @@
   "notifications_show_full_message": "Show full message",
   "notifications_unread_count_aria": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} unread message",
         "countPlural=*": "{count} unread messages"
