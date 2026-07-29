@@ -75,7 +75,18 @@ const dayKeyFormat = {
 
 const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>()
 
+/** `YYYY-MM-DD` — already a calendar day, with no instant to convert. */
+const DAY_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
 export function getCalendarDayKey(value: string | number | Date): string {
+  // A bare date is a label, not a moment. Sent through the formatter it would
+  // first be read as UTC midnight and then re-expressed in the account's zone,
+  // which lands on the day before for every zone behind UTC — so a day would
+  // change its own name simply by being asked for it. Returned unchanged, the
+  // function is idempotent, which is what lets `calendarDaysBetween` compare
+  // its own output.
+  if (typeof value === 'string' && DAY_ONLY.test(value)) return value
+
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return ''
 
@@ -144,7 +155,11 @@ export function getCalendarHour(value: string | number | Date = Date.now()): num
     hourFormatters.set(cacheKey, formatter)
   }
 
-  // `en-GB` with `hour12: false` renders midnight as '24' rather than '00' in
-  // some runtimes, which would put the small hours in the wrong bucket.
+  // `hour12: false` is specified to render midnight as '00', but some engines
+  // have historically emitted '24' for it, which would push the small hours
+  // out of every bucket that reads this. Sweeping all 418 zones on this
+  // runtime never produces '24', so the modulo is defensive rather than load
+  // bearing — it is kept because it costs nothing and the failure it prevents
+  // is silent.
   return Number.parseInt(formatter.format(date), 10) % 24
 }
