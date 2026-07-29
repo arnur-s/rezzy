@@ -1,8 +1,9 @@
-import { getActiveTimeZone } from '@/lib/time-zone'
+import { getActiveTimeZone, subscribeToTimeZone } from '@/lib/time-zone'
 import { createTestQueryClient } from '@/test/render'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
+import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { accountQueryKeys } from '../api/query-keys'
@@ -184,5 +185,49 @@ describe('useSyncTimeZone', () => {
     view.unmount()
 
     expect(getActiveTimeZone()).toBeUndefined()
+  })
+
+  it('survives the double-mount StrictMode subjects it to', async () => {
+    // The release is a separate effect, so a StrictMode mount runs apply,
+    // release, apply. The zone still has to be in place at the end of it.
+    hoisted.getMyProfile.mockResolvedValue(profile({ timezone: 'Asia/Tokyo' }))
+
+    const Wrapper = wrapper(queryClient)
+    render(
+      <StrictMode>
+        <Wrapper>
+          <TimeZoneProbe />
+        </Wrapper>
+      </StrictMode>,
+    )
+
+    await waitFor(() => expect(getActiveTimeZone()).toBe('Asia/Tokyo'))
+  })
+
+  it('never publishes a null on the way between two real zones', async () => {
+    // Why the release is its own effect rather than a cleanup on the one that
+    // applies the zone. Both land on the right value, but a cleanup would emit
+    // a `null` between them on every change, waking every subscriber for a
+    // state the account was never in — a visible flash back to machine-local
+    // time on any screen showing timestamps.
+    hoisted.getMyProfile.mockResolvedValue(profile({ timezone: 'Europe/Rome' }))
+
+    render(<TimeZoneProbe />, { wrapper: wrapper(queryClient) })
+    await waitFor(() => expect(getActiveTimeZone()).toBe('Europe/Rome'))
+
+    const seen: Array<string | undefined> = []
+    const unsubscribe = subscribeToTimeZone(() => {
+      seen.push(getActiveTimeZone())
+    })
+
+    queryClient.setQueryData(
+      accountQueryKeys.profile(USER_ID),
+      profile({ timezone: 'Asia/Tokyo' }),
+    )
+
+    await waitFor(() => expect(getActiveTimeZone()).toBe('Asia/Tokyo'))
+    unsubscribe()
+
+    expect(seen).toEqual(['Asia/Tokyo'])
   })
 })

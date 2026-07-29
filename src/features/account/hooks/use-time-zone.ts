@@ -33,9 +33,14 @@ export function useSyncTimeZone() {
 
   // Signing out unmounts the authenticated area, and the store is module-level:
   // without this the next account to use the tab would render its first frames
-  // in the previous account's zone. Kept as its own effect with an empty
-  // dependency list so it fires on unmount only — hanging it off the effect
-  // above would clear the zone on the way to every change of it.
+  // in the previous account's zone.
+  //
+  // Its own effect with an empty dependency list, so it fires on unmount only.
+  // Returned from the effect above it would still land on the right zone — the
+  // re-apply follows the cleanup in the same commit — but it would publish a
+  // `null` in between on every change, waking every subscriber for a value
+  // that was never true. The empty deps say what is actually meant: this
+  // belongs to the mount, not to the zone.
   useEffect(() => {
     return () => {
       setActiveTimeZone(null)
