@@ -76,7 +76,6 @@ export function DashboardPage() {
         ) : user ? (
           <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6 sm:px-6 md:py-8">
             <DashboardHeader
-              user={user}
               stats={homeStatsQuery.data}
               isPending={homeStatsQuery.isPending}
               isError={homeStatsQuery.isError}

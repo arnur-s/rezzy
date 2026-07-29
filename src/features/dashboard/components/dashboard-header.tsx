@@ -4,10 +4,8 @@ import { HomeSummaryLine } from '@/features/dashboard/components/home-summary-li
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { useNavigate } from '@tanstack/react-router'
-import type { User } from '@supabase/supabase-js'
 
 type Props = {
-  user: User
   stats: HomeStats | undefined
   isPending: boolean
   isError: boolean
@@ -23,7 +21,6 @@ type Props = {
  * there is no single inbox to open and the workspace cards are the doors.
  */
 export function DashboardHeader({
-  user,
   stats,
   isPending,
   isError,
@@ -36,7 +33,9 @@ export function DashboardHeader({
   return (
     <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
       <div className="min-w-0 flex-1 basis-64 space-y-2">
-        <GreetingHeader user={user} />
+        {/* No `user` prop: the greeting reads the profile row itself, so the
+            name it shows follows the profile page rather than sign-up. */}
+        <GreetingHeader />
         <HomeSummaryLine
           stats={stats}
           isPending={isPending}

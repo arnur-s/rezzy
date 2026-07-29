@@ -1,9 +1,12 @@
-import { getDateFormatter } from '@/lib/format-date'
+import {
+  calendarDaysBetween,
+  getCalendarDayKey,
+  getDateFormatter,
+} from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
 
 const MINUTE = 60 * 1000
 const HOUR = 60 * MINUTE
-const DAY = 24 * HOUR
 
 // Resolved per call rather than at module load: `getDateFormatter` caches the
 // instance, and the app locale is not settled when this module first evaluates.
@@ -22,10 +25,16 @@ export function formatRelativeShort(input: string | Date | null): string {
   if (diff < HOUR) {
     return m.inbox_relative_minutes({ count: Math.floor(diff / MINUTE) })
   }
-  if (diff < DAY) {
+
+  // Past the hour mark the answer stops being an elapsed duration and becomes
+  // a position on the account's calendar: 00:30 is "yesterday" to someone
+  // whose day has already turned over, however few hours ago it was.
+  const daysAgo = calendarDaysBetween(Date.now(), date)
+
+  if (daysAgo === 0) {
     return m.inbox_relative_hours({ count: Math.floor(diff / HOUR) })
   }
-  if (diff < 2 * DAY) {
+  if (daysAgo === 1) {
     return m.inbox_relative_yesterday()
   }
   return getDateFormatter(shortDateFormat).format(date)
@@ -34,28 +43,20 @@ export function formatRelativeShort(input: string | Date | null): string {
 /** Returns "Today" / "Yesterday" / "12 May" used between message groups. */
 export function formatDayHeading(input: string | Date): string {
   const date = typeof input === 'string' ? new Date(input) : input
-  const today = startOfDay(new Date())
-  const target = startOfDay(date)
-  const diffDays = Math.round((today.getTime() - target.getTime()) / DAY)
+  const diffDays = calendarDaysBetween(Date.now(), date)
 
   if (diffDays === 0) return m.inbox_day_today()
   if (diffDays === 1) return m.inbox_day_yesterday()
   return getDateFormatter(dayHeadingFormat).format(date)
 }
 
-/** Returns a stable per-day key (YYYY-MM-DD) for grouping. */
+/**
+ * Stable per-day key (YYYY-MM-DD) for grouping, in the account's zone so a
+ * transcript breaks where the reader's day breaks rather than where their
+ * laptop's does.
+ */
 export function dayKey(input: string | Date): string {
-  const date = typeof input === 'string' ? new Date(input) : input
-  const y = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${month}-${d}`
-}
-
-function startOfDay(date: Date): Date {
-  const next = new Date(date)
-  next.setHours(0, 0, 0, 0)
-  return next
+  return getCalendarDayKey(input)
 }
 
 const timeFormat = { hour: '2-digit', minute: '2-digit' } as const

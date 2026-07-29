@@ -1,4 +1,5 @@
-import { useSyncLanguagePreference } from '@/features/account'
+import { AppPaneGroup } from '@/components/app-pane'
+import { useSyncLanguagePreference, useSyncTimeZone } from '@/features/account'
 import {
   OnboardingStatusError,
   resolveAppGate,
@@ -6,7 +7,6 @@ import {
 } from '@/features/onboarding'
 import { useAuth } from '@/providers/auth-provider'
 import { NotificationsProvider } from '@/providers/notifications-provider'
-import { AppPaneGroup } from '@/components/app-pane'
 import { Sidebar } from '@/widgets/sidebar'
 import { AppShell } from '@astryxdesign/core/AppShell'
 import { Spinner } from '@astryxdesign/core/Spinner'
@@ -25,6 +25,10 @@ function RouteComponent() {
   // The account's language follows the user across browsers, so the server
   // value has to reconcile with the cache the app booted from.
   useSyncLanguagePreference()
+  // Same reasoning for the zone: every timestamp under this route is rendered
+  // in the account's day, not the machine's. Installed here, above the shell,
+  // so no authenticated surface can render a date before it is set.
+  useSyncTimeZone()
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(
     () =>

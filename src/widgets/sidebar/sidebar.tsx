@@ -1,6 +1,6 @@
-import { getUserDisplayName } from '@/entities/user'
 import type { Workspace } from '@/entities/workspace'
 import { WorkspaceIcon } from '@/entities/workspace'
+import { useMyIdentity } from '@/features/account'
 import { useWorkspaceReadiness } from '@/features/channels/hooks/use-channels'
 import { UnreadNotificationsNavItem } from '@/features/notifications'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
@@ -22,7 +22,6 @@ import {
   useSideNavCollapse,
 } from '@astryxdesign/core/SideNav'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
-import { useToast } from '@astryxdesign/core/Toast'
 import { Tooltip } from '@astryxdesign/core/Tooltip'
 import { useNavigate, useParams, useRouterState } from '@tanstack/react-router'
 import {
@@ -30,7 +29,6 @@ import {
   HomeIcon,
   LayoutDashboard,
   LayoutGridIcon,
-  LogOutIcon,
   MessageCircleIcon,
   SettingsIcon,
   UserRoundIcon,
@@ -203,35 +201,24 @@ export function Sidebar({
  */
 function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate()
-  const showToast = useToast()
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
-  const [isSigningOut, setIsSigningOut] = useState(false)
   // The rail's own collapse state, not the prop: SideNav drops this context in
   // drawer and topbar modes, so the mobile drawer keeps the expanded row even
   // while the desktop rail is collapsed.
   const { isCollapsed } = useSideNavCollapse()
 
-  if (!user) return null
+  // The saved profile, not auth metadata: this row is the one place the user
+  // sees themselves on every screen, so it has to reflect the name and picture
+  // they set on the profile page rather than what they typed at sign-up.
+  const { displayName, avatarUrl } = useMyIdentity()
 
-  const displayName = getUserDisplayName(user, m.sidebar_unknown_user())
+  if (!user) return null
 
   function go(to: '/settings/profile' | '/settings/appearance') {
     setIsOpen(false)
     onNavigate?.()
     void navigate({ to })
-  }
-
-  async function handleSignOut() {
-    setIsOpen(false)
-    try {
-      setIsSigningOut(true)
-      await signOut()
-      await navigate({ to: '/sign-in' })
-    } catch (error) {
-      setIsSigningOut(false)
-      showToast({ body: getErrorMessage(error), type: 'error' })
-    }
   }
 
   const items: Array<DropdownMenuOption> = [
@@ -240,32 +227,15 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
       icon: <UserRoundIcon className="size-4" />,
       onClick: () => go('/settings/profile'),
     },
-    {
-      // Straight to the preferences: Profile above already owns the identity
-      // section, so landing both entries on the same page would be a dead end.
-      label: m.sidebar_settings_label(),
-      icon: <SettingsIcon className="size-4" />,
-      onClick: () => go('/settings/appearance'),
-    },
-    // Signing out ends the session rather than moving you inside it, so it is
-    // set apart from the two routes above.
-    { type: 'divider' },
-    {
-      label: m.sidebar_logout(),
-      icon: <LogOutIcon className="size-4" />,
-      onClick: () => void handleSignOut(),
-    },
   ]
 
   const button: DropdownMenuButtonProps = isCollapsed
     ? {
         label: displayName,
         variant: 'ghost',
-        icon: <Avatar size="xsm" name={displayName} />,
+        icon: <Avatar size="sm" name={displayName} src={avatarUrl} />,
         isIconOnly: true,
         tooltip: displayName,
-        isDisabled: isSigningOut,
-        isLoading: isSigningOut,
         // Marker only, carries no styles of its own. `.sidebar-account-row` in
         // src/styles.css uses it to reach SideNav's footer zone.
         className: 'sidebar-account-row',
@@ -273,8 +243,6 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
     : {
         label: displayName,
         variant: 'ghost',
-        isDisabled: isSigningOut,
-        isLoading: isSigningOut,
         // Button centers its content, pads to 12px, and sets medium weight.
         // The account row has to read as the last nav row instead: 8px inset,
         // normal weight, and a label that grows so the chevron pins to the
@@ -288,7 +256,7 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           'sidebar-account-row px-2 font-normal [&>span>span:first-child]:grow',
         children: (
           <span className="flex min-w-0 items-center gap-2">
-            <Avatar size="xsm" name={displayName} />
+            <Avatar size="sm" name={displayName} src={avatarUrl} />
             <span className="truncate">{displayName}</span>
           </span>
         ),
@@ -496,8 +464,4 @@ function WorkspaceMark({
       <WorkspaceIcon name={icon} className="size-3.5" />
     </span>
   )
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : m.common_unknown_error()
 }
