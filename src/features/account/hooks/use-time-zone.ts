@@ -30,6 +30,17 @@ export function useSyncTimeZone() {
   useEffect(() => {
     setActiveTimeZone(timezone)
   }, [timezone])
+
+  // Signing out unmounts the authenticated area, and the store is module-level:
+  // without this the next account to use the tab would render its first frames
+  // in the previous account's zone. Kept as its own effect with an empty
+  // dependency list so it fires on unmount only — hanging it off the effect
+  // above would clear the zone on the way to every change of it.
+  useEffect(() => {
+    return () => {
+      setActiveTimeZone(null)
+    }
+  }, [])
 }
 
 /**

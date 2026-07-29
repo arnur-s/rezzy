@@ -172,4 +172,17 @@ describe('useSyncTimeZone', () => {
     )
     expect(getActiveTimeZone()).toBeUndefined()
   })
+
+  it('releases the zone on sign-out so the next account starts clean', async () => {
+    hoisted.getMyProfile.mockResolvedValue(profile({ timezone: 'Asia/Tokyo' }))
+
+    const view = render(<TimeZoneProbe />, { wrapper: wrapper(queryClient) })
+    await waitFor(() => expect(getActiveTimeZone()).toBe('Asia/Tokyo'))
+
+    // Signing out unmounts the authenticated area. The store is module-level,
+    // so without a reset the next account would inherit this zone.
+    view.unmount()
+
+    expect(getActiveTimeZone()).toBeUndefined()
+  })
 })
