@@ -43,7 +43,11 @@ export function MessageThreadHeader({
       ) : null}
 
       <span className="shrink-0">
-        <Avatar size="md" name={contactName} />
+        <Avatar
+          size="md"
+          name={contactName}
+          src={conversation.contact.avatar_url ?? undefined}
+        />
       </span>
 
       <div className="min-w-0 flex-1">

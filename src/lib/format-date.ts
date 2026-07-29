@@ -116,3 +116,35 @@ export function calendarDaysBetween(
 
   return Math.round((fromUtc - toUtc) / 86_400_000)
 }
+
+/**
+ * The hour of the day (0–23) an instant falls in, in the account's zone.
+ *
+ * For anything that greets or schedules by the time of day: `getHours()` would
+ * answer from the machine's clock, which is how a Berlin account signing in
+ * from Singapore gets wished good morning at eleven at night.
+ */
+const hourFormat = { hour: '2-digit', hour12: false } as const
+
+const hourFormatters = new Map<string, Intl.DateTimeFormat>()
+
+export function getCalendarHour(value: string | number | Date = Date.now()): number {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return 0
+
+  const timeZone = getActiveTimeZone()
+  const cacheKey = timeZone ?? ''
+
+  let formatter = hourFormatters.get(cacheKey)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(
+      'en-GB',
+      timeZone ? { ...hourFormat, timeZone } : hourFormat,
+    )
+    hourFormatters.set(cacheKey, formatter)
+  }
+
+  // `en-GB` with `hour12: false` renders midnight as '24' rather than '00' in
+  // some runtimes, which would put the small hours in the wrong bucket.
+  return Number.parseInt(formatter.format(date), 10) % 24
+}

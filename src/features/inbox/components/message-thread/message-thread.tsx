@@ -261,6 +261,7 @@ export function MessageThread({
               isLoading={messagesQuery.isPending || isReadCursorLoading}
               isError={messagesQuery.isError || readCursorQuery.isError}
               contactName={contactName}
+              contactAvatarUrl={conversation.contact.avatar_url ?? undefined}
               currentUserId={senderId}
               unreadDividerMessageId={unreadDividerMessageId}
               hasUnreadInboundMessages={hasUnreadInboundMessages}

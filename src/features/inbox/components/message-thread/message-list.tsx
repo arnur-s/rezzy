@@ -11,6 +11,7 @@ type Props = {
   isLoading: boolean
   isError: boolean
   contactName: string
+  contactAvatarUrl?: string
   currentUserId: string | null
   unreadDividerMessageId: string | null
   hasUnreadInboundMessages: boolean
@@ -34,6 +35,7 @@ export function MessageList({
   isLoading,
   isError,
   contactName,
+  contactAvatarUrl,
   currentUserId,
   unreadDividerMessageId,
   hasUnreadInboundMessages,
@@ -94,6 +96,7 @@ export function MessageList({
       key={conversationId}
       messages={resolvedMessages}
       contactName={contactName}
+      contactAvatarUrl={contactAvatarUrl}
       currentUserId={currentUserId}
       unreadDividerMessageId={unreadDividerMessageId}
       hasUnreadInboundMessages={hasUnreadInboundMessages}

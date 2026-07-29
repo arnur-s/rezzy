@@ -90,6 +90,8 @@ function isNewTimeBlock(message: MessageRow, next: MessageRow): boolean {
 type Props = {
   messages: Array<MessageRow>
   contactName: string
+  /** The contact's picture, so inbound runs are headed by a face not initials. */
+  contactAvatarUrl?: string
   currentUserId: string | null
   unreadDividerMessageId: string | null
   hasUnreadInboundMessages: boolean
@@ -110,6 +112,7 @@ type Props = {
 export function ChatTranscript({
   messages,
   contactName,
+  contactAvatarUrl,
   currentUserId,
   unreadDividerMessageId,
   hasUnreadInboundMessages,
@@ -370,7 +373,9 @@ export function ChatTranscript({
               key={row.key}
               sender={isOutbound ? 'user' : 'assistant'}
               avatar={
-                isOutbound ? undefined : <Avatar size="sm" name={contactName} />
+                isOutbound ? undefined : (
+                  <Avatar size="sm" name={contactName} src={contactAvatarUrl} />
+                )
               }
             >
               {row.messages.map((message, index) => {

@@ -41,6 +41,14 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
     ? conversation.status
     : 'open'
 
+  // Same precedence as the name: the freshly loaded contact first, then
+  // whatever the conversation row already carried, so the picture is on screen
+  // from the first paint rather than appearing a beat later.
+  const contactAvatarUrl =
+    contactQuery.data?.avatar_url ??
+    conversation.contact.avatar_url ??
+    undefined
+
   return (
     <aside
       // bg-surface keeps the panel opaque when it renders as the tablet
@@ -78,7 +86,7 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
           ) : null}
 
           <div className="flex flex-col items-center text-center">
-            <Avatar size="lg" name={contactName} />
+            <Avatar size="lg" name={contactName} src={contactAvatarUrl} />
             <p className="text-primary mt-3 text-base font-semibold">
               {contactName}
             </p>
