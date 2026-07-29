@@ -644,6 +644,7 @@
   "profile_phone_invalid": "Enter the number with its country code, for example +1 415 555 2671",
   "profile_timezone_label": "Time zone",
   "profile_timezone_description": "Times in your conversations are shown in this zone.",
+  "profile_timezone_following_browser": "Not set, so times follow this device: {zone}.",
   "profile_timezone_placeholder": "Search time zones",
   "profile_timezone_max": "Use 64 characters or fewer",
   "profile_timezone_no_results": "No matching time zone",

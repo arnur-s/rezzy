@@ -20,6 +20,7 @@ import { formatPhoneAsYouType, fromE164 } from '../lib/phone'
 import {
   formatTimeZoneLabel,
   formatTimeZoneOffset,
+  getBrowserTimeZone,
   listTimeZones,
 } from '../lib/time-zones'
 import type { UserProfile } from '../model/types'
@@ -65,6 +66,11 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
     () => createStaticSource(timeZoneItems),
     [timeZoneItems],
   )
+
+  // What the app is actually formatting in while the field is empty. Without
+  // it "Time zone: —" says nothing about which times the user is looking at,
+  // and most accounts never set one — the field opens blank.
+  const browserTimeZone = useMemo(() => getBrowserTimeZone(), [])
 
   const isPending = updateProfile.isPending
 
@@ -200,7 +206,13 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
           return (
             <Typeahead
               label={fieldLabel(m.profile_timezone_label(), 'optional')}
-              description={m.profile_timezone_description()}
+              description={
+                field.value || !browserTimeZone
+                  ? m.profile_timezone_description()
+                  : m.profile_timezone_following_browser({
+                      zone: formatTimeZoneLabel(browserTimeZone),
+                    })
+              }
               placeholder={m.profile_timezone_placeholder()}
               hasEntriesOnFocus
               debounceMs={0}

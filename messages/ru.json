@@ -668,6 +668,7 @@
   "profile_phone_invalid": "Введите номер с кодом страны, например +7 999 123 45 67",
   "profile_timezone_label": "Часовой пояс",
   "profile_timezone_description": "В этом поясе показывается время в диалогах.",
+  "profile_timezone_following_browser": "Не задан, поэтому время показывается по этому устройству: {zone}.",
   "profile_timezone_placeholder": "Поиск часового пояса",
   "profile_timezone_max": "Не более 64 символов",
   "profile_timezone_no_results": "Часовой пояс не найден",
