@@ -70,14 +70,26 @@ describe('ru counted messages agree with their number', () => {
     expect(m.home_summary_open({ count: 7 }, ru)).toBe(
       '7 открытых диалогов на вас',
     )
+    // The horizons are part of the sentence now, not a hover-only tooltip,
+    // so the plural forms have to survive the longer copy.
     expect(m.home_summary_waking({ count: 1 }, ru)).toBe(
-      '1 отложенный скоро вернётся',
+      '1 отложенный вернётся в течение суток',
+    )
+    expect(m.home_summary_waking({ count: 3 }, ru)).toBe(
+      '3 отложенных вернутся в течение суток',
     )
     expect(m.home_summary_waking({ count: 5 }, ru)).toBe(
-      '5 отложенных скоро вернутся',
+      '5 отложенных вернутся в течение суток',
     )
-    expect(m.home_summary_stale({ count: 1 }, ru)).toBe('1 ждёт ответа')
-    expect(m.home_summary_stale({ count: 6 }, ru)).toBe('6 ждут ответа')
+    expect(m.home_summary_stale({ count: 1 }, ru)).toBe(
+      '1 ждёт ответа больше 2 дней',
+    )
+    expect(m.home_summary_stale({ count: 3 }, ru)).toBe(
+      '3 ждут ответа больше 2 дней',
+    )
+    expect(m.home_summary_stale({ count: 6 }, ru)).toBe(
+      '6 ждут ответа больше 2 дней',
+    )
   })
 
   it('drops the redundant count when the attention list shows exactly one', () => {

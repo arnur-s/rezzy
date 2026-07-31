@@ -4,12 +4,12 @@ import { WorkspaceIcon } from '@/entities/workspace'
 import type { Workspace } from '@/entities/workspace'
 import type { WorkspaceDashboardStats } from '@/features/dashboard/api/dashboard-stats'
 import { DashboardSkeleton } from '@/features/dashboard/components/dashboard-skeleton'
+import { CreateWorkspaceTile } from '@/features/dashboard/components/create-workspace-tile'
 import { SectionError } from '@/features/dashboard/components/section-error'
 import { SectionHeading } from '@/features/dashboard/components/section-heading'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
 import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
-import { Button } from '@astryxdesign/core/Button'
 import { Link } from '@tanstack/react-router'
 import { ChevronRightIcon } from 'lucide-react'
 
@@ -49,21 +49,13 @@ export function SingleWorkspaceSummary({
         id="home-workspace-title"
         title={m.home_workspace_section_title()}
         actions={
-          <>
-            <Link
-              to="/workspaces/$id/settings"
-              params={{ id: workspace.id }}
-              className="text-secondary hover:bg-primary/4 hover:text-primary rounded-md px-2 py-1.5 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
-            >
-              {m.home_workspace_manage()}
-            </Link>
-            <Button
-              label={m.dashboard_empty_cta()}
-              variant="ghost"
-              size="sm"
-              onClick={onCreate}
-            />
-          </>
+          <Link
+            to="/workspaces/$id/settings"
+            params={{ id: workspace.id }}
+            className="text-secondary hover:bg-primary/4 hover:text-primary rounded-md px-2 py-1.5 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+          >
+            {m.home_workspace_manage()}
+          </Link>
         }
       />
 
@@ -143,6 +135,12 @@ export function SingleWorkspaceSummary({
           className="text-secondary/70 size-4 shrink-0"
         />
       </Link>
+
+      {/* The same tile the grid uses, so adding a second workspace does not
+          move or restyle the action that creates it. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2">
+        <CreateWorkspaceTile onCreate={onCreate} />
+      </div>
     </section>
   )
 }

@@ -204,12 +204,13 @@ describe('dashboard home route', () => {
       params: { id: 'w1' },
     })
     expect(screen.getByText(m.home_workspace_section_title())).toBeTruthy()
-    // The compact summary replaces the grid: no grid heading, and creating
-    // another workspace is a quiet button, not the big dashed card.
+    // The compact summary replaces the grid, so the grid heading stays away.
     expect(screen.queryByText(m.home_workspaces_section_title())).toBeNull()
+    // But the create action keeps the same shape it has in the grid. It used
+    // to be a ghost button here and a dashed tile there, so a user adding
+    // their second workspace had to relearn where the action lived.
     const create = screen.getByRole('button', { name: m.dashboard_empty_cta() })
-    expect(create).toBeTruthy()
-    expect(document.querySelector('.border-dashed')).toBeNull()
+    expect(create.querySelector('.border-dashed')).toBeTruthy()
     // The summary itself navigates to the workspace.
     const link = screen.getByRole('link', { name: 'Acme Sales' })
     expect(link.dataset.params).toBe(JSON.stringify({ id: 'w1' }))

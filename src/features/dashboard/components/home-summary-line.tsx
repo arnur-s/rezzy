@@ -3,13 +3,11 @@ import { m } from '@/paraglide/messages'
 import { DashboardSkeleton } from '@/features/dashboard/components/dashboard-skeleton'
 import { SectionError } from '@/features/dashboard/components/section-error'
 import { cn } from '@/lib/cn'
-import { Link } from '@tanstack/react-router'
 import { CheckIcon } from 'lucide-react'
 
 type Segment = {
   key: string
   text: string
-  hint?: string
   emphasized?: boolean
 }
 
@@ -20,10 +18,11 @@ type Props = {
   onRetry: () => void
   isRetrying?: boolean
   /**
-   * Where a segment goes when clicked. Null before any workspace exists, in
-   * which case the segments stay plain text rather than inventing a door.
+   * Open conversations nobody has claimed. The all-clear is about the
+   * reader's own plate, so without this it can announce calm directly above
+   * a list of customers no one is helping.
    */
-  inboxWorkspaceId?: string | null
+  unassignedCount?: number
 }
 
 /**
@@ -31,10 +30,17 @@ type Props = {
  * Zeros do not render; the all-clear collapses to a single line; loading and
  * failure are their own honest states instead of fake zeros.
  *
- * The segments are links, not labels. As inert text they restated what the
- * attention list already showed in full one section below, costing a reading
- * pass for strictly less information. As doors they earn the line: the summary
- * is the accelerator, the list is the detail.
+ * The segments are text, deliberately. They were briefly links, which was
+ * worse than either alternative: four differently-worded doors that all opened
+ * the same unfiltered inbox is a promise broken on every click. Until the inbox
+ * can be addressed by filter in its URL, one honest door (the header button)
+ * beats four misleading ones, and the reading order stays greeting, situation,
+ * action.
+ *
+ * Each segment also states its own threshold. The horizons used to live in
+ * `title` attributes, which are invisible on touch, unreachable by keyboard,
+ * and unreliably announced on a non-interactive span, so the numbers that most
+ * needed defining were the ones nobody could read.
  */
 export function HomeSummaryLine({
   stats,
@@ -42,7 +48,7 @@ export function HomeSummaryLine({
   isError,
   onRetry,
   isRetrying = false,
-  inboxWorkspaceId = null,
+  unassignedCount = 0,
 }: Props) {
   if (isPending) {
     return (
@@ -61,7 +67,6 @@ export function HomeSummaryLine({
     segments.push({
       key: 'unread',
       text: m.home_summary_unread({ count: stats.unreadAssigned }),
-      hint: m.home_attention_reason_unread_hint(),
       emphasized: true,
     })
   }
@@ -75,18 +80,28 @@ export function HomeSummaryLine({
     segments.push({
       key: 'waking',
       text: m.home_summary_waking({ count: stats.snoozedWaking }),
-      hint: m.home_summary_waking_hint(),
     })
   }
   if (stats.staleAssigned > 0) {
     segments.push({
       key: 'stale',
       text: m.home_summary_stale({ count: stats.staleAssigned }),
-      hint: m.home_summary_stale_hint(),
     })
   }
 
   if (segments.length === 0) {
+    // "Всё разобрано" is true of this reader and false of the team when
+    // conversations are sitting unclaimed. Say the narrower thing, and drop
+    // the celebratory check with it: a green tick over unclaimed customers
+    // is the wrong feeling even when the words are technically correct.
+    if (unassignedCount > 0) {
+      return (
+        <p className="text-secondary text-sm">
+          {m.home_summary_all_clear_unassigned({ count: unassignedCount })}
+        </p>
+      )
+    }
+
     return (
       <p className="flex items-center gap-2 text-sm">
         <span
@@ -105,55 +120,16 @@ export function HomeSummaryLine({
     // middots on a busy morning, which read as decoration rather than rhythm.
     <p className="text-secondary flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
       {segments.map((segment) => (
-        <SummarySegment
+        <span
           key={segment.key}
-          segment={segment}
-          inboxWorkspaceId={inboxWorkspaceId}
-        />
+          className={cn(
+            'tabular-nums',
+            segment.emphasized && 'text-primary font-semibold',
+          )}
+        >
+          {segment.text}
+        </span>
       ))}
     </p>
   )
-}
-
-function SummarySegment({
-  segment,
-  inboxWorkspaceId,
-}: {
-  segment: Segment
-  inboxWorkspaceId: string | null
-}) {
-  const className = cn(
-    'tabular-nums',
-    segment.emphasized && 'text-primary font-semibold',
-  )
-
-  if (!inboxWorkspaceId) {
-    return (
-      <span title={segment.hint} aria-label={getSegmentLabel(segment)} className={className}>
-        {segment.text}
-      </span>
-    )
-  }
-
-  return (
-    <Link
-      to="/workspaces/$id/inbox"
-      params={{ id: inboxWorkspaceId }}
-      title={segment.hint}
-      // The hint used to be reachable only by hovering. Folding it into the
-      // accessible name means keyboard and screen-reader users get the
-      // definition the sighted mouse user gets.
-      aria-label={getSegmentLabel(segment)}
-      className={cn(
-        className,
-        'rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent',
-      )}
-    >
-      {segment.text}
-    </Link>
-  )
-}
-
-function getSegmentLabel(segment: Segment): string {
-  return segment.hint ? `${segment.text}. ${segment.hint}` : segment.text
 }

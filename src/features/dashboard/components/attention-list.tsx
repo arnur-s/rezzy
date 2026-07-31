@@ -145,13 +145,12 @@ function ReasonChip({
     stale: 'bg-primary/[0.05] text-secondary border-primary/10',
   }
   return (
-    // `title` alone left the definition of each reason unreachable by keyboard
-    // and unreliable in screen readers. The visible label now carries the
-    // threshold where it has one, and the full sentence is exposed through the
-    // accessible name rather than a hover-only attribute.
+    // No `aria-label` and no `title`. An accessible name on a non-interactive
+    // span is announced inconsistently, and a tooltip never appears on touch,
+    // so a definition parked in either one is documentation that most users
+    // cannot reach. Each reason's threshold lives in its visible label
+    // instead — "Без ответа 2+ дн." says what it means to everyone at once.
     <span
-      title={getReasonHint(reason)}
-      aria-label={`${label}. ${getReasonHint(reason)}`}
       className={cn(
         'shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold leading-4',
         classes[reason],
@@ -194,16 +193,6 @@ function getReasonLabel(reason: AttentionItem['reason']): string {
   }
 }
 
-function getReasonHint(reason: AttentionItem['reason']): string {
-  switch (reason) {
-    case 'snoozed':
-      return m.home_attention_reason_snoozed_hint()
-    case 'unread':
-      return m.home_attention_reason_unread_hint()
-    case 'stale':
-      return m.home_attention_reason_stale_hint()
-  }
-}
 
 function getSnoozeLabel(iso: string): string {
   const wakingAgo = Date.now() - Date.parse(iso)

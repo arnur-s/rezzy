@@ -200,6 +200,44 @@ try {
     }
     console.log(`ok       ${label.padEnd(20)} greeting ${h1Size ?? '?'}px`)
 
+    // No meaning may be parked in a tooltip. `title` is invisible on touch
+    // and unreliable on a non-interactive element, so anything explained
+    // only there is documentation most users cannot read.
+    const tooltipOnly = await page.evaluate(() => {
+      const main = document.querySelector('main') ?? document.body
+      return [...main.querySelectorAll('[title]')]
+        .map((el) => el.getAttribute('title') ?? '')
+        .filter((t) => t.trim().length > 0)
+    })
+    if (tooltipOnly.length > 0) {
+      problems.push(
+        `[${label}] ${tooltipOnly.length} element(s) explain themselves only via title: ${tooltipOnly.join(" | ")}`,
+      )
+    }
+    console.log(`ok       ${label.padEnd(20)} tooltip-only definitions: ${tooltipOnly.length}`)
+
+    // Every door in the header zone should be distinguishable. Four
+    // differently-worded links onto one destination is a promise broken on
+    // each click, so the summary states facts and the button is the door.
+    const headerDoors = await page.evaluate(() => {
+      const h1 = document.querySelector('h1')
+      const header = h1?.closest('header')
+      if (!header) return null
+      const links = [...header.querySelectorAll('a[href]')].map((a) => a.getAttribute('href'))
+      return { count: links.length, hrefs: links }
+    })
+    if (headerDoors && headerDoors.count > 0) {
+      const unique = new Set(headerDoors.hrefs)
+      if (unique.size < headerDoors.count) {
+        problems.push(
+          `[${label}] the header has ${headerDoors.count} links resolving to only ${unique.size} destination(s): ${headerDoors.hrefs.join(" | ")}`,
+        )
+      }
+    }
+    console.log(
+      `ok       ${label.padEnd(20)} header links: ${headerDoors?.count ?? 0}`,
+    )
+
     await context.close()
   }
 } finally {

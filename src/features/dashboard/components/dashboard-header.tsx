@@ -19,6 +19,8 @@ type Props = {
   destination: HomePrimaryDestination | null
   /** True while the summary has nothing to report, so the header stays quiet. */
   isAllClear?: boolean
+  /** Unclaimed conversations, so the all-clear can stay honest about the team. */
+  unassignedCount?: number
 }
 
 /**
@@ -39,6 +41,7 @@ export function DashboardHeader({
   isRetrying = false,
   destination,
   isAllClear = false,
+  unassignedCount = 0,
 }: Props) {
   const navigate = useNavigate()
 
@@ -54,7 +57,7 @@ export function DashboardHeader({
           isError={isError}
           onRetry={onRetry}
           isRetrying={isRetrying}
-          inboxWorkspaceId={destination?.workspaceId ?? null}
+          unassignedCount={unassignedCount}
         />
       </div>
       {destination ? (

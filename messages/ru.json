@@ -426,7 +426,7 @@
   "home_greeting_morning": "Доброе утро",
   "home_greeting_afternoon": "Добрый день",
   "home_greeting_evening": "Добрый вечер",
-  "home_greeting_night": "Поздний вечер",
+  "home_greeting_night": "Вы сегодня допоздна",
   "home_summary_unread": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],
@@ -456,10 +456,10 @@
       "declarations": ["input count", "local countPlural = count: plural"],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{count} отложенный скоро вернётся",
-        "countPlural=few": "{count} отложенных скоро вернутся",
-        "countPlural=many": "{count} отложенных скоро вернутся",
-        "countPlural=*": "{count} отложенных скоро вернутся"
+        "countPlural=one": "{count} отложенный вернётся в течение суток",
+        "countPlural=few": "{count} отложенных вернутся в течение суток",
+        "countPlural=many": "{count} отложенных вернутся в течение суток",
+        "countPlural=*": "{count} отложенных вернутся в течение суток"
       }
     }
   ],
@@ -469,15 +469,27 @@
       "declarations": ["input count", "local countPlural = count: plural"],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{count} ждёт ответа",
-        "countPlural=few": "{count} ждут ответа",
-        "countPlural=many": "{count} ждут ответа",
-        "countPlural=*": "{count} ждут ответа"
+        "countPlural=one": "{count} ждёт ответа больше 2 дней",
+        "countPlural=few": "{count} ждут ответа больше 2 дней",
+        "countPlural=many": "{count} ждут ответа больше 2 дней",
+        "countPlural=*": "{count} ждут ответа больше 2 дней"
       }
     }
   ],
   "home_summary_stale_hint": "Ждут вашего ответа больше 2 дней",
   "home_summary_all_clear": "Всё разобрано — ни один диалог не ждёт вашего ответа",
+  "home_summary_all_clear_unassigned": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "На вас ничего не ждёт, но {count} диалог никто не взял",
+        "countPlural=few": "На вас ничего не ждёт, но {count} диалога никто не взял",
+        "countPlural=many": "На вас ничего не ждёт, но {count} диалогов никто не взял",
+        "countPlural=*": "На вас ничего не ждёт, но {count} диалога никто не взял"
+      }
+    }
+  ],
   "home_summary_error": "Не удалось загрузить сводку",
   "home_open_inbox": "Открыть входящие",
   "home_open_inbox_workspace": "Открыть «{name}»",
@@ -507,7 +519,7 @@
   "home_attention_reason_unread_hint": "Новые сообщения, которые вы ещё не читали",
   "home_attention_reason_stale": "Без ответа 2+ дн.",
   "home_attention_reason_stale_hint": "Ждёт вашего ответа больше 2 дней",
-  "home_attention_waking_now": "пора вернуться",
+  "home_attention_waking_now": "уже",
   "home_unassigned_title": "Никто не взял",
   "home_unassigned_hint": "Открытые диалоги, которые пока ни за кем не закреплены",
   "home_unassigned_error": "Не удалось загрузить незакреплённые диалоги",

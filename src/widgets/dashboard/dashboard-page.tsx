@@ -96,6 +96,7 @@ export function DashboardPage() {
               isRetrying={homeStatsQuery.isRefetching}
               destination={primaryDestination}
               isAllClear={isSummaryAllClear}
+              unassignedCount={unassignedQuery.data?.length ?? 0}
             />
 
             <AttentionList

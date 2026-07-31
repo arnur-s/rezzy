@@ -440,8 +440,8 @@
       "declarations": ["input count", "local countPlural = count: plural"],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{count} snoozed due back soon",
-        "countPlural=*": "{count} snoozed due back soon"
+        "countPlural=one": "{count} snoozed due back within a day",
+        "countPlural=*": "{count} snoozed due back within a day"
       }
     }
   ],
@@ -451,13 +451,23 @@
       "declarations": ["input count", "local countPlural = count: plural"],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{count} going stale",
-        "countPlural=*": "{count} going stale"
+        "countPlural=one": "{count} waiting on a reply 2+ days",
+        "countPlural=*": "{count} waiting on a reply 2+ days"
       }
     }
   ],
   "home_summary_stale_hint": "Waiting on a reply for more than 2 days",
   "home_summary_all_clear": "All clear. Nothing assigned to you needs attention right now",
+  "home_summary_all_clear_unassigned": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Nothing is waiting on you, but {count} conversation is unclaimed",
+        "countPlural=*": "Nothing is waiting on you, but {count} conversations are unclaimed"
+      }
+    }
+  ],
   "home_summary_error": "Couldn’t load your summary",
   "home_open_inbox": "Open inbox",
   "home_open_inbox_workspace": "Open {name}",
@@ -485,7 +495,7 @@
   "home_attention_reason_unread_hint": "New messages you haven’t read yet",
   "home_attention_reason_stale": "No reply 2+ days",
   "home_attention_reason_stale_hint": "Waiting on a reply for more than 2 days",
-  "home_attention_waking_now": "due back now",
+  "home_attention_waking_now": "now",
   "home_unassigned_title": "Unassigned",
   "home_unassigned_hint": "Open conversations nobody has picked up yet",
   "home_unassigned_error": "Couldn't load unassigned conversations",
