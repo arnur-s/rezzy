@@ -1,6 +1,6 @@
 begin;
 
-select plan(34);
+select plan(35);
 
 -- Caller-facing helpers must rely on RLS instead of bypassing it.
 select ok(
@@ -277,6 +277,7 @@ with exposed_tables(relation_name) as (
   values
     ('public.channels'),
     ('public.contact_channels'),
+    ('public.contact_notes'),
     ('public.contacts'),
     ('public.conversation_reads'),
     ('public.conversations'),
@@ -333,6 +334,17 @@ select ok(
   and not has_table_privilege('authenticated', 'public.contact_channels', 'references')
   and not has_table_privilege('authenticated', 'public.contact_channels', 'trigger'),
   'authenticated has the exact contact_channels privileges'
+);
+
+select ok(
+  has_table_privilege('authenticated', 'public.contact_notes', 'select')
+  and has_table_privilege('authenticated', 'public.contact_notes', 'insert')
+  and has_table_privilege('authenticated', 'public.contact_notes', 'update')
+  and has_table_privilege('authenticated', 'public.contact_notes', 'delete')
+  and not has_table_privilege('authenticated', 'public.contact_notes', 'truncate')
+  and not has_table_privilege('authenticated', 'public.contact_notes', 'references')
+  and not has_table_privilege('authenticated', 'public.contact_notes', 'trigger'),
+  'authenticated has the exact contact_notes privileges'
 );
 
 select ok(
@@ -436,6 +448,7 @@ with exposed_tables(relation_name) as (
   values
     ('public.channels'),
     ('public.contact_channels'),
+    ('public.contact_notes'),
     ('public.contacts'),
     ('public.conversation_reads'),
     ('public.conversations'),

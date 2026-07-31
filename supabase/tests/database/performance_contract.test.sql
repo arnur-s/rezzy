@@ -11,6 +11,16 @@ with expected_policies(schema_name, table_name, policy_name) as (
       'contact_channels',
       'Workspace admins can delete contact channels'
     ),
+    (
+      'public',
+      'contact_notes',
+      'Workspace members can create contact notes'
+    ),
+    (
+      'public',
+      'contact_notes',
+      'Authors and workspace admins can delete contact notes'
+    ),
     ('public', 'contacts', 'Workspace admins can delete contacts'),
     ('public', 'conversations', 'Workspace admins can delete conversations'),
     ('public', 'messages', 'Workspace admins can delete messages'),
@@ -80,6 +90,16 @@ with expected_indexes(table_name, index_name, column_name) as (
     (
       'contact_channels',
       'contact_channels_contact_id_fkey_idx',
+      'contact_id'
+    ),
+    (
+      'contact_notes',
+      'contact_notes_author_id_idx',
+      'author_id'
+    ),
+    (
+      'contact_notes',
+      'contact_notes_contact_order_idx',
       'contact_id'
     ),
     (
