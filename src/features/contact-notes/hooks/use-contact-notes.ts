@@ -88,6 +88,7 @@ export function useSetContactNotePinned(scope: ContactNotesScope) {
         replaceNote(current, updated),
       )
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   })
 }
 
@@ -109,5 +110,6 @@ export function useDeleteContactNote(scope: ContactNotesScope) {
     onError: (_error, _variables, context) => {
       if (context?.snapshot) queryClient.setQueryData(key, context.snapshot)
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   })
 }

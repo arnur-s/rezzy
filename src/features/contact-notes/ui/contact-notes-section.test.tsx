@@ -201,8 +201,30 @@ describe('ContactNotesSection', () => {
     })
   })
 
+  it('prevents another pin request while the first one is pending', async () => {
+    api.list.mockResolvedValue([note('1', { body: 'Pin once' })])
+    api.setPinned.mockReturnValue(new Promise(() => {}))
+    renderSection()
+
+    const item = await noteItem('Pin once')
+    const pinButton = within(item).getByRole('button', { name: 'Pin note' })
+    fireEvent.click(pinButton)
+
+    const pendingButton = await within(item).findByRole('button', {
+      name: 'Unpin note',
+    })
+    await waitFor(() =>
+      expect(pendingButton.getAttribute('aria-disabled')).toBe('true'),
+    )
+    fireEvent.click(pendingButton)
+
+    expect(api.setPinned).toHaveBeenCalledTimes(1)
+  })
+
   it('requires confirmation before deleting a note', async () => {
-    api.list.mockResolvedValue([note('1', { body: 'Remember this' })])
+    api.list
+      .mockResolvedValueOnce([note('1', { body: 'Remember this' })])
+      .mockResolvedValue([])
     api.remove.mockResolvedValue(undefined)
     renderSection()
 

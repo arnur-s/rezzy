@@ -73,6 +73,8 @@ export function ContactNoteItem({
   }
 
   function togglePin() {
+    if (setPinned.isPending) return
+
     setPinned.mutate(
       { noteId: note.id, isPinned: !note.is_pinned },
       {
@@ -142,6 +144,7 @@ export function ContactNoteItem({
                   }
                   size="sm"
                   variant="ghost"
+                  isDisabled={setPinned.isPending}
                   isLoading={setPinned.isPending}
                   onClick={togglePin}
                 />

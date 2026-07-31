@@ -1,6 +1,6 @@
 begin;
 
-select plan(39);
+select plan(42);
 
 -- Contract for collaborative notes on contacts. The production migration does not
 -- exist yet; until it does, this file should fail RED with relation
@@ -57,6 +57,17 @@ select policies_are(
     'Authors and workspace admins can delete contact notes'
   ],
   'contact_notes exposes only the intended RLS policies'
+);
+
+select ok(
+  (
+    select position('is_workspace_member' in coalesce(qual, '')) > 0
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'contact_notes'
+      and policyname = 'Authors and workspace admins can delete contact notes'
+  ),
+  'the delete policy directly requires current workspace membership'
 );
 
 select has_index(
@@ -271,6 +282,19 @@ update public.contact_notes
 set body = 'Author edited body'
 where id = '20000000-0000-4000-8000-000000000401';
 
+reset role;
+alter table public.contact_notes disable trigger contact_notes_updated_at;
+update public.contact_notes
+set updated_at = '2026-01-01T00:00:00.000Z'
+where id = '20000000-0000-4000-8000-000000000401';
+alter table public.contact_notes enable trigger contact_notes_updated_at;
+
+create temporary table contact_note_timestamp_before_pin as
+select id, updated_at
+from public.contact_notes
+where id = '20000000-0000-4000-8000-000000000401';
+grant select on contact_note_timestamp_before_pin to authenticated;
+
 select is(
   (
     select body
@@ -281,7 +305,6 @@ select is(
   'the author can edit their note body'
 );
 
-reset role;
 set local role authenticated;
 set local request.jwt.claims =
   '{"sub":"20000000-0000-4000-8000-000000000102","role":"authenticated"}';
@@ -308,6 +331,20 @@ select ok(
     where id = '20000000-0000-4000-8000-000000000401'
   ),
   'workspace members can collaboratively pin notes'
+);
+
+select is(
+  (
+    select cn.updated_at
+    from public.contact_notes cn
+    where cn.id = '20000000-0000-4000-8000-000000000401'
+  ),
+  (
+    select before_pin.updated_at
+    from contact_note_timestamp_before_pin before_pin
+    where before_pin.id = '20000000-0000-4000-8000-000000000401'
+  ),
+  'pinning does not change the note content timestamp'
 );
 
 select throws_ok(
@@ -448,6 +485,48 @@ select is(
   ),
   0,
   'workspace owners can delete notes written by others'
+);
+
+reset role;
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"20000000-0000-4000-8000-000000000105","role":"authenticated"}';
+
+insert into public.contact_notes (id, contact_id, body)
+values (
+  '20000000-0000-4000-8000-000000000406',
+  '20000000-0000-4000-8000-000000000301',
+  'Removed-member delete candidate'
+);
+
+reset role;
+delete from public.workspace_members
+where workspace_id = '20000000-0000-4000-8000-000000000201'
+  and user_id = '20000000-0000-4000-8000-000000000105';
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"20000000-0000-4000-8000-000000000105","role":"authenticated"}';
+
+delete from public.contact_notes
+where id = '20000000-0000-4000-8000-000000000406';
+
+reset role;
+select is(
+  (
+    select count(*)::int
+    from public.contact_notes
+    where id = '20000000-0000-4000-8000-000000000406'
+  ),
+  1,
+  'former workspace members cannot delete notes they authored before removal'
+);
+
+insert into public.workspace_members (workspace_id, user_id, role)
+values (
+  '20000000-0000-4000-8000-000000000201',
+  '20000000-0000-4000-8000-000000000105',
+  'member'
 );
 
 -- ── Author profile removal ────────────────────────────────────────────────────

@@ -142,6 +142,22 @@ describe('contact note mutations', () => {
     })
   })
 
+  it('invalidates the exact scoped list after pinning settles', async () => {
+    const queryClient = createTestQueryClient()
+    queryClient.setQueryData(key, [note('1')])
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
+    api.setPinned.mockResolvedValue(note('1', { is_pinned: true }))
+    const { result } = renderHook(() => useSetContactNotePinned(scope), {
+      wrapper: wrapper(queryClient),
+    })
+
+    await act(() =>
+      result.current.mutateAsync({ noteId: '1', isPinned: true }),
+    )
+
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: key })
+  })
+
   it('optimistically removes a note and restores it when deletion fails', async () => {
     const queryClient = createTestQueryClient()
     queryClient.setQueryData(key, [note('2'), note('1')])
@@ -167,5 +183,19 @@ describe('contact note mutations', () => {
       expect(result.current.isError).toBe(true)
       expect(read(queryClient)?.map((item) => item.id)).toEqual(['2', '1'])
     })
+  })
+
+  it('invalidates the exact scoped list after deletion settles', async () => {
+    const queryClient = createTestQueryClient()
+    queryClient.setQueryData(key, [note('1')])
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
+    api.remove.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useDeleteContactNote(scope), {
+      wrapper: wrapper(queryClient),
+    })
+
+    await act(() => result.current.mutateAsync({ noteId: '1' }))
+
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: key })
   })
 })
