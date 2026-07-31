@@ -33,20 +33,3 @@ export async function getContactById(
 
   return data
 }
-
-export async function updateContactNotes({
-  contactId,
-  notes,
-}: {
-  contactId: string
-  notes: string
-}): Promise<void> {
-  const { error } = await supabase
-    .from('contacts')
-    .update({ notes })
-    .eq('id', contactId)
-
-  if (error) {
-    throw error
-  }
-}

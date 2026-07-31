@@ -4,7 +4,9 @@ function descendingText(left: string, right: string) {
   return right.localeCompare(left)
 }
 
-export function sortContactNotes(notes: readonly ContactNote[]): ContactNote[] {
+export function sortContactNotes(
+  notes: ReadonlyArray<ContactNote>,
+): Array<ContactNote> {
   return [...notes].sort((left, right) => {
     if (left.is_pinned !== right.is_pinned) {
       return left.is_pinned ? -1 : 1

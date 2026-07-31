@@ -58,7 +58,7 @@ function wrapper(queryClient: QueryClient) {
 }
 
 function read(queryClient: QueryClient) {
-  return queryClient.getQueryData<ContactNote[]>(key)
+  return queryClient.getQueryData<Array<ContactNote>>(key)
 }
 
 describe('contact note mutations', () => {

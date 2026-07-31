@@ -1,6 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ContactWithChannels } from '@/entities/contact'
-import { getContactById, updateContactNotes } from '../api/contacts'
+import { useQuery } from '@tanstack/react-query'
+import { getContactById } from '../api/contacts'
 import { inboxQueryKeys } from '../api/query-keys'
 
 export function useContact(contactId: string | null) {
@@ -8,35 +7,5 @@ export function useContact(contactId: string | null) {
     queryFn: () => getContactById(contactId!),
     queryKey: inboxQueryKeys.contact(contactId ?? ''),
     enabled: !!contactId,
-  })
-}
-
-export function useUpdateContactNotes() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({
-      contactId,
-      notes,
-    }: {
-      contactId: string
-      notes: string
-    }) => updateContactNotes({ contactId, notes }),
-    onMutate: async ({ contactId, notes }) => {
-      const key = inboxQueryKeys.contact(contactId)
-      await queryClient.cancelQueries({ queryKey: key })
-      const snapshot = queryClient.getQueryData<ContactWithChannels>(key)
-
-      queryClient.setQueryData<ContactWithChannels>(key, (current) =>
-        current ? { ...current, notes } : current,
-      )
-
-      return { snapshot, key }
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.snapshot) {
-        queryClient.setQueryData(context.key, context.snapshot)
-      }
-    },
   })
 }

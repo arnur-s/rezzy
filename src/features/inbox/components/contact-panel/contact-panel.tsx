@@ -1,6 +1,7 @@
 import { PLATFORM_META, PlatformIcon, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { isConversationStatus } from '@/entities/conversation'
+import { ContactNotesSection } from '@/features/contact-notes'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Button } from '@astryxdesign/core/Button'
@@ -9,7 +10,6 @@ import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useContact } from '../../hooks/use-contact'
-import { ContactPanelNotes } from './contact-panel-notes'
 import { ContactPanelStatusSelect } from './contact-panel-status-select'
 
 type Props = {
@@ -124,9 +124,9 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
           />
 
           {contactQuery.data ? (
-            <ContactPanelNotes
+            <ContactNotesSection
+              workspaceId={workspaceId}
               contactId={contactQuery.data.id}
-              initialNotes={contactQuery.data.notes ?? ''}
             />
           ) : (
             <Skeleton width="100%" height={96} radius={3} />

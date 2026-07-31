@@ -10,7 +10,7 @@ export type ContactNotesScope = {
 export async function listContactNotes({
   workspaceId,
   contactId,
-}: ContactNotesScope): Promise<ContactNote[]> {
+}: ContactNotesScope): Promise<Array<ContactNote>> {
   const { data, error } = await supabase
     .from('contact_notes')
     .select('*')

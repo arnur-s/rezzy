@@ -11,7 +11,7 @@ import {
 import type { ContactNotesScope } from '../api/contact-notes'
 import { contactNoteQueryKeys } from '../api/query-keys'
 
-function replaceNote(notes: readonly ContactNote[], next: ContactNote) {
+function replaceNote(notes: ReadonlyArray<ContactNote>, next: ContactNote) {
   return sortContactNotes([
     ...notes.filter((note) => note.id !== next.id),
     next,
@@ -34,7 +34,7 @@ export function useCreateContactNote(scope: ContactNotesScope) {
     mutationFn: ({ body }: { body: string }) =>
       createContactNote({ ...scope, body }),
     onSuccess: (created) => {
-      queryClient.setQueryData<ContactNote[]>(key, (current = []) =>
+      queryClient.setQueryData<Array<ContactNote>>(key, (current = []) =>
         replaceNote(current, created),
       )
     },
@@ -49,7 +49,7 @@ export function useUpdateContactNote(scope: ContactNotesScope) {
     mutationFn: ({ noteId, body }: { noteId: string; body: string }) =>
       updateContactNoteBody({ ...scope, noteId, body }),
     onSuccess: (updated) => {
-      queryClient.setQueryData<ContactNote[]>(key, (current = []) =>
+      queryClient.setQueryData<Array<ContactNote>>(key, (current = []) =>
         replaceNote(current, updated),
       )
     },
@@ -70,8 +70,8 @@ export function useSetContactNotePinned(scope: ContactNotesScope) {
     }) => setContactNotePinned({ ...scope, noteId, isPinned }),
     onMutate: async ({ noteId, isPinned }) => {
       await queryClient.cancelQueries({ queryKey: key })
-      const snapshot = queryClient.getQueryData<ContactNote[]>(key)
-      queryClient.setQueryData<ContactNote[]>(key, (current = []) =>
+      const snapshot = queryClient.getQueryData<Array<ContactNote>>(key)
+      queryClient.setQueryData<Array<ContactNote>>(key, (current = []) =>
         sortContactNotes(
           current.map((note) =>
             note.id === noteId ? { ...note, is_pinned: isPinned } : note,
@@ -84,7 +84,7 @@ export function useSetContactNotePinned(scope: ContactNotesScope) {
       if (context?.snapshot) queryClient.setQueryData(key, context.snapshot)
     },
     onSuccess: (updated) => {
-      queryClient.setQueryData<ContactNote[]>(key, (current = []) =>
+      queryClient.setQueryData<Array<ContactNote>>(key, (current = []) =>
         replaceNote(current, updated),
       )
     },
@@ -100,8 +100,8 @@ export function useDeleteContactNote(scope: ContactNotesScope) {
       deleteContactNote({ ...scope, noteId }),
     onMutate: async ({ noteId }) => {
       await queryClient.cancelQueries({ queryKey: key })
-      const snapshot = queryClient.getQueryData<ContactNote[]>(key)
-      queryClient.setQueryData<ContactNote[]>(key, (current = []) =>
+      const snapshot = queryClient.getQueryData<Array<ContactNote>>(key)
+      queryClient.setQueryData<Array<ContactNote>>(key, (current = []) =>
         current.filter((note) => note.id !== noteId),
       )
       return { snapshot }

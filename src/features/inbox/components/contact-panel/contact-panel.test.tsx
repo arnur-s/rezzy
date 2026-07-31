@@ -4,12 +4,23 @@ import { render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ContactPanel } from './contact-panel'
 
-const hoisted = vi.hoisted(() => ({ useContact: vi.fn() }))
+const hoisted = vi.hoisted(() => ({
+  contactNotesSection: vi.fn(
+    (_props: { workspaceId: string; contactId: string }) => null,
+  ),
+  useContact: vi.fn(),
+}))
 
 vi.mock('../../hooks/use-contact', () => ({ useContact: hoisted.useContact }))
 
-// Both own queries and mutations of their own; this file is about the picture.
-vi.mock('./contact-panel-notes', () => ({ ContactPanelNotes: () => null }))
+vi.mock('@/features/contact-notes', () => ({
+  ContactNotesSection: (props: {
+    workspaceId: string
+    contactId: string
+  }) => hoisted.contactNotesSection(props),
+}))
+
+// Owns its own query and mutation; this file is about panel composition.
 vi.mock('./contact-panel-status-select', () => ({
   ContactPanelStatusSelect: () => null,
 }))
@@ -86,7 +97,7 @@ function renderPanel({
  * has to show something immediately and then prefer the fresher value, in the
  * same order it already resolves the name.
  */
-describe('ContactPanel avatar', () => {
+describe('ContactPanel', () => {
   beforeEach(() => {
     setLocale('en', { reload: false })
     vi.clearAllMocks()
@@ -114,5 +125,14 @@ describe('ContactPanel avatar', () => {
     renderPanel({ conversationAvatar: null, loadedAvatar: null })
 
     expect(document.querySelector('img')).toBeNull()
+  })
+
+  it('scopes Contact Notes to the active workspace and loaded contact', () => {
+    renderPanel({ loadedAvatar: null })
+
+    expect(hoisted.contactNotesSection).toHaveBeenCalledWith({
+      workspaceId: 'workspace-1',
+      contactId: 'contact-1',
+    })
   })
 })
