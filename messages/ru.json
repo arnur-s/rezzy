@@ -356,7 +356,18 @@
   "contact_notes_pin_error": "Не удалось изменить закрепление",
   "contact_notes_delete_error": "Не удалось удалить заметку",
   "contact_notes_validation_required": "Введите текст заметки",
-  "contact_notes_validation_max": "Заметка должна быть короче {max} символов",
+  "contact_notes_validation_max": [
+    {
+      "declarations": ["input max", "local maxPlural = max: plural"],
+      "selectors": ["maxPlural"],
+      "match": {
+        "maxPlural=one": "Заметка должна быть не длиннее {max} символа",
+        "maxPlural=few": "Заметка должна быть не длиннее {max} символов",
+        "maxPlural=many": "Заметка должна быть не длиннее {max} символов",
+        "maxPlural=*": "Заметка должна быть не длиннее {max} символов"
+      }
+    }
+  ],
   "contact_notes_pinned_label": "Закреплённая заметка",
   "inbox_contact_panel_status_label": "Статус диалога",
   "inbox_contact_panel_status_save_error": "Не удалось обновить статус",
