@@ -8,7 +8,16 @@ select plan(39);
 
 -- ── Shape / security metadata ─────────────────────────────────────────────────
 select has_table('public', 'contact_notes', 'contact_notes table exists');
-select row_security_active('public.contact_notes', 'contact_notes has RLS enabled');
+select ok(
+  (
+    select c.relrowsecurity
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'contact_notes'
+  ),
+  'contact_notes has RLS enabled'
+);
 
 select has_column('public', 'contact_notes', 'id', 'contact_notes has id');
 select has_column('public', 'contact_notes', 'workspace_id', 'contact_notes has workspace_id');
@@ -317,6 +326,11 @@ select throws_ok(
   'CONTACT_NOTE_IDENTITY_IMMUTABLE',
   'note identity fields and the author snapshot are immutable after insert'
 );
+
+reset role;
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"20000000-0000-4000-8000-000000000103","role":"authenticated"}';
 
 select throws_ok(
   $$

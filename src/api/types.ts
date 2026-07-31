@@ -154,6 +154,64 @@ export type Database = {
           },
         ]
       }
+      contact_notes: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          body: string
+          contact_id: string
+          created_at: string
+          id: string
+          is_pinned: boolean
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          body: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          body?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_notes_contact_workspace_fkey"
+            columns: ["workspace_id", "contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["workspace_id", "id"]
+          },
+          {
+            foreignKeyName: "contact_notes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           avatar_url: string | null

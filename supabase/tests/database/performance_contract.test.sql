@@ -100,7 +100,7 @@ with expected_indexes(table_name, index_name, column_name) as (
     (
       'contact_notes',
       'contact_notes_contact_order_idx',
-      'contact_id'
+      'workspace_id'
     ),
     (
       'conversation_reads',
