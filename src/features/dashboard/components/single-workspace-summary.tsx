@@ -3,7 +3,9 @@ import type { ChannelType } from '@/entities/channel'
 import { WorkspaceIcon } from '@/entities/workspace'
 import type { Workspace } from '@/entities/workspace'
 import type { WorkspaceDashboardStats } from '@/features/dashboard/api/dashboard-stats'
+import { DashboardSkeleton } from '@/features/dashboard/components/dashboard-skeleton'
 import { SectionError } from '@/features/dashboard/components/section-error'
+import { SectionHeading } from '@/features/dashboard/components/section-heading'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
 import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
@@ -40,29 +42,30 @@ export function SingleWorkspaceSummary({
 }: Props) {
   return (
     <section aria-labelledby="home-workspace-title" className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2
-          id="home-workspace-title"
-          className="text-primary text-sm font-semibold"
-        >
-          {m.home_workspace_section_title()}
-        </h2>
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          <Link
-            to="/workspaces/$id/settings"
-            params={{ id: workspace.id }}
-            className="text-secondary hover:bg-primary/4 hover:text-primary rounded-md px-2 py-1.5 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
-          >
-            {m.home_workspace_manage()}
-          </Link>
-          <Button
-            label={m.dashboard_empty_cta()}
-            variant="ghost"
-            size="sm"
-            onClick={onCreate}
-          />
-        </div>
-      </div>
+      {/* Same heading component and same rank as the multi-workspace grid,
+          so growing from one workspace to two does not silently restyle the
+          section. */}
+      <SectionHeading
+        id="home-workspace-title"
+        title={m.home_workspace_section_title()}
+        actions={
+          <>
+            <Link
+              to="/workspaces/$id/settings"
+              params={{ id: workspace.id }}
+              className="text-secondary hover:bg-primary/4 hover:text-primary rounded-md px-2 py-1.5 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+            >
+              {m.home_workspace_manage()}
+            </Link>
+            <Button
+              label={m.dashboard_empty_cta()}
+              variant="ghost"
+              size="sm"
+              onClick={onCreate}
+            />
+          </>
+        }
+      />
 
       {statsError ? (
         <SectionError
@@ -73,7 +76,9 @@ export function SingleWorkspaceSummary({
       ) : null}
 
       <Link
-        to="/workspaces/$id"
+        // The inbox, not the workspace root: the row advertises unread and
+        // last-message activity, so it should open the place that has them.
+        to="/workspaces/$id/inbox"
         params={{ id: workspace.id }}
         aria-label={workspace.name}
         className={cn(
@@ -107,10 +112,7 @@ export function SingleWorkspaceSummary({
             </p>
           ) : null}
           {statsPending ? (
-            <span
-              aria-hidden="true"
-              className="bg-primary/5 mt-1 block h-4 w-56 max-w-full animate-pulse rounded"
-            />
+            <DashboardSkeleton className="mt-1 h-4 w-56 max-w-full" />
           ) : stats ? (
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
               <p className="text-secondary flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs tabular-nums">

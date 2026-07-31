@@ -361,9 +361,6 @@
     }
   ],
   "inbox_channel_inactive_error": "Канал отключён. Включите его в настройках, чтобы отправлять сообщения",
-  "dashboard_page_kicker": "Главная",
-  "dashboard_page_title": "Ваши пространства",
-  "dashboard_page_description": "Что происходит во всех пространствах",
   "dashboard_load_error_title": "Не удалось загрузить дашборд",
   "dashboard_empty_title": "Пока нет пространств",
   "dashboard_empty_description": "Создайте пространство, чтобы начать получать сообщения",
@@ -429,7 +426,7 @@
   "home_greeting_morning": "Доброе утро",
   "home_greeting_afternoon": "Добрый день",
   "home_greeting_evening": "Добрый вечер",
-  "home_greeting_night": "Доброй ночи",
+  "home_greeting_night": "Поздний вечер",
   "home_summary_unread": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],
@@ -447,10 +444,10 @@
       "declarations": ["input count", "local countPlural = count: plural"],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{count} открытый на вас",
-        "countPlural=few": "{count} открытых на вас",
-        "countPlural=many": "{count} открытых на вас",
-        "countPlural=*": "{count} открытых на вас"
+        "countPlural=one": "{count} открытый диалог на вас",
+        "countPlural=few": "{count} открытых диалога на вас",
+        "countPlural=many": "{count} открытых диалогов на вас",
+        "countPlural=*": "{count} открытых диалога на вас"
       }
     }
   ],
@@ -483,6 +480,7 @@
   "home_summary_all_clear": "Всё разобрано — ни один диалог не ждёт вашего ответа",
   "home_summary_error": "Не удалось загрузить сводку",
   "home_open_inbox": "Открыть входящие",
+  "home_open_inbox_workspace": "Открыть «{name}»",
   "home_attention_title": "Требует вашего внимания",
   "home_attention_error": "Не удалось загрузить очередь",
   "home_attention_showing_top": [
@@ -507,12 +505,12 @@
   "home_attention_reason_snoozed_hint": "Отсрочка закончилась — пора вернуться к диалогу",
   "home_attention_reason_unread": "Непрочитано",
   "home_attention_reason_unread_hint": "Новые сообщения, которые вы ещё не читали",
-  "home_attention_reason_stale": "Без ответа",
+  "home_attention_reason_stale": "Без ответа 2+ дн.",
   "home_attention_reason_stale_hint": "Ждёт вашего ответа больше 2 дней",
   "home_attention_waking_now": "пора вернуться",
-  "home_unassigned_title": "Без исполнителя",
-  "home_unassigned_hint": "Открытые диалоги, которые никто пока не взял",
-  "home_unassigned_error": "Не удалось загрузить диалоги без исполнителя",
+  "home_unassigned_title": "Никто не взял",
+  "home_unassigned_hint": "Открытые диалоги, которые пока ни за кем не закреплены",
+  "home_unassigned_error": "Не удалось загрузить незакреплённые диалоги",
   "home_workspaces_section_title": "Ваши пространства",
   "home_workspace_section_title": "Ваше пространство",
   "home_workspace_manage": "Настройки пространства",

@@ -357,9 +357,6 @@
     }
   ],
   "inbox_channel_inactive_error": "Channel is inactive. Activate it in settings before sending messages",
-  "dashboard_page_kicker": "Home",
-  "dashboard_page_title": "Your workspaces",
-  "dashboard_page_description": "Activity across every workspace you own",
   "dashboard_load_error_title": "Could not load dashboard",
   "dashboard_empty_title": "No workspaces yet",
   "dashboard_empty_description": "Create your first workspace to start receiving conversations",
@@ -463,6 +460,7 @@
   "home_summary_all_clear": "All clear. Nothing assigned to you needs attention right now",
   "home_summary_error": "Couldn’t load your summary",
   "home_open_inbox": "Open inbox",
+  "home_open_inbox_workspace": "Open {name}",
   "home_attention_title": "Needs your attention",
   "home_attention_error": "Couldn't load your queue",
   "home_attention_showing_top": [
@@ -485,7 +483,7 @@
   "home_attention_reason_snoozed_hint": "Snooze ended. This conversation is due back now",
   "home_attention_reason_unread": "Unread",
   "home_attention_reason_unread_hint": "New messages you haven’t read yet",
-  "home_attention_reason_stale": "No reply",
+  "home_attention_reason_stale": "No reply 2+ days",
   "home_attention_reason_stale_hint": "Waiting on a reply for more than 2 days",
   "home_attention_waking_now": "due back now",
   "home_unassigned_title": "Unassigned",

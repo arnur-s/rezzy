@@ -1,5 +1,6 @@
 import type { WorkspaceDashboardStats } from '@/features/dashboard/api/dashboard-stats'
 import type { Workspace } from '@/entities/workspace'
+import { DashboardSkeletonRows } from '@/features/dashboard/components/dashboard-skeleton'
 import { SectionError } from '@/features/dashboard/components/section-error'
 import { m } from '@/paraglide/messages'
 import { Card } from '@astryxdesign/core/Card'
@@ -34,16 +35,17 @@ export function WorkspaceGrid({
     return map
   }, [stats])
 
+  // The grid reserves one placeholder per workspace it already knows about,
+  // so the cards land in the slots the skeleton was holding rather than
+  // resizing the section under the pointer.
   if (statsPending) {
     return (
-      <div
-        aria-hidden="true"
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-      >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {workspaces.map((workspace) => (
-          <div
+          <DashboardSkeletonRows
             key={workspace.id}
-            className="bg-primary/5 h-32 animate-pulse rounded-lg"
+            count={1}
+            rowClassName="h-32"
           />
         ))}
       </div>
@@ -74,7 +76,7 @@ export function WorkspaceGrid({
         <button
           type="button"
           onClick={onCreate}
-          className="group rounded-lg text-left outline-none transition focus-visible:ring-2 focus-visible:ring-accent hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+          className="group rounded-lg text-left outline-none transition focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.99] motion-reduce:transition-none"
         >
           {/* `transparent` + a dashed border, not `muted`. In light mode the
               card background is #FFFFFF (raised above the page) while the muted

@@ -1,3 +1,4 @@
+import type { AttentionItem } from '@/features/dashboard/api/attention-queue'
 import { m } from '@/paraglide/messages'
 import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
@@ -72,7 +73,13 @@ const resolvedHomeQuery = {
   refetch: vi.fn(),
 }
 
-const resolvedAttentionQuery = {
+const resolvedAttentionQuery: {
+  data: { items: Array<AttentionItem>; total: number }
+  isPending: boolean
+  isError: boolean
+  isRefetching: boolean
+  refetch: () => void
+} = {
   data: { items: [], total: 0 },
   isPending: false,
   isError: false,
@@ -99,6 +106,22 @@ vi.mock('@/features/dashboard/hooks/use-attention-queue', () => ({
   useUnassignedQueue: () => resolvedUnassignedQuery,
 }))
 
+/** An attention row belonging to a workspace, so the queue head is choosable. */
+function attentionItem(workspaceId: string): AttentionItem {
+  return {
+    conversationId: `c-${workspaceId}`,
+    workspaceId,
+    contactId: 'ct1',
+    contactName: 'Contact',
+    contactAvatarUrl: null,
+    channelType: 'telegram',
+    channelName: 'Main',
+    reason: 'unread',
+    timestamp: '2026-01-01T00:00:00.000Z',
+    preview: null,
+  }
+}
+
 function workspace(id: string, name: string) {
   return {
     id,
@@ -122,6 +145,7 @@ describe('dashboard home route', () => {
   beforeEach(() => {
     setLocale('en', { reload: false })
     navigateMock.mockClear()
+    resolvedAttentionQuery.data = { items: [], total: 0 }
     dashboardStatsQuery.current = {
       data: { perWorkspace: [] },
       isPending: false,
@@ -199,6 +223,46 @@ describe('dashboard home route', () => {
     expect(link.contains(manage)).toBe(false)
   })
 
+  // The multi-workspace state used to be the one screen in the product with
+  // no primary action at all, because "no single inbox to open" was read as
+  // "no door". The queue already ranks across workspaces, so the button
+  // follows its head and names where it goes.
+  it('gives multi-workspace users a primary action aimed at the top of the queue', () => {
+    workspacesQuery.current = {
+      data: [workspace('w1', 'Acme Sales'), workspace('w2', 'EU Accounts')],
+      isPending: false,
+      isError: false,
+    }
+    resolvedAttentionQuery.data = {
+      items: [attentionItem('w2')],
+      total: 1,
+    }
+    renderRoute()
+
+    const open = screen.getByRole('button', {
+      name: m.home_open_inbox_workspace({ name: 'EU Accounts' }),
+    })
+    fireEvent.click(open)
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/workspaces/$id/inbox',
+      params: { id: 'w2' },
+    })
+
+    resolvedAttentionQuery.data = { items: [], total: 0 }
+  })
+
+  // A card advertising unread counts that lands on an overview screen makes
+  // the user navigate twice for what the card just promised.
+  it('sends workspace cards to the inbox, not the workspace root', () => {
+    workspacesQuery.current = {
+      data: [workspace('w1', 'Acme Sales'), workspace('w2', 'EU Accounts')],
+      isPending: false,
+      isError: false,
+    }
+    renderRoute()
+    const card = screen.getByRole('link', { name: 'EU Accounts' })
+    expect(card.dataset.to).toBe('/workspaces/$id/inbox')
+  })
   it('keeps the workspace grid and create card for two workspaces', () => {
     workspacesQuery.current = {
       data: [workspace('w1', 'Acme Sales'), workspace('w2', 'EU Accounts')],

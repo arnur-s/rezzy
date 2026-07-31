@@ -21,13 +21,19 @@ export function WorkspaceCard({ workspace, stats }: Props) {
   const hasUnread = stats !== null && stats.unread > 0
 
   return (
+    // The inbox, not the workspace root. A card advertising "3 unread, last
+    // message 9m ago" that lands you on an overview screen makes the user
+    // navigate twice for the thing the card just promised.
     <Link
-      to="/workspaces/$id"
+      to="/workspaces/$id/inbox"
       params={{ id: workspace.id }}
       aria-label={workspace.name}
       className={cn(
         'group rounded-lg outline-none transition focus-visible:ring-2 focus-visible:ring-accent',
-        'hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0',
+        // One hover grammar per page: surfaces tint, nothing lifts. Cards used
+        // to translate upward while rows tinted, which is two different claims
+        // about what "hoverable" looks like on a single screen.
+        'active:scale-[0.99] motion-reduce:transition-none',
       )}
     >
       <Card variant="default" height="100%">
@@ -40,7 +46,7 @@ export function WorkspaceCard({ workspace, stats }: Props) {
             <WorkspaceIcon name={workspace.icon} className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-semibold">
+            <p className="truncate text-sm font-semibold">
               {workspace.name}
             </p>
             {workspace.description ? (

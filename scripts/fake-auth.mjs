@@ -17,6 +17,8 @@ export const PROJECT_REF = 'duagwiwduywrmmhqvdly'
 export const USER_ID = '00000000-0000-4000-8000-000000000001'
 export const WORKSPACE_ID = '00000000-0000-4000-8000-000000000002'
 export const CHANNEL_ID = '00000000-0000-4000-8000-000000000003'
+/** Second workspace, seeded only when a check asks for it. */
+export const WORKSPACE_ID_B = '00000000-0000-4000-8000-000000000005'
 
 const FAR_FUTURE = Math.floor(Date.now() / 1000) + 60 * 60 * 24
 
@@ -65,8 +67,43 @@ const CHANNEL = {
  * Fixtures keyed by the table each request targets. Anything unmatched returns
  * an empty list, which every list view in the app renders as an empty state.
  */
-const tableFixtures = (language) => ({
-  workspaces: [WORKSPACE],
+const SECOND_WORKSPACE = {
+  ...WORKSPACE,
+  id: WORKSPACE_ID_B,
+  name: 'Second Workspace',
+  description: 'Fixture for the multi-workspace home state',
+}
+
+const CONTACT = {
+  id: '00000000-0000-4000-8000-000000000006',
+  workspace_id: WORKSPACE_ID,
+  name: 'Мария Иванова',
+  avatar_url: null,
+}
+
+/**
+ * One conversation assigned to the fake user with an unread message, so home's
+ * attention queue has something to rank. Without it the section correctly
+ * stays silent and a check of its visual rank has nothing to measure.
+ */
+const CONVERSATION = {
+  id: '00000000-0000-4000-8000-000000000007',
+  workspace_id: WORKSPACE_ID,
+  contact_id: CONTACT.id,
+  status: 'open',
+  assigned_to: USER_ID,
+  last_message_at: '2026-01-02T00:00:00Z',
+  last_message_preview: 'Здравствуйте, когда будет доставка?',
+  snoozed_until: null,
+  channel: { id: CHANNEL_ID, type: CHANNEL.type, name: CHANNEL.name },
+  contact: { id: CONTACT.id, name: CONTACT.name, avatar_url: null },
+}
+
+const tableFixtures = (language, workspaceCount, seedQueue) => ({
+  workspaces:
+    workspaceCount > 1 ? [WORKSPACE, SECOND_WORKSPACE] : [WORKSPACE],
+  conversations: seedQueue ? [CONVERSATION] : [],
+  contacts: seedQueue ? [CONTACT] : [],
   workspace_members: [
     {
       id: '00000000-0000-4000-8000-000000000004',
@@ -100,9 +137,17 @@ const tableFixtures = (language) => ({
  * so seeding it afterwards would let the auth gate bounce to /sign-in first.
  *
  * `language` is the preference on the fake profile row: 'en', 'ru', or 'auto'.
+ *
+ * `workspaceCount` seeds a second workspace. Home's layout and its primary
+ * action both branch on this count, so the multi-workspace shape is only
+ * reachable in a browser check that asks for it.
  */
-export async function installFakeAuth(page, baseUrl, { language = 'en' } = {}) {
-  const fixtures = tableFixtures(language)
+export async function installFakeAuth(
+  page,
+  baseUrl,
+  { language = 'en', workspaceCount = 1, seedQueue = false } = {},
+) {
+  const fixtures = tableFixtures(language, workspaceCount, seedQueue)
 
   await page.addInitScript(
     ({ ref, session }) => {
@@ -129,8 +174,12 @@ export async function installFakeAuth(page, baseUrl, { language = 'en' } = {}) {
     if (url.pathname.startsWith('/auth/v1/logout')) return json({})
 
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
-      // RPCs here return counts or ids; an empty list satisfies every caller
-      // that renders a list, and 0 satisfies the counters.
+      // Most RPCs here return counts or ids, where an empty list satisfies
+      // every caller. The unread count is the exception: it is what makes a
+      // seeded conversation qualify for home's attention queue.
+      if (seedQueue && url.pathname.endsWith('get_unread_counts_for_workspaces')) {
+        return json([{ conversation_id: CONVERSATION.id, unread_count: 2 }])
+      }
       return json([])
     }
 

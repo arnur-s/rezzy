@@ -55,13 +55,22 @@ describe('UnassignedList', () => {
     expect(screen.getByText(m.home_unassigned_title())).toBeTruthy()
   })
 
-  it('stays silent while pending and when empty', () => {
+  // The section used to render nothing while its query was in flight, so it
+  // appeared late and pushed the workspace section down the page. It now
+  // holds its slot with a placeholder, and collapses only once it knows the
+  // answer is "nothing waiting".
+  it('holds its slot while pending, then collapses when empty', () => {
     const pending = renderList({ isPending: true })
-    expect(screen.queryByText(m.home_unassigned_title())).toBeNull()
+    expect(screen.getByText(m.home_unassigned_title())).toBeTruthy()
     pending.unmount()
 
     renderList({ items: [] })
     expect(screen.queryByText(m.home_unassigned_title())).toBeNull()
+  })
+
+  it('explains what qualifies on the page, not only in a hover tooltip', () => {
+    renderList({ items: [item] })
+    expect(screen.getByText(m.home_unassigned_hint())).toBeTruthy()
   })
 
   it('does not hide a query failure behind the empty state', () => {

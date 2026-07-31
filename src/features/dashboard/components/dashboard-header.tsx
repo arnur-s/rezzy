@@ -1,6 +1,7 @@
 import type { HomeStats } from '@/features/dashboard/api/home-stats'
 import { GreetingHeader } from '@/features/dashboard/components/greeting-header'
 import { HomeSummaryLine } from '@/features/dashboard/components/home-summary-line'
+import type { HomePrimaryDestination } from '@/features/dashboard/lib/home-primary-destination'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { useNavigate } from '@tanstack/react-router'
@@ -11,14 +12,24 @@ type Props = {
   isError: boolean
   onRetry: () => void
   isRetrying?: boolean
-  /** Present when the user has exactly one workspace, so the header can offer a direct door. */
-  inboxWorkspaceId: string | null
+  /**
+   * Where the page's one primary action goes. Null only before any workspace
+   * exists, which is the empty state and has its own call to action.
+   */
+  destination: HomePrimaryDestination | null
+  /** True while the summary has nothing to report, so the header stays quiet. */
+  isAllClear?: boolean
 }
 
 /**
  * Greeting, the operational summary, and the page's one primary action.
- * "Open inbox" only exists when there is exactly one workspace — with several,
- * there is no single inbox to open and the workspace cards are the doors.
+ *
+ * The button used to appear only for single-workspace users, which left the
+ * people juggling several — the ones who most need triage help — on the only
+ * screen in the product with no primary action. It now always points somewhere,
+ * and `resolveHomePrimaryDestination` decides where; with several workspaces the
+ * label names the one it opens, so the button never navigates somewhere the
+ * user did not expect.
  */
 export function DashboardHeader({
   stats,
@@ -26,7 +37,8 @@ export function DashboardHeader({
   isError,
   onRetry,
   isRetrying = false,
-  inboxWorkspaceId,
+  destination,
+  isAllClear = false,
 }: Props) {
   const navigate = useNavigate()
 
@@ -42,17 +54,24 @@ export function DashboardHeader({
           isError={isError}
           onRetry={onRetry}
           isRetrying={isRetrying}
+          inboxWorkspaceId={destination?.workspaceId ?? null}
         />
       </div>
-      {inboxWorkspaceId ? (
+      {destination ? (
         <Button
-          label={m.home_open_inbox()}
-          variant="primary"
+          label={
+            destination.isOnlyWorkspace
+              ? m.home_open_inbox()
+              : m.home_open_inbox_workspace({ name: destination.workspaceName })
+          }
+          // With nothing waiting there is no work to send anyone to, so the
+          // door stays available but stops competing with the all-clear.
+          variant={isAllClear ? 'secondary' : 'primary'}
           size="sm"
           onClick={() =>
             void navigate({
               to: '/workspaces/$id/inbox',
-              params: { id: inboxWorkspaceId },
+              params: { id: destination.workspaceId },
             })
           }
         />

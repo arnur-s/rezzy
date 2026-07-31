@@ -61,8 +61,15 @@ describe('ru counted messages agree with their number', () => {
   })
 
   it('declines the home summary segments', () => {
-    expect(m.home_summary_open({ count: 1 }, ru)).toBe('1 открытый на вас')
-    expect(m.home_summary_open({ count: 4 }, ru)).toBe('4 открытых на вас')
+    expect(m.home_summary_open({ count: 1 }, ru)).toBe(
+      '1 открытый диалог на вас',
+    )
+    expect(m.home_summary_open({ count: 4 }, ru)).toBe(
+      '4 открытых диалога на вас',
+    )
+    expect(m.home_summary_open({ count: 7 }, ru)).toBe(
+      '7 открытых диалогов на вас',
+    )
     expect(m.home_summary_waking({ count: 1 }, ru)).toBe(
       '1 отложенный скоро вернётся',
     )

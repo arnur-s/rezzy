@@ -9,13 +9,17 @@ import { getTimeOfDayGreeting } from '../utils/get-time-of-day-greeting'
  * renaming yourself on the profile page changes the greeting too. Auth metadata
  * is frozen at sign-up, which made this the most visible place in the product
  * still addressing people by a name they had already changed.
+ *
+ * Sized `text-base`, not `text-lg`: 16px is the ceiling for any authenticated
+ * surface, and the system carries hierarchy by weight rather than by scale.
+ * Position and weight already make this the loudest line on the page.
  */
 export function GreetingHeader() {
   const greeting = getTimeOfDayGreeting()
   const { displayName } = useMyIdentity()
 
   return (
-    <h1 className="text-primary truncate text-lg leading-tight font-semibold">
+    <h1 className="text-primary truncate text-base leading-tight font-semibold">
       {displayName
         ? m.home_greeting_line({ greeting, name: displayName })
         : greeting}

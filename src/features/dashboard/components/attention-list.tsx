@@ -1,7 +1,9 @@
 import type { Workspace } from '@/entities/workspace'
 import type { AttentionItem } from '@/features/dashboard/api/attention-queue'
 import { DashboardConversationRow } from '@/features/dashboard/components/dashboard-conversation-row'
+import { DashboardSkeletonRows } from '@/features/dashboard/components/dashboard-skeleton'
 import { SectionError } from '@/features/dashboard/components/section-error'
+import { SectionHeading } from '@/features/dashboard/components/section-heading'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
 import { m } from '@/paraglide/messages'
 import { List } from '@/components/list'
@@ -19,7 +21,7 @@ type Props = {
   isError: boolean
   onRetry: () => void
   isRetrying?: boolean
-  /** Present when the user has exactly one workspace. */
+  /** Where the page's primary action goes, so the overflow line can offer the same door. */
   inboxWorkspaceId: string | null
   /**
    * True when the summary line above has already reported the all-clear.
@@ -57,15 +59,16 @@ export function AttentionList({
 
   return (
     <section aria-labelledby="home-attention-title" className="space-y-3">
-      <h2
+      {/* The one section the page exists to serve, so it is the one heading
+          that carries full weight. */}
+      <SectionHeading
         id="home-attention-title"
-        className="text-primary text-sm font-semibold"
-      >
-        {m.home_attention_title()}
-      </h2>
+        title={m.home_attention_title()}
+        rank="primary"
+      />
 
       {isLoading ? (
-        <Skeleton />
+        <DashboardSkeletonRows count={3} />
       ) : isError ? (
         <SectionError
           message={m.home_attention_error()}
@@ -142,8 +145,13 @@ function ReasonChip({
     stale: 'bg-primary/[0.05] text-secondary border-primary/10',
   }
   return (
+    // `title` alone left the definition of each reason unreachable by keyboard
+    // and unreliable in screen readers. The visible label now carries the
+    // threshold where it has one, and the full sentence is exposed through the
+    // accessible name rather than a hover-only attribute.
     <span
       title={getReasonHint(reason)}
+      aria-label={`${label}. ${getReasonHint(reason)}`}
       className={cn(
         'shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold leading-4',
         classes[reason],
@@ -172,16 +180,6 @@ function EmptyState() {
         </p>
       </div>
     </div>
-  )
-}
-
-function Skeleton() {
-  return (
-    <ul className="space-y-2" aria-hidden="true">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <li key={i} className="bg-primary/5 h-12 animate-pulse rounded-lg" />
-      ))}
-    </ul>
   )
 }
 

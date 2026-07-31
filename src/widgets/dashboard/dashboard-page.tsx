@@ -3,6 +3,7 @@ import { Loader } from '@/components/loader'
 import { AttentionList } from '@/features/dashboard/components/attention-list'
 import { DashboardHeader } from '@/features/dashboard/components/dashboard-header'
 import { SectionError } from '@/features/dashboard/components/section-error'
+import { SectionHeading } from '@/features/dashboard/components/section-heading'
 import { SingleWorkspaceSummary } from '@/features/dashboard/components/single-workspace-summary'
 import { UnassignedList } from '@/features/dashboard/components/unassigned-list'
 import { WorkspaceGrid } from '@/features/dashboard/components/workspace-grid'
@@ -11,6 +12,7 @@ import {
   useUnassignedQueue,
 } from '@/features/dashboard/hooks/use-attention-queue'
 import { useDashboardStats } from '@/features/dashboard/hooks/use-dashboard-stats'
+import { resolveHomePrimaryDestination } from '@/features/dashboard/lib/home-primary-destination'
 import { useHomeStats } from '@/features/dashboard/hooks/use-home-stats'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
@@ -38,7 +40,18 @@ export function DashboardPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const workspaces = workspacesQuery.data ?? []
-  const inboxWorkspaceId = workspaces.length === 1 ? workspaces[0].id : null
+
+  // Home always has a door. Which one is a product decision, not a count:
+  // see `resolveHomePrimaryDestination`.
+  const primaryDestination = useMemo(
+    () =>
+      resolveHomePrimaryDestination(
+        workspaces,
+        attentionQuery.data?.items ?? [],
+        dashboardStatsQuery.data?.perWorkspace ?? [],
+      ),
+    [workspaces, attentionQuery.data, dashboardStatsQuery.data],
+  )
 
   // The summary line and the attention list read the same numbers, so at zero
   // they both render an all-clear. Only the summary should say it.
@@ -81,7 +94,8 @@ export function DashboardPage() {
               isError={homeStatsQuery.isError}
               onRetry={() => void homeStatsQuery.refetch()}
               isRetrying={homeStatsQuery.isRefetching}
-              inboxWorkspaceId={inboxWorkspaceId}
+              destination={primaryDestination}
+              isAllClear={isSummaryAllClear}
             />
 
             <AttentionList
@@ -92,7 +106,7 @@ export function DashboardPage() {
               isError={attentionQuery.isError}
               onRetry={() => void attentionQuery.refetch()}
               isRetrying={attentionQuery.isRefetching}
-              inboxWorkspaceId={inboxWorkspaceId}
+              inboxWorkspaceId={primaryDestination?.workspaceId ?? null}
               isSummaryAllClear={isSummaryAllClear}
             />
 
@@ -124,12 +138,10 @@ export function DashboardPage() {
                 aria-labelledby="home-workspaces-title"
                 className="space-y-3"
               >
-                <h2
+                <SectionHeading
                   id="home-workspaces-title"
-                  className="text-primary text-sm font-semibold"
-                >
-                  {m.home_workspaces_section_title()}
-                </h2>
+                  title={m.home_workspaces_section_title()}
+                />
                 <WorkspaceGrid
                   workspaces={workspaces}
                   stats={dashboardStatsQuery.data?.perWorkspace ?? []}
