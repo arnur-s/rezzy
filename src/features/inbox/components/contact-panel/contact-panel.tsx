@@ -1,10 +1,6 @@
-import {
-  PLATFORM_META,
-  PlatformIcon,
-  isChannelType,
-} from '@/entities/channel'
-import { isConversationStatus } from '@/entities/conversation'
+import { PLATFORM_META, PlatformIcon, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
+import { isConversationStatus } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Button } from '@astryxdesign/core/Button'
@@ -14,7 +10,6 @@ import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useContact } from '../../hooks/use-contact'
 import { ContactPanelNotes } from './contact-panel-notes'
-import { ContactPanelQuickActions } from './contact-panel-quick-actions'
 import { ContactPanelStatusSelect } from './contact-panel-status-select'
 
 type Props = {
@@ -56,7 +51,7 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
       className="bg-surface flex h-full w-full min-w-0 flex-col overflow-hidden"
     >
       <header className="border-border/60 flex h-16 shrink-0 items-center justify-between border-b px-4">
-        <h3 className="text-primary text-sm font-semibold">
+        <h3 className="text-primary font-semibold">
           {m.inbox_contact_panel_title()}
         </h3>
         <IconButton
@@ -126,12 +121,6 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
             workspaceId={workspaceId}
             conversationId={conversation.id}
             value={status}
-          />
-
-          <ContactPanelQuickActions
-            workspaceId={workspaceId}
-            conversationId={conversation.id}
-            currentStatus={status}
           />
 
           {contactQuery.data ? (

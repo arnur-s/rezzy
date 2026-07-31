@@ -1,4 +1,4 @@
-import { PLATFORM_META, PlatformIcon, isChannelType } from '@/entities/channel'
+﻿import { PLATFORM_META, PlatformIcon, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'

@@ -289,7 +289,7 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
  */
 function BrandMark() {
   return (
-    <span className="text-primary flex size-6 shrink-0 items-center justify-center leading-none font-semibold">
+    <span className="text-primary flex size-6 shrink-0 items-center justify-center leading-none font-semibold text-xl">
       R
     </span>
   )

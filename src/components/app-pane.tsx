@@ -27,7 +27,7 @@ import type { CSSProperties, ReactNode } from 'react'
  */
 
 /** Canvas gutter, matched to the gap between panes so the rhythm is uniform. */
-const GUTTER = 'md:gap-2 md:p-2'
+const GUTTER = 'md:gap-2 md:p-2 pl-0!'
 
 type AppPaneGroupProps = {
   children: ReactNode

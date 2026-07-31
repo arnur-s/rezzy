@@ -61,7 +61,7 @@ function RouteComponent() {
     <AppPane>
       {/* 64px and a hairline — the shared pane-header contract. */}
       <header className="border-border/60 flex h-16 shrink-0 items-center border-b">
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-0">
           <h1 className="truncate text-base font-semibold">
             {m.account_settings_title()}
           </h1>
@@ -71,11 +71,7 @@ function RouteComponent() {
       {/* The pane owns the scroll edge-to-edge; the column inside it owns the
           measure, so the scrollbar rides the pane rather than the text. */}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
-          <p className="text-secondary max-w-2xl text-sm">
-            {m.account_settings_description()}
-          </p>
-
+        <div className="mx-auto w-full max-w-3xl">
           {/*
             One nav for both breakpoints. TabList lays its tabs out in a row but
             does not scroll them: at 390px the Russian labels need 421px in a
@@ -86,7 +82,7 @@ function RouteComponent() {
             and last tabs keep the page's own inset, so a scrolled tab does not
             sit flush against the viewport edge.
           */}
-          <div className="-mx-4 overflow-x-auto px-4 pt-6 sm:-mx-8 sm:px-8">
+          <div className="-mx-4px-4 pt-6 sm:-mx-8 sm:px-8">
             <TabList
               value={selectedKey}
               onChange={(key) => {

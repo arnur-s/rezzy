@@ -370,6 +370,7 @@ export function ChatInput({
             placement="above"
             hasCloseButton={false}
             label={m.inbox_composer_emoji_label()}
+            className="p-0"
             content={
               emojiPickerOpen ? (
                 <EmojiPicker onEmojiSelect={handleEmojiSelect} />

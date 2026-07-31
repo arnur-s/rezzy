@@ -56,8 +56,6 @@ export function AppearanceSettings() {
     <SettingsSection>
       <SettingRow
         label={m.settings_appearance_mode_label()}
-        description={m.settings_appearance_mode_description()}
-        scope={m.settings_scope_this_device()}
         control={
           <SegmentedControl
             size="sm"
@@ -81,8 +79,6 @@ export function AppearanceSettings() {
 
       <SettingRow
         label={m.settings_appearance_language_label()}
-        description={m.settings_appearance_language_description()}
-        scope={m.settings_scope_account()}
         control={
           <SegmentedControl
             size="sm"

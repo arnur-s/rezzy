@@ -1,4 +1,5 @@
 import { m } from '@/paraglide/messages'
+import { useTheme } from '@/providers/theme-provider'
 import { Spinner } from '@astryxdesign/core/Spinner'
 import { Suspense, lazy } from 'react'
 
@@ -22,13 +23,13 @@ const EmojiMartPicker = lazy(async () => {
 
   return {
     default: function LoadedPicker({
+      theme,
       onEmojiSelect,
     }: {
+      theme: string
       onEmojiSelect: (emoji: { native: string }) => void
     }) {
-      return (
-        <Picker data={data} onEmojiSelect={onEmojiSelect} theme="auto" />
-      )
+      return <Picker data={data} onEmojiSelect={onEmojiSelect} theme={theme} />
     },
   }
 })
@@ -38,6 +39,8 @@ export function EmojiPicker({
 }: {
   onEmojiSelect: (emoji: { native: string }) => void
 }) {
+  const { theme } = useTheme()
+
   return (
     <Suspense
       fallback={
@@ -49,7 +52,7 @@ export function EmojiPicker({
         </div>
       }
     >
-      <EmojiMartPicker onEmojiSelect={onEmojiSelect} />
+      <EmojiMartPicker onEmojiSelect={onEmojiSelect} theme={theme} />
     </Suspense>
   )
 }

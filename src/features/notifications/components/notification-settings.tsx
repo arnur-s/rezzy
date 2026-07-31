@@ -154,8 +154,6 @@ export function NotificationSettings() {
           <>
             <SettingRow
               label={m.settings_notifications_in_app_label()}
-              description={m.settings_notifications_in_app_description()}
-              scope={m.settings_scope_account()}
               control={
                 <ToggleSwitch
                   isSelected={preferences.inAppEnabled}
@@ -169,8 +167,6 @@ export function NotificationSettings() {
 
             <SettingRow
               label={m.settings_notifications_sound_label()}
-              description={m.settings_notifications_sound_description()}
-              scope={m.settings_scope_account()}
               control={
                 <ToggleSwitch
                   isSelected={preferences.soundEnabled}
@@ -185,7 +181,6 @@ export function NotificationSettings() {
             <SettingRow
               label={m.settings_notifications_preview_label()}
               description={m.settings_notifications_preview_description()}
-              scope={m.settings_scope_account()}
               control={
                 // `sm:w-48` was cut to fit the English options and truncated
                 // the Russian ones ("Показывать сообще…"). A minimum plus a
@@ -216,7 +211,7 @@ export function NotificationSettings() {
         <SettingRow
           label={m.settings_notifications_desktop_label()}
           description={m.settings_notifications_desktop_description()}
-          scope={m.settings_scope_this_browser()}
+          // scope={m.settings_scope_this_browser()}
           control={
             <div
               aria-describedby={permissionHelp ? permissionHelpId : undefined}
@@ -250,13 +245,9 @@ export function NotificationSettings() {
             </span>
           </div>
 
-          {permissionHelp ? (
+          {permissionHelp && (
             <p id={permissionHelpId} className="text-secondary text-xs">
               {permissionHelp}
-            </p>
-          ) : (
-            <p className="text-secondary text-xs">
-              {m.settings_notifications_permission_managed_help()}
             </p>
           )}
         </div>

@@ -15,7 +15,5 @@ todos.json
 *.log
 # Output of scripts/copy-screenshots.mjs.
 .screenshots/
-# heroui-agents-md
-.heroui-docs/
 full-schema.sql
 project-structure.txt
