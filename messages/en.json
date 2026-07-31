@@ -499,6 +499,20 @@
   "home_unassigned_title": "Unassigned",
   "home_unassigned_hint": "Open conversations nobody has picked up yet",
   "home_unassigned_error": "Couldn't load unassigned conversations",
+  "home_unassigned_showing_top": [
+    {
+      "declarations": [
+        "input count",
+        "input total",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Showing 1 of {total}",
+        "countPlural=*": "Showing {count} of {total}"
+      }
+    }
+  ],
   "home_workspaces_section_title": "Your workspaces",
   "home_workspace_section_title": "Your workspace",
   "home_workspace_manage": "Workspace settings",

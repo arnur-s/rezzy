@@ -36,6 +36,7 @@ function renderList(props: Partial<Parameters<typeof UnassignedList>[0]> = {}) {
   return renderWithQueryClient(
     <UnassignedList
       items={[]}
+      total={0}
       workspaces={workspaces}
       isPending={false}
       isError={false}

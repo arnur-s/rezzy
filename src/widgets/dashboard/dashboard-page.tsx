@@ -96,7 +96,7 @@ export function DashboardPage() {
               isRetrying={homeStatsQuery.isRefetching}
               destination={primaryDestination}
               isAllClear={isSummaryAllClear}
-              unassignedCount={unassignedQuery.data?.length ?? 0}
+              unassignedCount={unassignedQuery.data?.total ?? 0}
             />
 
             <AttentionList
@@ -112,7 +112,8 @@ export function DashboardPage() {
             />
 
             <UnassignedList
-              items={unassignedQuery.data ?? []}
+              items={unassignedQuery.data?.items ?? []}
+              total={unassignedQuery.data?.total ?? 0}
               workspaces={workspaces}
               isPending={unassignedQuery.isPending}
               isError={unassignedQuery.isError}

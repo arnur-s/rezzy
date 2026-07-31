@@ -1,7 +1,7 @@
 import { mockQueryBuilder } from '@/test/supabase-query-mock'
 import type { QueryBuilderMock } from '@/test/supabase-query-mock'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getAttentionQueue } from './attention-queue'
+import { getAttentionQueue, getUnassignedQueue } from './attention-queue'
 
 const supabaseMock = vi.hoisted(() => ({
   from: vi.fn(),
@@ -17,8 +17,8 @@ vi.mock('./unread-counts', () => ({
 
 let lastQuery: QueryBuilderMock<Array<unknown>>
 
-function mockConversations(rows: Array<unknown>) {
-  lastQuery = mockQueryBuilder(rows)
+function mockConversations(rows: Array<unknown>, count: number | null = null) {
+  lastQuery = mockQueryBuilder(rows, null, count)
   supabaseMock.from.mockReturnValue(lastQuery)
 }
 
@@ -107,5 +107,48 @@ describe('getAttentionQueue', () => {
     await getAttentionQueue('user-1', ['w1'], shared)
 
     expect(unreadMock.getUnreadCountsForWorkspaces).not.toHaveBeenCalled()
+  })
+})
+
+describe('getUnassignedQueue', () => {
+  beforeEach(() => {
+    supabaseMock.from.mockReset()
+  })
+
+  // The count is quoted as a fact in the home summary ("nothing is waiting on
+  // you, but N are unclaimed"), so returning the page length would state the
+  // display cap with false precision the moment the real number exceeded it.
+  it('reports the true total, not the capped page length', async () => {
+    const rows = Array.from({ length: 5 }, (_, i) => conversation(`u${i}`))
+    mockConversations(rows, 23)
+
+    const result = await getUnassignedQueue(['w1'])
+
+    expect(result.items).toHaveLength(5)
+    expect(result.total).toBe(23)
+  })
+
+  it('falls back to the page length when the server omits the count', async () => {
+    mockConversations([conversation('u1')], null)
+
+    const result = await getUnassignedQueue(['w1'])
+
+    // Never an overstatement: at worst it undercounts, which cannot turn the
+    // summary into a false claim of calm.
+    expect(result.total).toBe(1)
+  })
+
+  it('asks for an exact count rather than deriving one from the page', async () => {
+    mockConversations([], 0)
+    await getUnassignedQueue(['w1'])
+
+    const selectArgs = lastQuery.argsFor('select')
+    expect(selectArgs?.[1]).toMatchObject({ count: 'exact' })
+  })
+
+  it('returns an empty queue without querying when there are no workspaces', async () => {
+    const result = await getUnassignedQueue([])
+    expect(result).toEqual({ items: [], total: 0 })
+    expect(supabaseMock.from).not.toHaveBeenCalled()
   })
 })

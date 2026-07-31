@@ -523,6 +523,22 @@
   "home_unassigned_title": "Никто не взял",
   "home_unassigned_hint": "Открытые диалоги, которые пока ни за кем не закреплены",
   "home_unassigned_error": "Не удалось загрузить незакреплённые диалоги",
+  "home_unassigned_showing_top": [
+    {
+      "declarations": [
+        "input count",
+        "input total",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Показан 1 из {total}",
+        "countPlural=few": "Показаны {count} из {total}",
+        "countPlural=many": "Показаны {count} из {total}",
+        "countPlural=*": "Показаны {count} из {total}"
+      }
+    }
+  ],
   "home_workspaces_section_title": "Ваши пространства",
   "home_workspace_section_title": "Ваше пространство",
   "home_workspace_manage": "Настройки пространства",

@@ -11,6 +11,8 @@ import { useMemo } from 'react'
 
 type Props = {
   items: Array<UnassignedItem>
+  /** Qualifying conversations before the cap, so the list can say what it hides. */
+  total: number
   workspaces: Array<Workspace>
   isPending: boolean
   isError: boolean
@@ -31,6 +33,7 @@ type Props = {
  */
 export function UnassignedList({
   items,
+  total,
   workspaces,
   isPending,
   isError,
@@ -66,7 +69,8 @@ export function UnassignedList({
           isRetrying={isRetrying}
         />
       ) : (
-        <List size="md">
+        <>
+          <List size="md">
           {items.map((item) => (
             <DashboardConversationRow
               key={item.conversationId}
@@ -83,7 +87,19 @@ export function UnassignedList({
               }
             />
           ))}
-        </List>
+          </List>
+          {total > items.length ? (
+            // The attention list discloses its cap; this one used to
+            // truncate at five in silence, so the same page was honest
+            // about one queue and quiet about the other.
+            <p className="text-secondary text-xs">
+              {m.home_unassigned_showing_top({
+                count: items.length,
+                total,
+              })}
+            </p>
+          ) : null}
+        </>
       )}
     </section>
   )

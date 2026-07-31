@@ -41,6 +41,13 @@ export type AttentionQueue = {
   total: number
 }
 
+export type UnassignedQueue = {
+  /** The most recent items, capped for display. */
+  items: Array<UnassignedItem>
+  /** Every qualifying conversation, so the UI can be honest about the cap. */
+  total: number
+}
+
 export type UnassignedItem = {
   conversationId: string
   workspaceId: string
@@ -184,15 +191,23 @@ const UNASSIGNED_LIMIT = 5
  * Unassigned open conversations with the most recent inbound activity —
  * "what just arrived that nobody picked up" as opposed to "what's aging on my
  * plate".
+ *
+ * Returns the true total alongside the capped page. The count is quoted as a
+ * fact in the summary line ("nothing is waiting on you, but N are unclaimed"),
+ * so returning the page length would state `UNASSIGNED_LIMIT` with false
+ * precision whenever the real number exceeded it — the honesty mechanism
+ * lying, in the one sentence built to be trusted.
  */
 export async function getUnassignedQueue(
   workspaceIds: Array<string>,
-): Promise<Array<UnassignedItem>> {
-  if (workspaceIds.length === 0) return []
+): Promise<UnassignedQueue> {
+  if (workspaceIds.length === 0) return { items: [], total: 0 }
 
-  const { data, error } = await supabase
+  // `count: exact` applies the same filters as the page, so the total the
+  // cap hides costs no extra round trip.
+  const { data, error, count } = await supabase
     .from('conversations')
-    .select(ATTENTION_SELECT)
+    .select(ATTENTION_SELECT, { count: 'exact' })
     .is('assigned_to', null)
     .eq('status', 'open')
     .in('workspace_id', workspaceIds)
@@ -214,5 +229,7 @@ export async function getUnassignedQueue(
       preview: raw.last_message_preview?.trim() || null,
     })
   }
-  return items
+  // `count` is null only if the server omits the header, in which case the
+  // page length is the best available answer and never an overstatement.
+  return { items, total: count ?? items.length }
 }

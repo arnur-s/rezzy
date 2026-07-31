@@ -1,6 +1,14 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 
-type Result<T> = { data: T; error: PostgrestError | null }
+/**
+ * `count` is present only when the caller asked for it (`select(..., { count
+ * })`), so it is optional here for the same reason it is optional there.
+ */
+type Result<T> = {
+  data: T
+  error: PostgrestError | null
+  count?: number | null
+}
 
 /**
  * A stand-in for a PostgREST query builder.
@@ -41,6 +49,7 @@ export function postgrestError(message = 'mock query failed'): PostgrestError {
 export function mockQueryBuilder<T>(
   data: T | ((calls: Array<[string, ...Array<unknown>]>) => T),
   error: PostgrestError | null = null,
+  count: number | null = null,
 ): QueryBuilderMock<T> {
   const calls: Array<[string, ...Array<unknown>]> = []
 
@@ -59,7 +68,7 @@ export function mockQueryBuilder<T>(
         typeof data === 'function'
           ? (data as (c: typeof calls) => T)(calls)
           : data
-      return Promise.resolve({ data: rows, error }).then(onFulfilled)
+      return Promise.resolve({ data: rows, error, count }).then(onFulfilled)
     },
   }
 
