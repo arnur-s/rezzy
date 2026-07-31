@@ -42,7 +42,7 @@ function NoteTimestamp({ note }: { note: ContactNote }) {
     : m.contact_notes_created_timestamp_aria({ author, date })
 
   return (
-    <time className="text-secondary text-[0.6875rem]" dateTime={value} aria-label={accessible}>
+    <time className="text-secondary text-xs" dateTime={value} aria-label={accessible}>
       {visible}
     </time>
   )
