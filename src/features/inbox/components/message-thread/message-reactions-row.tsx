@@ -1,4 +1,5 @@
 import type { MessageReactionRow } from '@/entities/message'
+import { displayReactionEmoji, groupMessageReactions } from '@/entities/message'
 import { cn } from '@/lib/cn'
 import { useMemo } from 'react'
 
@@ -7,21 +8,13 @@ type Props = {
   isOutbound: boolean
 }
 
-/** Custom-emoji reactions arrive as opaque provider ids; render a fallback. */
-function displayEmoji(emoji: string): string {
-  return emoji.startsWith('custom:') ? '💠' : emoji
-}
-
-/** Emoji chips with counts, shown under the bubble like major messengers. */
+/**
+ * Emoji chips with counts, shown under the bubble like major messengers. The
+ * counts are derived from the reaction records themselves, so a re-delivered
+ * event cannot inflate one.
+ */
 export function MessageReactionsRow({ reactions, isOutbound }: Props) {
-  const grouped = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const reaction of reactions) {
-      const key = displayEmoji(reaction.emoji)
-      counts.set(key, (counts.get(key) ?? 0) + 1)
-    }
-    return Array.from(counts.entries())
-  }, [reactions])
+  const grouped = useMemo(() => groupMessageReactions(reactions), [reactions])
 
   if (grouped.length === 0) return null
 
@@ -32,14 +25,14 @@ export function MessageReactionsRow({ reactions, isOutbound }: Props) {
         isOutbound ? 'justify-end' : 'justify-start',
       )}
     >
-      {grouped.map(([emoji, count]) => (
+      {grouped.map((group) => (
         <span
-          key={emoji}
+          key={group.emoji}
           className="inline-flex items-center gap-0.5 rounded-full bg-primary/8 px-1.5 py-0.5 text-xs shadow-xs"
         >
-          <span>{emoji}</span>
-          {count > 1 ? (
-            <span className="text-xs text-primary/60">{count}</span>
+          <span>{displayReactionEmoji(group.emoji)}</span>
+          {group.count > 1 ? (
+            <span className="text-xs text-primary/60">{group.count}</span>
           ) : null}
         </span>
       ))}

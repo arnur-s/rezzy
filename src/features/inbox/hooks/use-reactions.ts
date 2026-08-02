@@ -1,4 +1,5 @@
 import type { MessageReactionRow } from '@/entities/message'
+import { applyReactionRow, dedupeReactions } from '@/entities/message'
 import { supabase } from '@/utils/supabase'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
@@ -18,7 +19,9 @@ export function useConversationReactions(conversationId: string | null) {
 
   const reactionsByMessageId = useMemo(() => {
     const map = new Map<string, Array<MessageReactionRow>>()
-    for (const reaction of query.data ?? []) {
+    // A reactor that reached the same emoji through two provider spellings has
+    // two rows; the reaction happened once.
+    for (const reaction of dedupeReactions(query.data ?? [])) {
       if (!reaction.message_id) continue
       const list = map.get(reaction.message_id)
       if (list) {
@@ -36,6 +39,12 @@ export function useConversationReactions(conversationId: string | null) {
 /**
  * Keeps the reactions cache live: webhook-driven INSERT/UPDATE rows replace or
  * remove cached entries (a row flipping to action='removed' disappears).
+ *
+ * A reaction is not a message. This subscription touches the reactions cache
+ * and nothing else — no conversation preview, no unread counts, and no
+ * notification of any kind — so a counter ticking up never announces itself or
+ * marks a thread unread. Re-delivered events are absorbed by
+ * `applyReactionRow`, which is why nothing here reports a duplicate as an error.
  */
 export function useReactionsRealtime(conversationId: string | null) {
   const queryClient = useQueryClient()
@@ -49,10 +58,7 @@ export function useReactionsRealtime(conversationId: string | null) {
       if (row.conversation_id !== conversationId) return
       queryClient.setQueryData<Array<MessageReactionRow>>(
         reactionsKey,
-        (current) => {
-          const withoutRow = (current ?? []).filter((item) => item.id !== row.id)
-          return row.action === 'added' ? [...withoutRow, row] : withoutRow
-        },
+        (current) => applyReactionRow(current ?? [], row),
       )
     }
 
