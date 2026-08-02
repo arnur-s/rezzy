@@ -8,22 +8,23 @@ import {
   getMediaPlaceholder,
   isMessageStatus,
   isMessageType,
+  parseSharedContacts,
 } from '@/entities/message'
+import { getReactionCapabilities } from '@/entities/channel'
+import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { cn } from '@/lib/cn'
+import { useLongPress } from '@/hooks/use-long-press'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
-import {
-  ChatMessageBubble,
-  ChatMessageMetadata,
-} from '@astryxdesign/core/Chat'
-import { IconButton } from '@astryxdesign/core/IconButton'
+import { ChatMessageBubble, ChatMessageMetadata } from '@astryxdesign/core/Chat'
+import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
 import { useToast } from '@astryxdesign/core/Toast'
-import { ReplyIcon, TriangleAlertIcon } from 'lucide-react'
-import { memo } from 'react'
+import { CopyIcon, ReplyIcon, SmilePlusIcon, TriangleAlertIcon } from 'lucide-react'
+import { memo, useState } from 'react'
 import { useRetryMessage } from '../../hooks/use-messages'
+import { currentOutboundReaction } from '../../hooks/use-send-reaction'
 import {
   effectiveRichMediaType,
-  parseContactsMetadata,
   parseInteractiveMetadata,
   parseLocationMetadata,
   parseMessageMediaMetadata,
@@ -32,7 +33,12 @@ import {
   parseStoryMetadata,
   parseUnsupportedMetadata,
 } from '../../schemas/message-metadata'
+import { getReactionAvailability } from '../../utils/reaction-eligibility'
+import type { ReactionBlockedReason } from '../../utils/reaction-eligibility'
 import { formatTime } from '../../utils/relative-time'
+import { MessageActionMenu } from './message-action-menu'
+import type { MessageActionAnchor } from './message-action-menu'
+import { ReactionPicker } from './reaction-picker'
 import { MessageCollapsibleText } from './message-collapsible-text'
 import { MessageContactCard } from './message-contact-card'
 import { MessageInteractive } from './message-interactive'
@@ -104,7 +110,8 @@ export const MessageBubble = memo(function MessageBubbleComponent({
   const isMedia =
     !isStructured &&
     (type !== 'text' || !!message.media_url || !!mediaMetadata?.storage_path)
-  const showRichAttachment = !isDeleted && RICH_MEDIA_TYPES.has(richType) && isMedia
+  const showRichAttachment =
+    !isDeleted && RICH_MEDIA_TYPES.has(richType) && isMedia
   const showStickerPlaceholder = !isDeleted && isMedia && !showRichAttachment
   const hasContent = !isDeleted && !!message.content?.trim()
   const showToast = useToast()
@@ -123,6 +130,76 @@ export const MessageBubble = memo(function MessageBubbleComponent({
   const onReply = isDeleted ? null : (thread?.onReplyToMessage ?? null)
   const hasFailed =
     isOutbound && message.status === 'failed' && thread != null && !isDeleted
+
+  const actionItems: Array<DropdownMenuOption> = []
+  if (onReply) {
+    actionItems.push({
+      label: m.inbox_reply_action(),
+      icon: <ReplyIcon className="size-4" aria-hidden />,
+      onClick: () => onReply(message),
+    })
+  }
+  if (hasContent) {
+    const text = message.content ?? ''
+    actionItems.push({
+      label: m.inbox_message_copy(),
+      icon: <CopyIcon className="size-4" aria-hidden />,
+      onClick: () => {
+        void copyToClipboard(text).then((ok) =>
+          showToast({
+            body: ok ? m.inbox_message_copied() : m.inbox_message_copy_failed(),
+            type: ok ? 'info' : 'error',
+          }),
+        )
+      },
+    })
+  }
+
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+
+  // Reactions are a channel capability before they are a message action: an
+  // unsupported provider draws nothing, rather than a disabled control that
+  // explains a limitation the agent cannot lift.
+  const onReact = thread?.onReactToMessage ?? null
+  const reactionAvailability = thread
+    ? getReactionAvailability({
+        channelType: thread.channelType,
+        message,
+        isChannelActive: thread.isChannelActive,
+      })
+    : ({ status: 'hidden' } as const)
+  const showReactionPicker =
+    onReact !== null && reactionAvailability.status !== 'hidden'
+  const isReactionPending = thread?.isReactionPending(message.id) ?? false
+  const supportedReactionEmoji = thread
+    ? getReactionCapabilities(thread.channelType).supportedEmoji
+    : []
+
+  if (showReactionPicker && reactionAvailability.status === 'available') {
+    actionItems.push({
+      label: m.inbox_reaction_add(),
+      icon: <SmilePlusIcon className="size-4" aria-hidden />,
+      // Touch reaches the picker through press-and-hold, which opens this menu;
+      // hover reaches it through the gutter trigger. Both end up here.
+      onClick: () => setIsPickerOpen(true),
+    })
+  }
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // A menu raised by press-and-hold dims and blurs the rest of the thread, the
+  // way a messenger does; the same menu opened from the trigger does not.
+  const [isPressMenu, setIsPressMenu] = useState(false)
+  const handleMenuOpenChange = (open: boolean) => {
+    setIsMenuOpen(open)
+    if (!open) setIsPressMenu(false)
+  }
+  const longPress = useLongPress({
+    isEnabled: actionItems.length > 0,
+    onLongPress: () => {
+      setIsPressMenu(true)
+      setIsMenuOpen(true)
+    },
+  })
 
   const handleRetry = () => {
     if (!thread) return
@@ -143,11 +220,11 @@ export const MessageBubble = memo(function MessageBubbleComponent({
   // Media-only messages render without a visible bubble boundary.
   const isGhost = showRichAttachment && !showReplyPreview && !hasContent
 
-  // Text reads from its first line, so the rail marks that line. A media or
+  // Text reads from its first line, so the trigger marks that line. A media or
   // structured bubble is one object with no first line — on a 500px video,
   // top-anchoring strands the control in empty space beside the frame's
-  // corner — so the rail marks its middle instead.
-  const railAnchor: RailAnchor =
+  // corner — so the trigger marks its middle instead.
+  const actionAnchor: MessageActionAnchor =
     showRichAttachment || isStructured ? 'block' : 'first-line'
 
   const showEdited = !!message.edited_at && !isDeleted
@@ -158,249 +235,269 @@ export const MessageBubble = memo(function MessageBubbleComponent({
   const hasTrailingMeta =
     showEdited || showDelivery || hasFailed || reactions.length > 0
   // Runs carry one footer, but a message with state of its own always shows it.
-  const showFooter = closesRun || showEdited || hasFailed || reactions.length > 0
+  const showFooter =
+    closesRun || showEdited || hasFailed || reactions.length > 0
 
   return (
-    <ChatMessageBubble
-      id={`message-${message.id}`}
-      data-message-id={message.id}
-      variant={isGhost ? 'ghost' : 'filled'}
-      group={group}
+    // The hover scope is the whole row, not the bubble: a two-word message is a
+    // small target, and reaching for its menu should not mean reaching for the
+    // words. It has to be a per-message box — the astryx ChatMessage root wraps
+    // a whole same-sender run, so grouping on that would reveal every message's
+    // trigger at once. Column + gap-1 + the direction alignment reproduce
+    // exactly what ChatMessage's own children wrapper gave the bubble and its
+    // metadata as siblings, so inserting it changes no spacing.
+    <div
       className={cn(
-        // Positioning context and hover scope for the action rail: the astryx
-        // ChatMessage root wraps a whole same-sender run, so grouping on it
-        // would reveal every message's rail at once.
-        'group/msg relative',
-        // A failed send is stated on the bubble itself, not only in the caption
-        // below it: the caption sits between two messages and a 1px ring on a
-        // 10%-alpha plate is not a signal anyone reads at a glance.
-        hasFailed && 'bg-error/12 ring-error/70 ring-1',
+        'group/row relative flex w-full min-w-0 flex-col gap-1',
+        isOutbound ? 'items-end' : 'items-start',
+        // Above the neighbouring rows so the scrim below covers them.
+        isPressMenu && 'z-40',
       )}
-      metadata={
-        showFooter ? (
-          // Timestamp lives inside our own footer (not astryx's `timestamp`
-          // slot) so we own the separator and only draw it before real content.
-          <ChatMessageMetadata
-            footer={
-              // One caption row, never two. A second line pushed the failure
-              // notice closer to the next message than to its own bubble.
-              <span
-                className={cn(
-                  'flex flex-wrap items-center gap-x-1 gap-y-0.5',
-                  isOutbound ? 'justify-end' : 'justify-start',
-                )}
-              >
-                <span>{formatTime(message.created_at)}</span>
-                {/* Inherits the footer colour instead of dimming to
+    >
+      {isPressMenu ? (
+        // Behind everything in this row (negative z-index inside the row's own
+        // stacking context) and over everything outside it, so the held message
+        // and its footer stay sharp while the thread recedes.
+        // Lighter than the dialog scrim it derives from: the blur is already
+        // doing most of the separating, and the thread behind should still
+        // read as the place you are, not as a dismissed layer.
+        <span
+          aria-hidden
+          className="bg-overlay/60 fixed inset-0 -z-10 backdrop-blur-md"
+        />
+      ) : null}
+      <ChatMessageBubble
+        id={`message-${message.id}`}
+        data-message-id={message.id}
+        variant={isGhost ? 'ghost' : 'filled'}
+        group={group}
+        {...longPress}
+        className={cn(
+          // Positioning context for the action trigger.
+          'relative',
+          // Press-and-hold is the touch path into the menu, and it cannot
+          // survive the platform's own text-selection gesture on the same
+          // press — so on touch the bubble is not selectable and the menu
+          // carries Copy instead.
+          '[@media(hover:none)]:[-webkit-touch-callout:none] [@media(hover:none)]:select-none',
+          // A failed send is stated on the bubble itself, not only in the caption
+          // below it: the caption sits between two messages and a 1px ring on a
+          // 10%-alpha plate is not a signal anyone reads at a glance.
+          hasFailed && 'bg-error/12 ring-error/70 ring-1',
+        )}
+        metadata={
+          showFooter ? (
+            // Timestamp lives inside our own footer (not astryx's `timestamp`
+            // slot) so we own the separator and only draw it before real content.
+            <ChatMessageMetadata
+              footer={
+                // One caption row, never two. A second line pushed the failure
+                // notice closer to the next message than to its own bubble.
+                <span
+                  className={cn(
+                    'flex flex-wrap items-center gap-x-1 gap-y-0.5',
+                    isOutbound ? 'justify-end' : 'justify-start',
+                  )}
+                >
+                  <span>{formatTime(message.created_at)}</span>
+                  {/* Inherits the footer colour instead of dimming to
                     `text-primary/30`, which composited to 1.96:1 on the light
                     page: a separator you cannot see does not separate. */}
-                {hasTrailingMeta ? <span aria-hidden>·</span> : null}
-                {showEdited ? (
-                  <span className="italic">{m.inbox_message_edited()}</span>
-                ) : null}
-                {showDelivery ? (
-                  <DeliveryIndicator status={message.status} />
-                ) : null}
-                <MessageReactionsRow
-                  reactions={reactions}
-                  isOutbound={isOutbound}
-                />
-                {hasFailed ? (
-                  <>
-                    <span
-                      role="status"
-                      className="text-error flex items-center gap-1"
-                    >
-                      <TriangleAlertIcon
-                        className="size-3 shrink-0"
-                        aria-hidden
+                  {hasTrailingMeta ? <span aria-hidden>·</span> : null}
+                  {showEdited ? (
+                    <span className="italic">{m.inbox_message_edited()}</span>
+                  ) : null}
+                  {showDelivery ? (
+                    <DeliveryIndicator status={message.status} />
+                  ) : null}
+                  <MessageReactionsRow
+                    reactions={reactions}
+                    isOutbound={isOutbound}
+                  />
+                  {hasFailed ? (
+                    <>
+                      <span
+                        role="status"
+                        className="text-error flex items-center gap-1"
+                      >
+                        <TriangleAlertIcon
+                          className="size-3 shrink-0"
+                          aria-hidden
+                        />
+                        <span>{m.inbox_message_status_failed()}</span>
+                      </span>
+                      <Button
+                        label={m.inbox_message_retry()}
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleRetry}
+                        isDisabled={retryMessage.isPending}
+                        isLoading={retryMessage.isPending}
+                        // Caption scale so the remedy sits beside the problem
+                        // rather than out-shouting it at body size — but with
+                        // real padding, since 10px of text is not a hit target.
+                        // The pseudo-element grows that target on touch without
+                        // widening the caption row.
+                        className="text-error hover:bg-error/10 relative h-auto min-h-0 rounded-sm px-1.5 py-1 text-xs font-medium underline underline-offset-2 [@media(hover:none)]:after:absolute [@media(hover:none)]:after:-inset-2 [@media(hover:none)]:after:content-['']"
                       />
-                      <span>{m.inbox_message_status_failed()}</span>
-                    </span>
-                    <Button
-                      label={m.inbox_message_retry()}
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleRetry}
-                      isDisabled={retryMessage.isPending}
-                      isLoading={retryMessage.isPending}
-                      // Caption scale so the remedy sits beside the problem
-                      // rather than out-shouting it at body size — but with
-                      // real padding, since 10px of text is not a hit target.
-                      // The pseudo-element grows that target on touch without
-                      // widening the caption row.
-                      className="text-error hover:bg-error/10 relative h-auto min-h-0 rounded-sm px-1.5 py-1 text-xs font-medium underline underline-offset-2 [@media(hover:none)]:after:absolute [@media(hover:none)]:after:-inset-2 [@media(hover:none)]:after:content-['']"
-                    />
-                  </>
-                ) : null}
-              </span>
-            }
-          />
-        ) : undefined
-      }
-    >
-      {showReplyPreview ? (
-        <MessageReplyPreview
-          quote={quote}
-          replyToMessageId={message.reply_to_message_id}
-        />
-      ) : null}
-
-      {isDeleted ? (
-        <p className="text-xs italic opacity-70">{m.inbox_message_deleted()}</p>
-      ) : null}
-
-      {!isDeleted && type === 'location' ? (
-        <LocationOrFallback message={message} isOutbound={isOutbound} />
-      ) : null}
-      {!isDeleted && type === 'contact' ? (
-        <ContactsOrFallback message={message} isOutbound={isOutbound} />
-      ) : null}
-      {!isDeleted && type === 'interactive' ? (
-        <InteractiveOrFallback message={message} isOutbound={isOutbound} />
-      ) : null}
-      {!isDeleted &&
-      (type === 'share' || type === 'story_reply' || type === 'story_mention') ? (
-        <MessageShare
-          share={parseShareMetadata(message.metadata)}
-          story={parseStoryMetadata(message.metadata)}
-          messageType={type}
-          isOutbound={isOutbound}
-        />
-      ) : null}
-      {!isDeleted && (type === 'unsupported' || type === 'system') ? (
-        <MessageUnsupported
-          unsupported={parseUnsupportedMetadata(message.metadata)}
-          messageType={type}
-          isOutbound={isOutbound}
-        />
-      ) : null}
-
-      {showRichAttachment && (
-        <MessageMediaAttachment
-          messageType={richType}
-          metadata={mediaMetadata}
-          isOutbound={isOutbound}
-          mediaUrl={message.media_url}
-          mediaFilename={message.media_filename}
-          mediaMimeType={message.media_mime_type}
-          mediaSize={message.media_size}
-          workspaceId={message.workspace_id}
-        />
-      )}
-      {!isDeleted &&
-        extraAttachments.map((attachment) =>
-          attachment.storage_path && attachment.download_status === 'stored' ? (
-            <MessageMediaAttachment
-              key={attachment.id}
-              messageType={
-                isMessageType(attachment.kind) ? attachment.kind : 'document'
+                    </>
+                  ) : null}
+                </span>
               }
-              metadata={null}
-              isOutbound={isOutbound}
-              mediaUrl={attachment.storage_path}
-              mediaFilename={attachment.filename}
-              mediaMimeType={attachment.mime_type}
-              mediaSize={
-                attachment.size_bytes !== null
-                  ? Number(attachment.size_bytes)
-                  : null
-              }
-              workspaceId={message.workspace_id}
             />
-          ) : (
-            <p key={attachment.id} className="mt-1 text-xs opacity-70">
-              {m.inbox_attachment_failed()}
-            </p>
-          ),
-        )}
-      {showStickerPlaceholder ? (
-        <p className={cn('text-xs opacity-80', hasContent && 'mb-1')}>
-          {getMediaPlaceholder(type)}
-        </p>
-      ) : null}
-      {hasContent && !isStructuredContentDuplicate(type, message.content) ? (
-        <MessageCollapsibleText
-          content={message.content ?? ''}
-          className={cn(
-            'whitespace-pre-wrap wrap-break-word leading-relaxed',
-            (showRichAttachment || isStructured) && 'mt-1',
-          )}
-        />
-      ) : null}
+          ) : undefined
+        }
+      >
+        {showReplyPreview ? (
+          <MessageReplyPreview
+            quote={quote}
+            replyToMessageId={message.reply_to_message_id}
+          />
+        ) : null}
 
-      {/* Last child so assistive tech reads the message before its actions,
-          even though the rail is painted beside the bubble's first line. */}
-      {onReply ? (
-        <MessageActionRail
-          isOutbound={isOutbound}
-          messageId={message.id}
-          isTabStop={isTabStop}
-          anchor={railAnchor}
-          onReply={() => onReply(message)}
-        />
-      ) : null}
-    </ChatMessageBubble>
+        {isDeleted ? (
+          <p className="text-xs italic opacity-70">
+            {m.inbox_message_deleted()}
+          </p>
+        ) : null}
+
+        {!isDeleted && type === 'location' ? (
+          <LocationOrFallback message={message} isOutbound={isOutbound} />
+        ) : null}
+        {!isDeleted && type === 'contact' ? (
+          <ContactsOrFallback message={message} isOutbound={isOutbound} />
+        ) : null}
+        {!isDeleted && type === 'interactive' ? (
+          <InteractiveOrFallback message={message} isOutbound={isOutbound} />
+        ) : null}
+        {!isDeleted &&
+        (type === 'share' ||
+          type === 'story_reply' ||
+          type === 'story_mention') ? (
+          <MessageShare
+            share={parseShareMetadata(message.metadata)}
+            story={parseStoryMetadata(message.metadata)}
+            messageType={type}
+            isOutbound={isOutbound}
+          />
+        ) : null}
+        {!isDeleted && (type === 'unsupported' || type === 'system') ? (
+          <MessageUnsupported
+            unsupported={parseUnsupportedMetadata(message.metadata)}
+            messageType={type}
+            isOutbound={isOutbound}
+          />
+        ) : null}
+
+        {showRichAttachment && (
+          <MessageMediaAttachment
+            messageType={richType}
+            metadata={mediaMetadata}
+            isOutbound={isOutbound}
+            mediaUrl={message.media_url}
+            mediaFilename={message.media_filename}
+            mediaMimeType={message.media_mime_type}
+            mediaSize={message.media_size}
+            workspaceId={message.workspace_id}
+          />
+        )}
+        {!isDeleted &&
+          extraAttachments.map((attachment) =>
+            attachment.storage_path &&
+            attachment.download_status === 'stored' ? (
+              <MessageMediaAttachment
+                key={attachment.id}
+                messageType={
+                  isMessageType(attachment.kind) ? attachment.kind : 'document'
+                }
+                metadata={null}
+                isOutbound={isOutbound}
+                mediaUrl={attachment.storage_path}
+                mediaFilename={attachment.filename}
+                mediaMimeType={attachment.mime_type}
+                mediaSize={
+                  attachment.size_bytes !== null
+                    ? Number(attachment.size_bytes)
+                    : null
+                }
+                workspaceId={message.workspace_id}
+              />
+            ) : (
+              <p key={attachment.id} className="mt-1 text-xs opacity-70">
+                {m.inbox_attachment_failed()}
+              </p>
+            ),
+          )}
+        {showStickerPlaceholder ? (
+          <p className={cn('text-xs opacity-80', hasContent && 'mb-1')}>
+            {getMediaPlaceholder(type)}
+          </p>
+        ) : null}
+        {hasContent && !isStructuredContentDuplicate(type, message.content) ? (
+          <MessageCollapsibleText
+            content={message.content ?? ''}
+            className={cn(
+              'whitespace-pre-wrap wrap-break-word leading-relaxed',
+              (showRichAttachment || isStructured) && 'mt-1',
+            )}
+          />
+        ) : null}
+
+        {/* Last child so assistive tech reads the message before its actions,
+          even though the trigger is painted beside the bubble's first line. */}
+        {actionItems.length > 0 ? (
+          <MessageActionMenu
+            isOutbound={isOutbound}
+            messageId={message.id}
+            isTabStop={isTabStop}
+            anchor={actionAnchor}
+            items={actionItems}
+            isOpen={isMenuOpen}
+            onOpenChange={handleMenuOpenChange}
+          />
+        ) : null}
+        {showReactionPicker ? (
+          <ReactionPicker
+            isOutbound={isOutbound}
+            messageId={message.id}
+            currentEmoji={currentOutboundReaction(reactions)}
+            supportedEmoji={supportedReactionEmoji}
+            // A pending mutation disables only this message's control; the rest
+            // of the transcript stays reactive.
+            isDisabled={
+              reactionAvailability.status === 'blocked' || isReactionPending
+            }
+            disabledReason={
+              reactionAvailability.status === 'blocked'
+                ? reactionBlockedCopy(reactionAvailability.reason)
+                : null
+            }
+            isTabStop={isTabStop}
+            anchor={actionAnchor}
+            isOpen={isPickerOpen}
+            onOpenChange={setIsPickerOpen}
+            onSelect={(emoji) => onReact(message, emoji)}
+          />
+        ) : null}
+      </ChatMessageBubble>
+    </div>
   )
 })
 
-/** Where the rail sits vertically: on a line of text, or against a block. */
-type RailAnchor = 'first-line' | 'block'
-
 /**
- * Message-scoped actions, parked in the transcript gutter beside the bubble
- * rather than inside the metadata footer — the footer is a status readout, and
- * an action mixed into it lands at a different x on every message depending on
- * which telemetry happens to be present.
- *
- * The rail is a DOM child of the bubble, so hovering it keeps the bubble's
- * `:hover` alive; the inline padding (not a margin) puts the visual gap inside
- * the rail's own hit area so the pointer never crosses a dead zone on the way.
+ * Why the reaction control is disabled, in words. A disabled control that does
+ * not say why reads as a bug; each of these resolves on its own, so the
+ * sentence is also the instruction.
  */
-function MessageActionRail({
-  isOutbound,
-  messageId,
-  isTabStop,
-  anchor,
-  onReply,
-}: {
-  isOutbound: boolean
-  messageId: string
-  isTabStop: boolean
-  anchor: RailAnchor
-  onReply: () => void
-}) {
-  return (
-    <span
-      className={cn(
-        'absolute flex items-center opacity-0 transition-opacity duration-150 ease-out motion-reduce:transition-none',
-        // top-2 centers the 28px control on the first 20px line inside the
-        // bubble's 12px padding-block; a block is marked at its middle.
-        anchor === 'first-line' ? 'top-2' : 'top-1/2 -translate-y-1/2',
-        // No hit target until the message is engaged, so the empty gutter
-        // stays empty.
-        'pointer-events-none',
-        'group-hover/msg:pointer-events-auto group-hover/msg:opacity-100',
-        'group-focus-within/msg:pointer-events-auto group-focus-within/msg:opacity-100',
-        // Touch has no hover to reveal it: stay quietly present instead.
-        '[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-60',
-        isOutbound ? 'right-full pr-1' : 'left-full pl-1',
-      )}
-    >
-      <IconButton
-        label={m.inbox_reply_action()}
-        tooltip={m.inbox_reply_action()}
-        size="sm"
-        variant="ghost"
-        icon={<ReplyIcon className="size-3.5" aria-hidden />}
-        onClick={onReply}
-        data-reply-for={messageId}
-        tabIndex={isTabStop ? 0 : -1}
-        // The 28px control keeps its compact mark; touch gets the 44px target.
-        className="[@media(hover:none)]:after:absolute [@media(hover:none)]:after:-inset-2 [@media(hover:none)]:after:content-['']"
-      />
-    </span>
-  )
+function reactionBlockedCopy(reason: ReactionBlockedReason): string {
+  switch (reason) {
+    case 'message_deleted':
+      return m.inbox_reaction_unavailable_deleted()
+    case 'missing_provider_id':
+      return m.inbox_reaction_unavailable_pending()
+    case 'channel_disconnected':
+      return m.inbox_reaction_unavailable_channel()
+  }
 }
 
 /**
@@ -435,11 +532,17 @@ function ContactsOrFallback({
   message: MessageRowWithAttachments
   isOutbound: boolean
 }) {
-  const contacts = parseContactsMetadata(message.metadata)
+  const contacts = parseSharedContacts(message.metadata)
   if (contacts.length === 0) {
     return <TypeFallback type="contact" />
   }
-  return <MessageContactCard contacts={contacts} isOutbound={isOutbound} />
+  return (
+    <MessageContactCard
+      contacts={contacts}
+      isOutbound={isOutbound}
+      workspaceId={message.workspace_id}
+    />
+  )
 }
 
 function InteractiveOrFallback({
@@ -453,7 +556,9 @@ function InteractiveOrFallback({
   if (!interactive) {
     return <TypeFallback type="interactive" />
   }
-  return <MessageInteractive interactive={interactive} isOutbound={isOutbound} />
+  return (
+    <MessageInteractive interactive={interactive} isOutbound={isOutbound} />
+  )
 }
 
 function TypeFallback({ type }: { type: MessageType }) {

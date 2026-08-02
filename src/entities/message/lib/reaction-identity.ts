@@ -35,3 +35,28 @@ export function reactionIdentity(row: MessageReactionRow): string {
     normalizeReactionEmoji(row.emoji),
   ].join('\t')
 }
+
+/**
+ * The reactor id recorded for a reaction the workspace sent.
+ *
+ * Providers attribute an outbound reaction to the connected business account,
+ * not to the agent who clicked, and none of them hand back a reactor id for it:
+ * Telegram's `setMessageReaction` answers `true`, and WhatsApp answers with a
+ * wamid for the reaction message rather than for the reactor. So our side needs
+ * a stable id of its own, or the same agent reacting twice would write two rows
+ * and count twice.
+ *
+ * Namespaced with a colon so it cannot collide with a real provider identity —
+ * those are numeric (Telegram user id, IGSID) or an E.164 phone (`wa_id`), and
+ * none of them contain one. `is_from_contact` stays the semantic flag; this is
+ * only the key.
+ *
+ * Mirrored in `supabase/functions/send-reaction/index.ts`, which cannot import
+ * from the Vite app, and pinned by `reaction-identity.test.ts`.
+ */
+export const OUTBOUND_REACTOR_ID = 'rezzy:business'
+
+/** Whether a row is this workspace's own reaction rather than the contact's. */
+export function isOutboundReaction(row: MessageReactionRow): boolean {
+  return !row.is_from_contact
+}

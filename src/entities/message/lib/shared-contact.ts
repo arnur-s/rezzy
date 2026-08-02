@@ -1,3 +1,4 @@
+import { phoneNumbersMatch } from '@/lib/phone-identity'
 import { z } from 'zod'
 
 /**
@@ -78,22 +79,34 @@ export function toSharedContact(payload: SharedContactPayload): SharedContact {
     trimmed(payload.name) ??
     trimmed([firstName, lastName].filter(Boolean).join(' '))
 
-  const phoneNumbers = new Set<string>()
+  const phoneNumbers: Array<string> = []
   const identities: Array<SharedContactIdentity> = []
 
+  /**
+   * Keeps the first spelling of each number. A WhatsApp card carries the same
+   * subscriber twice — once as a written number, once as a wa_id — and a card
+   * that printed one person's number on two lines would read as two numbers.
+   */
+  const addPhone = (value: string) => {
+    if (phoneNumbers.some((existing) => phoneNumbersMatch(existing, value))) {
+      return
+    }
+    phoneNumbers.push(value)
+  }
+
   const primary = trimmed(payload.phone)
-  if (primary) phoneNumbers.add(primary)
+  if (primary) addPhone(primary)
 
   for (const entry of payload.phones ?? []) {
     const phone = trimmed(entry.phone)
-    if (phone) phoneNumbers.add(phone)
+    if (phone) addPhone(phone)
 
     const waId = trimmed(entry.wa_id)
     if (waId) {
       // A wa_id is the subscriber's number without the `+`, so it is both a
       // dialable number and a WhatsApp identity. Kept as both: the number
       // matches `contacts.phone`, the identity matches `contact_channels`.
-      phoneNumbers.add(`+${waId}`)
+      addPhone(`+${waId}`)
       identities.push({ channelType: 'whatsapp', externalId: waId })
     }
   }
@@ -115,7 +128,7 @@ export function toSharedContact(payload: SharedContactPayload): SharedContact {
     firstName,
     lastName,
     company: trimmed(payload.company),
-    phoneNumbers: [...phoneNumbers],
+    phoneNumbers,
     emails: [...emails],
     identities,
     rawVCard: trimmed(payload.vcard),

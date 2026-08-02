@@ -18,7 +18,7 @@ const CONVERSATION_SELECT = `
   last_inbound_at,
   created_at,
   updated_at,
-  channel:channels!inner(id, type, name),
+  channel:channels!inner(id, type, name, is_active),
   contact:contacts!inner(id, name, phone, avatar_url, status)
 ` as const
 

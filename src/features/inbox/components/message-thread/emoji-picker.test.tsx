@@ -2,6 +2,15 @@ import { render, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { EmojiPicker } from './emoji-picker'
 
+// The picker reads the active theme to match emoji-mart's palette to the app's,
+// and `useTheme` throws outside its provider. Stubbed rather than wrapped in the
+// real ThemeProvider, which reads localStorage that this environment does not
+// provide — and which would put this test's subject back behind a second
+// moving part it is not meant to be testing.
+vi.mock('@/providers/theme-provider', () => ({
+  useTheme: () => ({ theme: 'light' }),
+}))
+
 /**
  * `EmojiPicker` is behind `React.lazy`, so a broken dynamic import fails at
  * runtime on first open rather than at build time. TypeScript cannot see

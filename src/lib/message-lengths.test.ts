@@ -52,6 +52,16 @@ const BUDGETS: Array<{ key: string; max: number; where: string }> = [
   { key: 'home_attention_reason_snoozed', max: 20, where: 'attention reason chip' },
   { key: 'home_attention_reason_unread', max: 20, where: 'attention reason chip' },
   { key: 'home_attention_reason_stale', max: 20, where: 'attention reason chip' },
+  // The shared-contact card's action sits inside a message bubble, which is
+  // capped at a fraction of the thread width and is narrowest on a phone. A
+  // button does not wrap its label, so an over-long one widens the bubble or
+  // spills out of it.
+  { key: 'inbox_shared_contact_create', max: 24, where: 'shared contact card action' },
+  { key: 'inbox_shared_contact_open', max: 24, where: 'shared contact card action' },
+  { key: 'inbox_shared_contact_review', max: 24, where: 'shared contact card action' },
+  { key: 'inbox_shared_contact_checking', max: 24, where: 'shared contact card action' },
+  { key: 'inbox_shared_contact_copy_details', max: 24, where: 'shared contact card action' },
+  { key: 'inbox_shared_contact_lookup_failed', max: 32, where: 'shared contact card status' },
 ]
 
 describe('strings inside fixed-width controls stay within budget', () => {

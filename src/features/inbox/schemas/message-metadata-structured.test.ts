@@ -1,8 +1,8 @@
+import { parseSharedContacts } from '@/entities/message'
 import { setLocale } from '@/paraglide/runtime'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   listPreviewFromMessage,
-  parseContactsMetadata,
   parseInteractiveMetadata,
   parseLocationMetadata,
   parseQuoteMetadata,
@@ -27,14 +27,14 @@ describe('structured metadata parsers', () => {
 
   it('parses contact cards from both provider shapes', () => {
     expect(
-      parseContactsMetadata({
+      parseSharedContacts({
         contacts: [
           { name: 'Dana', phones: [{ wa_id: '77015550001' }] },
           { first_name: 'Aizhan', phone: '+77015550002' },
         ],
       }),
     ).toHaveLength(2)
-    expect(parseContactsMetadata({ contacts: 'nope' })).toEqual([])
+    expect(parseSharedContacts({ contacts: 'nope' })).toEqual([])
   })
 
   it('parses interactive, share, story, quote, and unsupported sections', () => {

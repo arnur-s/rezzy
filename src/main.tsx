@@ -4,10 +4,10 @@ import { initLocale } from '@/lib/locale'
 // Imported before the Supabase client is constructed: it reads the recovery
 // marker out of the URL, and Supabase strips the fragment as it boots.
 import '@/lib/password-recovery'
+import { AppLayerProvider } from '@/providers/app-layer-provider'
 import { AuthProvider, useAuth } from '@/providers/auth-provider'
 import { ThemeProvider, useTheme } from '@/providers/theme-provider'
 import { queryClient } from '@/utils/query-client'
-import { LayerProvider } from '@astryxdesign/core/Layer'
 import { LinkProvider } from '@astryxdesign/core/Link'
 import { Theme } from '@astryxdesign/core/theme'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -40,7 +40,7 @@ function App() {
 
   return (
     <Theme theme={neutralTheme} mode={theme}>
-      <LayerProvider>
+      <AppLayerProvider>
         <RouterProvider
           router={router}
           context={{ auth }}
@@ -48,7 +48,7 @@ function App() {
             <LinkProvider component={RouterLink}>{children}</LinkProvider>
           )}
         />
-      </LayerProvider>
+      </AppLayerProvider>
     </Theme>
   )
 }

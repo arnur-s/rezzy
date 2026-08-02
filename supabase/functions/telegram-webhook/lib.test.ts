@@ -326,7 +326,8 @@ describe('normalizeTelegramReaction', () => {
     })
     expect(normalized?.reactorExternalId).toBe('555')
     expect(normalized?.ops).toEqual([
-      expect.objectContaining({ emoji: '❤️', action: 'added' }),
+      // Canonical: a presentation selector is not part of the identity.
+      expect.objectContaining({ emoji: '❤', action: 'added' }),
       expect.objectContaining({ emoji: 'custom:ce9', action: 'added' }),
       expect.objectContaining({ emoji: '⭐', action: 'added' }),
       expect.objectContaining({ emoji: '👍', action: 'removed' }),

@@ -10,7 +10,14 @@ export type ConversationRow = Tables<'conversations'>
 export type ProfileRow = Tables<'profiles'>
 
 export type ConversationWithRelations = ConversationRow & {
-  channel: Pick<Channel, 'id' | 'type' | 'name'>
+  /**
+   * `is_active` is optional because only the queries that need it select it —
+   * the inbox thread, which disables outbound actions on a disconnected
+   * channel. Absent means "not asked for", not "disconnected", so callers must
+   * treat `undefined` as connected rather than blocking on missing data.
+   */
+  channel: Pick<Channel, 'id' | 'type' | 'name'> &
+    Partial<Pick<Channel, 'is_active'>>
   contact: Pick<ContactRow, 'id' | 'name' | 'phone' | 'avatar_url' | 'status'>
   /**
    * There is deliberately no `assigned_profile` here. `public.profiles` has

@@ -31,8 +31,8 @@ import {
   LayoutGridIcon,
   MessageCircleIcon,
   SettingsIcon,
-  UsersRoundIcon,
   UserRoundIcon,
+  UsersRoundIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'

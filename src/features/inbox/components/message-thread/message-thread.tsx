@@ -1,9 +1,14 @@
 import type { ChannelType } from '@/entities/channel'
-import { PLATFORM_META, isChannelType } from '@/entities/channel'
+import {
+  PLATFORM_META,
+  getReactionCapabilities,
+  isChannelType,
+} from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
 import { ChatLayout } from '@astryxdesign/core/Chat'
+import { useToast } from '@astryxdesign/core/Toast'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   useConversationReadCursor,
@@ -15,6 +20,8 @@ import {
   useConversationReactions,
   useReactionsRealtime,
 } from '../../hooks/use-reactions'
+import { useSendReaction } from '../../hooks/use-send-reaction'
+import { isPresentableError } from '../../utils/presentable-error'
 import { getFirstUnreadInboundMessageId } from '../../utils/read-cursor'
 import { MessageComposer } from './message-composer'
 import { MessageList } from './message-list'
@@ -45,6 +52,7 @@ export function MessageThread({
 }: Props) {
   const conversationId = conversation.id
   const unreadCount = conversation.unread_count
+  const showToast = useToast()
   const messagesQuery = useMessages(conversationId)
   const readCursorQuery = useConversationReadCursor({
     conversationId,
@@ -60,6 +68,11 @@ export function MessageThread({
   })
   const { reactionsByMessageId } = useConversationReactions(conversationId)
   useReactionsRealtime(conversationId)
+  const { sendReaction, isMessagePending } = useSendReaction({
+    conversationId,
+    workspaceId,
+    channelId: conversation.channel.id,
+  })
   const messages = messagesQuery.messages
 
   /** Reply composition target; cleared on send, cancel, or thread switch. */
@@ -206,17 +219,52 @@ export function MessageThread({
     () => new Map(messages.map((message) => [message.id, message])),
     [messages],
   )
+
+  // Absent means the query did not ask for it, not that the channel is down —
+  // see ConversationWithRelations.
+  const isChannelActive = conversation.channel.is_active !== false
+  const canSendReactions = getReactionCapabilities(channelTypeResolved).canSend
+
+  const handleReactToMessage = useCallback(
+    (message: MessageRow, emoji: string) => {
+      // Success is silent by design: the chip under the bubble is the whole
+      // feedback. Only the failure — an action the agent took and did not
+      // get — is worth a word.
+      void sendReaction({ message, selectedEmoji: emoji }).catch((error) => {
+        showToast({
+          body: isPresentableError(error)
+            ? error.message
+            : m.inbox_reaction_error_generic(),
+          type: 'error',
+        })
+      })
+    },
+    [sendReaction, showToast],
+  )
+
   // Memoized: every bubble consumes this context, so an inline object would
   // re-render the whole transcript on each parent render.
   const threadContext = useMemo<MessageThreadContextValue>(
     () => ({
       channelType: channelTypeResolved,
       contactName,
+      isChannelActive,
       reactionsByMessageId,
       messagesById,
       onReplyToMessage: setReplyTo,
+      onReactToMessage: canSendReactions ? handleReactToMessage : null,
+      isReactionPending: isMessagePending,
     }),
-    [channelTypeResolved, contactName, reactionsByMessageId, messagesById],
+    [
+      channelTypeResolved,
+      contactName,
+      isChannelActive,
+      reactionsByMessageId,
+      messagesById,
+      canSendReactions,
+      handleReactToMessage,
+      isMessagePending,
+    ],
   )
 
   return (

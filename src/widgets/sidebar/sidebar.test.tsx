@@ -2,6 +2,7 @@ import { accountQueryKeys } from '@/features/account'
 import type { UserProfile } from '@/features/account'
 import type * as UseWorkspaces from '@/features/workspaces/hooks/use-workspaces'
 import type { Workspace } from '@/entities/workspace'
+import { m } from '@/paraglide/messages'
 import { setLocale } from '@/paraglide/runtime'
 import { createTestQueryClient, renderWithQueryClient } from '@/test/render'
 import type { User } from '@supabase/supabase-js'
@@ -176,7 +177,10 @@ describe('Sidebar inbox item', () => {
     const description = document.getElementById(
       trigger?.getAttribute('aria-describedby') ?? '',
     )
-    expect(description?.textContent).toBe('Connect a channel to open the inbox.')
+    // Asserted against the catalogue, not a copy of the sentence: what matters
+    // here is that the disabled item is described by the locked tooltip at all.
+    // Pinning the wording made an ordinary copy edit look like a broken sidebar.
+    expect(description?.textContent).toBe(m.sidebar_inbox_locked_tooltip())
   })
 
   // Disabling on an unresolved query would flicker the item on every workspace

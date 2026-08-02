@@ -1,15 +1,12 @@
 import type { MessageReactionRow, MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
 import { setLocale } from '@/paraglide/runtime'
-import { fireEvent, screen } from '@testing-library/react'
+import { act, fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithQueryClient } from '@/test/render'
 import { MessageBubble } from './message-bubble'
-import {
-  
-  MessageThreadProvider
-} from './message-thread-context'
-import type {MessageThreadContextValue} from './message-thread-context';
+import { MessageThreadProvider } from './message-thread-context'
+import type { MessageThreadContextValue } from './message-thread-context'
 
 vi.mock('./message-media', () => ({
   MessageMediaAttachment: ({ mediaUrl }: { mediaUrl: string | null }) => (
@@ -43,7 +40,9 @@ function messageRow(overrides: Partial<MessageRow> = {}): MessageRow {
   }
 }
 
-function reactionRow(overrides: Partial<MessageReactionRow> = {}): MessageReactionRow {
+function reactionRow(
+  overrides: Partial<MessageReactionRow> = {},
+): MessageReactionRow {
   return {
     id: 'reaction-1',
     workspace_id: 'workspace-1',
@@ -71,9 +70,12 @@ function renderBubble(
   const value: MessageThreadContextValue = {
     channelType: 'telegram',
     contactName: 'Alina',
+    isChannelActive: true,
     reactionsByMessageId: new Map(),
     messagesById: new Map(),
     onReplyToMessage: null,
+    onReactToMessage: null,
+    isReactionPending: () => false,
     ...thread,
   }
   return renderWithQueryClient(
@@ -94,7 +96,13 @@ describe('MessageBubble structured types', () => {
         type: 'location',
         content: null,
         metadata: {
-          location: { kind: 'venue', latitude: 51.1, longitude: 71.4, name: 'Coffee Boom', address: 'Turan 37' },
+          location: {
+            kind: 'venue',
+            latitude: 51.1,
+            longitude: 71.4,
+            name: 'Coffee Boom',
+            address: 'Turan 37',
+          },
         },
       }),
     )
@@ -116,7 +124,8 @@ describe('MessageBubble structured types', () => {
       }),
     )
     expect(screen.getByText('Dana A')).toBeTruthy()
-    expect(screen.getByText('+77015550001')).toBeTruthy()
+    // A wa_id is a subscriber number; the card prints it as one.
+    expect(screen.getByText('+7 701 555 0001')).toBeTruthy()
   })
 
   it('renders interactive replies with their selection context', () => {
@@ -125,7 +134,12 @@ describe('MessageBubble structured types', () => {
         type: 'interactive',
         content: 'Plan B',
         metadata: {
-          interactive: { kind: 'list_reply', id: 'row2', title: 'Plan B', description: 'Second option' },
+          interactive: {
+            kind: 'list_reply',
+            id: 'row2',
+            title: 'Plan B',
+            description: 'Second option',
+          },
         },
       }),
     )
@@ -142,9 +156,7 @@ describe('MessageBubble structured types', () => {
         metadata: { unsupported: { kind: 'poll', preview: 'Lunch?' } },
       }),
     )
-    expect(
-      screen.getByText(m.inbox_unsupported_message()),
-    ).toBeTruthy()
+    expect(screen.getByText(m.inbox_unsupported_message())).toBeTruthy()
     expect(screen.getByText('Lunch?')).toBeTruthy()
   })
 
@@ -153,11 +165,15 @@ describe('MessageBubble structured types', () => {
       messageRow({
         type: 'share',
         content: null,
-        metadata: { share: { kind: 'ig_reel', url: 'https://cdn/reel', title: 'A reel' } },
+        metadata: {
+          share: { kind: 'ig_reel', url: 'https://cdn/reel', title: 'A reel' },
+        },
       }),
     )
     expect(screen.getByText('Shared reel')).toBeTruthy()
-    expect(screen.getByRole('link').getAttribute('href')).toBe('https://cdn/reel')
+    expect(screen.getByRole('link').getAttribute('href')).toBe(
+      'https://cdn/reel',
+    )
   })
 })
 
@@ -167,7 +183,11 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
       messageRow({
         reply_to_message_id: 'parent-1',
         metadata: {
-          quote: { external_id: '55', preview: 'original text', author_name: 'Aizhan K' },
+          quote: {
+            external_id: '55',
+            preview: 'original text',
+            author_name: 'Aizhan K',
+          },
         },
       }),
     )
@@ -182,7 +202,10 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
 
   it('hides deleted content behind a placeholder', () => {
     renderBubble(
-      messageRow({ content: 'secret text', deleted_at: '2026-07-23T10:06:00Z' }),
+      messageRow({
+        content: 'secret text',
+        deleted_at: '2026-07-23T10:06:00Z',
+      }),
     )
     expect(screen.getByText('This message was deleted')).toBeTruthy()
     expect(screen.queryByText('secret text')).toBeNull()
@@ -208,7 +231,11 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
 
   it('offers retry for failed outbound messages', () => {
     renderBubble(
-      messageRow({ direction: 'outbound', status: 'failed', sender_id: 'user-1' }),
+      messageRow({
+        direction: 'outbound',
+        status: 'failed',
+        sender_id: 'user-1',
+      }),
     )
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
     // Failure is stated in words, not left to a status glyph.
@@ -228,10 +255,10 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
 
   it('quotes the loaded parent when the reply carries no quote payload', () => {
     const parent = messageRow({ id: 'parent-1', content: 'Can you resend it?' })
-    renderBubble(
-      messageRow({ id: 'msg-2', reply_to_message_id: 'parent-1' }),
-      { messagesById: new Map([[parent.id, parent]]), contactName: 'Alina' },
-    )
+    renderBubble(messageRow({ id: 'msg-2', reply_to_message_id: 'parent-1' }), {
+      messagesById: new Map([[parent.id, parent]]),
+      contactName: 'Alina',
+    })
     expect(screen.getByText('Can you resend it?')).toBeTruthy()
     expect(screen.getByText('Alina')).toBeTruthy()
     expect(screen.queryByText('Quoted message')).toBeNull()
@@ -243,10 +270,10 @@ describe('MessageBubble reply, edit, delete, reactions', () => {
       direction: 'outbound',
       content: 'Invoice is on its way',
     })
-    renderBubble(
-      messageRow({ id: 'msg-2', reply_to_message_id: 'parent-1' }),
-      { messagesById: new Map([[parent.id, parent]]), contactName: 'Alina' },
-    )
+    renderBubble(messageRow({ id: 'msg-2', reply_to_message_id: 'parent-1' }), {
+      messagesById: new Map([[parent.id, parent]]),
+      contactName: 'Alina',
+    })
     expect(screen.getByText('You')).toBeTruthy()
     expect(screen.queryByText('Alina')).toBeNull()
   })
@@ -280,7 +307,11 @@ describe('MessageBubble run footers and reply affordance', () => {
 
   it('keeps the footer mid-run when the message carries its own state', () => {
     renderBubble(
-      messageRow({ direction: 'outbound', status: 'failed', sender_id: 'user-1' }),
+      messageRow({
+        direction: 'outbound',
+        status: 'failed',
+        sender_id: 'user-1',
+      }),
       undefined,
       { closesRun: false },
     )
@@ -291,33 +322,89 @@ describe('MessageBubble run footers and reply affordance', () => {
     const { unmount } = renderBubble(messageRow(), replyThread, {
       isTabStop: true,
     })
-    expect(screen.getByRole('button', { name: 'Reply' }).tabIndex).toBe(0)
+    expect(
+      screen.getByRole('button', { name: 'Message actions' }).tabIndex,
+    ).toBe(0)
     unmount()
 
     renderBubble(messageRow(), replyThread, { isTabStop: false })
     // Still focusable by the arrow keys, just not by Tab.
-    expect(screen.getByRole('button', { name: 'Reply' }).tabIndex).toBe(-1)
+    expect(
+      screen.getByRole('button', { name: 'Message actions' }).tabIndex,
+    ).toBe(-1)
   })
 
-  it('replies with the message the rail belongs to', () => {
+  it('replies with the message the menu belongs to', () => {
     const onReplyToMessage = vi.fn()
     const message = messageRow({ id: 'msg-42' })
     renderBubble(message, { onReplyToMessage })
-    fireEvent.click(screen.getByRole('button', { name: 'Reply' }))
+    // Reply is one option behind the trigger now, not the trigger itself.
+    expect(screen.queryByRole('menuitem', { name: 'Reply' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Message actions' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Reply' }))
     expect(onReplyToMessage).toHaveBeenCalledWith(message)
   })
 
-  it('offers no reply control on a deleted message', () => {
-    renderBubble(
-      messageRow({ deleted_at: '2026-07-23T10:06:00Z' }),
-      { onReplyToMessage: vi.fn() },
-    )
-    expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull()
+  it('copies the message text from the menu', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    renderBubble(messageRow({ content: 'invoice 4417' }), replyThread)
+    fireEvent.click(screen.getByRole('button', { name: 'Message actions' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Copy text' }))
+    expect(writeText).toHaveBeenCalledWith('invoice 4417')
+    vi.unstubAllGlobals()
+  })
+
+  it('offers no actions on a deleted message', () => {
+    renderBubble(messageRow({ deleted_at: '2026-07-23T10:06:00Z' }), {
+      onReplyToMessage: vi.fn(),
+    })
+    expect(screen.queryByRole('button', { name: 'Message actions' })).toBeNull()
+  })
+
+  it('opens the menu behind a scrim when the message is pressed and held', () => {
+    vi.useFakeTimers()
+    try {
+      const { container } = renderBubble(messageRow(), replyThread)
+      const bubble = container.querySelector('[data-message-id="msg-1"]')
+      expect(bubble).not.toBeNull()
+      if (!bubble) return
+
+      fireEvent.pointerDown(bubble, { pointerType: 'touch' })
+      expect(container.querySelector('[aria-hidden].fixed')).toBeNull()
+      act(() => {
+        vi.advanceTimersByTime(500)
+      })
+      expect(container.querySelector('[aria-hidden].fixed')).not.toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('does not arm press-and-hold for a mouse', () => {
+    vi.useFakeTimers()
+    try {
+      const { container } = renderBubble(messageRow(), replyThread)
+      const bubble = container.querySelector('[data-message-id="msg-1"]')
+      if (!bubble) throw new Error('bubble not rendered')
+
+      fireEvent.pointerDown(bubble, { pointerType: 'mouse' })
+      act(() => {
+        vi.advanceTimersByTime(500)
+      })
+      expect(container.querySelector('[aria-hidden].fixed')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('renders extra structured attachments beyond the legacy first one', () => {
     const message = {
-      ...messageRow({ type: 'image', content: null, media_url: 'ws/c/m/one.jpg' }),
+      ...messageRow({
+        type: 'image',
+        content: null,
+        media_url: 'ws/c/m/one.jpg',
+      }),
       message_attachments: [
         {
           id: 'att-2',

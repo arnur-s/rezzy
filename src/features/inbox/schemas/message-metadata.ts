@@ -54,23 +54,12 @@ export const locationMetadataSchema = z
 
 export type LocationMetadata = z.infer<typeof locationMetadataSchema>
 
-export const contactCardSchema = z
-  .object({
-    name: z.string().optional(),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    phone: z.string().optional(),
-    phones: z
-      .array(
-        z.object({ phone: z.string().optional(), wa_id: z.string().optional() }).passthrough(),
-      )
-      .optional(),
-    emails: z.array(z.object({ email: z.string().optional() }).passthrough()).optional(),
-    company: z.string().optional(),
-  })
-  .passthrough()
-
-export type ContactCardMetadata = z.infer<typeof contactCardSchema>
+/**
+ * Contact cards are parsed by the message entity
+ * (`parseSharedContacts`): they are the one structured payload with a life
+ * beyond rendering — matching and contact creation read them too — so their
+ * canonical form belongs below this feature rather than inside it.
+ */
 
 export const interactiveMetadataSchema = z
   .object({
@@ -131,11 +120,6 @@ function metadataSection(raw: unknown, key: string): unknown {
 export function parseLocationMetadata(raw: unknown): LocationMetadata | null {
   const result = locationMetadataSchema.safeParse(metadataSection(raw, 'location'))
   return result.success ? result.data : null
-}
-
-export function parseContactsMetadata(raw: unknown): Array<ContactCardMetadata> {
-  const result = z.array(contactCardSchema).safeParse(metadataSection(raw, 'contacts'))
-  return result.success ? result.data : []
 }
 
 export function parseInteractiveMetadata(raw: unknown): InteractiveMetadata | null {

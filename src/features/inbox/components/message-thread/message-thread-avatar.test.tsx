@@ -38,6 +38,13 @@ vi.mock('../../hooks/use-reactions', () => ({
   useReactionsRealtime: () => {},
 }))
 
+vi.mock('../../hooks/use-send-reaction', () => ({
+  useSendReaction: () => ({
+    sendReaction: vi.fn(),
+    isMessagePending: () => false,
+  }),
+}))
+
 vi.mock('./message-composer', () => ({ MessageComposer: () => null }))
 vi.mock('./thread-scroll-button', () => ({ ThreadScrollButton: () => null }))
 vi.mock('./message-thread-status-actions', () => ({

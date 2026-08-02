@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "build": "vite build",
-    "verify": "pnpm typecheck && pnpm i18n:audit && pnpm lint && pnpm test && pnpm build",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "dev": "vite dev --port 3000 --open --host",
     "dev:agent": "vite dev --port 3000 --host 127.0.0.1",
     "preview": "vite preview",

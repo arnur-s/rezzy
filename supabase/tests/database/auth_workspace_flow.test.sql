@@ -1,6 +1,6 @@
 begin;
 
-select plan(22);
+select plan(26);
 
 select ok(to_regclass('public.profiles') is not null, 'profiles table exists');
 select ok(to_regclass('public.workspaces') is not null, 'workspaces table exists');
@@ -201,6 +201,82 @@ select ok(
   has_table_privilege('authenticated', 'public.workspace_members', 'insert'),
   'authenticated users can insert workspace memberships'
 );
+
+-- === Creating a workspace from the browser ================================
+-- The client inserts with a returning clause, and `insert ... returning`
+-- evaluates the select policy as a with-check on the new row *before* the
+-- after-insert trigger creates the owner membership. A membership-only select
+-- policy therefore rejects the creator's own row with 42501.
+
+insert into auth.users (id, email, raw_user_meta_data)
+values
+  (
+    '00000000-0000-4000-8000-0000000000e1',
+    'workspace-creator@example.com',
+    '{"full_name":"Erin Creator"}'::jsonb
+  ),
+  (
+    '00000000-0000-4000-8000-0000000000e2',
+    'workspace-outsider@example.com',
+    '{"full_name":"Oscar Outsider"}'::jsonb
+  );
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-0000000000e1","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    insert into public.workspaces (name, description, icon, is_main, created_by)
+    values (
+      'Creator Read Back',
+      'A second workspace',
+      'briefcase',
+      false,
+      '00000000-0000-4000-8000-0000000000e1'
+    )
+    returning id
+  $$,
+  'a creator can read back the workspace it just inserted'
+);
+
+select results_eq(
+  $$
+    select wm.role
+    from public.workspace_members wm
+    join public.workspaces w on w.id = wm.workspace_id
+    where w.name = 'Creator Read Back'
+  $$,
+  $$ values ('owner'::text) $$,
+  'the after-insert trigger makes the creator an owner'
+);
+
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-0000000000e2","role":"authenticated"}';
+
+select is_empty(
+  $$
+    select w.id
+    from public.workspaces w
+    where w.name = 'Creator Read Back'
+  $$,
+  'a non-member cannot see somebody else''s workspace'
+);
+
+select throws_ok(
+  $$
+    insert into public.workspaces (name, created_by)
+    values (
+      'Stolen Workspace',
+      '00000000-0000-4000-8000-0000000000e1'
+    )
+  $$,
+  '42501',
+  null,
+  'a user cannot create a workspace attributed to somebody else'
+);
+
+reset role;
 
 select * from finish();
 

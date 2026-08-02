@@ -251,7 +251,11 @@ export function ChatTranscript({
     const { appended } = diffMessageLists(previous, messages)
     if (appended.length === 0) return
 
-    if (appended.some((row) => isOwnOutboundMessage(row, currentUserIdRef.current))) {
+    if (
+      appended.some((row) =>
+        isOwnOutboundMessage(row, currentUserIdRef.current),
+      )
+    ) {
       // Sending is explicit intent to return to the live conversation.
       wasAtEndRef.current = true
       scrollToEnd()
@@ -313,37 +317,50 @@ export function ChatTranscript({
   const rows = useMemo(() => buildTranscriptRows(flatItems), [flatItems])
   const lastMessageId = messages.at(-1)?.id ?? null
 
-  // Roving focus across the reply rails. Only the newest message is a Tab
-  // stop, so reaching the composer from the transcript costs one stop instead
-  // of one per message; the arrows walk the thread from there.
-  const handleRailKeys = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const target = event.target
-    if (!(target instanceof HTMLElement) || !target.hasAttribute('data-reply-for')) {
-      return
-    }
-    const { key } = event
-    if (key !== 'ArrowUp' && key !== 'ArrowDown' && key !== 'Home' && key !== 'End') {
-      return
-    }
-    const rails = Array.from(
-      event.currentTarget.querySelectorAll<HTMLElement>('[data-reply-for]'),
-    )
-    const index = rails.indexOf(target)
-    if (index === -1) return
-    const next =
-      key === 'Home'
-        ? 0
-        : key === 'End'
-          ? rails.length - 1
-          : key === 'ArrowUp'
-            ? Math.max(0, index - 1)
-            : Math.min(rails.length - 1, index + 1)
-    if (next === index) return
-    // Owning the arrows here also stops them from scrolling the transcript out
-    // from under the control that has focus.
-    event.preventDefault()
-    rails[next].focus()
-  }, [])
+  // Roving focus across the per-message action triggers. Only the newest
+  // message is a Tab stop, so reaching the composer from the transcript costs
+  // one stop instead of one per message; the arrows walk the thread from there.
+  const handleRailKeys = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      const target = event.target
+      if (
+        !(target instanceof HTMLElement) ||
+        !target.hasAttribute('data-message-actions-for')
+      ) {
+        return
+      }
+      const { key } = event
+      if (
+        key !== 'ArrowUp' &&
+        key !== 'ArrowDown' &&
+        key !== 'Home' &&
+        key !== 'End'
+      ) {
+        return
+      }
+      const rails = Array.from(
+        event.currentTarget.querySelectorAll<HTMLElement>(
+          '[data-message-actions-for]',
+        ),
+      )
+      const index = rails.indexOf(target)
+      if (index === -1) return
+      const next =
+        key === 'Home'
+          ? 0
+          : key === 'End'
+            ? rails.length - 1
+            : key === 'ArrowUp'
+              ? Math.max(0, index - 1)
+              : Math.min(rails.length - 1, index + 1)
+      if (next === index) return
+      // Owning the arrows here also stops them from scrolling the transcript out
+      // from under the control that has focus.
+      event.preventDefault()
+      rails[next].focus()
+    },
+    [],
+  )
 
   return (
     <div

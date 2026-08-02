@@ -28,7 +28,14 @@ export function MessageReactionsRow({ reactions, isOutbound }: Props) {
       {grouped.map((group) => (
         <span
           key={group.emoji}
-          className="inline-flex items-center gap-0.5 rounded-full bg-primary/8 px-1.5 py-0.5 text-xs shadow-xs"
+          className={cn(
+            'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs shadow-xs',
+            // Our own reaction is marked, not merely counted: without it the
+            // agent cannot tell a chip they can withdraw from one they cannot.
+            group.reactedByCurrentUser
+              ? 'bg-primary/12 ring-primary/30 ring-1'
+              : 'bg-primary/8',
+          )}
         >
           <span>{displayReactionEmoji(group.emoji)}</span>
           {group.count > 1 ? (

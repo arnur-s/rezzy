@@ -1,7 +1,11 @@
 // Pure per-provider reaction normalization. Each provider reports reactions
 // differently; these helpers translate callbacks into uniform ReactionOp lists
 // that the persistence layer upserts idempotently.
+//
+// Every emoji leaving this module is canonical (see reaction-emoji.ts), so a
+// heart from WhatsApp and a heart from Telegram are the same reaction identity.
 
+import { normalizeReactionEmoji } from './reaction-emoji.ts'
 import type { ReactionOp } from './types.ts'
 
 /**
@@ -16,8 +20,10 @@ export function diffTelegramReactionSets(args: {
   newEmojis: string[]
   providerTimestamp: string | null
 }): ReactionOp[] {
-  const oldSet = new Set(args.oldEmojis)
-  const newSet = new Set(args.newEmojis)
+  // Canonicalize before diffing: a provider that switches variation-selector
+  // form between two callbacks otherwise looks like "removed ❤, added ❤".
+  const oldSet = new Set(args.oldEmojis.map(normalizeReactionEmoji))
+  const newSet = new Set(args.newEmojis.map(normalizeReactionEmoji))
   const ops: ReactionOp[] = []
   for (const emoji of newSet) {
     if (!oldSet.has(emoji)) {
@@ -55,7 +61,7 @@ export function whatsappReactionOp(args: {
   emoji: string | null | undefined
   providerTimestamp: string | null
 }): ReactionOp | null {
-  const emoji = args.emoji?.trim() ?? ''
+  const emoji = normalizeReactionEmoji(args.emoji?.trim() ?? '')
   if (!emoji) return null
   return {
     reactorExternalId: args.reactorExternalId,
@@ -74,7 +80,9 @@ export function instagramReactionOp(args: {
   reactionName: string | null | undefined
   providerTimestamp: string | null
 }): ReactionOp | null {
-  const emoji = args.emoji?.trim() || args.reactionName?.trim() || ''
+  const emoji = normalizeReactionEmoji(
+    args.emoji?.trim() || args.reactionName?.trim() || '',
+  )
   if (!emoji) return null
   return {
     reactorExternalId: args.reactorExternalId,

@@ -46,4 +46,15 @@ export const contactQueryKeys = {
       ...contactQueryKeys.detail(workspaceId, contactId),
       'conversations',
     ] as const,
+  phones: (workspaceId: string, contactId: string) =>
+    [...contactQueryKeys.detail(workspaceId, contactId), 'phones'] as const,
+  /**
+   * Identity lookups ("is this shared contact already in the CRM?"). Under the
+   * workspace segment like everything else, so creating a contact invalidates
+   * every open lookup in that workspace and none in another.
+   */
+  matches: (workspaceId: string) =>
+    [...contactQueryKeys.workspace(workspaceId), 'match'] as const,
+  match: (workspaceId: string, identityKey: string) =>
+    [...contactQueryKeys.matches(workspaceId), identityKey] as const,
 }

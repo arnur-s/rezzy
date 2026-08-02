@@ -1,4 +1,5 @@
 import { WorkspaceIconPicker, resolveWorkspaceIcon  } from '@/entities/workspace'
+import { WorkspacePhoneRegionSection } from '@/features/workspaces/components/workspace-phone-region-section'
 import {
   useUpdateWorkspace,
   useWorkspace,
@@ -205,6 +206,8 @@ function RouteComponent() {
           />
         </div>
       </form>
+
+      <WorkspacePhoneRegionSection workspaceId={workspaceId} />
     </div>
   )
 }

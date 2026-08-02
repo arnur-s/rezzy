@@ -18,11 +18,24 @@ describe('diffTelegramReactionSets', () => {
       oldEmojis: ['👍'],
       newEmojis: ['❤️', '🔥'],
     })
+    // Emoji leave canonicalized, so the unique key cannot split one reaction
+    // into two rows over a variation selector.
     expect(ops).toEqual([
-      expect.objectContaining({ emoji: '❤️', action: 'added' }),
+      expect.objectContaining({ emoji: '❤', action: 'added' }),
       expect.objectContaining({ emoji: '🔥', action: 'added' }),
       expect.objectContaining({ emoji: '👍', action: 'removed' }),
     ])
+  })
+
+  it('sees no change when the provider respells an unchanged reaction', () => {
+    // Telegram re-sending ❤ as ❤️ is not "removed ❤, added ❤️".
+    expect(
+      diffTelegramReactionSets({
+        ...base,
+        oldEmojis: ['❤️'],
+        newEmojis: ['❤'],
+      }),
+    ).toEqual([])
   })
 
   it('emits nothing for an unchanged set (duplicate callback)', () => {
@@ -83,7 +96,7 @@ describe('instagramReactionOp', () => {
         reactionName: 'love',
         providerTimestamp: '2026-07-23T10:00:00Z',
       }),
-    ).toEqual(expect.objectContaining({ emoji: '❤️', action: 'added' }))
+    ).toEqual(expect.objectContaining({ emoji: '❤', action: 'added' }))
     expect(
       instagramReactionOp({
         reactorExternalId: 'IGSID1',

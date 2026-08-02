@@ -21,6 +21,7 @@ import { useState } from 'react'
 import {
   useContactConversations,
   useContactDetail,
+  useContactPhones,
 } from '../hooks/use-contacts'
 import { ContactFormDialog } from './contact-form-dialog'
 
@@ -69,6 +70,7 @@ function CopyableField({
 export function ContactDetailPage({ workspaceId, contactId }: Props) {
   const contactQuery = useContactDetail(workspaceId, contactId)
   const conversationsQuery = useContactConversations(workspaceId, contactId)
+  const phonesQuery = useContactPhones(workspaceId, contactId)
   const membersQuery = useWorkspaceMemberDirectory(workspaceId)
   const [isEditOpen, setIsEditOpen] = useState(false)
 
@@ -149,7 +151,16 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
         ?.fullName ?? null)
     : null
   const conversations = conversationsQuery.data ?? []
-  const isIncomplete = !contact.phone?.trim() && !contact.email?.trim()
+  const loadedPhones = (phonesQuery.data ?? [])
+    .map((entry) => entry.phone.trim())
+    .filter((phone) => phone !== '')
+  const phoneRows =
+    loadedPhones.length > 0
+      ? loadedPhones
+      : contact.phone?.trim()
+        ? [contact.phone.trim()]
+        : []
+  const isIncomplete = phoneRows.length === 0 && !contact.email?.trim()
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
@@ -200,13 +211,23 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
               {m.contact_detail_information()}
             </h2>
             <div className="divide-border divide-y">
-              {contact.phone?.trim() ? (
+              {/* Every number, primary first. The list falls back to the
+                primary alone while the set is loading (or if it fails), so the
+                field never disappears from under the reader. */}
+              {phoneRows.map((phone, index) => (
                 <CopyableField
-                  label={m.contact_detail_phone()}
-                  value={contact.phone.trim()}
+                  key={phone}
+                  label={
+                    index === 0
+                      ? m.contact_detail_phone()
+                      : m.contact_form_phone_additional({
+                          number: String(index + 1),
+                        })
+                  }
+                  value={phone}
                   copyLabel={m.contact_detail_copy_phone()}
                 />
-              ) : null}
+              ))}
               {contact.email?.trim() ? (
                 <CopyableField
                   label={m.contact_detail_email()}

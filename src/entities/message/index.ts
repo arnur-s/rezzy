@@ -6,7 +6,12 @@ export {
   groupMessageReactions,
 } from './lib/message-reactions'
 export type { MessageReactionGroup } from './lib/message-reactions'
-export { canonicalizeReaction, reactionIdentity } from './lib/reaction-identity'
+export {
+  OUTBOUND_REACTOR_ID,
+  canonicalizeReaction,
+  isOutboundReaction,
+  reactionIdentity,
+} from './lib/reaction-identity'
 export {
   hasSharedContactIdentity,
   parseSharedContacts,

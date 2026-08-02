@@ -5,6 +5,7 @@
 // into duplicates.
 
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { normalizeReactionEmoji } from './reaction-emoji.ts'
 import type {
   AttachmentInput,
   NormalizedMessageInput,
@@ -197,6 +198,10 @@ export interface ReactionTarget {
  * keeps out-of-order callbacks from reverting newer state. With
  * `replaceOthers`, the reactor's other added emojis are first flipped to
  * removed (WhatsApp replace semantics).
+ *
+ * Emoji identity is canonicalized here as well as in the provider helpers: this
+ * is the boundary the unique key is matched on, so no caller can write a
+ * variant form that would split one reaction into two rows.
  */
 export async function applyReactionOps(
   client: SupabaseClient,
@@ -231,7 +236,10 @@ export async function applyReactionOps(
       .eq('reactor_external_id', options.replaceOthers.reactorExternalId)
       .eq('action', 'added')
     if (options.replaceOthers.keepEmoji) {
-      replace = replace.neq('emoji', options.replaceOthers.keepEmoji)
+      replace = replace.neq(
+        'emoji',
+        normalizeReactionEmoji(options.replaceOthers.keepEmoji),
+      )
     }
     const { error } = await replace
     if (error) logDbError('persist: reaction replace failed', error)
@@ -239,6 +247,7 @@ export async function applyReactionOps(
 
   const affectedIds: string[] = []
   for (const op of ops) {
+    const emoji = normalizeReactionEmoji(op.emoji)
     const values: Record<string, unknown> = {
       action: op.action,
       provider_timestamp: op.providerTimestamp ?? null,
@@ -253,7 +262,7 @@ export async function applyReactionOps(
       .eq('channel_id', target.channelId)
       .eq('provider_message_id', target.providerMessageId)
       .eq('reactor_external_id', op.reactorExternalId)
-      .eq('emoji', op.emoji)
+      .eq('emoji', emoji)
     if (op.providerTimestamp) {
       update = update.or(
         `provider_timestamp.is.null,provider_timestamp.lte.${op.providerTimestamp}`,
@@ -279,7 +288,7 @@ export async function applyReactionOps(
         provider_message_id: target.providerMessageId,
         reactor_external_id: op.reactorExternalId,
         is_from_contact: op.isFromContact,
-        emoji: op.emoji,
+        emoji,
         action: op.action,
         provider_timestamp: op.providerTimestamp ?? null,
         metadata: op.metadata ?? {},

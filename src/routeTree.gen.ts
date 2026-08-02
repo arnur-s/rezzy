@@ -14,6 +14,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PasswordResetRouteImport } from './routes/password-reset'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as InstagramCallbackRouteImport } from './routes/instagram-callback'
+import { Route as E2eSharedContactRouteImport } from './routes/e2e-shared-contact'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -60,6 +61,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const InstagramCallbackRoute = InstagramCallbackRouteImport.update({
   id: '/instagram-callback',
   path: '/instagram-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const E2eSharedContactRoute = E2eSharedContactRouteImport.update({
+  id: '/e2e-shared-contact',
+  path: '/e2e-shared-contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -192,6 +198,7 @@ const AuthenticatedWorkspacesIdSettingsChannelsNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/e2e-shared-contact': typeof E2eSharedContactRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$id/settings/channels/': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/e2e-shared-contact': typeof E2eSharedContactRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
@@ -245,6 +253,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/e2e-shared-contact': typeof E2eSharedContactRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
   '/password-reset': typeof PasswordResetRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/e2e-shared-contact'
     | '/instagram-callback'
     | '/onboarding'
     | '/password-reset'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/workspaces/$id/settings/channels/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/e2e-shared-contact'
     | '/instagram-callback'
     | '/onboarding'
     | '/password-reset'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/e2e-shared-contact'
     | '/instagram-callback'
     | '/onboarding'
     | '/password-reset'
@@ -358,6 +370,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  E2eSharedContactRoute: typeof E2eSharedContactRoute
   InstagramCallbackRoute: typeof InstagramCallbackRoute
   OnboardingRoute: typeof OnboardingRoute
   PasswordResetRoute: typeof PasswordResetRoute
@@ -400,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/instagram-callback'
       fullPath: '/instagram-callback'
       preLoaderRoute: typeof InstagramCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e2e-shared-contact': {
+      id: '/e2e-shared-contact'
+      path: '/e2e-shared-contact'
+      fullPath: '/e2e-shared-contact'
+      preLoaderRoute: typeof E2eSharedContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -672,6 +692,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  E2eSharedContactRoute: E2eSharedContactRoute,
   InstagramCallbackRoute: InstagramCallbackRoute,
   OnboardingRoute: OnboardingRoute,
   PasswordResetRoute: PasswordResetRoute,
