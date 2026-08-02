@@ -187,6 +187,7 @@ export function InboxPage({
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       userId={senderId}
+      workspaceId={workspaceId}
       onRetry={handleRetryConversations}
       isRetrying={isSearchActive ? searchResults.isRefetching : conversationsQuery.isRefetching}
     />

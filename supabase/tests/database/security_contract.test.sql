@@ -35,11 +35,13 @@ select ok(
 with required_definers(signature) as (
   values
     ('public.auto_assign_conversation_on_outbound_message()'),
+    ('public.ensure_contact_owner_is_workspace_member()'),
     ('public.get_channel_credentials(uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.handle_inbound_message_insert()'),
     ('public.handle_new_workspace()'),
     ('public.handle_outbound_message_insert()'),
+    ('public.list_workspace_members(uuid)'),
     ('public.rls_auto_enable()'),
     ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
@@ -63,12 +65,15 @@ with empty_search_path_functions(signature) as (
     ('public.get_channel_credentials(uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.enforce_contact_note_integrity()'),
+    ('public.ensure_contact_owner_is_workspace_member()'),
     ('public.handle_inbound_message_insert()'),
     ('public.handle_new_workspace()'),
     ('public.handle_outbound_message_insert()'),
     ('public.handle_updated_at()'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
     ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
     ('public.upsert_channel_credentials(uuid,jsonb)')
@@ -102,7 +107,9 @@ select is(
 with user_rpcs(signature) as (
   values
     ('public.is_workspace_member(uuid)'),
-    ('public.mark_conversation_read(uuid,uuid)')
+    ('public.list_workspace_members(uuid)'),
+    ('public.mark_conversation_read(uuid,uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
 )
 select ok(
   not exists (
@@ -124,7 +131,9 @@ select ok(
 with user_rpcs(signature) as (
   values
     ('public.is_workspace_member(uuid)'),
-    ('public.mark_conversation_read(uuid,uuid)')
+    ('public.list_workspace_members(uuid)'),
+    ('public.mark_conversation_read(uuid,uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
 )
 select ok(
   not exists (
@@ -146,7 +155,9 @@ select ok(
 with user_rpcs(signature) as (
   values
     ('public.is_workspace_member(uuid)'),
-    ('public.mark_conversation_read(uuid,uuid)')
+    ('public.list_workspace_members(uuid)'),
+    ('public.mark_conversation_read(uuid,uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
 )
 select ok(
   not exists (

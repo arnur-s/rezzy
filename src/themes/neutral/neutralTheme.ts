@@ -57,19 +57,34 @@ const neutralSyntax = defineSyntaxTheme({
 export const neutralTheme = defineTheme({
   name: 'neutral',
 
-  // Typography: Figtree across body, heading, and display sizes (display
+  // Typography: Golos Text across body, heading, and display sizes (display
   // size tokens inherit from heading.family). Monospace stays as the
   // platform default for code.
+  //
+  // Golos Text rather than the theme's upstream Figtree, for two reasons that
+  // are both about this app rather than about the faces:
+  //
+  //  1. `baseLocale` is `ru` (`project.inlang/settings.json`), so Russian is
+  //     the default experience. Figtree's release ships Latin and Latin-ext
+  //     and no Cyrillic, which would leave the primary locale in the system
+  //     fallback and style only the Latin strings beside it — two typefaces
+  //     on one screen. Golos Text is Cyrillic-first.
+  //  2. Naming a family here does not load it; the `@font-face` in
+  //     `src/fonts/fonts.css` does. Golos Text is already self-hosted there
+  //     as `unicode-range`-split woff2 subsets. Figtree was named but never
+  //     declared anywhere in the repo, so the whole interface rendered in the
+  //     system UI stack.
+  //
   // Scale: base=14, ratio=1.2. Bold weights on h3/h4 for subsection hierarchy.
   typography: {
     scale: { base: 14, ratio: 1.2 },
     body: {
-      family: 'Figtree',
+      family: 'Golos Text',
       fallbacks:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     },
     heading: {
-      family: 'Figtree',
+      family: 'Golos Text',
       fallbacks:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       weights: { 3: 'bold', 4: 'bold' },

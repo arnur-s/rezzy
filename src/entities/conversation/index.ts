@@ -6,7 +6,6 @@ export {
 } from './model/types'
 export { ConversationStatusChip } from './ui/conversation-status-chip'
 export type {
-  AssignedProfile,
   ConversationRow,
   ConversationStatus,
   ConversationWithRelations,

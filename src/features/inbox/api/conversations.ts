@@ -1,5 +1,4 @@
 import type {
-  AssignedProfile,
   ConversationStatus,
   ConversationWithRelations,
 } from '@/entities/conversation'
@@ -37,53 +36,7 @@ export async function getWorkspaceConversations(
     throw error
   }
 
-  const conversations = data
-  const assignedIds = Array.from(
-    new Set(
-      conversations
-        .map((row) => row.assigned_to)
-        .filter((id): id is string => !!id),
-    ),
-  )
-
-  if (assignedIds.length === 0) {
-    return conversations.map((row) => ({
-      ...row,
-      unread_count: 0,
-      assigned_profile: null,
-    }))
-  }
-
-  const profilesById = await fetchProfilesByIds(assignedIds)
-
-  return conversations.map((row) => ({
-    ...row,
-    unread_count: 0,
-    assigned_profile: row.assigned_to
-      ? (profilesById.get(row.assigned_to) ?? null)
-      : null,
-  }))
-}
-
-async function fetchProfilesByIds(
-  ids: Array<string>,
-): Promise<Map<string, AssignedProfile>> {
-  if (ids.length === 0) return new Map()
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, full_name, avatar_url')
-    .in('id', ids)
-
-  if (error) {
-    throw error
-  }
-
-  const map = new Map<string, AssignedProfile>()
-  for (const profile of data) {
-    map.set(profile.id, profile)
-  }
-  return map
+  return data.map((row) => ({ ...row, unread_count: 0 }))
 }
 
 export async function getWorkspaceConversationsBySearch(
@@ -105,32 +58,7 @@ export async function getWorkspaceConversationsBySearch(
     throw error
   }
 
-  const conversations = data
-  const assignedIds = Array.from(
-    new Set(
-      conversations
-        .map((row) => row.assigned_to)
-        .filter((id): id is string => !!id),
-    ),
-  )
-
-  if (assignedIds.length === 0) {
-    return conversations.map((row) => ({
-      ...row,
-      unread_count: 0,
-      assigned_profile: null,
-    }))
-  }
-
-  const profilesById = await fetchProfilesByIds(assignedIds)
-
-  return conversations.map((row) => ({
-    ...row,
-    unread_count: 0,
-    assigned_profile: row.assigned_to
-      ? (profilesById.get(row.assigned_to) ?? null)
-      : null,
-  }))
+  return data.map((row) => ({ ...row, unread_count: 0 }))
 }
 
 export async function getConversationById(
@@ -145,17 +73,7 @@ export async function getConversationById(
 
   if (error) return null
 
-  const assignedId = data.assigned_to
-  if (!assignedId) {
-    return { ...data, unread_count: 0, assigned_profile: null }
-  }
-
-  const profilesById = await fetchProfilesByIds([assignedId])
-  return {
-    ...data,
-    unread_count: 0,
-    assigned_profile: profilesById.get(assignedId) ?? null,
-  }
+  return { ...data, unread_count: 0 }
 }
 
 export async function markConversationRead(

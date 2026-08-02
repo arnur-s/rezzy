@@ -220,7 +220,7 @@ export type Database = {
           id: string
           last_seen_at: string | null
           name: string | null
-          notes: string | null
+          owner_id: string | null
           phone: string | null
           source: string | null
           status: string
@@ -235,7 +235,7 @@ export type Database = {
           id?: string
           last_seen_at?: string | null
           name?: string | null
-          notes?: string | null
+          owner_id?: string | null
           phone?: string | null
           source?: string | null
           status?: string
@@ -250,7 +250,7 @@ export type Database = {
           id?: string
           last_seen_at?: string | null
           name?: string | null
-          notes?: string | null
+          owner_id?: string | null
           phone?: string | null
           source?: string | null
           status?: string
@@ -259,6 +259,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contacts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contacts_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -1100,6 +1107,18 @@ export type Database = {
         Args: { p_workspace_id: string }
         Returns: boolean
       }
+      list_workspace_members: {
+        Args: { p_workspace_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          job_title: string
+          joined_at: string
+          phone: string
+          role: string
+          user_id: string
+        }[]
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string; p_last_read_message_id?: string }
         Returns: undefined
@@ -1124,6 +1143,38 @@ export type Database = {
           contact_channel_id: string
           contact_id: string
           conversation_id: string
+        }[]
+      }
+      search_workspace_contacts: {
+        Args: {
+          p_include_unowned?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_owner_ids?: string[]
+          p_query?: string
+          p_sort?: string
+          p_sources?: string[]
+          p_statuses?: string[]
+          p_tags?: string[]
+          p_workspace_id: string
+        }
+        Returns: {
+          avatar_url: string
+          channel_types: string[]
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          last_seen_at: string
+          name: string
+          owner_id: string
+          phone: string
+          source: string
+          status: string
+          tags: string[]
+          total_count: number
+          updated_at: string
+          workspace_id: string
         }[]
       }
       soft_delete_workspace: {

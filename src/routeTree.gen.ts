@@ -30,8 +30,10 @@ import { Route as AuthenticatedWorkspacesIdInboxRouteImport } from './routes/_au
 import { Route as AuthenticatedWorkspacesIdContactsRouteImport } from './routes/_authenticated/workspaces/$id/contacts'
 import { Route as AuthenticatedWorkspacesIdSettingsIndexRouteImport } from './routes/_authenticated/workspaces/$id/settings/index'
 import { Route as AuthenticatedWorkspacesIdInboxIndexRouteImport } from './routes/_authenticated/workspaces/$id/inbox/index'
+import { Route as AuthenticatedWorkspacesIdContactsIndexRouteImport } from './routes/_authenticated/workspaces/$id/contacts/index'
 import { Route as AuthenticatedWorkspacesIdSettingsMembersRouteImport } from './routes/_authenticated/workspaces/$id/settings/members'
 import { Route as AuthenticatedWorkspacesIdInboxConversationIdRouteImport } from './routes/_authenticated/workspaces/$id/inbox/$conversationId'
+import { Route as AuthenticatedWorkspacesIdContactsContactIdRouteImport } from './routes/_authenticated/workspaces/$id/contacts/$contactId'
 import { Route as AuthenticatedWorkspacesIdSettingsChannelsIndexRouteImport } from './routes/_authenticated/workspaces/$id/settings/channels/index'
 import { Route as AuthenticatedWorkspacesIdSettingsChannelsNewRouteImport } from './routes/_authenticated/workspaces/$id/settings/channels/new'
 
@@ -151,6 +153,12 @@ const AuthenticatedWorkspacesIdInboxIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedWorkspacesIdInboxRoute,
   } as any)
+const AuthenticatedWorkspacesIdContactsIndexRoute =
+  AuthenticatedWorkspacesIdContactsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedWorkspacesIdContactsRoute,
+  } as any)
 const AuthenticatedWorkspacesIdSettingsMembersRoute =
   AuthenticatedWorkspacesIdSettingsMembersRouteImport.update({
     id: '/members',
@@ -162,6 +170,12 @@ const AuthenticatedWorkspacesIdInboxConversationIdRoute =
     id: '/$conversationId',
     path: '/$conversationId',
     getParentRoute: () => AuthenticatedWorkspacesIdInboxRoute,
+  } as any)
+const AuthenticatedWorkspacesIdContactsContactIdRoute =
+  AuthenticatedWorkspacesIdContactsContactIdRouteImport.update({
+    id: '/$contactId',
+    path: '/$contactId',
+    getParentRoute: () => AuthenticatedWorkspacesIdContactsRoute,
   } as any)
 const AuthenticatedWorkspacesIdSettingsChannelsIndexRoute =
   AuthenticatedWorkspacesIdSettingsChannelsIndexRouteImport.update({
@@ -191,12 +205,14 @@ export interface FileRoutesByFullPath {
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
-  '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
+  '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRouteWithChildren
   '/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
   '/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsRouteWithChildren
   '/workspaces/$id/': typeof AuthenticatedWorkspacesIdIndexRoute
+  '/workspaces/$id/contacts/$contactId': typeof AuthenticatedWorkspacesIdContactsContactIdRoute
   '/workspaces/$id/inbox/$conversationId': typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
   '/workspaces/$id/settings/members': typeof AuthenticatedWorkspacesIdSettingsMembersRoute
+  '/workspaces/$id/contacts/': typeof AuthenticatedWorkspacesIdContactsIndexRoute
   '/workspaces/$id/inbox/': typeof AuthenticatedWorkspacesIdInboxIndexRoute
   '/workspaces/$id/settings/': typeof AuthenticatedWorkspacesIdSettingsIndexRoute
   '/workspaces/$id/settings/channels/new': typeof AuthenticatedWorkspacesIdSettingsChannelsNewRoute
@@ -216,10 +232,11 @@ export interface FileRoutesByTo {
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
-  '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
   '/workspaces/$id': typeof AuthenticatedWorkspacesIdIndexRoute
+  '/workspaces/$id/contacts/$contactId': typeof AuthenticatedWorkspacesIdContactsContactIdRoute
   '/workspaces/$id/inbox/$conversationId': typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
   '/workspaces/$id/settings/members': typeof AuthenticatedWorkspacesIdSettingsMembersRoute
+  '/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsIndexRoute
   '/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxIndexRoute
   '/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsIndexRoute
   '/workspaces/$id/settings/channels/new': typeof AuthenticatedWorkspacesIdSettingsChannelsNewRoute
@@ -242,12 +259,14 @@ export interface FileRoutesById {
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
-  '/_authenticated/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRoute
+  '/_authenticated/workspaces/$id/contacts': typeof AuthenticatedWorkspacesIdContactsRouteWithChildren
   '/_authenticated/workspaces/$id/inbox': typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
   '/_authenticated/workspaces/$id/settings': typeof AuthenticatedWorkspacesIdSettingsRouteWithChildren
   '/_authenticated/workspaces/$id/': typeof AuthenticatedWorkspacesIdIndexRoute
+  '/_authenticated/workspaces/$id/contacts/$contactId': typeof AuthenticatedWorkspacesIdContactsContactIdRoute
   '/_authenticated/workspaces/$id/inbox/$conversationId': typeof AuthenticatedWorkspacesIdInboxConversationIdRoute
   '/_authenticated/workspaces/$id/settings/members': typeof AuthenticatedWorkspacesIdSettingsMembersRoute
+  '/_authenticated/workspaces/$id/contacts/': typeof AuthenticatedWorkspacesIdContactsIndexRoute
   '/_authenticated/workspaces/$id/inbox/': typeof AuthenticatedWorkspacesIdInboxIndexRoute
   '/_authenticated/workspaces/$id/settings/': typeof AuthenticatedWorkspacesIdSettingsIndexRoute
   '/_authenticated/workspaces/$id/settings/channels/new': typeof AuthenticatedWorkspacesIdSettingsChannelsNewRoute
@@ -274,8 +293,10 @@ export interface FileRouteTypes {
     | '/workspaces/$id/inbox'
     | '/workspaces/$id/settings'
     | '/workspaces/$id/'
+    | '/workspaces/$id/contacts/$contactId'
     | '/workspaces/$id/inbox/$conversationId'
     | '/workspaces/$id/settings/members'
+    | '/workspaces/$id/contacts/'
     | '/workspaces/$id/inbox/'
     | '/workspaces/$id/settings/'
     | '/workspaces/$id/settings/channels/new'
@@ -295,10 +316,11 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/settings'
     | '/workspaces'
-    | '/workspaces/$id/contacts'
     | '/workspaces/$id'
+    | '/workspaces/$id/contacts/$contactId'
     | '/workspaces/$id/inbox/$conversationId'
     | '/workspaces/$id/settings/members'
+    | '/workspaces/$id/contacts'
     | '/workspaces/$id/inbox'
     | '/workspaces/$id/settings'
     | '/workspaces/$id/settings/channels/new'
@@ -324,8 +346,10 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$id/inbox'
     | '/_authenticated/workspaces/$id/settings'
     | '/_authenticated/workspaces/$id/'
+    | '/_authenticated/workspaces/$id/contacts/$contactId'
     | '/_authenticated/workspaces/$id/inbox/$conversationId'
     | '/_authenticated/workspaces/$id/settings/members'
+    | '/_authenticated/workspaces/$id/contacts/'
     | '/_authenticated/workspaces/$id/inbox/'
     | '/_authenticated/workspaces/$id/settings/'
     | '/_authenticated/workspaces/$id/settings/channels/new'
@@ -490,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesIdInboxIndexRouteImport
       parentRoute: typeof AuthenticatedWorkspacesIdInboxRoute
     }
+    '/_authenticated/workspaces/$id/contacts/': {
+      id: '/_authenticated/workspaces/$id/contacts/'
+      path: '/'
+      fullPath: '/workspaces/$id/contacts/'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdContactsIndexRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesIdContactsRoute
+    }
     '/_authenticated/workspaces/$id/settings/members': {
       id: '/_authenticated/workspaces/$id/settings/members'
       path: '/members'
@@ -503,6 +534,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspaces/$id/inbox/$conversationId'
       preLoaderRoute: typeof AuthenticatedWorkspacesIdInboxConversationIdRouteImport
       parentRoute: typeof AuthenticatedWorkspacesIdInboxRoute
+    }
+    '/_authenticated/workspaces/$id/contacts/$contactId': {
+      id: '/_authenticated/workspaces/$id/contacts/$contactId'
+      path: '/$contactId'
+      fullPath: '/workspaces/$id/contacts/$contactId'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIdContactsContactIdRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesIdContactsRoute
     }
     '/_authenticated/workspaces/$id/settings/channels/': {
       id: '/_authenticated/workspaces/$id/settings/channels/'
@@ -541,6 +579,24 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
 const AuthenticatedSettingsRouteWithChildren =
   AuthenticatedSettingsRoute._addFileChildren(
     AuthenticatedSettingsRouteChildren,
+  )
+
+interface AuthenticatedWorkspacesIdContactsRouteChildren {
+  AuthenticatedWorkspacesIdContactsContactIdRoute: typeof AuthenticatedWorkspacesIdContactsContactIdRoute
+  AuthenticatedWorkspacesIdContactsIndexRoute: typeof AuthenticatedWorkspacesIdContactsIndexRoute
+}
+
+const AuthenticatedWorkspacesIdContactsRouteChildren: AuthenticatedWorkspacesIdContactsRouteChildren =
+  {
+    AuthenticatedWorkspacesIdContactsContactIdRoute:
+      AuthenticatedWorkspacesIdContactsContactIdRoute,
+    AuthenticatedWorkspacesIdContactsIndexRoute:
+      AuthenticatedWorkspacesIdContactsIndexRoute,
+  }
+
+const AuthenticatedWorkspacesIdContactsRouteWithChildren =
+  AuthenticatedWorkspacesIdContactsRoute._addFileChildren(
+    AuthenticatedWorkspacesIdContactsRouteChildren,
   )
 
 interface AuthenticatedWorkspacesIdInboxRouteChildren {
@@ -590,7 +646,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedWorkspacesIndexRoute: typeof AuthenticatedWorkspacesIndexRoute
-  AuthenticatedWorkspacesIdContactsRoute: typeof AuthenticatedWorkspacesIdContactsRoute
+  AuthenticatedWorkspacesIdContactsRoute: typeof AuthenticatedWorkspacesIdContactsRouteWithChildren
   AuthenticatedWorkspacesIdInboxRoute: typeof AuthenticatedWorkspacesIdInboxRouteWithChildren
   AuthenticatedWorkspacesIdSettingsRoute: typeof AuthenticatedWorkspacesIdSettingsRouteWithChildren
   AuthenticatedWorkspacesIdIndexRoute: typeof AuthenticatedWorkspacesIdIndexRoute
@@ -602,7 +658,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedWorkspacesIndexRoute: AuthenticatedWorkspacesIndexRoute,
   AuthenticatedWorkspacesIdContactsRoute:
-    AuthenticatedWorkspacesIdContactsRoute,
+    AuthenticatedWorkspacesIdContactsRouteWithChildren,
   AuthenticatedWorkspacesIdInboxRoute:
     AuthenticatedWorkspacesIdInboxRouteWithChildren,
   AuthenticatedWorkspacesIdSettingsRoute:

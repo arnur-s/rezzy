@@ -1,6 +1,8 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
+import type { WorkspaceMember } from '@/entities/workspace'
+import { setLocale } from '@/paraglide/runtime'
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ConversationListItem } from './conversation-list-item'
 
 vi.mock('@/entities/channel', async () => {
@@ -40,11 +42,25 @@ function conversation(overrides: {
       avatar_url: null,
       status: 'new',
     },
-    assigned_profile: null,
   }
 }
 
-function renderInList(row: ConversationWithRelations, isActive: boolean) {
+const MEMBER: WorkspaceMember = {
+  userId: 'user-1',
+  role: 'admin',
+  fullName: 'Ivan Sidorov',
+  avatarUrl: null,
+  jobTitle: 'Account manager',
+  phone: '+7 916 555-01-22',
+  joinedAt: '2020-01-01',
+}
+
+function renderInList(
+  row: ConversationWithRelations,
+  isActive: boolean,
+  assignee: WorkspaceMember | null = null,
+  isAssigneeUnresolved = false,
+) {
   return render(
     <div role="listbox" aria-label="Conversations">
       <button
@@ -55,7 +71,12 @@ function renderInList(row: ConversationWithRelations, isActive: boolean) {
         data-selected={isActive ? 'true' : 'false'}
         className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5"
       >
-        <ConversationListItem conversation={row} isActive={isActive} />
+        <ConversationListItem
+          conversation={row}
+          isActive={isActive}
+          assignee={assignee}
+          isAssigneeUnresolved={isAssigneeUnresolved}
+        />
       </button>
     </div>,
   )
@@ -83,5 +104,35 @@ describe('ConversationListItem unread display', () => {
 
     const title = within(option).getByText('Test Contact')
     expect(title.className).toContain('font-semibold')
+  })
+})
+
+describe('ConversationListItem assignee mark', () => {
+  beforeEach(() => {
+    setLocale('en', { reload: false })
+  })
+
+  it('shows the assignee face when the roster resolves the id', () => {
+    renderInList(conversation({}), false, MEMBER)
+
+    const option = screen.getByRole('option', { name: /Test Contact/i })
+    // Astryx's Avatar renders its monogram in more than one node; the assertion
+    // is that the face is there at all, not how many layers draw it.
+    expect(within(option).getAllByText('IS').length).toBeGreaterThan(0)
+  })
+
+  it('renders nothing for the mark when nobody is assigned', () => {
+    renderInList(conversation({}), false, null)
+
+    const option = screen.getByRole('option', { name: /Test Contact/i })
+    expect(within(option).queryAllByText('IS')).toHaveLength(0)
+    expect(within(option).queryByLabelText(/former member/i)).toBeNull()
+  })
+
+  it('marks an assignee the roster can no longer resolve rather than dropping it', () => {
+    renderInList(conversation({}), false, null, true)
+
+    const option = screen.getByRole('option', { name: /Test Contact/i })
+    expect(within(option).getByLabelText(/former member/i)).toBeTruthy()
   })
 })

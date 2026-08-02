@@ -1,6 +1,7 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { setLocale } from '@/paraglide/runtime'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { renderWithQueryClient } from '@/test/render'
+import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ConversationList } from './conversation-list'
 
@@ -20,7 +21,7 @@ function renderList(overrides: RenderProps = {}) {
   const onSearchChange = vi.fn()
   const onRetry = vi.fn()
 
-  const utils = render(
+  const utils = renderWithQueryClient(
     <ConversationList
       conversations={overrides.conversations ?? []}
       isLoading={overrides.isLoading ?? false}
@@ -34,6 +35,7 @@ function renderList(overrides: RenderProps = {}) {
       searchQuery={overrides.searchQuery ?? ''}
       onSearchChange={overrides.onSearchChange ?? onSearchChange}
       userId={overrides.userId ?? 'user-1'}
+      workspaceId={overrides.workspaceId ?? 'w'}
       onRetry={overrides.onRetry ?? onRetry}
       isRetrying={overrides.isRetrying ?? false}
     />,
@@ -69,7 +71,6 @@ function conversationFixture(
       avatar_url: null,
       status: 'new',
     },
-    assigned_profile: null,
   }
 }
 

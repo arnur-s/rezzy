@@ -5,7 +5,7 @@
    Sequence comes from @astryxdesign/core/src/tailwind-theme.css. */
 @layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
 
-/* Self-hosted woff2 subsets for the families the gothic theme names. Imported
+/* Self-hosted woff2 subsets for the families the theme names. Imported
    outside every layer on purpose: @font-face registers a family globally rather
    than participating in the cascade, and the faces must exist before the theme
    references them by name. */
@@ -15,11 +15,10 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import '@astryxdesign/core/reset.css';
 @import '@astryxdesign/core/astryx.css';
-/* Gothic theme stylesheet, pre-built from `src/themes/gothic/gothicTheme.ts`
-   by `pnpm exec astryx theme build` (see the `theme:build` script). Shipping
-   the compiled CSS instead of letting <Theme> inject styles at runtime keeps
-   the tokens in the cascade from first paint. */
-/* @import './themes/gothic/theme.css'; */
+/* No theme stylesheet is imported here. `src/themes/neutral/neutralTheme.ts` is
+   applied at runtime by `<Theme theme={neutralTheme}>` in `main.tsx`, which
+   injects its tokens itself — there is no compiled `theme.css` and no build
+   step to run after editing the theme. */
 
 /* Astryx design tokens → Tailwind utilities (bg-surface, text-primary,
    text-secondary, bg-accent-bg, border-border, …). Values come from the
@@ -29,7 +28,7 @@
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 /* The 12px readable floor, for the sizes a theme token cannot reach.
-   `gothicTheme.ts` clamps the `--font-size-*` scale, which covers every size
+   `neutralTheme.ts` clamps the `--font-size-*` scale, which covers every size
    that comes from a token. It cannot cover a size a component computes for
    itself: Astryx's `Avatar` derives its initials from the avatar's pixel size
    (`size * 0.4`) and writes the result to an inline `--x-fontSize`, and
@@ -38,11 +37,13 @@
 
    Overriding those means naming Astryx's StyleX atomic classes, whose hashed
    names are a build output of the dependency rather than a supported selector,
-   so the rules are generated from the installed `astryx.css` rather than
-   written here by hand. Regenerate with `pnpm astryx:font-floor`;
-   `pnpm check:font-floor` fails when the generated file drifts from the
-   installed package, and `pnpm check:font-size` measures the rendered result
-   on every route. */
+   so the rules were generated from the installed `astryx.css` rather than
+   written here by hand.
+
+   The generator (`scripts/font-floor-build.mjs`) and its drift check were
+   removed along with the rest of `scripts/`, so this file can no longer be
+   regenerated: treat it as pinned to @astryxdesign/core@0.1.8 and re-derive the
+   hashes before upgrading, or the rules stop matching silently. */
 @import './generated/astryx-font-floor.css';
 
 /* No rule above the account row.

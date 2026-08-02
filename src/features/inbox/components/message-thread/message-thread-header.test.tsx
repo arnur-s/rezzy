@@ -10,6 +10,12 @@ vi.mock('./message-thread-status-actions', () => ({
   MessageThreadStatusActions: () => null,
 }))
 
+// Same reason: the assignee control owns the roster query and the reassignment
+// mutation. Its own behaviour is covered in conversation-assignee-control.test.
+vi.mock('./conversation-assignee-control', () => ({
+  ConversationAssigneeControl: () => null,
+}))
+
 const AVATAR = 'https://cdn.example.com/contact.png'
 
 function conversation(
@@ -39,7 +45,6 @@ function conversation(
       status: 'new',
       ...overrides,
     },
-    assigned_profile: null,
   }
 }
 
@@ -48,6 +53,7 @@ function renderHeader(contact: Partial<ConversationWithRelations['contact']>) {
     <MessageThreadHeader
       conversation={conversation(contact)}
       workspaceId="workspace-1"
+      currentUserId="user-1"
       onToggleContactPanel={() => {}}
     />,
   )

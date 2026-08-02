@@ -3,11 +3,13 @@ import {
   getUserWorkspaces,
   getWorkspace,
   getWorkspaceMembers,
+  listWorkspaceMembers,
   updateWorkspace,
   workspaceQueryKeys,
 } from '@/features/workspaces/api/workspaces'
 import type { CreateWorkspaceFormValues } from '@/features/workspaces/schemas/workspace-form-schema'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
 
 export function useWorkspaces(userId?: string) {
   return useQuery({
@@ -34,6 +36,52 @@ export function useWorkspaceMembers(workspaceId: string) {
     enabled: !!workspaceId,
     refetchOnWindowFocus: false,
   })
+}
+
+/**
+ * The workspace roster, cached once per workspace.
+ *
+ * Every surface that shows a teammate reads from this one query rather than
+ * embedding profile rows in its own payload. A colleague who changes their
+ * name, photo or phone then changes everywhere at once, and a conversation
+ * list of 200 rows still costs one roster fetch instead of a join per row.
+ *
+ * Long `staleTime` on purpose: a roster changes when somebody is invited or
+ * leaves, which is a different order of magnitude from the inbox's own
+ * traffic. The assignee mutation invalidates nothing here, because assigning a
+ * conversation does not change who is in the workspace.
+ */
+export function useWorkspaceMemberDirectory(workspaceId: string) {
+  return useQuery({
+    queryFn: () => listWorkspaceMembers(workspaceId),
+    queryKey: workspaceQueryKeys.memberDirectory(workspaceId),
+    enabled: !!workspaceId,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+/**
+ * The same roster keyed by user id, for resolving a stored `assigned_to` /
+ * `owner_id` into a person.
+ *
+ * `isLoaded` is not a convenience flag, it is required to read the result
+ * correctly. A miss means one of two very different things — "this id belongs
+ * to somebody who has left the workspace" or "the roster has not arrived yet" —
+ * and a caller that treats the second as the first flashes a stranger's
+ * placeholder onto every assigned row for the length of one fetch.
+ */
+export function useWorkspaceMemberLookup(workspaceId: string) {
+  const directory = useWorkspaceMemberDirectory(workspaceId)
+  const members = directory.data
+
+  return useMemo(
+    () => ({
+      lookup: new Map((members ?? []).map((member) => [member.userId, member])),
+      isLoaded: members !== undefined,
+    }),
+    [members],
+  )
 }
 
 export function useCreateWorkspace({

@@ -57,7 +57,6 @@ function buildDetails(
         avatar_url: null,
         status: 'active',
       },
-      assigned_profile: null,
     },
     ...overrides,
   }

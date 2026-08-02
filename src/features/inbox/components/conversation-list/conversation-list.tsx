@@ -1,5 +1,6 @@
 import { listItemStyle } from '@/components/list'
 import type { ConversationWithRelations } from '@/entities/conversation'
+import { useWorkspaceMemberLookup } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { cn } from '@/lib/cn'
@@ -21,6 +22,7 @@ type Props = {
   searchQuery: string
   onSearchChange: (value: string) => void
   userId: string | null
+  workspaceId: string
   onRetry?: () => void
   isRetrying?: boolean
 }
@@ -54,9 +56,16 @@ export function ConversationList({
   onSearchChange,
   searchQuery,
   userId,
+  workspaceId,
   onRetry,
   isRetrying = false,
 }: Props) {
+  // One roster fetch behind the whole list. Rows resolve their own assignee
+  // from it rather than each carrying an embedded profile — see
+  // ConversationWithRelations on why an embedded one could only name yourself.
+  const { lookup: memberLookup, isLoaded: isRosterLoaded } =
+    useWorkspaceMemberLookup(workspaceId)
+
   const primaryUnreadCounts = useMemo(() => {
     const counts: Record<InboxPrimaryFilter, number> = {
       all: 0,
@@ -138,13 +147,25 @@ export function ConversationList({
             {filtered.map((conversation) => {
               const isActive = conversation.id === selectedConversationId
               const contactName = conversation.contact.name?.trim() || '—'
+              const assignee = conversation.assigned_to
+                ? (memberLookup.get(conversation.assigned_to) ?? null)
+                : null
+              // The face is pointer-only, so the owner has to reach the
+              // accessible name too — otherwise the row announces less than it
+              // shows.
+              const rowLabel = assignee
+                ? m.inbox_row_aria_with_assignee({
+                    contact: contactName,
+                    name: assignee.fullName,
+                  })
+                : contactName
               return (
                 <button
                   key={conversation.id}
                   type="button"
                   role="option"
                   aria-selected={isActive}
-                  aria-label={contactName}
+                  aria-label={rowLabel}
                   data-selected={isActive ? 'true' : 'false'}
                   onClick={() => onSelect(conversation.id)}
                   className={cn(
@@ -160,6 +181,12 @@ export function ConversationList({
                   <ConversationListItem
                     conversation={conversation}
                     isActive={isActive}
+                    assignee={assignee}
+                    isAssigneeUnresolved={
+                      isRosterLoaded &&
+                      conversation.assigned_to !== null &&
+                      assignee === null
+                    }
                   />
                 </button>
               )

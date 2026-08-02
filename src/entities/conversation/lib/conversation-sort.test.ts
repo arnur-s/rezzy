@@ -29,7 +29,6 @@ function row(
       avatar_url: null,
       status: 'new',
     },
-    assigned_profile: null,
   }
 }
 

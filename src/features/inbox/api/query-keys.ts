@@ -4,6 +4,9 @@ export const inboxQueryKeys = {
     ['inbox', 'conversations', workspaceId] as const,
   conversationSearch: (workspaceId: string, query: string) =>
     ['inbox', 'conversations', workspaceId, 'search', query] as const,
+  /** Prefix for every search result set in a workspace, whatever the term. */
+  conversationSearchAll: (workspaceId: string) =>
+    ['inbox', 'conversations', workspaceId, 'search'] as const,
   messages: (conversationId: string) =>
     ['inbox', 'messages', conversationId] as const,
   readCursor: (conversationId: string, userId: string) =>

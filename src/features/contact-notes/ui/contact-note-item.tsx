@@ -6,7 +6,10 @@ import { useToast } from '@astryxdesign/core/Toast'
 import { PencilIcon, PinIcon, PinOffIcon, Trash2Icon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { ContactNotesScope } from '../api/contact-notes'
-import { useSetContactNotePinned, useUpdateContactNote } from '../hooks/use-contact-notes'
+import {
+  useSetContactNotePinned,
+  useUpdateContactNote,
+} from '../hooks/use-contact-notes'
 import { ContactNoteForm } from './contact-note-form'
 
 type Props = ContactNotesScope & {
@@ -42,7 +45,11 @@ function NoteTimestamp({ note }: { note: ContactNote }) {
     : m.contact_notes_created_timestamp_aria({ author, date })
 
   return (
-    <time className="text-secondary text-xs" dateTime={value} aria-label={accessible}>
+    <time
+      className="text-secondary text-xs"
+      dateTime={value}
+      aria-label={accessible}
+    >
       {visible}
     </time>
   )
@@ -109,10 +116,12 @@ export function ContactNoteItem({
                   title={m.contact_notes_pinned_label()}
                 >
                   <PinIcon className="size-3.5" aria-hidden />
-                  <span className="sr-only">{m.contact_notes_pinned_label()}</span>
+                  <span className="sr-only">
+                    {m.contact_notes_pinned_label()}
+                  </span>
                 </span>
               ) : null}
-              <p className="text-primary min-w-0 flex-1 whitespace-pre-wrap break-words text-sm leading-5">
+              <p className="text-primary min-w-0 flex-1 whitespace-pre-wrap wrap-break-word text-sm leading-5">
                 {note.body}
               </p>
             </div>

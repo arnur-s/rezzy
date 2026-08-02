@@ -52,7 +52,6 @@ function conversation(avatarUrl: string | null): ConversationWithRelations {
       avatar_url: avatarUrl,
       status: 'new',
     },
-    assigned_profile: null,
   }
 }
 
@@ -72,7 +71,6 @@ function renderPanel({
             name: 'Jane Doe',
             phone: null,
             avatar_url: loadedAvatar,
-            notes: null,
             status: 'new',
             contact_channels: [],
           },

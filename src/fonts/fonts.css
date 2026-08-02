@@ -1,22 +1,33 @@
 /**
- * Self-hosted webfonts for the gothic theme.
+ * Self-hosted webfonts.
  *
  * Provenance: Google Fonts woff2 subsets, downloaded into this folder and
  * served from the app so there is no third-party request at runtime and no
- * dependency on a CDN. This mirrors why the theme ships pre-built CSS instead
- * of injecting styles at runtime (see `src/styles.css`): everything the first
- * paint needs is already in the bundle.
+ * dependency on a CDN.
+ *
+ * This file is what makes a family real. `neutralTheme.ts` naming a family
+ * does nothing on its own — the theme writes a `font-family` string, and if no
+ * `@font-face` here matches it the browser falls straight through to the
+ * fallback stack. That has already happened once: the neutral theme arrived
+ * naming Figtree, which is declared nowhere in this repo, and the entire
+ * interface rendered in the system UI stack until the theme was pointed back
+ * at Golos Text.
  *
  * Families, and why these subsets:
  *
- * - Golos Text (body + headings, variable 400–900). Latin *and* Cyrillic,
- *   because `baseLocale` is `ru` (see `project.inlang/settings.json`) — a
- *   Latin-only body face would leave the default locale in the system
- *   fallback. Replaced Fustat, which ships Arabic + Latin and no Cyrillic.
- * - Manufacturing Consent (display-1..3 only, weight 400). Latin only; the
- *   family has no Cyrillic to fetch. No product surface uses a display size
- *   today, so `font-display: swap` plus `unicode-range` means the browser
- *   never downloads these two files until something actually renders in them.
+ * - Golos Text (body + headings + display, variable 400–900). Latin *and*
+ *   Cyrillic, because `baseLocale` is `ru` (see `project.inlang/settings.json`)
+ *   — a Latin-only body face would leave the default locale in the system
+ *   fallback and style only the Latin strings beside it. This rule has now
+ *   ruled out two candidates: Fustat (Arabic + Latin) and Figtree (Latin +
+ *   Latin-ext).
+ * - Manufacturing Consent (weight 400). Latin only. **Currently unreferenced**
+ *   — it was the gothic theme's display face, bound to `display-1..3`, and the
+ *   neutral theme uses Golos Text at every size. `font-display: swap` plus
+ *   `unicode-range` means the browser never downloads these two files while
+ *   nothing renders in them, so the declaration is inert rather than costly.
+ *   Delete the two woff2 files and this block if no display face is wanted
+ *   back.
  *
  * `unicode-range` is what keeps this cheap: a browser fetches only the subsets
  * whose ranges appear on the page. Keep the ranges byte-identical to Google's

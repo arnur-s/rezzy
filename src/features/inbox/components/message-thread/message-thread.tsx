@@ -224,6 +224,7 @@ export function MessageThread({
       <MessageThreadHeader
         conversation={conversation}
         workspaceId={workspaceId}
+        currentUserId={senderId}
         onToggleContactPanel={onToggleContactPanel}
         onBack={onBack}
       />

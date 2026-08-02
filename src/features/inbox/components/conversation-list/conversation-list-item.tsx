@@ -5,20 +5,28 @@ import {
   isConversationStatus,
 } from '@/entities/conversation'
 import type { ConversationWithRelations } from '@/entities/conversation'
+import type { WorkspaceMember } from '@/entities/workspace'
 import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
 import { memo } from 'react'
+import { ConversationAssigneeMark } from './conversation-assignee-mark'
 import { FormattedMessageText } from '../formatted-message-text'
 import { formatRelativeShort } from '../../utils/relative-time'
 
 type Props = {
   conversation: ConversationWithRelations
   isActive: boolean
+  /** Resolved from the workspace roster; null when nobody is assigned. */
+  assignee: WorkspaceMember | null
+  /** True when `assigned_to` is set but the roster no longer contains that id. */
+  isAssigneeUnresolved: boolean
 }
 
 function ConversationListItemImpl({
   conversation,
   isActive,
+  assignee,
+  isAssigneeUnresolved,
 }: Props) {
   const channelType = isChannelType(conversation.channel.type)
     ? conversation.channel.type
@@ -81,9 +89,18 @@ function ConversationListItemImpl({
           ) : null}
         </div>
 
-        {status ? (
-          <div className="mt-1.5">
-            <ConversationStatusChip status={status} />
+        {/* The row's third line answers "what is the state of this work":
+            where it stands on the left, who owns it on the right. Both are
+            optional, so the line renders only when it has something to say —
+            and `min-h-6` holds it at the badge's own height so a row carrying
+            only a face is not shorter than its neighbours. */}
+        {status || assignee || isAssigneeUnresolved ? (
+          <div className="mt-1.5 flex min-h-6 items-center justify-between gap-2">
+            {status ? <ConversationStatusChip status={status} /> : <span />}
+            <ConversationAssigneeMark
+              assignee={assignee}
+              isUnresolved={isAssigneeUnresolved}
+            />
           </div>
         ) : null}
       </div>

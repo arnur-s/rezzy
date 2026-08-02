@@ -1,4 +1,5 @@
 import type { Tables, TablesInsert, TablesUpdate } from '@/api/types'
+import type { WorkspaceMember } from '@/entities/workspace'
 import { supabase } from '@/utils/supabase'
 import type { CreateWorkspaceFormValues } from '../schemas/workspace-form-schema'
 
@@ -9,6 +10,8 @@ export const workspaceQueryKeys = {
   list: (userId: string) => ['workspaces', 'list', userId] as const,
   members: (workspaceId: string) =>
     ['workspaces', 'members', workspaceId] as const,
+  memberDirectory: (workspaceId: string) =>
+    ['workspaces', 'member-directory', workspaceId] as const,
 }
 
 export async function getUserWorkspaces() {
@@ -50,6 +53,16 @@ export type WorkspaceMemberWithProfile = Tables<'workspace_members'> & {
   profile: WorkspaceMemberProfile | null
 }
 
+/**
+ * Direct table read, and therefore only ever the caller's own membership:
+ * `public.workspace_members` is `user_id = auth.uid()` and `public.profiles` is
+ * `id = auth.uid()`, so the embedded profile resolves for nobody else.
+ *
+ * Kept as-is because its one consumer (the members stub in workspace settings)
+ * has not been rebuilt. Anything that needs the actual roster must use
+ * {@link listWorkspaceMembers}, which goes through the RPC that can see past
+ * those policies.
+ */
 export async function getWorkspaceMembers(
   workspaceId: string,
 ): Promise<Array<WorkspaceMemberWithProfile>> {
@@ -64,6 +77,47 @@ export async function getWorkspaceMembers(
   }
 
   return data as unknown as Array<WorkspaceMemberWithProfile>
+}
+
+/**
+ * The workspace roster: every member, with the profile fields the product
+ * renders for a teammate.
+ *
+ * `public.list_workspace_members` is SECURITY DEFINER because both source
+ * tables are own-row-only under RLS; it re-establishes the workspace boundary
+ * itself via `public.is_workspace_member`, so a non-member gets an error rather
+ * than a roster.
+ *
+ * The generated `Returns` type says `string` for every column, because Postgres
+ * records no nullability for a function's RETURNS TABLE. Three of them are
+ * nullable in `public.profiles`, so this normalises them here rather than
+ * letting an empty avatar or a missing job title travel as `''` into the UI.
+ */
+export async function listWorkspaceMembers(
+  workspaceId: string,
+): Promise<Array<WorkspaceMember>> {
+  const { data, error } = await supabase.rpc('list_workspace_members', {
+    p_workspace_id: workspaceId,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return data.map((row) => ({
+    userId: row.user_id,
+    role: row.role,
+    fullName: row.full_name,
+    avatarUrl: nullIfBlank(row.avatar_url),
+    jobTitle: nullIfBlank(row.job_title),
+    phone: nullIfBlank(row.phone),
+    joinedAt: row.joined_at,
+  }))
+}
+
+function nullIfBlank(value: string | null): string | null {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
 }
 
 export async function createWorkspace({

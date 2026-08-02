@@ -51,7 +51,6 @@ function conversation(id = 'conv-1'): ConversationWithRelations {
       avatar_url: null,
       status: 'new',
     },
-    assigned_profile: null,
   }
 }
 

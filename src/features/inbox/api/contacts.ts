@@ -9,10 +9,10 @@ const CONTACT_SELECT = `
   phone,
   avatar_url,
   status,
+  owner_id,
   last_seen_at,
   source,
   tags,
-  notes,
   created_at,
   updated_at,
   contact_channels(id, channel_type, external_name)

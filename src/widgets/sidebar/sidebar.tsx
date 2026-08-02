@@ -31,6 +31,7 @@ import {
   LayoutGridIcon,
   MessageCircleIcon,
   SettingsIcon,
+  UsersRoundIcon,
   UserRoundIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -154,6 +155,15 @@ export function Sidebar({
                   onClick={onNavigate}
                 />
               </Tooltip>
+              <SideNavItem
+                label={m.sidebar_contacts_label()}
+                icon={UsersRoundIcon}
+                href={`/workspaces/${currentWorkspace.id}/contacts`}
+                isSelected={pathname.startsWith(
+                  `/workspaces/${currentWorkspace.id}/contacts`,
+                )}
+                onClick={onNavigate}
+              />
               <SideNavItem
                 label={m.common_settings()}
                 icon={SettingsIcon}

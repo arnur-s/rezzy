@@ -41,6 +41,13 @@ const BUDGETS: Array<{ key: string; max: number; where: string }> = [
   { key: 'inbox_status_open', max: 14, where: 'status chip' },
   { key: 'inbox_status_closed', max: 14, where: 'status chip' },
   { key: 'inbox_status_snoozed', max: 14, where: 'status chip' },
+  // The thread header's assignee trigger truncates its label at `max-w-28`
+  // (112px), which is roughly 18 characters at the 12px metadata size. A member
+  // name is expected to truncate there — it has a face beside it and a hover
+  // card behind it — but these two stand in for the *state*, so a clipped one
+  // would leave the control saying nothing.
+  { key: 'inbox_assignee_assign_cta', max: 18, where: 'assignee trigger' },
+  { key: 'inbox_assignee_former_member', max: 18, where: 'assignee trigger' },
   // Attention-queue reason chips sit inline beside a truncating name.
   { key: 'home_attention_reason_snoozed', max: 20, where: 'attention reason chip' },
   { key: 'home_attention_reason_unread', max: 20, where: 'attention reason chip' },

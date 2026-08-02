@@ -1,463 +1,247 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-26T13:42:58Z",
+  "generatedAt": "2026-07-31T00:00:00Z",
   "title": "Design System: Rezzy",
   "extensions": {
     "colorMeta": {
-      "ink": {
+      "panel-white": {
+        "role": "neutral",
+        "displayName": "Panel White",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "canvas-gray": {
+        "role": "neutral",
+        "displayName": "Canvas Gray",
+        "canonical": "#f1f1f1",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "rule-gray": {
+        "role": "neutral",
+        "displayName": "Rule Gray",
+        "canonical": "#ebebeb",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "chip-gray": {
+        "role": "neutral",
+        "displayName": "Chip Gray",
+        "canonical": "#e5e5e5",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "border-strong": {
+        "role": "neutral",
+        "displayName": "Border Strong",
+        "canonical": "#d4d4d4",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "soft-gray": {
+        "role": "neutral",
+        "displayName": "Soft Gray",
+        "canonical": "#a3a3a3",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "mid-gray": {
+        "role": "neutral",
+        "displayName": "Mid Gray",
+        "canonical": "#737373",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "dim-gray": {
+        "role": "neutral",
+        "displayName": "Dim Gray",
+        "canonical": "#525252",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "panel-graphite": {
         "role": "primary",
-        "displayName": "Ink",
-        "canonical": "#101314",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
+        "displayName": "Panel Graphite",
+        "canonical": "#262626",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
       },
-      "parchment": {
+      "canvas-black": {
+        "role": "neutral",
+        "displayName": "Canvas Black",
+        "canonical": "#1b1b1b",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+      },
+      "text-black": {
         "role": "primary",
-        "displayName": "Parchment",
-        "canonical": "#E8F1F6",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
+        "displayName": "Text Black",
+        "canonical": "#171717",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
       },
-      "charcoal": {
-        "role": "neutral",
-        "displayName": "Charcoal",
-        "canonical": "#24292D",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
+      "text-white": {
+        "role": "primary",
+        "displayName": "Near White",
+        "canonical": "#fafafa",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
       },
-      "slate": {
-        "role": "neutral",
-        "displayName": "Slate",
-        "canonical": "#495056",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
-      },
-      "fog": {
-        "role": "neutral",
-        "displayName": "Fog",
-        "canonical": "#96A0AB",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
-      },
-      "mist": {
-        "role": "neutral",
-        "displayName": "Mist",
-        "canonical": "#D8E2E9",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
-      },
-      "vellum": {
-        "role": "neutral",
-        "displayName": "Vellum",
-        "canonical": "#FFFFFF",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#cdd5db",
-          "#FFFFFF"
-        ]
-      },
-      "pitch": {
-        "role": "neutral",
-        "displayName": "Pitch",
-        "canonical": "#1a1d20",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
-      },
-      "stone-chip": {
-        "role": "neutral",
-        "displayName": "Stone Chip",
-        "canonical": "#d5dee4",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
-      },
-      "iron-chip": {
-        "role": "neutral",
-        "displayName": "Iron Chip",
-        "canonical": "#3d4248",
-        "tonalRamp": [
-          "#181c1f",
-          "#2c3236",
-          "#40464b",
-          "#535a61",
-          "#676f76",
-          "#8a929c",
-          "#bbc3cb",
-          "#E8F1F6"
-        ]
-      },
-      "forest-moss": {
+      "deep-green": {
         "role": "tertiary",
-        "displayName": "Forest Moss",
-        "canonical": "#3a5e2c",
-        "tonalRamp": [
-          "#1c321a",
-          "#2c4d2a",
-          "#446a39",
-          "#658d50",
-          "#87b06a",
-          "#b5d397",
-          "#d4e6bd",
-          "#eaf3df"
-        ]
+        "displayName": "Deep Green",
+        "canonical": "#007004",
+        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
       },
-      "sage-moss": {
+      "deep-red": {
         "role": "tertiary",
-        "displayName": "Sage Moss",
-        "canonical": "#b3c79a",
-        "tonalRamp": [
-          "#1c321a",
-          "#2c4d2a",
-          "#446a39",
-          "#658d50",
-          "#87b06a",
-          "#b5d397",
-          "#d4e6bd",
-          "#eaf3df"
-        ]
+        "displayName": "Deep Red",
+        "canonical": "#a50c25",
+        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
       },
-      "blood-crimson": {
+      "deep-amber": {
         "role": "tertiary",
-        "displayName": "Blood Crimson",
-        "canonical": "#8d2d4c",
-        "tonalRamp": [
-          "#3a131e",
-          "#572235",
-          "#9b3358",
-          "#a04a6e",
-          "#c26988",
-          "#dc82a4",
-          "#ebb6ca",
-          "#f5e3eb"
-        ]
+        "displayName": "Deep Amber",
+        "canonical": "#745b00",
+        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
       },
-      "dusty-rose": {
+      "pastel-green": {
         "role": "tertiary",
-        "displayName": "Dusty Rose",
-        "canonical": "#c6a6a2",
-        "tonalRamp": [
-          "#301b16",
-          "#452c25",
-          "#5b3e36",
-          "#725347",
-          "#896a5b",
-          "#ad8d7b",
-          "#d2b4af",
-          "#ebd0ca"
-        ]
+        "displayName": "Pastel Green",
+        "canonical": "#9fe59b",
+        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
       },
-      "deep-gold": {
+      "pastel-red": {
         "role": "tertiary",
-        "displayName": "Deep Gold",
-        "canonical": "#6c5010",
-        "tonalRamp": [
-          "#4a3500",
-          "#6c5010",
-          "#9c7b1f",
-          "#c39e3e",
-          "#d6b56a",
-          "#e6d091",
-          "#ebe1c4",
-          "#f7f1e3"
-        ]
+        "displayName": "Pastel Red",
+        "canonical": "#ffc6c1",
+        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
       },
-      "aged-gold": {
+      "pastel-amber": {
         "role": "tertiary",
-        "displayName": "Aged Gold",
-        "canonical": "#d3c490",
-        "tonalRamp": [
-          "#4a3500",
-          "#6c5010",
-          "#9c7b1f",
-          "#c39e3e",
-          "#d6b56a",
-          "#e6d091",
-          "#ebe1c4",
-          "#f7f1e3"
-        ]
+        "displayName": "Pastel Amber",
+        "canonical": "#fdcf4f",
+        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
       },
-      "periwinkle-plate": {
+      "green-plate": {
         "role": "secondary",
-        "displayName": "Periwinkle Midnight (plate)",
-        "canonical": "#a3b5d6",
-        "tonalRamp": [
-          "#161e4d",
-          "#2a3565",
-          "#3a4783",
-          "#5462ab",
-          "#6a85cf",
-          "#a3b5e0",
-          "#d2dcef",
-          "#e8ecf6"
-        ]
+        "displayName": "Green Plate",
+        "canonical": "#c5e5c0",
+        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
       },
-      "periwinkle-vivid": {
+      "red-plate": {
         "role": "secondary",
-        "displayName": "Periwinkle Midnight (text)",
-        "canonical": "#1f2c54",
-        "tonalRamp": [
-          "#161e4d",
-          "#2a3565",
-          "#3a4783",
-          "#5462ab",
-          "#6a85cf",
-          "#a3b5e0",
-          "#d2dcef",
-          "#e8ecf6"
-        ]
+        "displayName": "Red Plate",
+        "canonical": "#facecb",
+        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
       },
-      "moss-plate": {
+      "amber-plate": {
         "role": "secondary",
-        "displayName": "Sage Moss (plate)",
-        "canonical": "#b3c79a",
-        "tonalRamp": [
-          "#1c321a",
-          "#2c4d2a",
-          "#446a39",
-          "#658d50",
-          "#87b06a",
-          "#b5d397",
-          "#d4e6bd",
-          "#eaf3df"
-        ]
+        "displayName": "Amber Plate",
+        "canonical": "#f8da9d",
+        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
       },
-      "moss-vivid": {
+      "blue-plate": {
         "role": "secondary",
-        "displayName": "Sage Moss (text)",
-        "canonical": "#244023",
-        "tonalRamp": [
-          "#1c321a",
-          "#2c4d2a",
-          "#446a39",
-          "#658d50",
-          "#87b06a",
-          "#b5d397",
-          "#d4e6bd",
-          "#eaf3df"
-        ]
+        "displayName": "Blue Plate",
+        "canonical": "#c4ddfb",
+        "tonalRamp": ["#00284f", "#00458c", "#0060c4", "#0074e2", "#6d9cfe", "#9eb7ff", "#c4ddfb", "#e8f1ff"]
       },
-      "gold-plate": {
+      "green-vivid": {
         "role": "secondary",
-        "displayName": "Aged Gold (plate)",
-        "canonical": "#d3c490",
-        "tonalRamp": [
-          "#4a3500",
-          "#6c5010",
-          "#9c7b1f",
-          "#c39e3e",
-          "#d6b56a",
-          "#e6d091",
-          "#ebe1c4",
-          "#f7f1e3"
-        ]
+        "displayName": "Green Vivid",
+        "canonical": "#0c5700",
+        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
       },
-      "gold-vivid": {
+      "red-vivid": {
         "role": "secondary",
-        "displayName": "Aged Gold (text)",
-        "canonical": "#6c5010",
-        "tonalRamp": [
-          "#4a3500",
-          "#6c5010",
-          "#9c7b1f",
-          "#c39e3e",
-          "#d6b56a",
-          "#e6d091",
-          "#ebe1c4",
-          "#f7f1e3"
-        ]
+        "displayName": "Red Vivid",
+        "canonical": "#89001a",
+        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
       },
-      "rose-plate": {
+      "amber-vivid": {
         "role": "secondary",
-        "displayName": "Dusty Rose (plate)",
-        "canonical": "#c6a6a2",
-        "tonalRamp": [
-          "#301b16",
-          "#452c25",
-          "#5b3e36",
-          "#725347",
-          "#896a5b",
-          "#ad8d7b",
-          "#d2b4af",
-          "#ebd0ca"
-        ]
+        "displayName": "Amber Vivid",
+        "canonical": "#584400",
+        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
       },
-      "rose-vivid": {
+      "blue-vivid": {
         "role": "secondary",
-        "displayName": "Dusty Rose (text)",
-        "canonical": "#4a2520",
-        "tonalRamp": [
-          "#301b16",
-          "#452c25",
-          "#5b3e36",
-          "#725347",
-          "#896a5b",
-          "#ad8d7b",
-          "#d2b4af",
-          "#ebd0ca"
-        ]
+        "displayName": "Blue Vivid",
+        "canonical": "#00458c",
+        "tonalRamp": ["#00284f", "#00458c", "#0060c4", "#0074e2", "#6d9cfe", "#9eb7ff", "#c4ddfb", "#e8f1ff"]
+      },
+      "signal-blue": {
+        "role": "secondary",
+        "displayName": "Signal Blue",
+        "canonical": "#0074e2",
+        "tonalRamp": ["#00284f", "#00458c", "#0060c4", "#0074e2", "#6d9cfe", "#9eb7ff", "#c4ddfb", "#e8f1ff"]
+      },
+      "signal-green": {
+        "role": "secondary",
+        "displayName": "Signal Green",
+        "canonical": "#198100",
+        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
+      },
+      "signal-amber": {
+        "role": "secondary",
+        "displayName": "Signal Amber",
+        "canonical": "#ffce2f",
+        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
+      },
+      "signal-red": {
+        "role": "secondary",
+        "displayName": "Signal Red",
+        "canonical": "#e33f4a",
+        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Manufacturing Consent blackletter at 61/49/39px. Theme identity held in reserve — no product surface uses it. Self-hosted and Latin-only; because unicode-range gates the download, its files are never fetched while nothing renders at a display size."
+        "purpose": "42 / 35 / 29px. Theme capacity only — no product surface uses a display size."
       },
       "heading": {
         "displayName": "Heading",
-        "purpose": "Astryx heading-1 at 31px. Theme capacity; the authenticated shell has nothing at this scale."
+        "purpose": "24px semibold. Theme capacity; the shell has nothing at this scale. h3/h4 are bold (700)."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "16px semibold. Page titles and empty-state headings — the largest type any authenticated screen shows."
+        "purpose": "14px semibold. Page titles, pane header names, empty-state headings."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "13px Golos Text. The workhorse: message text, contact names, previews, form content. Runs inside a 768px measure. Cyrillic-capable, which is required — baseLocale is `ru`."
+        "purpose": "14px. The intended workhorse: message text, contact names, previews, form content. Currently under-used — most surfaces still sit on the 12px tier."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "10px medium. Timestamps, metadata, chip text, kickers. Sentence case, always."
+        "purpose": "12px medium. Timestamps, metadata, chip text, filter labels. Sentence case. This is the floor; nothing renders below it."
       },
       "code": {
         "displayName": "Code",
-        "purpose": "JetBrains Mono. Declared in the theme; no product surface uses it yet."
+        "purpose": "14px platform monospace. No self-hosted mono face."
       }
     },
     "shadows": [
       {
         "name": "shadow-low",
-        "value": "0 2px 4px light-dark(#10131414, #00000033), 0 4px 8px light-dark(#1013141a, #00000040)",
-        "purpose": "Cards and raised sheets at rest. Light mode tints with ink at low alpha, not black — pure black on parchment reads as dirt."
+        "value": "0 2px 4px light-dark(oklch(0 0 0 / 5%), oklch(0 0 0 / 25%)), 0 4px 8px light-dark(oklch(0 0 0 / 10%), oklch(0 0 0 / 40%)), inset 0 0 0 1px light-dark(transparent, oklch(1 0 0 / 8%))",
+        "purpose": "Every AppPane, and cards at rest. In dark mode the inset rim, not the drop, is what gives the surface an edge against the canvas."
       },
       {
         "name": "shadow-med",
-        "value": "0 2px 4px light-dark(#10131414, #00000033), 0 4px 12px light-dark(#1013141a, #00000040)",
+        "value": "0 2px 4px light-dark(oklch(0 0 0 / 5%), oklch(0 0 0 / 35%)), 0 4px 12px light-dark(oklch(0 0 0 / 10%), oklch(0 0 0 / 50%)), inset 0 0 0 1px light-dark(transparent, oklch(1 0 0 / 12%))",
         "purpose": "Hover and mid-elevation containers."
       },
       {
         "name": "shadow-high",
-        "value": "0 4px 6px light-dark(#1013141a, #00000040), 0 12px 24px light-dark(#10131426, #0000004D)",
+        "value": "0 4px 6px light-dark(oklch(0 0 0 / 10%), oklch(0 0 0 / 50%)), 0 12px 24px light-dark(oklch(0 0 0 / 15%), oklch(0 0 0 / 70%)), inset 0 0 0 1px light-dark(transparent, oklch(1 0 0 / 15%))",
         "purpose": "Popovers, dropdowns, dialogs."
       },
       {
-        "name": "shadow-inset-hover",
-        "value": "inset 0px 0px 0px 1px light-dark(#49505630, #96A0AB30)",
-        "purpose": "Ring-style hover emphasis where a real border would shift layout."
-      },
-      {
         "name": "shadow-inset-selected",
-        "value": "inset 0px 0px 0px 2px light-dark(#49505650, #96A0AB50)",
-        "purpose": "Ring-style selection emphasis."
-      },
-      {
-        "name": "shadow-inset-error",
-        "value": "inset 0px 0px 0px 1px light-dark(#8d2d4c50, #d4485150)",
-        "purpose": "Status ring on invalid fields and cards. The success and warning siblings follow the same shape."
+        "value": "inset 0px 0px 0px 2px #0074e280",
+        "purpose": "Ring-style selection emphasis where a real border would shift layout."
       }
     ],
     "motion": [
-      {
-        "name": "duration-fast",
-        "value": "150ms",
-        "purpose": "Hover, selection, and tonal state changes. Product code mostly uses Tailwind's bare `transition`, which lands here."
-      },
-      {
-        "name": "duration-medium",
-        "value": "350ms",
-        "purpose": "Drawer and overlay entry. Deliberately unhurried — the theme's motion ratio is 0.75."
-      },
-      {
-        "name": "duration-slow",
-        "value": "800ms",
-        "purpose": "Theatrical theme capacity. No product surface uses it."
-      },
-      {
-        "name": "unread-count-emphasis",
-        "value": "280ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "The one authored animation: a changed unread count scales 0.92 → 1 and fades 0.55 → 1 from transform-origin: left center, so it draws the eye without moving its neighbors. Disabled under prefers-reduced-motion."
-      }
+      { "name": "duration-fast", "value": "125ms", "purpose": "Hover and selection tints. Min 95ms, max 165ms." },
+      { "name": "duration-medium", "value": "300ms", "purpose": "Panel and sheet transitions. Min 225ms, max 400ms." },
+      { "name": "duration-slow", "value": "700ms", "purpose": "Theme capacity; nothing in the shell runs this long." },
+      { "name": "unread-count-emphasis", "value": "280ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The one authored animation. Scales 0.92 to 1 and fades 0.55 to 1 from left center so a changing count draws the eye without moving its neighbors. Disabled under prefers-reduced-motion." }
     ],
     "breakpoints": [
-      {
-        "name": "sm",
-        "value": "640px"
-      },
-      {
-        "name": "md",
-        "value": "768px"
-      },
-      {
-        "name": "lg",
-        "value": "1024px"
-      }
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
     ]
   },
   "components": [
@@ -465,204 +249,161 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Accent fill with an inverting label: ink-on-parchment in light mode, parchment-on-ink in dark.",
-      "html": "<button class=\"ds-btn-primary\">Connect channel</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; background: var(--color-accent, #101314); color: var(--color-on-accent, #E8F1F6); font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); font-size: 0.8125rem; font-weight: 500; line-height: 1.5385; border: 0; border-radius: 0.25rem; cursor: pointer; transition: opacity 150ms ease-out; } .ds-btn-primary:hover { opacity: 0.88; } .ds-btn-primary:active { opacity: 0.8; } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-accent, #101314); outline-offset: 2px; }"
+      "description": "The accent fill. One per screen — every screen has exactly one primary action.",
+      "html": "<button class=\"ds-btn-primary\">Сохранить</button>",
+      "css": ".ds-btn-primary { background: #262626; color: #ffffff; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; font-size: 14px; font-weight: 500; line-height: 1.4286; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; transition: background 125ms ease; } .ds-btn-primary:hover { background: #404040; } .ds-btn-primary:focus-visible { outline: 2px solid #262626; outline-offset: 2px; }"
     },
     {
       "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "The neutral chip as a button. Gray is the one categorical hue that flips between modes, precisely so secondary never reads as primary on parchment.",
-      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
-      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; background: var(--color-background-gray, #d5dee4); color: var(--color-text-gray, #24292D); font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); font-size: 0.8125rem; font-weight: 500; line-height: 1.5385; border: 0; border-radius: 0.25rem; cursor: pointer; transition: opacity 150ms ease-out; } .ds-btn-secondary:hover { opacity: 0.85; } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-accent, #101314); outline-offset: 2px; }"
+      "description": "The neutral chip. No border — it reads as a filled shape one tone off the pane, so it can never be mistaken for the primary action.",
+      "html": "<button class=\"ds-btn-secondary\">Отмена</button>",
+      "css": ".ds-btn-secondary { background: #e5e5e5; color: #262626; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; font-size: 14px; font-weight: 500; line-height: 1.4286; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; transition: background 125ms ease; } .ds-btn-secondary:hover { background: #d4d4d4; } .ds-btn-secondary:focus-visible { outline: 2px solid #262626; outline-offset: 2px; }"
     },
     {
-      "name": "Ghost Button",
+      "name": "Destructive Button",
       "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "Transparent until touched. The default for inline actions and icon controls; hover is the accent at 5%.",
-      "html": "<button class=\"ds-btn-ghost\">Retry</button>",
-      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; background: transparent; color: var(--color-text-primary, #101314); font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); font-size: 0.8125rem; font-weight: 500; line-height: 1.5385; border: 0; border-radius: 0.25rem; cursor: pointer; transition: background-color 150ms ease-out; } .ds-btn-ghost:hover { background: color-mix(in srgb, var(--color-text-primary, #101314) 5%, transparent); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--color-accent, #101314); outline-offset: 2px; }"
+      "refersTo": "button-destructive",
+      "description": "A pastel well with deep red text, not a filled crimson. The quietest colored object on screen by design — weight for a destructive action belongs in the copy and the dialog, not in a re-fill.",
+      "html": "<button class=\"ds-btn-destructive\">Удалить канал</button>",
+      "css": ".ds-btn-destructive { background: #facecb; color: #a50c25; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; font-size: 14px; font-weight: 500; line-height: 1.4286; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; transition: background 125ms ease; } .ds-btn-destructive:hover { background: #ffc6c1; } .ds-btn-destructive:focus-visible { outline: 2px solid #a50c25; outline-offset: 2px; }"
+    },
+    {
+      "name": "Filled Semantic Badge",
+      "kind": "chip",
+      "refersTo": "badge-info",
+      "description": "Saturated, opaque, mode-locked. On a chroma-0 field this is the brightest object on screen — which is why unread counts use it.",
+      "html": "<span class=\"ds-badge-info\">12</span>",
+      "css": ".ds-badge-info { display: inline-flex; align-items: center; background: #0074e2; color: #ffffff; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; font-size: 12px; font-weight: 500; line-height: 1.6667; padding: 2px 6px; border-radius: 10px; }"
+    },
+    {
+      "name": "Categorical Badge",
+      "kind": "chip",
+      "refersTo": "badge-blue",
+      "description": "A pastel plate carrying deep same-hue text. Never combined with text-primary — the plate ships its own foreground. Inverts to a hue-tinted alpha overlay in dark mode.",
+      "html": "<span class=\"ds-badge-cat\">Telegram</span>",
+      "css": ".ds-badge-cat { display: inline-flex; align-items: center; background: #c4ddfb; color: #00458c; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; font-size: 12px; font-weight: 500; line-height: 1.6667; padding: 2px 6px; border-radius: 10px; }"
     },
     {
       "name": "Text Input",
       "kind": "input",
       "refersTo": "input-default",
-      "description": "Label above, 8px corners, transparent fill. The error state is driven from React Hook Form's fieldState and renders its message below at label size.",
-      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Workspace name</span><input class=\"ds-field-input\" type=\"text\" placeholder=\"Acme Sales\" /></label>",
-      "css": ".ds-field { display: flex; flex-direction: column; gap: 4px; max-width: 280px; font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); } .ds-field-label { font-size: 0.625rem; font-weight: 500; line-height: 1.6; color: var(--color-text-primary, #101314); } .ds-field-input { height: 36px; padding: 6px 8px; font-family: inherit; font-size: 0.8125rem; line-height: 1.5385; color: var(--color-text-primary, #101314); background: transparent; border: 1px solid var(--color-border-emphasized, #96A0AB); border-radius: 0.5rem; transition: border-color 150ms ease-out, box-shadow 150ms ease-out; } .ds-field-input::placeholder { color: var(--color-text-disabled, #96A0AB); } .ds-field-input:focus { outline: none; border-color: var(--color-accent, #101314); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent, #101314) 20%, transparent); }"
+      "description": "10px corners, hairline border, no fill. Focus is an inset ring rather than a border shift, so nothing reflows.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Найти контакт\" />",
+      "css": ".ds-input { background: transparent; color: #171717; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.4286; padding: 6px 8px; border: 1px solid #ebebeb; border-radius: 10px; width: 100%; transition: box-shadow 125ms ease; } .ds-input::placeholder { color: #737373; } .ds-input:focus { outline: none; box-shadow: inset 0 0 0 2px #0074e280; } .ds-input:disabled { color: #a3a3a3; background: #f1f1f1; }"
     },
     {
-      "name": "Nav Item",
+      "name": "Conversation List Item",
+      "kind": "custom",
+      "refersTo": "list-row",
+      "description": "The most-read surface in the product. A transparent row in a scrollable listbox — never card-wrapped. Hover and selection are the accent at 4% and 10%.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-row-plate\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#26A5E4\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m22 2-7 20-4-9-9-4Z\"/><path d=\"M22 2 11 13\"/></svg></span><span class=\"ds-row-body\"><span class=\"ds-row-top\"><span class=\"ds-row-name\">Мария Соколова</span><span class=\"ds-row-time\">14:32</span></span><span class=\"ds-row-preview\">Спасибо, всё получилось!</span></span></div>",
+      "css": ".ds-row { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: transparent; cursor: pointer; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; transition: background 125ms ease; } .ds-row:hover { background: rgba(23,23,23,0.04); } .ds-row-plate { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 28px; background: rgba(38,165,228,0.1); } .ds-row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; } .ds-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; } .ds-row-name { font-size: 14px; font-weight: 600; color: #171717; } .ds-row-time { font-size: 12px; color: #737373; flex-shrink: 0; } .ds-row-preview { font-size: 12px; color: #737373; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }"
+    },
+    {
+      "name": "App Pane",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "One elevated region of the shell. Carries the fill, the radius, and the lift; content inside is edge-to-edge because a pane has no padding of its own. The 64px header rule is intra-pane, never between panes.",
+      "html": "<div class=\"ds-pane\"><div class=\"ds-pane-header\">Входящие</div><div class=\"ds-pane-body\">Содержимое панели</div></div>",
+      "css": ".ds-pane { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.10); font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; width: 280px; } .ds-pane-header { height: 64px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid #ebebeb; font-size: 14px; font-weight: 600; color: #171717; } .ds-pane-body { padding: 12px; font-size: 14px; color: #737373; }"
+    },
+    {
+      "name": "Side Nav Item",
       "kind": "nav",
       "refersTo": "list-row-selected",
-      "description": "Rail rows, selected and at rest. Selection is a quiet 10% accent fill; hover sits at 4% so the two never compete; focus is an inset ring so it survives on top of either.",
-      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item--selected\" href=\"#\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\"/></svg><span>Inbox</span></a><a class=\"ds-nav-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg><span>Settings</span></a></nav>",
-      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 220px; font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); } .ds-nav-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 0.75rem; font-size: 0.8125rem; font-weight: 500; line-height: 1.5385; color: color-mix(in srgb, var(--color-text-primary, #101314) 60%, transparent); text-decoration: none; transition: background-color 150ms ease-out, color 150ms ease-out; } .ds-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; } .ds-nav-item:hover { background: color-mix(in srgb, var(--color-text-primary, #101314) 4%, transparent); color: var(--color-text-primary, #101314); } .ds-nav-item--selected, .ds-nav-item--selected:hover { background: color-mix(in srgb, var(--color-text-primary, #101314) 10%, transparent); color: var(--color-text-primary, #101314); } .ds-nav-item:focus-visible { outline: 2px solid var(--color-accent, #101314); outline-offset: -2px; }"
+      "description": "The rail is the product's spine and the only persistent chrome. Selection is a quiet accent fill — the same grammar as a conversation row, not a different one.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 12h-6l-2 3h-4l-2-3H2\"/><path d=\"M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z\"/></svg>Входящие</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>Контакты</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 200px; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; } .ds-nav-item { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #171717; text-decoration: none; transition: background 125ms ease; } .ds-nav-item:hover { background: rgba(23,23,23,0.04); } .ds-nav-item--active { background: rgba(23,23,23,0.10); } .ds-nav-item:focus-visible { outline: 2px solid #262626; outline-offset: -2px; }"
     },
     {
-      "name": "Conversation Row",
+      "name": "Error Banner",
       "kind": "custom",
-      "refersTo": "list-row-selected",
-      "description": "The most-read surface in the product: a 36px squircle platform plate, contact name, relative timestamp, preview, and an unread badge. Selected rows take the 10% accent fill and drop the badge.",
-      "html": "<div class=\"ds-conv-list\"><button class=\"ds-conv-row\" type=\"button\"><span class=\"ds-conv-plate\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M21.9 4.3 18.6 19.8c-.2 1.1-.9 1.4-1.8.9l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4.2-.6-.3-.2L6.5 13.7l-4.8-1.5c-1-.3-1-1 .2-1.5l18.6-7.2c.9-.3 1.6.2 1.4 1z\"/></svg></span><span class=\"ds-conv-body\"><span class=\"ds-conv-top\"><span class=\"ds-conv-name\">Marta Vieira</span><span class=\"ds-conv-time\">4m</span></span><span class=\"ds-conv-bottom\"><span class=\"ds-conv-preview\">Can you send the updated quote today?</span><span class=\"ds-conv-badge\">3</span></span></span></button><button class=\"ds-conv-row ds-conv-row--selected\" type=\"button\"><span class=\"ds-conv-plate\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M21.9 4.3 18.6 19.8c-.2 1.1-.9 1.4-1.8.9l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4.2-.6-.3-.2L6.5 13.7l-4.8-1.5c-1-.3-1-1 .2-1.5l18.6-7.2c.9-.3 1.6.2 1.4 1z\"/></svg></span><span class=\"ds-conv-body\"><span class=\"ds-conv-top\"><span class=\"ds-conv-name ds-conv-name--read\">Tomás Rehn</span><span class=\"ds-conv-time\">2h</span></span><span class=\"ds-conv-bottom\"><span class=\"ds-conv-preview ds-conv-preview--read\">Thanks — that works on our end.</span></span></span></button></div>",
-      "css": ".ds-conv-list { display: flex; flex-direction: column; gap: 2px; width: 320px; padding: 8px; font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); } .ds-conv-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 10px 12px; background: transparent; border: 0; border-radius: 0.75rem; text-align: left; cursor: pointer; transition: background-color 150ms ease-out; } .ds-conv-row:hover { background: color-mix(in srgb, var(--color-text-primary, #101314) 4%, transparent); } .ds-conv-row--selected, .ds-conv-row--selected:hover { background: color-mix(in srgb, var(--color-text-primary, #101314) 10%, transparent); } .ds-conv-row:focus-visible { outline: 2px solid var(--color-accent, #101314); outline-offset: -2px; } .ds-conv-plate { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 1.5rem; background: color-mix(in srgb, #26A5E4 10%, transparent); color: #26A5E4; } .ds-conv-plate svg { width: 20px; height: 20px; } .ds-conv-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; } .ds-conv-top { display: flex; align-items: baseline; gap: 8px; } .ds-conv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; font-weight: 600; line-height: 1.5385; color: var(--color-text-primary, #101314); } .ds-conv-name--read { font-weight: 500; color: color-mix(in srgb, var(--color-text-primary, #101314) 90%, transparent); } .ds-conv-time { flex-shrink: 0; font-size: 0.625rem; line-height: 1.6; color: color-mix(in srgb, var(--color-text-primary, #101314) 50%, transparent); font-variant-numeric: tabular-nums; } .ds-conv-bottom { display: flex; align-items: baseline; gap: 8px; } .ds-conv-preview { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.625rem; line-height: 1.6; color: color-mix(in srgb, var(--color-text-primary, #101314) 80%, transparent); } .ds-conv-preview--read { color: color-mix(in srgb, var(--color-text-primary, #101314) 55%, transparent); } .ds-conv-badge { flex-shrink: 0; padding: 2px 6px; border-radius: 0.5rem; background: var(--color-background-blue, #a3b5d6); color: var(--color-text-blue, #1f2c54); font-size: 0.625rem; font-weight: 500; line-height: 1.6; font-variant-numeric: tabular-nums; }"
-    },
-    {
-      "name": "Badge",
-      "kind": "chip",
-      "refersTo": "badge-info",
-      "description": "A categorical chip: dusty pastel plate carrying deep same-hue text. Self-contained, so it reads correctly on parchment and on ink without a light/dark pair.",
-      "html": "<span class=\"ds-badge ds-badge--info\">12</span> <span class=\"ds-badge ds-badge--success\">Resolved</span> <span class=\"ds-badge ds-badge--warning\">Pending</span> <span class=\"ds-badge ds-badge--error\">Failed</span> <span class=\"ds-badge ds-badge--neutral\">Draft</span>",
-      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 0.5rem; font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); font-size: 0.625rem; font-weight: 500; line-height: 1.6; font-variant-numeric: tabular-nums; } .ds-badge--info { background: var(--color-background-blue, #a3b5d6); color: var(--color-text-blue, #1f2c54); } .ds-badge--success { background: var(--color-background-green, #b3c79a); color: var(--color-text-green, #244023); } .ds-badge--warning { background: var(--color-background-yellow, #d3c490); color: var(--color-text-yellow, #6c5010); } .ds-badge--error { background: var(--color-background-red, #c6a6a2); color: var(--color-text-red, #4a2520); } .ds-badge--neutral { background: var(--color-background-gray, #d5dee4); color: var(--color-text-gray, #24292D); }"
-    },
-    {
-      "name": "Message Bubble",
-      "kind": "custom",
-      "refersTo": "message-bubble",
-      "description": "Both directions share one fill — the accent at 10%. Direction reads from alignment and from the delivery-tick row, not from color. The date-separator pill above the run uses bg-muted, not bg-surface: the transcript has no background of its own, so a surface fill would paint the page colour onto the page.",
-      "html": "<div class=\"ds-thread\"><div class=\"ds-thread-day\"><span class=\"ds-thread-day-pill\">Today</span></div><div class=\"ds-msg ds-msg--in\"><div class=\"ds-msg-bubble\">Can you send the updated quote today?</div><div class=\"ds-msg-meta\">09:14</div></div><div class=\"ds-msg ds-msg--out\"><div class=\"ds-msg-bubble\">On its way — give me ten minutes.</div><div class=\"ds-msg-meta\">09:16<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m18 6-8.5 8.5L6 11\"/><path d=\"m22 10-7.5 7.5L13 16\"/></svg></div></div></div>",
-      "css": ".ds-thread { display: flex; flex-direction: column; gap: 8px; width: 340px; padding: 12px; font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); } .ds-thread-day { display: flex; justify-content: center; padding: 6px 0; } .ds-thread-day-pill { padding: 2px 10px; border-radius: 9999px; background: var(--color-background-muted, #D8E2E9); color: var(--color-text-secondary, #495056); font-size: 0.625rem; font-weight: 500; line-height: 1.6; } .ds-msg { display: flex; flex-direction: column; gap: 2px; max-width: 82%; } .ds-msg--in { align-self: flex-start; align-items: flex-start; } .ds-msg--out { align-self: flex-end; align-items: flex-end; } .ds-msg-bubble { padding: 12px; border-radius: 0.75rem; background: var(--color-neutral, color-mix(in srgb, #101314 10%, transparent)); color: var(--color-text-primary, #101314); font-size: 0.8125rem; line-height: 1.5385; } .ds-msg-meta { display: inline-flex; align-items: center; gap: 4px; font-size: 0.625rem; line-height: 1.6; color: var(--color-text-secondary, #495056); font-variant-numeric: tabular-nums; } .ds-msg-meta svg { width: 12px; height: 12px; }"
-    },
-    {
-      "name": "Ruled Row Group",
-      "kind": "card",
-      "refersTo": "pane-header",
-      "description": "The product's answer to a list of records that is not a conversation: edge-to-edge rows closed top and bottom by hairlines, never card-wrapped. Used for channels, members, and settings rows.",
-      "html": "<div class=\"ds-ruled\"><div class=\"ds-ruled-row\"><div class=\"ds-ruled-text\"><p class=\"ds-ruled-label\">Colour mode</p><p class=\"ds-ruled-desc\">Follow the system setting, or pin one.</p></div><button class=\"ds-ruled-control\" type=\"button\">System</button></div><div class=\"ds-ruled-row\"><div class=\"ds-ruled-text\"><p class=\"ds-ruled-label\">Language</p><p class=\"ds-ruled-desc\">Interface language for this account.</p></div><button class=\"ds-ruled-control\" type=\"button\">English</button></div></div>",
-      "css": ".ds-ruled { display: flex; flex-direction: column; width: 420px; border-top: 1px solid color-mix(in srgb, var(--color-text-primary, #101314) 6%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary, #101314) 6%, transparent); font-family: var(--font-family-body, 'Golos Text', -apple-system, sans-serif); } .ds-ruled-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px 0; border-top: 1px solid color-mix(in srgb, var(--color-text-primary, #101314) 6%, transparent); } .ds-ruled-row:first-child { border-top: 0; } .ds-ruled-text { min-width: 0; } .ds-ruled-label { margin: 0; font-size: 0.8125rem; font-weight: 500; line-height: 1.5385; color: var(--color-text-primary, #101314); } .ds-ruled-desc { margin: 2px 0 0; font-size: 0.8125rem; line-height: 1.5385; color: var(--color-text-secondary, #495056); } .ds-ruled-control { flex-shrink: 0; height: 28px; padding: 0 10px; background: var(--color-background-gray, #d5dee4); color: var(--color-text-gray, #24292D); font-family: inherit; font-size: 0.625rem; font-weight: 500; border: 0; border-radius: 0.25rem; cursor: pointer; transition: opacity 150ms ease-out; } .ds-ruled-control:hover { opacity: 0.85; } .ds-ruled-control:focus-visible { outline: 2px solid var(--color-accent, #101314); outline-offset: 2px; }"
+      "refersTo": "card-default",
+      "description": "A status surface at full measure is a tinted field, not a plate and not an outlined box. The hue's vivid tone carries the icon, the title, the description, and the action — that is the whole of its color weight.",
+      "html": "<div class=\"ds-banner\"><svg class=\"ds-banner-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 8v4\"/><path d=\"M12 16h.01\"/></svg><span class=\"ds-banner-body\"><span class=\"ds-banner-title\">Канал отключён</span><span class=\"ds-banner-desc\">Переподключите Telegram, чтобы снова получать сообщения.</span></span><button class=\"ds-banner-action\">Переподключить</button></div>",
+      "css": ".ds-banner { display: flex; gap: 12px; align-items: flex-start; background: #facecb; color: #89001a; border-radius: 10px; padding: 12px; font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; max-width: 520px; } .ds-banner-icon { flex-shrink: 0; margin-top: 2px; } .ds-banner-body { display: flex; flex-direction: column; gap: 2px; flex: 1; } .ds-banner-title { font-size: 14px; font-weight: 600; } .ds-banner-desc { font-size: 12px; opacity: 0.9; } .ds-banner-action { background: #89001a; color: #facecb; border: none; border-radius: 6px; padding: 6px 10px; font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; flex-shrink: 0; } .ds-banner-action:hover { background: #a50c25; }"
     }
   ],
   "narrative": {
-    "northStar": "The Ink Desk",
-    "overview": "Rezzy is one page with writing on it. The authenticated shell is a single continuous surface — no floating cards, no stacked planes, no gutters showing a canvas underneath — divided only by hairline rules, the way a ruled ledger divides itself. Regions are established by lines and by the reading measure of the text inside them, not by boxes. This is the product's structural claim, and almost every rule below follows from it.\n\nThe palette is a single hue worn thin: five steps of a cool blue-gray (H≈210, C=4), from parchment #E8F1F6 to ink #101314. Light and dark are not two palettes but one, with the roles reversed — the tone that writes the text on ink becomes the page in light mode. Because there is only one hue in the neutrals, chroma is genuinely informative when it appears: the ten categorical chips are dusty pastel plates carrying deep same-hue text, and they mark channel, status, and count. Nothing else is colored.\n\nType is a two-size instrument. The product runs on 13px body and 10px labels, with 16px reserved for page titles; hierarchy is carried by weight (400 → 500 → 600), never by scale. Held in reserve above all of it, unused by any product surface, is a blackletter display face — the theme's signature, waiting for a marketing surface that does not exist yet. The register is calm and worked-in, not ceremonial: a desk you return to, not a document you admire.",
+    "northStar": "The Lit Panel",
+    "overview": "Rezzy's shell is a canvas with elevated panes inset into it: the conversation list, the thread, the contact panel, a settings page. What separates two regions is the canvas showing between them, not a line drawn across them. This is the product's structural claim and it survived a full change of palette, so treat it as the durable identity.\n\nWhat changed underneath is the material. The palette used to be a single cool hue worn thin, with light and dark trading roles. It is now a pure grayscale spine at chroma zero — Tailwind's neutral ramp, no tint anywhere in the structure — with a from-scratch OKLCH categorical palette bolted on for meaning. Because the neutrals have no hue at all, chroma is not merely informative when it appears, it is the only thing on screen carrying meaning. A blue badge is the single saturated object in a field of gray, and that is the whole point.\n\nDepth changed with it. In light mode the panes still lift by tone: white sheets on a gray canvas. In dark mode the tones collapse — card, popover, muted, and the canvas are all #1b1b1b — and a pane is instead cut out of the dark by a 1px inset rim of white at 8-15% carried inside the shadow tokens. That rim, not the drop shadow, is what gives a panel an edge against a dark field. In dark mode the interface is not layered, it is lit.",
     "keyCharacteristics": [
-      "One continuous surface: the shell has no canvas/pane split, and no pane has a fill, radius, gap, or shadow",
-      "Hairline separation: a 1px `border-border/60` rule is the only device that divides regions",
-      "One neutral hue: five tones of H≈210 C=4, whose roles invert between light and dark",
-      "Two-size type: 13px body, 10px labels, 16px page titles; weight carries hierarchy",
-      "Chroma is categorical: ten dusty-pastel chip triples, each self-contained with its own text color",
-      "Reserved blackletter: Manufacturing Consent exists at display sizes only and appears on no product surface",
-      "Theatrical motion tokens (150 / 350 / 800ms) against near-instant UI transitions",
-      "Depth has exactly two moves: recess to `bg-muted`, or raise to `bg-card`"
+      "Canvas and panes: the shell is a canvas, each region is an inset pane with a fill, a radius, a gap, and a lift",
+      "Gutter separation: the canvas showing between panes divides regions; hairlines rule only within a pane",
+      "Grayscale spine: the entire structure is chroma 0, so any hue on screen is a signal",
+      "Two color languages: pastel plates with same-hue text for categories, saturated opaque fills for status signals",
+      "Lift by tone in light, lift by rim-light in dark — dark mode collapses card/popover/muted onto the canvas",
+      "Two type tiers: 14px body, 12px metadata floor; hierarchy escalates through weight and opacity, never size",
+      "Soft, generous corners: 4 / 6 / 10 / 12 / 28px, with 28px large enough to circle any plate it lands on",
+      "Snappy motion: 125 / 300 / 700ms"
     ],
     "rules": [
-      {
-        "name": "The Five Tones Rule",
-        "body": "The neutral system is five steps of one hue, and light mode inverts their roles rather than introducing new values. If a surface seems to need a sixth neutral, it needs a different layer or a hairline — not a new tone. Add one and the mode inversion stops being reversible.",
-        "section": "colors"
-      },
-      {
-        "name": "The Chip Carries Its Own Text Rule",
-        "body": "A categorical plate is never combined with `text-primary`. Each hue's `-vivid` token is the only correct foreground on its `-subtle` plate, and the theme's `Card` and `Banner` variants rebind `--color-text-primary` locally so nested `Text` children inherit it. Use the variant; do not hand-assemble a plate.",
-        "section": "colors"
-      },
-      {
-        "name": "The Chip Is Not A Field Rule",
-        "body": "A plate is calibrated for chip area. `#b3c79a` is right behind 10px text at 60px wide and a slab at 700px, where it outshouts the ink primary button beside it and inverts the page's hierarchy on a message that is only a confirmation. So a status surface that runs the full measure fills with the `-muted` well instead, and the hue stays at full strength in the icon, the copy, and the action — the field goes quiet, the meaning does not. Measured light: the well lands 1.07–1.46:1 against the page, its copy 6.2–10.5:1 against the well.",
-        "section": "Colors"
-      },
-      {
-        "name": "The Region Rebinds The Neutral Chip Rule",
-        "body": "Inside a status region the neutral chip becomes that hue's vivid tone, so a secondary `Button` in a banner's `endContent` arrives as a deep same-hue chip instead of `#d5dee4` — a cool gray at the same tone as the well it sits on, which is a shape with no affordance. Rebind `--color-background-gray` / `--color-text-gray` on the region, never the button; that way the loudest note on a quiet well is the thing to press.",
-        "section": "Colors"
-      },
-      {
-        "name": "The Brand-Hex Exception",
-        "body": "Platform brand colors — Telegram #26A5E4, WhatsApp #25D366, Instagram #E1306C, in src/entities/channel/lib/platform.ts — are the only raw hex values permitted in component code, because they are other companies' identities and must not drift with the theme. Every other color comes from a token.",
-        "section": "colors"
-      },
-      {
-        "name": "The Remapped Scale Rule",
-        "body": "Tailwind's size names do not mean their Tailwind values here. @astryxdesign/core/tailwind-theme.css rebinds --text-* to the theme scale, so `text-sm` is 13px (not 14px) and `text-xs` is 10px (not 12px). Never reason about a size from Tailwind's defaults, and never convert a design spec's px value by assuming the default scale. The same bridge rebinds --spacing to a 4px base, so `p-4` is 16px as expected — spacing is safe, type is not.",
-        "section": "typography"
-      },
-      {
-        "name": "The Two-Size Rule",
-        "body": "The interface runs on `text-sm` and `text-xs`. `text-base` is for page titles. Escalate through weight (400 → 500 → 600) and opacity (text-primary/55 → /80 → full), not through size. Introducing a fourth size into a shell means the hierarchy failed at weight first.",
-        "section": "typography"
-      },
-      {
-        "name": "The Blackletter Reserve Rule",
-        "body": "Manufacturing Consent is bound to display-1, display-2, and display-3 and nowhere else. It does not go on a page title, a pane header, or the brand mark. It is legible at 61px and illegible as UI, and holding it back is what keeps it available for a marketing surface later. It is Latin-only, which is acceptable *because* it is reserved — a display face that never renders product copy never meets a Cyrillic string.",
-        "section": "typography"
-      },
-      {
-        "name": "The Cyrillic Coverage Rule",
-        "body": "Any face that carries interface text must ship a Cyrillic subset. baseLocale is `ru` (project.inlang/settings.json), so Russian is the default experience, not a translation bolted on — a Latin-only body font leaves the primary locale in the system fallback and styles only the Latin strings beside it, which reads as two typefaces on one screen. This is why the theme's original choice, Fustat, could not stay: it ships Arabic and Latin and no Cyrillic. Judge a candidate body face by its unicode-range coverage before its shapes.",
-        "section": "typography"
-      },
-      {
-        "name": "The Measure Rule",
-        "body": "The transcript, its skeleton, and the composer share one exported measure constant (mx-auto w-full max-w-3xl). Tailwind's `container` is wrong here — it tracks the breakpoint up to 1536px and lets messages sprawl across an empty page on a wide display. Change the measure in one place or not at all.",
-        "section": "layout"
-      },
-      {
-        "name": "The Pane Owns Its Scroll Rule",
-        "body": "Scrolling belongs to the pane, never to the shell or to a wrapper around several panes. A pane that does not carry min-h-0 in its flex chain will push its scroll up to an ancestor and take the whole shell with it.",
-        "section": "layout"
-      },
-      {
-        "name": "The Surface-Equals-Page Rule",
-        "body": "`bg-surface` is a no-op on the shell: --color-background-surface and --color-background-body resolve to the same value in both modes. Do not reach for it to create separation, and do not add a fill to a pane expecting one — it paints the color that is already there. If a region must read as distinct, recess it with bg-muted, raise it with bg-card, or rule it with border-border/60. Restoring a floating-pane shell means first giving the canvas its own token below surface; until then, flat is not a style preference but an arithmetic fact.",
-        "section": "elevation"
-      },
-      {
-        "name": "The Hairline Rule",
-        "body": "`border-border/60` is the separation device. It is correct between adjacent regions inside a pane (a header and its body, a filter strip and the list below it), between sibling panes (LayoutPanel hasDivider), at the rail's right edge (AppShell's `section` variant), and between rows of a dense list. It is never a full outline around a large surface.",
-        "section": "elevation"
-      },
-      {
-        "name": "The Shadow-Is-Theme-Only Rule",
-        "body": "Component code carries no shadow-* utilities. Shadows live in --shadow-low/med/high and are applied by Astryx's Card, Popover, and Dialog. Two exceptions exist and both are decorative detail at small scale: shadow-xs on a reaction pill, drop-shadow-md on an image-viewer control. A shadow-md on hover in this system is the old floating-pane shell trying to come back.",
-        "section": "elevation"
-      },
-      {
-        "name": "The Radius-Name Trap",
-        "body": "Tailwind's radius names are rebound to the theme scale, and the mapping is not one-to-one with Tailwind's defaults: rounded-sm = 4px, rounded-md = 8px, rounded-lg = 12px, and rounded-xl = 24px, not 12px. A spec that says \"12px corner\" is rounded-lg here. Reaching for rounded-xl because it sounds like a slightly-rounder rounded-lg doubles the radius.",
-        "section": "shapes"
-      },
-      {
-        "name": "The Squircle Plate",
-        "body": "36–48px avatar and platform plates take rounded-xl (24px) — at that size the radius consumes most of the square and the plate reads as a squircle. This is the product's one recurring silhouette: a soft tinted plate holding a brand glyph, repeated down every list. Keep the pairing (size-9 rounded-xl with a 10% brand tint) intact; a smaller radius turns it into a generic app icon.",
-        "section": "shapes"
-      }
+      { "name": "The Grayscale Spine Rule", "body": "Every structural surface, rule, and running-text tone in this system is chroma 0. Nothing that is merely structure may take a tint. The corollary is the valuable half: because the field is achromatic, a single chip is loud without being large, and adding a second decorative hue costs more here than it would in a tinted system.", "section": "colors" },
+      { "name": "The Two Reds Rule", "body": "#a50c25 and #e33f4a are both red and they are not interchangeable. The deep one is a text tone, calibrated to sit on a pastel well or on the page; the bright one is a fill, calibrated to carry white text as a solid object. Putting the fill red on text gives you 3.1:1 on white; putting the text red on a dot gives you a maroon smudge at 8px. Reach for the component variant and let the theme pick.", "section": "colors" },
+      { "name": "The Chip Carries Its Own Text Rule", "body": "A categorical plate is never combined with text-primary. Each hue's *-vivid token is the only correct foreground on its *-subtle plate, and the theme's Card and Banner variants rebind --color-text-primary locally so nested Text children inherit it. Use the variant; do not hand-assemble a plate.", "section": "colors" },
+      { "name": "The Chip Is Not A Field Rule", "body": "A plate is calibrated for chip area. A pastel that is right behind 12px text at 60px wide is a slab at 700px, where it outshouts the graphite primary button beside it. A status surface that runs the full measure fills with the -muted well and spends its hue on the icon, the copy, and the action — the field goes quiet, the meaning does not.", "section": "colors" },
+      { "name": "The Overlay Composites Rule", "body": "In dark mode a categorical background is an alpha overlay, not a solid tone. Do not simplify one to a flat hex: the overlay is what lets the same chip sit correctly on the canvas, on a pane, and in a popover, which in dark mode are three different tones behind one transparent plate.", "section": "colors" },
+      { "name": "The Brand-Hex Exception", "body": "Platform brand colors — Telegram #26A5E4, WhatsApp #25D366, Instagram #E1306C, in src/entities/channel/lib/platform.ts — are the only raw hex values permitted in component code, because they are other companies' identities and must not drift with the theme. Every other color comes from a token.", "section": "colors" },
+      { "name": "The Remapped Scale Rule", "body": "Tailwind's size names do not mean their Tailwind values here. text-base is 14px, text-lg is 17px, text-xl is 20px — and critically, text-sm is 12px, not 14px. Never convert a design spec's px value by assuming Tailwind's defaults. The same bridge rebinds --spacing to 4px, so p-4 is 16px as expected: spacing is safe, type is not.", "section": "typography" },
+      { "name": "The 12px Floor Rule", "body": "Nothing in this product renders below 12px. baseLocale is ru, whose diacritics and soft signs are the first things to go as size drops. Base 14 at ratio 1.2 produces 10 / 8 / 7 / 6px at xs through 4xs, and the theme clamps all four to 0.75rem rather than rescaling, which would move every size in the system. Two sizes outside a token's reach are floored in src/generated/astryx-font-floor.css, whose generator no longer exists — treat that file as pinned to @astryxdesign/core 0.1.8.", "section": "typography" },
+      { "name": "The Two-Tier Rule", "body": "The interface has two tiers: body at text-base (14px) and metadata at the 12px floor. Escalate through weight (400 to 500 to 600) and opacity, not through size. This is the target, not the current state — under the neutral theme's floor text-sm and text-xs both resolve to 12px, so roughly 160 usages need an audit onto the correct tier.", "section": "typography" },
+      { "name": "The Opacity Step Is Mode-Asymmetric Rule", "body": "text-primary/55 computes to 4.0:1 in light and 5.4:1 in dark, so an opacity step tuned in one mode can be under AA in the other. /70 is the lowest rung that clears both. Prefer text-secondary, which is a designed tone rather than an arithmetic one.", "section": "typography" },
+      { "name": "The Cyrillic Coverage Rule", "body": "Any face that carries interface text must ship a Cyrillic subset. baseLocale is ru, so a Latin-only body font leaves the primary locale in the system fallback and styles only the Latin strings beside it. This rule has now caught two faces: Fustat (Arabic + Latin) and Figtree (Latin + Latin-ext), which the neutral theme named on arrival and which had no @font-face anywhere in the repo. Judge a candidate by its unicode-range coverage before its shapes, and confirm the @font-face exists — naming a family in the theme does not load it.", "section": "typography" },
+      { "name": "The Measure Rule", "body": "The transcript, its skeleton, and the composer share one exported measure constant. Tailwind's container is wrong here — it tracks the breakpoint up to 1536px and lets messages sprawl across an empty page on a wide display. Change the measure in one place or not at all.", "section": "layout" },
+      { "name": "The Pane Owns Its Scroll Rule", "body": "Scrolling belongs to the pane, never to the shell or to a wrapper around several panes. A pane that does not carry min-h-0 in its flex chain will push its scroll up to an ancestor and take the whole shell with it.", "section": "layout" },
+      { "name": "The Surface-Above-Canvas Rule", "body": "bg-surface must paint something against bg-body. A theme is free to choose the two tones, but not to make them equal: the shell's entire structure rests on that gap, and collapsing it removes every region boundary in the app at once. The check that used to assert this against the built page no longer exists.", "section": "elevation" },
+      { "name": "The Rim Is The Edge Rule", "body": "In dark mode, elevation is a light effect, not a tonal one — card, popover, muted, and canvas are all #1b1b1b. A surface that should read as raised must carry a shadow token so it gets the inset rim. Hand-rolling a card with bg-card and no shadow produces an invisible rectangle in dark mode.", "section": "elevation" },
+      { "name": "The Recess Is Pane-Relative Rule", "body": "bg-muted is byte-identical to bg-body in both modes, so it recesses only inside a pane, against bg-surface. On the canvas it paints nothing — a full-bleed bg-muted region outside a pane is a no-op, not a subtle effect.", "section": "elevation" },
+      { "name": "The Hairline Is Already Thin Rule", "body": "Use border-border at full strength. border-border/60 is a holdover from a theme whose border token was the accent at 10% alpha, where /60 landed a visible 6% rule. The current light token is an opaque #ebebeb; at /60 it composites to roughly #f3f3f3 on a white pane — about 1.06:1, which is not a rule, it is a rumor.", "section": "elevation" },
+      { "name": "The Gutter Rule", "body": "The canvas showing between panes is what separates regions. It is owned by AppPaneGroup in one place, so the seam is one value everywhere and a route cannot hand-roll its own. A pane never carries a border: a shadow and an outline together read as a card drawn on top of a card.", "section": "elevation" },
+      { "name": "The Hairline Rule", "body": "A rule divides within a pane — a header and the body that scrolls under it, a filter strip and its list, one row of a dense list and the next. It is not used between panes, where the gutter does the work, and it is never a full outline around a large surface.", "section": "elevation" },
+      { "name": "The Shadow-Is-Theme-Only Rule", "body": "Component code carries no ad hoc shadow-* utilities beyond the bridge names. Shadows live in --shadow-low/med/high and are applied by Astryx's Card, Popover, and Dialog, or by AppPane, which maps shadow-sm to --shadow-low. The pane vocabulary has exactly one elevation, and a second one competing with it makes the frame read as unstable.", "section": "elevation" },
+      { "name": "The Radius-Name Trap", "body": "Tailwind's radius names are rebound to the theme scale: rounded-sm = 6px, rounded-md = 10px, rounded-lg = 12px, and rounded-xl = 28px. A spec that says 12px corner is rounded-lg here. rounded-xl is more than double rounded-lg, not one step up from it.", "section": "shapes" },
+      { "name": "The Plate Went Round", "body": "--radius-page moved from 24px to 28px, which exceeds half the width of every plate that uses it: a 36px plate clamps to an 18px radius and a 48px plate to 24px — both are circles. The product's recurring silhouette used to be a squircle holding a brand glyph, repeated down every list. It is now a circle, and nobody chose that.", "section": "shapes" }
     ],
     "dos": [
-      "Do treat src/themes/gothic/gothicTheme.ts as the source of truth for every token, and run `pnpm theme:build` after changing it — that regenerates theme.css, gothic.js, and gothic.d.ts, and main.tsx imports the built module, so skipping the rebuild leaves the app on the old tokens.",
-      "Do add a self-hosted @font-face in src/fonts/fonts.css for any family the theme names, with the unicode-range split intact. Naming a family in the theme does not load it.",
-      "Do separate regions with `border-border/60`. It is the system's one structural device.",
-      "Do recess with `bg-muted` and raise with `bg-card`. Those are the only two tonal moves available.",
-      "Do use the Tailwind bridge names (text-primary, text-secondary, bg-muted, bg-card, bg-accent-bg, text-on-accent, border-border, text-error) rather than raw var(--color-*) in class strings.",
+      "Do treat src/themes/neutral/neutralTheme.ts as the source of truth for every token. It is applied at runtime by <Theme> in src/main.tsx; there is no build step and no compiled theme.css to regenerate.",
+      "Do add a self-hosted @font-face in src/fonts/fonts.css for any family the theme names, with the unicode-range split intact, and confirm the family ships Cyrillic. Naming a family in the theme does not load it.",
+      "Do separate sibling regions with the canvas gutter — compose AppPanes and let AppPaneGroup own the space between them. Rule within a pane with border-border.",
+      "Do give a surface a shadow token when it should read as raised. In dark mode the inset rim is the only thing distinguishing a card from the canvas.",
+      "Do use the Tailwind bridge names (text-primary, text-secondary, bg-muted, bg-card, bg-surface, bg-accent-bg, text-on-accent, border-border, text-error, bg-blue-subtle, text-blue-vivid) rather than raw var(--color-*) in class strings.",
       "Do express state as the accent at low alpha: bg-primary/4 hover, bg-primary/10 selected, bg-primary/5 quiet plate.",
-      "Do put text-on-accent on any accent fill and --color-on-error on any error fill, so labels invert with their background.",
-      "Do reach for a Badge / Banner / Card variant to get a categorical hue, so the plate and its text arrive as a matched pair.",
-      "Do keep interface text at text-sm (13px) or text-xs (10px), and escalate through weight and opacity.",
+      "Do put text-on-accent on any accent fill, so labels invert with their background.",
+      "Do reach for a Badge / Banner / Card variant to get a hue, and pick the variant family deliberately: semantic variants are loud saturated fills, categorical variants are quiet pastel plates.",
+      "Do fill a full-measure status surface with the hue's -muted well and spend the hue on the icon, the copy, and the action. A chip plate stretched to a region is a slab.",
+      "Do put body copy on text-base (14px) and metadata on the 12px floor, and escalate through weight and opacity.",
+      "Do reach for text-secondary when copy needs to recede; it is a designed tone. If an opacity step is unavoidable, /70 is the lowest rung that clears AA in both modes.",
       "Do give every pane overflow-hidden, its own overflow-y-auto scroll region, and min-h-0 through its flex chain.",
       "Do share TRANSCRIPT_MEASURE between the transcript, its skeleton, and the composer.",
-      "Do honor the 64px h-16 pane-header contract on every pane that has a header, so the inbox columns align across their dividers.",
-      "Do guard every transition and animation with motion-reduce:.",
-      "Fill a full-measure status surface with the hue's `-muted` well and spend the hue on the icon, the copy, and the action. A chip plate stretched to a region is a slab."
+      "Do honor the 64px h-16 pane-header contract on every pane that has a header, so the inbox columns align across the gutters between them.",
+      "Do guard every transition and animation with motion-reduce:."
     ],
     "donts": [
-      "Don't assume Tailwind's default scales. text-sm is 13px, text-xs is 10px, and rounded-xl is 24px in this project.",
-      "Don't use bg-surface for separation. It resolves to the same value as the page in both modes, so it paints the colour that is already there. It remains correct for opacity — the contact panel carries bg-surface so the tablet overlay drawer is not see-through, and the auth wrapper uses it the same way — but it can never make a region read as distinct. That is what bg-muted and bg-card are for.",
-      "Don't give a pane a fill, a radius, a gap, or a shadow. The shell is one continuous surface; a pane radius notches a corner out of the content area and a pane shadow has no gap to cast into.",
-      "Don't draw a border around a large surface. Hairlines divide regions; they do not outline them.",
-      "Don't add shadow-* in component code. Shadows are theme tokens applied by Astryx Card, Popover, and Dialog.",
-      "Don't introduce a second neutral tone. The ramp is five steps of one hue and the light/dark inversion depends on that symmetry.",
-      "Don't put text-primary on a categorical plate. Use the hue's -vivid token, or the component variant that binds it.",
-      "Leave a secondary `Button` on a colored well. The neutral chip is a cool gray at the same tone as the well and reads as a shape, not a control — rebind `--color-background-gray` / `--color-text-gray` on the region so the action takes the hue.",
+      "Don't assume Tailwind's default scales. text-sm is 12px, text-base is 14px, rounded-md is 10px, and rounded-xl is 28px in this project.",
+      "Don't introduce a size below 12px, and don't reach for text-2xs, text-3xs, or text-4xs expecting a smaller step — the theme clamps all of them to the floor.",
+      "Don't write border-border/60. The border token is opaque in light mode and the modifier thins it to roughly 1.06:1 against a white pane. Use border-border.",
+      "Don't rely on bg-muted to recess against the canvas. It is the canvas value; it only reads inside a pane.",
+      "Don't assume bg-card looks like anything in dark mode without a shadow. Card, popover, muted, and body are all #1b1b1b there.",
+      "Don't hand-roll a pane. Use AppPane, so the fill, the radius, the lift, the scroll containment, and the phone-width full-bleed arrive together and stay in one file.",
+      "Don't give a pane a border. It already carries a shadow, and an outline on top of that reads as a card drawn on a card.",
+      "Don't put a hairline between two panes. The gutter is the separation there; a rule as well says the same thing twice.",
+      "Don't let a theme collapse background-surface into background-body. Every pane in the app goes invisible at once, and there is no longer an automated check that would tell you.",
+      "Don't add ad hoc shadow-* in component code beyond the bridge names.",
+      "Don't tint a structural surface. The spine is chroma 0 and the whole color system depends on hue meaning something.",
+      "Don't put text-primary on a categorical plate. Use the hue's *-vivid token, or the component variant that binds it.",
+      "Don't swap the two reds. #a50c25 is a text tone and #e33f4a is a fill; each fails at the other's job.",
+      "Don't flatten a dark-mode categorical background to a solid hex. It is an alpha overlay so it can composite onto the canvas, a pane, or a popover.",
       "Don't hardcode a hex. The only exceptions are the three platform brand colors in src/entities/channel/lib/platform.ts.",
-      "Don't put Manufacturing Consent on a product surface. It is bound to display-1..3 and the shell has nothing at that scale.",
       "Don't use uppercase or all-caps labels. Labels are sentence case throughout.",
-      "Don't nest a Card in a Card, or put a Card inside a shell pane.",
+      "Don't nest a Card in a Card, or put a Card inside a shell pane. The pane is already the raised object.",
       "Don't card-wrap dense list rows. Conversations are transparent rows in a scrollable list; records are ruled rows in a divide-y border-y group.",
-      "Don't change the box metrics of anything inside the transcript for cosmetic reasons — the list measures row heights for scroll anchoring, so a border or type-size change on a bubble or date separator perturbs the pin. Restyle with color.",
+      "Don't change the box metrics of anything inside the transcript for cosmetic reasons — the list measures row heights for scroll anchoring. Restyle with color.",
       "Don't add a decorative background. src/styles.css has no pattern, gradient, or texture, and the auth screens do not want one.",
-      "Don't add a top bar. Identity, navigation, notifications, and the account live in the rail; color mode and language live in Settings under Appearance; every page owns its own title. Breadcrumbs restating the nav selection two rows away are duplication, not wayfinding.",
-      "Don't redirect on a failed query. Render the error with a retry — a failed check is not a known-empty result."
+      "Don't add a top bar. Identity, navigation, notifications, and the account live in the rail; every page owns its own title.",
+      "Don't redirect on a failed query. Render the error with a retry — a failed check is not a known-empty result.",
+      "Don't cite pnpm theme:build, check:contrast, check:font-size, check:shell-elevation, or astryx:font-floor. scripts/ was removed; none of them exist."
     ]
   }
 }

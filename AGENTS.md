@@ -157,7 +157,8 @@ For component work:
 1. Discover with the Astryx CLI before writing UI: `pnpm exec astryx build "<idea>"`, then `astryx component <Name>` for the exact props. Do not guess APIs.
 2. Inspect current usage in this repository; check the installed package types when in doubt.
 3. Keep the CSS cascade-layer order in `src/styles.css` intact — Astryx component styles live in the `astryx-base` layer and break silently if Tailwind preflight is layered above them.
-4. Theme comes from `@astryxdesign/theme-neutral` (runtime `<Theme>` in `main.tsx` plus `theme.css`); never override `--color-*` tokens in `:root`.
+4. The theme is `src/themes/neutral/neutralTheme.ts`, applied at runtime by `<Theme theme={neutralTheme}>` in `main.tsx`. It is the single source of truth for every token; there is no compiled `theme.css` and no build step after editing it. Never override `--color-*` tokens in `:root`. (`@astryxdesign/theme-neutral` is still a declared dependency but is imported nowhere.)
+5. Read `DESIGN.md` before writing UI. Its scales are not Tailwind's: `text-sm` is 12px, `text-base` is 14px, `rounded-md` is 10px, `rounded-xl` is 28px. Its "Known drift" list records where the current code and the intended system disagree.
 
 Do not add compatibility shims that mimic the old HeroUI prop surface. Do not run a documentation generator that overwrites this file, and do not paste a generated component index into `AGENTS.md`.
 
@@ -186,8 +187,9 @@ product defect, not a localization chore.
   locale was active on first import. Export `createXSchema()` and call it
   through `useLocalizedSchema`.
 - **Never hardcode user-facing English**, including in validation messages and
-  API-layer fallbacks. `pnpm i18n:audit` fails on both this and on key parity,
-  undefined keys, and placeholder mismatches between locales.
+  API-layer fallbacks. Key parity, undefined keys, and placeholder mismatches
+  between locales matter just as much — all four used to be enforced by
+  `pnpm i18n:audit`, which no longer exists, so check them by reading.
 - **Astryx is English-only.** It ships no Russian catalogue, and a few of its
   strings (`isRequired` / `isOptional` on `Field`) are hardcoded past its own
   translator. Prefer the app's catalogue: see `src/lib/field-label.ts`.
@@ -196,16 +198,14 @@ product defect, not a localization chore.
   a budget in `src/lib/message-lengths.test.ts` for any string inside a
   fixed-width control.
 
-Useful i18n commands:
-
-```bash
-pnpm i18n:audit   # key parity, undefined keys, placeholders, hardcoded English
-pnpm i18n:shots   # screenshots every route in both locales (needs pnpm build)
-```
+The only i18n command left is `pnpm i18n:compile`, which `pnpm typecheck` runs
+for you. The audit and the screenshot sweep (`pnpm i18n:audit`,
+`pnpm i18n:shots`) were removed with `scripts/`; nothing enforces key parity or
+Russian layout automatically now.
 
 jsdom has no layout, so overflow and truncation are invisible to the unit
-suite. For copy or layout changes, run `pnpm build && pnpm i18n:shots` and read
-the Russian screenshots.
+suite. For copy or layout changes, view the affected route in Russian at phone
+width in a real browser before calling it done.
 
 ## Supabase
 
@@ -237,13 +237,15 @@ Astryx compiles with StyleX, so its selectors are hashed atomic classes
 (`.x1k6wstc`) that are a build output of the dependency, not a supported API.
 Never write one into `src/styles.css` by hand: it stops matching silently on the
 next upgrade. If a declaration inside Astryx has to be overridden, derive the
-selector from the installed `astryx.css` in a generator, as
-`scripts/font-floor-build.mjs` does for the 12px readable floor.
+selector from the installed `astryx.css` in a generator rather than transcribing
+it.
 
-```bash
-pnpm astryx:font-floor   # regenerate after upgrading @astryxdesign/core
-pnpm check:font-floor    # fails when the generated file drifts (part of pnpm verify)
-```
+`src/generated/astryx-font-floor.css` is the one file that does this, for the
+12px readable floor. Its generator (`scripts/font-floor-build.mjs`) and its
+drift check were removed along with the rest of `scripts/`, so the file is
+effectively pinned to `@astryxdesign/core@0.1.8`. Re-derive the hashes from the
+installed package before upgrading, or those rules stop matching without
+failing anything.
 
 ## Test Account
 
@@ -266,30 +268,31 @@ Useful commands:
 pnpm typecheck
 pnpm lint
 pnpm test
+pnpm test:e2e
 pnpm build
-pnpm verify
 pnpm test:db
-pnpm i18n:audit
 ```
 
-Some failures are only reachable in a real browser, because jsdom has no
-layout and does not run the real bundle:
+**The browser-check suite is gone.** `scripts/` was removed, and with it
+`pnpm smoke`, `check:password-reset`, `check:overflow`, `check:mobile-nav`,
+`i18n:audit`, `i18n:shots`, `theme:build`, `check:contrast`, `check:font-size`,
+`check:shell-elevation`, `astryx:font-floor`, and `check:font-floor`. Do not
+cite them, and do not assume the invariants they used to guard are still
+enforced — several are load-bearing and are now held by review alone (see the
+"Known drift" list in `DESIGN.md`).
 
-```bash
-pnpm build && pnpm smoke                  # every route renders, no console errors
-pnpm build && pnpm check:password-reset   # the reset flow, both halves, both locales
-pnpm build && pnpm check:overflow         # overflowing nav scrolls itself, at phone width
-pnpm build && pnpm check:mobile-nav       # the rail stays in its drawer at phone width
-pnpm build && pnpm i18n:shots             # screenshots of every route in both locales
-```
+`pnpm verify` is currently broken for the same reason: it chains
+`pnpm i18n:audit`, which no longer exists, so the whole script fails before
+running lint, test, or build. Until that is resolved, run the individual
+commands above rather than `pnpm verify`.
 
-Run the flow checks when touching auth, the overflow check when touching
-navigation or label copy, and read the Russian screenshots when touching copy
-or layout. `pnpm i18n:shots` covers both locales, both colour modes, and phone
-as well as desktop width, because the narrow viewport is where longer copy runs
-out of room first.
+jsdom has no layout and does not run the real bundle, so overflow, truncation,
+and anything that depends on computed styles remain invisible to the unit
+suite. For copy or layout changes — especially in Russian, which runs 15-30%
+longer than English — check the result in a browser at phone width before
+calling it done.
 
-Use `pnpm verify` for broad or release-sensitive changes when practical. For documentation-only changes, review the diff and verify referenced paths and commands; a full application build is not required.
+For documentation-only changes, review the diff and verify referenced paths and commands; a full application build is not required.
 
 If a command cannot run because required services, credentials, or local tooling are unavailable, report that clearly instead of claiming success.
 

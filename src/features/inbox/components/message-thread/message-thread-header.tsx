@@ -1,15 +1,18 @@
 ﻿import { PLATFORM_META, PlatformIcon, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { IconButton } from '@astryxdesign/core/IconButton'
-import { cn } from '@/lib/cn'
 import { ArrowLeftIcon, InfoIcon } from 'lucide-react'
+import { ConversationAssigneeControl } from './conversation-assignee-control'
 import { MessageThreadStatusActions } from './message-thread-status-actions'
 
 type Props = {
   conversation: ConversationWithRelations
   workspaceId: string
+  /** The signed-in agent, so the assignee menu can offer "assign to me" first. */
+  currentUserId: string | null
   onToggleContactPanel: () => void
   onBack?: () => void
 }
@@ -17,6 +20,7 @@ type Props = {
 export function MessageThreadHeader({
   conversation,
   workspaceId,
+  currentUserId,
   onToggleContactPanel,
   onBack,
 }: Props) {
@@ -54,8 +58,11 @@ export function MessageThreadHeader({
         <h2 className="truncate text-sm font-semibold text-primary">
           {contactName}
         </h2>
-        {/* Channel, phone, and assignee are separated by space, not dots: with
-            all three present the row carried two middots of pure decoration. */}
+        {/* Channel and phone are separated by space, not dots: with both
+            present the row carried a middot of pure decoration. The assignee
+            used to sit here too and no longer does — it is the one mutable
+            thing in a line of customer facts, and it now lives in the action
+            cluster with the other control that routes this thread away. */}
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-primary/70">
           {channelType ? <PlatformIcon type={channelType} size="sm" /> : null}
           <span className={cn('-ml-1', channelType && 'text-primary')}>
@@ -64,17 +71,31 @@ export function MessageThreadHeader({
           {conversation.contact.phone ? (
             <span className="truncate">{conversation.contact.phone}</span>
           ) : null}
-          {conversation.assigned_profile ? (
-            <span className="truncate">
-              {m.inbox_assigned_to({
-                name: conversation.assigned_profile.full_name,
-              })}
-            </span>
-          ) : null}
         </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        {/* Hidden below `lg`.
+
+            The thread pane is whatever the viewport has left after the rail and
+            the conversation list, so at 900px it is about 300px wide and this
+            header is already at its limit with a contact, a status action and a
+            panel toggle in it. Measured there, the control took the contact's
+            own name from "truncated" to "absent" — the title's flex-1 resolved
+            to single digits and its metadata line painted over the buttons. A
+            control that costs the header its subject is not worth its place in
+            the header.
+
+            The assignee is not lost at those widths: every conversation row in
+            the list beside it still carries the owner's face. */}
+        <span className="hidden lg:flex">
+          <ConversationAssigneeControl
+            workspaceId={workspaceId}
+            conversationId={conversation.id}
+            assignedTo={conversation.assigned_to}
+            currentUserId={currentUserId}
+          />
+        </span>
         <MessageThreadStatusActions
           workspaceId={workspaceId}
           conversationId={conversation.id}

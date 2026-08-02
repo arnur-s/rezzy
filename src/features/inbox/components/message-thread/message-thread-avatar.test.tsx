@@ -43,6 +43,9 @@ vi.mock('./thread-scroll-button', () => ({ ThreadScrollButton: () => null }))
 vi.mock('./message-thread-status-actions', () => ({
   MessageThreadStatusActions: () => null,
 }))
+vi.mock('./conversation-assignee-control', () => ({
+  ConversationAssigneeControl: () => null,
+}))
 
 // Records what the thread hands down, so a dropped prop is visible even though
 // the list itself renders nothing here.
@@ -79,7 +82,6 @@ function conversation(avatarUrl: string | null): ConversationWithRelations {
       avatar_url: avatarUrl,
       status: 'new',
     },
-    assigned_profile: null,
   }
 }
 

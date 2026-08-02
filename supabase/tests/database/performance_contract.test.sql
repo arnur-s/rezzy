@@ -98,6 +98,11 @@ with expected_indexes(table_name, index_name, column_name) as (
       'author_id'
     ),
     (
+      'contacts',
+      'contacts_owner_id_fkey_idx',
+      'owner_id'
+    ),
+    (
       'contact_notes',
       'contact_notes_contact_order_idx',
       'workspace_id'
