@@ -163,7 +163,10 @@ create or replace function public.set_contact_phones(
   p_contact_id uuid,
   p_phones text[]
 )
-returns table (id uuid, phone text, digits text, position integer)
+-- `position` is quoted here and below: it is a col_name_keyword, legal as a
+-- column name but not as a bare RETURNS TABLE parameter name. The quoted form
+-- keeps the field name the client reads.
+returns table (id uuid, phone text, digits text, "position" integer)
 language plpgsql
 volatile
 security invoker
@@ -248,7 +251,7 @@ create or replace function public.list_contact_phones(
   p_workspace_id uuid,
   p_contact_id uuid
 )
-returns table (id uuid, phone text, digits text, position integer)
+returns table (id uuid, phone text, digits text, "position" integer)
 language sql
 stable
 security invoker

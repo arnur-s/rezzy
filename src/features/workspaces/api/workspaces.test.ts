@@ -13,6 +13,7 @@ vi.mock('@/utils/supabase', () => ({
 const memberWorkspace = {
   created_at: '2026-05-20T08:00:00.000Z',
   created_by: 'owner-1',
+  default_phone_region: null,
   deleted_at: null,
   description: 'Shared sales workspace',
   icon: 'briefcase',

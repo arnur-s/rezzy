@@ -53,6 +53,7 @@ vi.mock('@/features/channels/hooks/use-channels', () => ({
 const workspace: Workspace = {
   created_at: '2026-07-26T00:00:00.000Z',
   created_by: 'user-1',
+  default_phone_region: null,
   deleted_at: null,
   description: null,
   icon: 'briefcase',

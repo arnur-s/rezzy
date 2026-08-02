@@ -217,6 +217,44 @@ export type Database = {
           },
         ]
       }
+      contact_phones: {
+        Row: {
+          contact_id: string
+          created_at: string
+          digits: string | null
+          id: string
+          phone: string
+          position: number
+          workspace_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          digits?: string | null
+          id?: string
+          phone: string
+          position?: number
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          digits?: string | null
+          id?: string
+          phone?: string
+          position?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_phones_contact_workspace_fkey"
+            columns: ["workspace_id", "contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           avatar_url: string | null
@@ -1002,6 +1040,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          default_phone_region: string | null
           deleted_at: string | null
           description: string | null
           icon: string | null
@@ -1014,6 +1053,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string
+          default_phone_region?: string | null
           deleted_at?: string | null
           description?: string | null
           icon?: string | null
@@ -1026,6 +1066,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          default_phone_region?: string | null
           deleted_at?: string | null
           description?: string | null
           icon?: string | null
@@ -1101,6 +1142,10 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      get_workspace_phone_region: {
+        Args: { p_workspace_id: string }
+        Returns: string
+      }
       get_workspace_unread_counts: {
         Args: { p_workspace_id: string }
         Returns: {
@@ -1111,6 +1156,15 @@ export type Database = {
       is_workspace_member: {
         Args: { p_workspace_id: string }
         Returns: boolean
+      }
+      list_contact_phones: {
+        Args: { p_contact_id: string; p_workspace_id: string }
+        Returns: {
+          digits: string
+          id: string
+          phone: string
+          position: number
+        }[]
       }
       list_workspace_members: {
         Args: { p_workspace_id: string }
@@ -1136,6 +1190,26 @@ export type Database = {
         }
         Returns: undefined
       }
+      match_workspace_contacts: {
+        Args: {
+          p_emails?: string[]
+          p_identities?: string[]
+          p_limit?: number
+          p_phone_digits?: string[]
+          p_workspace_id: string
+        }
+        Returns: {
+          avatar_url: string
+          email: string
+          id: string
+          match_reason: string
+          name: string
+          phone: string
+          status: string
+        }[]
+      }
+      normalize_reaction_emoji: { Args: { emoji: string }; Returns: string }
+      phone_digits: { Args: { p_value: string }; Returns: string }
       resolve_instagram_conversation: {
         Args: {
           p_avatar_url?: string
@@ -1181,6 +1255,23 @@ export type Database = {
           updated_at: string
           workspace_id: string
         }[]
+      }
+      set_contact_phones: {
+        Args: {
+          p_contact_id: string
+          p_phones: string[]
+          p_workspace_id: string
+        }
+        Returns: {
+          digits: string
+          id: string
+          phone: string
+          position: number
+        }[]
+      }
+      set_workspace_phone_region: {
+        Args: { p_region: string; p_workspace_id: string }
+        Returns: string
       }
       soft_delete_workspace: {
         Args: { p_workspace_id: string }

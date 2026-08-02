@@ -11,6 +11,7 @@ function workspace(id: string, name = id): Workspace {
     description: null,
     icon: null,
     is_main: false,
+    default_phone_region: null,
     created_at: '',
     created_by: 'u1',
     updated_at: '',

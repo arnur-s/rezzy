@@ -50,6 +50,7 @@ function workspaceFixture(id: string, name: string): Workspace {
     name,
     created_at: '2026-01-01T00:00:00Z',
     created_by: 'u1',
+    default_phone_region: null,
     deleted_at: null,
     description: null,
     icon: null,
