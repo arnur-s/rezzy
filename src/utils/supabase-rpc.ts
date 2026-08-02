@@ -12,8 +12,8 @@ import { supabase } from './supabase'
  * that has the migration applied. This module is the one place that bridges that
  * gap, and it is deliberately narrow:
  *
- *   - the untyped call is confined to {@link untypedRpc} — one cast, here, with
- *     `unknown` as its return type rather than `any`, so nothing downstream
+ *   - the untyped call is confined to {@link untypedClient} — one cast, here,
+ *     with `unknown` as its return type rather than `any`, so nothing downstream
  *     inherits a silent escape hatch;
  *   - every caller passes a Zod schema, so the response is *validated* rather
  *     than asserted. That is stronger than the generated types would have been:
@@ -26,12 +26,23 @@ import { supabase } from './supabase'
 
 type UntypedRpcResult = { data: unknown; error: PostgrestError | null }
 
-type UntypedRpc = (
-  name: string,
-  args: Record<string, unknown>,
-) => PromiseLike<UntypedRpcResult>
+/**
+ * The client is cast, not the method.
+ *
+ * `SupabaseClient.rpc` is a prototype method whose body is `this.rest.rpc(...)`,
+ * so pulling it out into a bare `const` and calling it detaches its receiver:
+ * under ESM strict mode `this` is `undefined` and every call throws
+ * `Cannot read properties of undefined (reading 'rest')` before a request is
+ * made. Keeping the call in method position is what binds it.
+ */
+type UntypedRpcClient = {
+  rpc: (
+    name: string,
+    args: Record<string, unknown>,
+  ) => PromiseLike<UntypedRpcResult>
+}
 
-const untypedRpc = supabase.rpc as unknown as UntypedRpc
+const untypedClient = supabase as unknown as UntypedRpcClient
 
 /** True for the PostgREST error raised when the function is not in the schema. */
 export function isMissingFunctionError(error: unknown): boolean {
@@ -48,7 +59,7 @@ export async function callRpc<TSchema extends z.ZodType>(
   args: Record<string, unknown>,
   schema: TSchema,
 ): Promise<z.infer<TSchema>> {
-  const { data, error } = await untypedRpc(name, args)
+  const { data, error } = await untypedClient.rpc(name, args)
   if (error) throw error
 
   const parsed = schema.safeParse(data)
