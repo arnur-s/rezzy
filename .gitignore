@@ -17,3 +17,5 @@ todos.json
 .screenshots/
 full-schema.sql
 project-structure.txt
+# Git worktrees for parallel agent sessions. See "Parallel agent work" in AGENTS.md.
+.claude/worktrees/

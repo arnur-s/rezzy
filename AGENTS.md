@@ -340,6 +340,67 @@ For documentation-only changes, review the diff and verify referenced paths and 
 
 If a command cannot run because required services, credentials, or local tooling are unavailable, report that clearly instead of claiming success.
 
+## Parallel Agent Work (Git Worktrees)
+
+Several agents can work on this repository at once, each in its own git
+worktree, so nobody rebases or stashes out from under anyone else. Worktrees
+live in `.claude/worktrees/<name>` and are gitignored.
+
+### Starting work
+
+In Claude Code, ask for a worktree and use the `EnterWorktree` tool — it creates
+the directory and branch and moves the session into it. Elsewhere:
+
+```bash
+git worktree add .claude/worktrees/<name> -b <branch>
+cd .claude/worktrees/<name>
+pnpm worktree:setup
+```
+
+`git worktree add` checks out tracked files only, so a fresh worktree has no
+`.env`, no `node_modules/`, and no `src/paraglide/` — and every script in
+`package.json` fails until those exist. `scripts/worktree-setup.mjs` copies the
+ignored env files from the main checkout, installs dependencies, and compiles
+messages. A `SessionStart` hook in `.claude/settings.json` runs it
+automatically, so a Claude Code session usually lands in a ready worktree; run
+`pnpm worktree:setup` by hand if you arrive some other way. Every step is
+skipped when already satisfied, so re-running costs a second or two.
+
+### Dev servers and Supabase
+
+`pnpm dev` and `pnpm dev:agent` go through `scripts/dev.mjs`, which keeps the
+main checkout on port 3000 and gives each worktree a port derived from its
+directory name (3100–3499, stable across restarts). Pass `--port` or set `PORT`
+to override.
+
+Local Supabase is **not** isolated per worktree: `supabase/config.toml` pins
+fixed ports, so there is one shared instance for the whole machine. Start it
+once (`pnpm supabase:start`) and let every worktree talk to it. Two worktrees
+running `pnpm test:db` or `supabase db reset` at the same time will interfere —
+coordinate, or run database work from a single worktree.
+
+### Finishing work
+
+```bash
+git push -u origin <branch>
+gh pr create --fill --base main
+```
+
+CI (`.github/workflows/ci.yml`) runs `pnpm verify` and the database tests on
+every pull request. `gh` requires a one-time `gh auth login`.
+
+When the branch is merged or abandoned, remove the worktree. `git worktree
+remove` refuses while `node_modules/` is present, so delete the directory first:
+
+```bash
+rm -rf .claude/worktrees/<name>
+git worktree prune
+```
+
+Do not symlink a shared `node_modules` between worktrees. Two branches with
+different lockfiles would overwrite each other's dependencies, which is exactly
+the interference worktrees exist to prevent.
+
 ## Change Discipline
 
 - Keep diffs focused on the requested task.
