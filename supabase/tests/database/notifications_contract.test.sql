@@ -1,6 +1,6 @@
 begin;
 
-select plan(25);
+select plan(32);
 
 -- =============================================================================
 -- Seed: a workspace with two members (A, B), an outsider (C) who is never a
@@ -500,7 +500,8 @@ select throws_ok(
 reset role;
 
 -- =============================================================================
--- RLS: push_subscriptions. Users manage only their own subscriptions.
+-- push_subscriptions. Registration goes through public.upsert_push_subscription
+-- (20260809090100); reading and sign-out deletion stay on the table's own RLS.
 -- =============================================================================
 
 insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
@@ -517,15 +518,31 @@ set local request.jwt.claims =
 
 select lives_ok(
   $$
+    select public.upsert_push_subscription(
+      'https://push.example.com/a-endpoint',
+      'a-p256dh',
+      'a-auth',
+      'Test Agent A'
+    )
+  $$,
+  'a user can register their own push subscription'
+);
+
+-- The RPC is the only write path left. The INSERT grant and policy went with
+-- 20260809090100, so a direct write is refused before RLS is consulted.
+select throws_ok(
+  $$
     insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
     values (
       '10000000-0000-4000-8000-000000000101',
-      'https://push.example.com/a-endpoint',
+      'https://push.example.com/a-direct-endpoint',
       'a-p256dh',
       'a-auth'
     )
   $$,
-  'a user can create their own push subscription'
+  '42501',
+  NULL,
+  'a user cannot write push_subscriptions directly'
 );
 
 select is(
@@ -554,6 +571,115 @@ select is(
   ),
   1,
   'a user cannot delete another user''s push subscription'
+);
+
+-- ---------------------------------------------------------------------------
+-- Shared device: B signs in where A had already registered this browser. The
+-- endpoint is one physical notification channel, so it moves to B outright --
+-- otherwise A keeps receiving message previews on a device signed in as B.
+-- ---------------------------------------------------------------------------
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"10000000-0000-4000-8000-000000000102","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    select public.upsert_push_subscription(
+      'https://push.example.com/a-endpoint',
+      'b-p256dh',
+      'b-auth',
+      'Test Agent B'
+    )
+  $$,
+  'registering an endpoint another user holds succeeds instead of failing'
+);
+
+reset role;
+
+select is(
+  (
+    select user_id
+    from public.push_subscriptions
+    where endpoint = 'https://push.example.com/a-endpoint'
+  ),
+  '10000000-0000-4000-8000-000000000102'::uuid,
+  'the second user owns the transferred endpoint'
+);
+
+select is(
+  (
+    select count(*)::int
+    from public.push_subscriptions
+    where user_id = '10000000-0000-4000-8000-000000000101'
+  ),
+  0,
+  'the first user keeps no subscription for a transferred endpoint'
+);
+
+-- A's sign-out deletes by endpoint under A's own RLS. Once the endpoint has
+-- moved, that must remove nothing rather than unsubscribing its new owner.
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"10000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+delete from public.push_subscriptions
+where endpoint = 'https://push.example.com/a-endpoint';
+
+reset role;
+
+select is(
+  (
+    select count(*)::int
+    from public.push_subscriptions
+    where endpoint = 'https://push.example.com/a-endpoint'
+  ),
+  1,
+  'a stale sign-out does not remove the endpoint''s new owner'
+);
+
+-- Re-registering an endpoint you already hold refreshes it in place.
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"10000000-0000-4000-8000-000000000102","role":"authenticated"}';
+
+select public.upsert_push_subscription(
+  'https://push.example.com/b-endpoint',
+  'b-p256dh-rotated',
+  'b-auth-rotated',
+  'Test Agent B'
+);
+
+reset role;
+
+select results_eq(
+  $$
+    select count(*)::int, max(p256dh)
+    from public.push_subscriptions
+    where endpoint = 'https://push.example.com/b-endpoint'
+  $$,
+  $$ values (1, 'b-p256dh-rotated') $$,
+  're-registering your own endpoint refreshes the one row rather than adding another'
+);
+
+-- Sign-out by the current owner still removes the subscription.
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"10000000-0000-4000-8000-000000000102","role":"authenticated"}';
+
+delete from public.push_subscriptions
+where endpoint = 'https://push.example.com/a-endpoint';
+
+reset role;
+
+select is(
+  (
+    select count(*)::int
+    from public.push_subscriptions
+    where endpoint = 'https://push.example.com/a-endpoint'
+  ),
+  0,
+  'sign-out removes the caller''s own push subscription'
 );
 
 -- =============================================================================

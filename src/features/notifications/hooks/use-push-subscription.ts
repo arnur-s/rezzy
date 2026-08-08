@@ -83,7 +83,6 @@ export function usePushSubscription(): UsePushSubscription {
       }
 
       await upsertPushSubscription({
-        userId: user.id,
         endpoint: json.endpoint,
         p256dh: keys.p256dh,
         auth: keys.auth,

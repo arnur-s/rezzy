@@ -1312,6 +1312,15 @@ export type Database = {
         Args: { p_channel_id: string; p_credentials: Json }
         Returns: undefined
       }
+      upsert_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
