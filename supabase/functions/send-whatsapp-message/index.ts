@@ -371,7 +371,7 @@ export default {
 
     const { data: credentials, error: secretError } = await admin.rpc(
       'get_channel_credentials',
-      { p_channel_id: channelId },
+      { p_channel_id: channelId, p_workspace_id: row.workspace_id },
     )
 
     if (secretError) {
