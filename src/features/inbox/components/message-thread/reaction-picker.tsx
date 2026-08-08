@@ -5,8 +5,8 @@ import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { Popover } from '@astryxdesign/core/Popover'
 import { SmilePlusIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MessageActionAnchor } from './message-action-menu'
 
 type Props = {
@@ -92,8 +92,9 @@ export function ReactionPicker({
               // user — who cannot press and hold — still has a way in.
               '[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-60',
             ),
-        // Outboard of the action menu, which occupies the first slot.
-        isOutbound ? 'right-full mr-7 pr-1' : 'left-full ml-7 pl-1',
+        // First slot in the gutter, nearest the bubble; the action menu sits
+        // outboard of it.
+        isOutbound ? 'right-full pr-1' : 'left-full pl-1',
       )}
     >
       <Popover
@@ -102,6 +103,7 @@ export function ReactionPicker({
         label={m.inbox_reaction_picker_label()}
         placement="above"
         alignment={isOutbound ? 'end' : 'start'}
+        className="p-1"
         content={
           <ReactionOptions
             supportedEmoji={supportedEmoji}

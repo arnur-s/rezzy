@@ -1,10 +1,10 @@
 import { Image } from '@/components/image'
 import type { MessageType } from '@/entities/message'
 import { formatFileSize, getMediaPlaceholder } from '@/entities/message'
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
-import { cn } from '@/lib/cn'
 import { FileTextIcon, SparklesIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useMessageMediaUrl } from '../../hooks/use-message-media-url'
@@ -48,11 +48,7 @@ function fitMedia(metadata: MessageMediaMetadata | null): MediaFit | null {
   const width = metadata?.telegram?.width
   const height = metadata?.telegram?.height
   if (!width || !height) return null
-  const scale = Math.min(
-    MEDIA_MAX_WIDTH / width,
-    MEDIA_MAX_HEIGHT / height,
-    1,
-  )
+  const scale = Math.min(MEDIA_MAX_WIDTH / width, MEDIA_MAX_HEIGHT / height, 1)
   return {
     width: Math.round(width * scale),
     height: Math.round(height * scale),
@@ -105,9 +101,7 @@ export function MessageMediaAttachment({
       <div
         className={cn(
           'bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-xs',
-          isOutbound
-            ? 'bg-current/10 text-current/90'
-            : 'text-primary/80',
+          isOutbound ? 'bg-current/10 text-current/90' : 'text-primary/80',
         )}
       >
         <div className="flex items-start gap-2">

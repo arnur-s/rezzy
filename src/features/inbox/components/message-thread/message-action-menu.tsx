@@ -16,6 +16,13 @@ type Props = {
    */
   isTabStop: boolean
   anchor: MessageActionAnchor
+  /**
+   * Which gutter slot the trigger takes. `outer` steps one control-width
+   * further from the bubble so the reaction trigger can lead the row; with no
+   * reaction control on the message there is nothing to follow, so the menu
+   * takes the inner slot itself rather than floating past an empty gap.
+   */
+  slot: 'inner' | 'outer'
   items: Array<DropdownMenuOption>
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
@@ -38,6 +45,7 @@ export function MessageActionMenu({
   messageId,
   isTabStop,
   anchor,
+  slot,
   items,
   isOpen,
   onOpenChange,
@@ -66,7 +74,9 @@ export function MessageActionMenu({
               // screen-reader user — who cannot press and hold — has a way in.
               '[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-60',
             ),
-        isOutbound ? 'right-full pr-1' : 'left-full pl-1',
+        isOutbound
+          ? cn('right-full pr-1', slot === 'outer' && 'mr-7')
+          : cn('left-full pl-1', slot === 'outer' && 'ml-7'),
       )}
     >
       <DropdownMenu

@@ -1,3 +1,4 @@
+import { getReactionCapabilities } from '@/entities/channel'
 import type {
   MessageRowWithAttachments,
   MessageStatus,
@@ -10,16 +11,15 @@ import {
   isMessageType,
   parseSharedContacts,
 } from '@/entities/message'
-import { getReactionCapabilities } from '@/entities/channel'
-import { copyToClipboard } from '@/lib/copy-to-clipboard'
-import { cn } from '@/lib/cn'
 import { useLongPress } from '@/hooks/use-long-press'
+import { cn } from '@/lib/cn'
+import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { ChatMessageBubble, ChatMessageMetadata } from '@astryxdesign/core/Chat'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
 import { useToast } from '@astryxdesign/core/Toast'
-import { CopyIcon, ReplyIcon, SmilePlusIcon, TriangleAlertIcon } from 'lucide-react'
+import { CopyIcon, ReplyIcon, TriangleAlertIcon } from 'lucide-react'
 import { memo, useState } from 'react'
 import { useRetryMessage } from '../../hooks/use-messages'
 import { currentOutboundReaction } from '../../hooks/use-send-reaction'
@@ -33,12 +33,11 @@ import {
   parseStoryMetadata,
   parseUnsupportedMetadata,
 } from '../../schemas/message-metadata'
-import { getReactionAvailability } from '../../utils/reaction-eligibility'
 import type { ReactionBlockedReason } from '../../utils/reaction-eligibility'
+import { getReactionAvailability } from '../../utils/reaction-eligibility'
 import { formatTime } from '../../utils/relative-time'
-import { MessageActionMenu } from './message-action-menu'
 import type { MessageActionAnchor } from './message-action-menu'
-import { ReactionPicker } from './reaction-picker'
+import { MessageActionMenu } from './message-action-menu'
 import { MessageCollapsibleText } from './message-collapsible-text'
 import { MessageContactCard } from './message-contact-card'
 import { MessageInteractive } from './message-interactive'
@@ -49,6 +48,7 @@ import { MessageReplyPreview } from './message-reply-preview'
 import { MessageShare } from './message-share'
 import { useMessageThreadContext } from './message-thread-context'
 import { MessageUnsupported } from './message-unsupported'
+import { ReactionPicker } from './reaction-picker'
 
 const RICH_MEDIA_TYPES = new Set<MessageType>([
   'image',
@@ -174,16 +174,6 @@ export const MessageBubble = memo(function MessageBubbleComponent({
   const supportedReactionEmoji = thread
     ? getReactionCapabilities(thread.channelType).supportedEmoji
     : []
-
-  if (showReactionPicker && reactionAvailability.status === 'available') {
-    actionItems.push({
-      label: m.inbox_reaction_add(),
-      icon: <SmilePlusIcon className="size-4" aria-hidden />,
-      // Touch reaches the picker through press-and-hold, which opens this menu;
-      // hover reaches it through the gutter trigger. Both end up here.
-      onClick: () => setIsPickerOpen(true),
-    })
-  }
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   // A menu raised by press-and-hold dims and blurs the rest of the thread, the
@@ -443,20 +433,7 @@ export const MessageBubble = memo(function MessageBubbleComponent({
           />
         ) : null}
 
-        {/* Last child so assistive tech reads the message before its actions,
-          even though the trigger is painted beside the bubble's first line. */}
-        {actionItems.length > 0 ? (
-          <MessageActionMenu
-            isOutbound={isOutbound}
-            messageId={message.id}
-            isTabStop={isTabStop}
-            anchor={actionAnchor}
-            items={actionItems}
-            isOpen={isMenuOpen}
-            onOpenChange={handleMenuOpenChange}
-          />
-        ) : null}
-        {showReactionPicker ? (
+        {showReactionPicker && (
           <ReactionPicker
             isOutbound={isOutbound}
             messageId={message.id}
@@ -478,7 +455,22 @@ export const MessageBubble = memo(function MessageBubbleComponent({
             onOpenChange={setIsPickerOpen}
             onSelect={(emoji) => onReact(message, emoji)}
           />
-        ) : null}
+        )}
+
+        {/* Last child so assistive tech reads the message before its actions,
+          even though the trigger is painted beside the bubble's first line. */}
+        {actionItems.length > 0 && (
+          <MessageActionMenu
+            isOutbound={isOutbound}
+            messageId={message.id}
+            isTabStop={isTabStop}
+            anchor={actionAnchor}
+            slot={showReactionPicker ? 'outer' : 'inner'}
+            items={actionItems}
+            isOpen={isMenuOpen}
+            onOpenChange={handleMenuOpenChange}
+          />
+        )}
       </ChatMessageBubble>
     </div>
   )
