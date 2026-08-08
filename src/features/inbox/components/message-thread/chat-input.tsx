@@ -320,7 +320,7 @@ export function ChatInput({
           {showStyledMirror && (
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm leading-6 wrap-break-word whitespace-pre-wrap"
+              className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm pointer-coarse:text-[16px] leading-6 wrap-break-word whitespace-pre-wrap"
             >
               <FormattedMessageText
                 as="span"
@@ -348,6 +348,13 @@ export function ChatInput({
             className={cn(
               // Transparent: the composer surface around it is the field.
               'h-9 min-h-9 w-full resize-none bg-transparent px-2 py-1 text-sm leading-6 shadow-none',
+              // iOS Safari zooms the viewport when a focused control computes
+              // to under 16px, and `text-sm` is 12px here. 16px is Safari's
+              // threshold, not a type-scale step: the nearest token above it
+              // (`text-lg`, 17px) would also rebind the line-height that the
+              // 5-line `MAX_HEIGHT` cap is measured against. The emoji mirror
+              // above carries the same pair or the caret drifts under it.
+              'pointer-coarse:text-[16px]',
               'ring-0 outline-none focus:ring-0 focus-visible:ring-0',
               showStyledMirror && 'caret-primary text-transparent',
             )}

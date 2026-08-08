@@ -238,3 +238,39 @@ describe('ChatInput draft safety', () => {
     expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('')
   })
 })
+
+// iOS Safari zooms the viewport whenever a focused form control computes to
+// under 16px, and this project's `text-sm` is 12px. jsdom has no layout and
+// never evaluates the media query, so these assertions pin the class contract
+// rather than the rendered size; the visual check belongs in a real browser.
+describe('ChatInput mobile zoom guard', () => {
+  beforeEach(() => {
+    voiceMock.reset()
+  })
+
+  it('raises the textarea to the 16px iOS threshold on coarse pointers', () => {
+    render(<ChatInput onSend={vi.fn()} />)
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    expect(textarea.className).toContain('pointer-coarse:text-[16px]')
+  })
+
+  it('keeps the emoji mirror on the same font size as the textarea', () => {
+    // The mirror is painted under a transparent caret, so any size drift
+    // between the two puts the caret in the wrong place mid-word.
+    render(<ChatInput onSend={vi.fn()} />)
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    act(() => {
+      fireEvent.change(textarea, { target: { value: 'ship it 🚀' } })
+    })
+
+    const mirror = Array.from(
+      document.querySelectorAll('span[aria-hidden="true"]'),
+    ).find((el) => el.textContent === 'ship it 🚀')
+    expect(mirror).toBeDefined()
+    expect(mirror?.className).toContain('pointer-coarse:text-[16px]')
+    // Same line box as the textarea, so the two stay glyph-for-glyph aligned.
+    expect(mirror?.className).toContain('leading-6')
+  })
+})
