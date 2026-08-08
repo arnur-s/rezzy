@@ -21,6 +21,7 @@
     "dev": "node scripts/dev.mjs --open --host",
     "dev:agent": "node scripts/dev.mjs --host 127.0.0.1",
     "worktree:setup": "node scripts/worktree-setup.mjs --strict",
+    "worktree:finish": "node scripts/worktree-finish.mjs",
     "preview": "vite preview",
     "test:watch": "vitest",
     "test:db": "supabase test db",

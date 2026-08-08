@@ -386,13 +386,34 @@ coordinate, or run database work from a single worktree.
 
 ### Finishing work
 
+**A task is not done until its work is on a pull request.** Leaving commits
+sitting in a worktree hides them from review and from CI, and the next agent to
+touch the same files has no way to see them.
+
+When the work is complete and the relevant validation passes, commit it, then:
+
 ```bash
-git push -u origin <branch>
-gh pr create --fill --base main
+pnpm worktree:finish
 ```
 
+`scripts/worktree-finish.mjs` pushes the branch, sets its upstream, and opens a
+pull request against `main` — reusing the existing PR if there already is one,
+so re-running after another commit just updates it. Extra flags go through to
+`gh pr create`, e.g. `pnpm worktree:finish --draft`.
+
+It refuses rather than guessing. A dirty tree, a detached HEAD, a worktree
+sitting on `main`, or a branch with no commits beyond `origin/main` are all
+reported and left alone. In particular it will not commit for you: the message
+is yours to write.
+
+Do not open a pull request for work that is still in progress, and do not open
+one to ask a question — answer the user instead. `--draft` covers work that is
+worth pushing but not worth reviewing yet.
+
 CI (`.github/workflows/ci.yml`) runs `pnpm verify` and the database tests on
-every pull request. `gh` requires a one-time `gh auth login`.
+every pull request. `gh` requires a one-time `gh auth login`; without it the
+branch still pushes and the script prints the GitHub compare URL to finish by
+hand.
 
 When the branch is merged or abandoned, remove the worktree. `git worktree
 remove` refuses while `node_modules/` is present, so delete the directory first:
