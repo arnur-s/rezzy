@@ -342,14 +342,19 @@ If a command cannot run because required services, credentials, or local tooling
 
 ## Parallel Agent Work (Git Worktrees)
 
-Several agents can work on this repository at once, each in its own git
-worktree, so nobody rebases or stashes out from under anyone else. Worktrees
-live in `.claude/worktrees/<name>` and are gitignored.
+Several agents work on this repository at once, and the main checkout is shared.
+Editing it directly puts your uncommitted work in someone else's `git status`
+and theirs in yours.
+
+**Before changing any file for a task, move into a worktree.** Worktrees live in
+`.claude/worktrees/<name>` and are gitignored. Stay in the main checkout only
+when the task changes nothing on disk — answering a question, reading code — or
+when the user asks you to work in place.
 
 ### Starting work
 
-In Claude Code, ask for a worktree and use the `EnterWorktree` tool — it creates
-the directory and branch and moves the session into it. Elsewhere:
+In Claude Code, call the `EnterWorktree` tool — it creates the directory and
+branch and moves the session into it. Elsewhere:
 
 ```bash
 git worktree add .claude/worktrees/<name> -b <branch>

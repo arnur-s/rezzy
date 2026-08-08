@@ -10,21 +10,6 @@
 - Do not duplicate shared repository rules here. If a shared rule needs to change, update `AGENTS.md` instead.
 - Do not implement planned product domains merely because they appear in product documentation. Follow the current repository and the concrete task.
 
-## Work in a git worktree
-
-Before changing any file for a task, call `EnterWorktree` to move this session into
-`.claude/worktrees/<name>` on its own branch. Several agents work in this repository at
-once, and the main checkout is shared: editing it directly puts your uncommitted work in
-someone else's `git status` and theirs in yours.
-
-The session lands ready to run — a `SessionStart` hook seeds the new worktree with the
-ignored files a fresh checkout lacks. See "Parallel Agent Work (Git Worktrees)" in
-`AGENTS.md` for what that covers, which ports each worktree gets, and how to finish a
-branch.
-
-Stay in the main checkout only when the task changes nothing on disk (answering a
-question, reading code) or when the user asks you to work in place.
-
 ## Astryx workflow
 
 Use the Astryx version installed by the repository. Run CLI commands through pnpm:
