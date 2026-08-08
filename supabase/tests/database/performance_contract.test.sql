@@ -11,6 +11,11 @@ select plan(2);
 -- (20260804090100), which authorises entirely through is_workspace_member and
 -- a direction check, and the channels write policies below reach auth.uid()
 -- only through their role test.
+--
+-- Two more were dropped outright by 20260808090000: "Workspace admins can
+-- delete contacts" and "Workspace admins can delete conversations". Hard
+-- deletion of either is no longer reachable -- the policy and the grant both
+-- went -- so there is no longer a policy to cache anything in.
 with expected_policies(schema_name, table_name, policy_name) as (
   values
     ('public', 'channels', 'Workspace admins can create channels'),
@@ -30,8 +35,6 @@ with expected_policies(schema_name, table_name, policy_name) as (
       'contact_notes',
       'Authors and workspace admins can delete contact notes'
     ),
-    ('public', 'contacts', 'Workspace admins can delete contacts'),
-    ('public', 'conversations', 'Workspace admins can delete conversations'),
     ('public', 'messages', 'Workspace admins can delete messages'),
     (
       'public',

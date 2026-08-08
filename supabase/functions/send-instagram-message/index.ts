@@ -8,6 +8,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { resolveOutboundRoute } from '../_shared/outbound-route.ts'
 import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 import {
   instagramAttachmentType,
@@ -272,31 +273,29 @@ export default {
       }
     }
 
-    const { data: conversation, error: convError } = await admin
-      .from('conversations')
-      .select('contact_id, channel_id')
-      .eq('id', row.conversation_id)
-      .maybeSingle()
-    if (convError || !conversation) {
-      console.error('send-instagram-message: conversation load', convError)
-      return jsonResponse(404, { error: 'Conversation not found' })
+    // Both lookups are scoped to the message's workspace. Without that, a
+    // conversation repointed at another workspace's channel would send on that
+    // workspace's credentials -- see _shared/outbound-route.ts.
+    const resolved = await resolveOutboundRoute(admin, {
+      workspaceId: row.workspace_id,
+      conversationId: row.conversation_id,
+      context: 'send-instagram-message',
+    })
+    if (!resolved.ok) {
+      return jsonResponse(404, {
+        error:
+          resolved.reason === 'conversation_not_found'
+            ? 'Conversation not found'
+            : 'Channel not found',
+      })
     }
-    const channelId = conversation.channel_id as string
-    const contactId = conversation.contact_id as string
+    const { contactId, channelId, channelType, channelIsActive } =
+      resolved.route
 
-    const { data: channel, error: channelError } = await admin
-      .from('channels')
-      .select('id, type, is_active')
-      .eq('id', channelId)
-      .maybeSingle()
-    if (channelError || !channel) {
-      console.error('send-instagram-message: channel load', channelError)
-      return jsonResponse(404, { error: 'Channel not found' })
-    }
-    if (channel.type !== 'instagram') {
+    if (channelType !== 'instagram') {
       return jsonResponse(400, { error: 'Channel is not Instagram' })
     }
-    if (!channel.is_active) {
+    if (!channelIsActive) {
       await recordSendFailure(admin, row, channelId, 'channel_inactive', null)
       return jsonResponse(409, {
         error:

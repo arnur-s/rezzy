@@ -550,14 +550,28 @@ select ok(
   'authenticated has the exact contact_notes privileges'
 );
 
+-- DELETE went with the archive change (20260808090000): "delete" now means
+-- archive, through an admin-guarded RPC. UPDATE became a column grant in
+-- 20260809090000, and the column list is the assertion -- workspace_id absent
+-- from it is what stops a member of two workspaces moving a contact between
+-- them, so has_any_column_privilege would not be checking anything.
 select ok(
   has_table_privilege('authenticated', 'public.contacts', 'select')
   and has_table_privilege('authenticated', 'public.contacts', 'insert')
-  and has_table_privilege('authenticated', 'public.contacts', 'update')
-  and has_table_privilege('authenticated', 'public.contacts', 'delete')
+  and not has_table_privilege('authenticated', 'public.contacts', 'update')
+  and has_any_column_privilege('authenticated', 'public.contacts', 'update')
+  and not has_table_privilege('authenticated', 'public.contacts', 'delete')
   and not has_table_privilege('authenticated', 'public.contacts', 'truncate')
   and not has_table_privilege('authenticated', 'public.contacts', 'references')
-  and not has_table_privilege('authenticated', 'public.contacts', 'trigger'),
+  and not has_table_privilege('authenticated', 'public.contacts', 'trigger')
+  and (
+    select array_agg(a.attname::text order by a.attname::text)
+    from pg_attribute a
+    where a.attrelid = 'public.contacts'::regclass
+      and a.attnum > 0
+      and not a.attisdropped
+      and has_column_privilege('authenticated', a.attrelid, a.attnum, 'update')
+  ) = array['email', 'name', 'owner_id', 'phone', 'status', 'tags'],
   'authenticated has the exact contacts privileges'
 );
 
@@ -572,14 +586,26 @@ select ok(
   'authenticated has the exact conversation_reads privileges'
 );
 
+-- Same two changes, and here the column list is the whole cross-workspace fix:
+-- channel_id absent from it is what stops a member of workspace A repointing a
+-- conversation at workspace B's channel and sending on B's credentials.
 select ok(
   has_table_privilege('authenticated', 'public.conversations', 'select')
   and has_table_privilege('authenticated', 'public.conversations', 'insert')
-  and has_table_privilege('authenticated', 'public.conversations', 'update')
-  and has_table_privilege('authenticated', 'public.conversations', 'delete')
+  and not has_table_privilege('authenticated', 'public.conversations', 'update')
+  and has_any_column_privilege('authenticated', 'public.conversations', 'update')
+  and not has_table_privilege('authenticated', 'public.conversations', 'delete')
   and not has_table_privilege('authenticated', 'public.conversations', 'truncate')
   and not has_table_privilege('authenticated', 'public.conversations', 'references')
-  and not has_table_privilege('authenticated', 'public.conversations', 'trigger'),
+  and not has_table_privilege('authenticated', 'public.conversations', 'trigger')
+  and (
+    select array_agg(a.attname::text order by a.attname::text)
+    from pg_attribute a
+    where a.attrelid = 'public.conversations'::regclass
+      and a.attnum > 0
+      and not a.attisdropped
+      and has_column_privilege('authenticated', a.attrelid, a.attnum, 'update')
+  ) = array['assigned_to', 'status'],
   'authenticated has the exact conversations privileges'
 );
 

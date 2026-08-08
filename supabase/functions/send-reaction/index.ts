@@ -13,6 +13,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { resolveOutboundRoute } from '../_shared/outbound-route.ts'
 import { applyReactionOps, touchChannelActivity } from '../_shared/persist.ts'
 import { normalizeReactionEmoji } from '../_shared/reaction-emoji.ts'
 import type {
@@ -66,17 +67,6 @@ interface MessageRow {
   type: string
   external_id: string | null
   deleted_at: string | null
-}
-
-interface ConversationRow {
-  contact_id: string
-  channel_id: string
-}
-
-interface ChannelRow {
-  id: string
-  type: string
-  is_active: boolean
 }
 
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
@@ -286,38 +276,34 @@ export default {
 
     const providerMessageId = row.external_id.trim()
 
-    const { data: conversation, error: convError } = await admin
-      .from('conversations')
-      .select('contact_id, channel_id')
-      .eq('id', row.conversation_id)
-      .maybeSingle()
+    // Both lookups are scoped to the message's workspace. Without that, a
+    // conversation repointed at another workspace's channel would react on that
+    // workspace's credentials -- see _shared/outbound-route.ts.
+    const resolved = await resolveOutboundRoute(admin, {
+      workspaceId: row.workspace_id,
+      conversationId: row.conversation_id,
+      context: 'send-reaction',
+    })
 
-    if (convError || !conversation) {
-      console.error('send-reaction: conversation load', convError)
-      return failure(404, 'message_unavailable')
+    if (!resolved.ok) {
+      return failure(
+        404,
+        resolved.reason === 'conversation_not_found'
+          ? 'message_unavailable'
+          : 'channel_unavailable',
+      )
     }
-    const conv = conversation as ConversationRow
+    const { contactId, channelId, channelType, channelIsActive } =
+      resolved.route
 
-    const { data: channel, error: channelError } = await admin
-      .from('channels')
-      .select('id, type, is_active')
-      .eq('id', conv.channel_id)
-      .maybeSingle()
-
-    if (channelError || !channel) {
-      console.error('send-reaction: channel load', channelError)
-      return failure(404, 'channel_unavailable')
-    }
-    const channelRow = channel as ChannelRow
-
-    if (!REACTION_PROVIDERS.has(channelRow.type)) {
+    if (!REACTION_PROVIDERS.has(channelType)) {
       return failure(400, 'reactions_unsupported')
     }
-    if (!channelRow.is_active) return failure(409, 'channel_disconnected')
+    if (!channelIsActive) return failure(409, 'channel_disconnected')
 
     const { data: credentials, error: secretError } = await admin.rpc(
       'get_channel_credentials',
-      { p_channel_id: conv.channel_id },
+      { p_channel_id: channelId },
     )
     if (secretError) {
       console.error('send-reaction: channel secret load', secretError)
@@ -327,8 +313,8 @@ export default {
     const { data: contactChannel, error: ccError } = await admin
       .from('contact_channels')
       .select('external_id')
-      .eq('contact_id', conv.contact_id)
-      .eq('channel_type', channelRow.type)
+      .eq('contact_id', contactId)
+      .eq('channel_type', channelType)
       .maybeSingle()
 
     if (ccError) {
@@ -341,7 +327,7 @@ export default {
     const command: SendReactionCommand = { providerMessageId, emoji }
     let outcome: ProviderOutcome
 
-    if (channelRow.type === 'telegram') {
+    if (channelType === 'telegram') {
       const botToken = getCredentialString(credentials, 'bot_token')
       if (!botToken) return failure(400, 'channel_unauthorized')
 
@@ -349,7 +335,7 @@ export default {
         buildTelegramReactionRequest({ botToken, chatId: recipientId, command }),
         interpretTelegramReactionResponse,
       )
-    } else if (channelRow.type === 'instagram') {
+    } else if (channelType === 'instagram') {
       const accessToken = getCredentialString(credentials, 'access_token')
       const instagramUserId = getCredentialString(
         credentials,
@@ -389,7 +375,7 @@ export default {
     }
 
     if (!outcome.ok) {
-      await touchChannelActivity(admin, conv.channel_id, 'error', outcome.code)
+      await touchChannelActivity(admin, channelId, 'error', outcome.code)
       return failure(
         outcome.isRetryable ? 503 : 502,
         outcome.code,
@@ -402,7 +388,7 @@ export default {
     // send that never happened.
     await recordReaction(admin, {
       workspaceId: row.workspace_id,
-      channelId: conv.channel_id,
+      channelId,
       conversationId: row.conversation_id,
       messageId: row.id,
       providerMessageId,

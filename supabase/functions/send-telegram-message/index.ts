@@ -3,6 +3,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { resolveOutboundRoute } from '../_shared/outbound-route.ts'
 import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 
 const CORS_HEADERS = {
@@ -36,11 +37,6 @@ interface MessageRow {
   reply_to_message_id: string | null
 }
 
-interface ConversationRow {
-  contact_id: string
-  channel_id: string
-}
-
 interface TelegramSendMessageResponse {
   ok: boolean
   description?: string
@@ -70,12 +66,6 @@ async function recordSendFailure(
   if (channelId) {
     await touchChannelActivity(admin, channelId, 'error', errorCode)
   }
-}
-
-interface ChannelRow {
-  id: string
-  type: string
-  is_active: boolean
 }
 
 type SecretField = 'bot_token' | 'webhook_secret'
@@ -257,38 +247,33 @@ export default {
       }
     }
 
-    const { data: conversation, error: convError } = await admin
-      .from('conversations')
-      .select('contact_id, channel_id')
-      .eq('id', row.conversation_id)
-      .maybeSingle()
+    // Both lookups are scoped to the message's workspace. Without that, a
+    // conversation repointed at another workspace's channel would send on that
+    // workspace's credentials -- see _shared/outbound-route.ts.
+    const resolved = await resolveOutboundRoute(admin, {
+      workspaceId: row.workspace_id,
+      conversationId: row.conversation_id,
+      context: 'send-telegram-message',
+    })
 
-    if (convError || !conversation) {
-      console.error('send-telegram-message: conversation load', convError)
-      return jsonResponse(404, { error: 'Conversation not found' })
+    if (!resolved.ok) {
+      return jsonResponse(404, {
+        error:
+          resolved.reason === 'conversation_not_found'
+            ? 'Conversation not found'
+            : 'Channel not found',
+      })
     }
 
-    const conv = conversation as ConversationRow
+    const { contactId, channelId, channelType, channelIsActive } =
+      resolved.route
 
-    const { data: channel, error: channelError } = await admin
-      .from('channels')
-      .select('id, type, is_active')
-      .eq('id', conv.channel_id)
-      .maybeSingle()
-
-    const channelRow = channel as ChannelRow
-
-    if (channelError || !channelRow) {
-      console.error('send-telegram-message: channel load', channelError)
-      return jsonResponse(404, { error: 'Channel not found' })
-    }
-
-    if (channelRow.type !== 'telegram') {
+    if (channelType !== 'telegram') {
       return jsonResponse(400, { error: 'Channel is not Telegram' })
     }
 
-    if (!channelRow.is_active) {
-      await recordSendFailure(admin, row, channelRow.id, 'channel_inactive', null)
+    if (!channelIsActive) {
+      await recordSendFailure(admin, row, channelId, 'channel_inactive', null)
 
       return jsonResponse(409, {
         error:
@@ -297,7 +282,7 @@ export default {
     }
     const { data: credentials, error: secretError } = await admin.rpc(
       'get_channel_credentials',
-      { p_channel_id: conv.channel_id },
+      { p_channel_id: channelId },
     )
 
     if (secretError) {
@@ -321,7 +306,7 @@ export default {
     const { data: contactChannel, error: ccError } = await admin
       .from('contact_channels')
       .select('external_id')
-      .eq('contact_id', conv.contact_id)
+      .eq('contact_id', contactId)
       .eq('channel_type', 'telegram')
       .maybeSingle()
 
@@ -333,12 +318,12 @@ export default {
     if (!contactChannel?.external_id?.trim()) {
       console.error(
         'send-telegram-message: no telegram external_id for contact',
-        conv.contact_id,
+        contactId,
       )
       await recordSendFailure(
         admin,
         row,
-        conv.channel_id,
+        channelId,
         'missing_chat_id',
         null,
       )
@@ -373,7 +358,7 @@ export default {
 
       if (signedError || !signedData?.signedUrl) {
         console.error('send-telegram-message: signed URL error', signedError)
-        await recordSendFailure(admin, row, conv.channel_id, 'signed_url_failed', null)
+        await recordSendFailure(admin, row, channelId, 'signed_url_failed', null)
         return jsonResponse(502, { error: 'Failed to create signed URL for media' })
       }
 
@@ -402,7 +387,7 @@ export default {
           'send-telegram-message: Telegram network error',
           e,
         )
-        await recordSendFailure(admin, row, conv.channel_id, 'network_error', null)
+        await recordSendFailure(admin, row, channelId, 'network_error', null)
         return jsonResponse(502, { error: 'Telegram request failed' })
       }
     } else {
@@ -426,7 +411,7 @@ export default {
           'send-telegram-message: Telegram network error',
           e,
         )
-        await recordSendFailure(admin, row, conv.channel_id, 'network_error', null)
+        await recordSendFailure(admin, row, channelId, 'network_error', null)
         return jsonResponse(502, { error: 'Telegram request failed' })
       }
     }
@@ -439,7 +424,7 @@ export default {
       await recordSendFailure(
         admin,
         row,
-        conv.channel_id,
+        channelId,
         telegramJson.error_code != null ? String(telegramJson.error_code) : null,
         telegramJson.description ?? null,
       )
@@ -470,7 +455,7 @@ export default {
       messageId: row.id,
       status: 'delivered',
     })
-    await touchChannelActivity(admin, conv.channel_id, 'outbound')
+    await touchChannelActivity(admin, channelId, 'outbound')
 
     const { error: updateConvError } = await admin
       .from('conversations')

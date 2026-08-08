@@ -7,6 +7,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { resolveOutboundRoute } from '../_shared/outbound-route.ts'
 import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 
 const GRAPH_VERSION = Deno.env.get('WHATSAPP_GRAPH_VERSION') ?? 'v23.0'
@@ -48,17 +49,6 @@ interface MessageRow {
   media_filename: string | null
   media_mime_type: string | null
   reply_to_message_id: string | null
-}
-
-interface ConversationRow {
-  contact_id: string
-  channel_id: string
-}
-
-interface ChannelRow {
-  id: string
-  type: string
-  is_active: boolean
 }
 
 interface WhatsappSendResponse {
@@ -346,38 +336,33 @@ export default {
       }
     }
 
-    const { data: conversation, error: convError } = await admin
-      .from('conversations')
-      .select('contact_id, channel_id')
-      .eq('id', row.conversation_id)
-      .maybeSingle()
+    // Both lookups are scoped to the message's workspace. Without that, a
+    // conversation repointed at another workspace's channel would send on that
+    // workspace's credentials -- see _shared/outbound-route.ts.
+    const resolved = await resolveOutboundRoute(admin, {
+      workspaceId: row.workspace_id,
+      conversationId: row.conversation_id,
+      context: 'send-whatsapp-message',
+    })
 
-    if (convError || !conversation) {
-      console.error('send-whatsapp-message: conversation load', convError)
-      return jsonResponse(404, { error: 'Conversation not found' })
+    if (!resolved.ok) {
+      return jsonResponse(404, {
+        error:
+          resolved.reason === 'conversation_not_found'
+            ? 'Conversation not found'
+            : 'Channel not found',
+      })
     }
 
-    const conv = conversation as ConversationRow
+    const { contactId, channelId, channelType, channelIsActive } =
+      resolved.route
 
-    const { data: channel, error: channelError } = await admin
-      .from('channels')
-      .select('id, type, is_active')
-      .eq('id', conv.channel_id)
-      .maybeSingle()
-
-    const channelRow = channel as ChannelRow
-
-    if (channelError || !channelRow) {
-      console.error('send-whatsapp-message: channel load', channelError)
-      return jsonResponse(404, { error: 'Channel not found' })
-    }
-
-    if (channelRow.type !== 'whatsapp') {
+    if (channelType !== 'whatsapp') {
       return jsonResponse(400, { error: 'Channel is not WhatsApp' })
     }
 
-    if (!channelRow.is_active) {
-      await recordSendFailure(admin, row, conv.channel_id, { reason: 'channel_inactive' })
+    if (!channelIsActive) {
+      await recordSendFailure(admin, row, channelId, { reason: 'channel_inactive' })
       return jsonResponse(409, {
         error:
           'Channel is inactive. Activate it in settings before sending messages.',
@@ -386,7 +371,7 @@ export default {
 
     const { data: credentials, error: secretError } = await admin.rpc(
       'get_channel_credentials',
-      { p_channel_id: conv.channel_id },
+      { p_channel_id: channelId },
     )
 
     if (secretError) {
@@ -409,7 +394,7 @@ export default {
     const { data: contactChannel, error: ccError } = await admin
       .from('contact_channels')
       .select('external_id, metadata')
-      .eq('contact_id', conv.contact_id)
+      .eq('contact_id', contactId)
       .eq('channel_type', 'whatsapp')
       .maybeSingle()
 
@@ -421,9 +406,9 @@ export default {
     if (!contactChannel?.external_id?.trim()) {
       console.error(
         'send-whatsapp-message: no whatsapp external_id for contact',
-        conv.contact_id,
+        contactId,
       )
-      await recordSendFailure(admin, row, conv.channel_id, { reason: 'missing_recipient' })
+      await recordSendFailure(admin, row, channelId, { reason: 'missing_recipient' })
       return jsonResponse(400, {
         error: 'WhatsApp recipient id missing for contact',
       })
@@ -459,7 +444,7 @@ export default {
 
       if (signedError || !signedData?.signedUrl) {
         console.error('send-whatsapp-message: signed URL error', signedError)
-        await recordSendFailure(admin, row, conv.channel_id, { reason: 'signed_url_failed' })
+        await recordSendFailure(admin, row, channelId, { reason: 'signed_url_failed' })
         return jsonResponse(502, {
           error: 'Failed to create signed URL for media',
         })
@@ -573,7 +558,7 @@ export default {
                 whatsapp_dial_id: variant,
               },
             })
-            .eq('contact_id', conv.contact_id)
+            .eq('contact_id', contactId)
             .eq('channel_type', 'whatsapp')
           if (cacheError) {
             console.error(
@@ -586,7 +571,7 @@ export default {
     }
 
     if (!result.ok) {
-      await recordSendFailure(admin, row, conv.channel_id, {
+      await recordSendFailure(admin, row, channelId, {
         ...whatsappErrorDiagnostics(result.httpStatus, result.error),
         ...(result.failureKind !== 'api' ? { reason: result.failureKind } : {}),
       })
@@ -623,7 +608,7 @@ export default {
 
     const waMessageId = result.waMessageId
     if (!waMessageId) {
-      await recordSendFailure(admin, row, conv.channel_id, { reason: 'missing_wamid' })
+      await recordSendFailure(admin, row, channelId, { reason: 'missing_wamid' })
       return jsonResponse(502, { error: 'WhatsApp send failed' })
     }
 
@@ -647,7 +632,7 @@ export default {
       messageId: row.id,
       status: 'sent',
     })
-    await touchChannelActivity(admin, conv.channel_id, 'outbound')
+    await touchChannelActivity(admin, channelId, 'outbound')
 
     const { error: updateConvError } = await admin
       .from('conversations')
