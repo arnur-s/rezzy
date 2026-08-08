@@ -20,6 +20,19 @@ export type ContactListParams = {
   page: number
 }
 
+/**
+ * What the page can ask the URL to change.
+ *
+ * `archived` is not part of `ContactListParams` because that type maps field
+ * for field onto `search_workspace_contacts`, and the archive is served by a
+ * different RPC with a different visibility rule. Folding it in would put a
+ * parameter into the directory query that the directory query has no argument
+ * for.
+ */
+export type ContactListPatch = Partial<ContactListParams> & {
+  archived?: boolean
+}
+
 export const EMPTY_CONTACT_LIST_PARAMS: ContactListParams = {
   query: '',
   statuses: [],

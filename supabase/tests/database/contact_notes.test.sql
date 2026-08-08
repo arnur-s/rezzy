@@ -1,6 +1,6 @@
 begin;
 
-select plan(42);
+select plan(44);
 
 -- Contract for collaborative notes on contacts. The production migration does not
 -- exist yet; until it does, this file should fail RED with relation
@@ -221,6 +221,13 @@ select throws_ok(
   'contact notes must reference an existing contact'
 );
 
+-- Refused by the insert policy rather than by the trigger, since 20260804090000
+-- gave enforce_contact_note_integrity definer rights: it can now see the
+-- contact, stamps the note with that contact's workspace, and the policy -- the
+-- authorization boundary -- rejects a workspace the caller is not in. The
+-- previous 23503 was the trigger reporting "no such contact" only because RLS
+-- had hidden it, which was the same answer for a contact in another workspace
+-- and for one that does not exist.
 select throws_ok(
   $$
     insert into public.contact_notes (contact_id, body)
@@ -229,8 +236,8 @@ select throws_ok(
       'Cross-workspace note attempt'
     )
   $$,
-  '23503',
-  'CONTACT_NOTE_CONTACT_NOT_FOUND',
+  '42501',
+  null,
   'a member cannot create a note for a contact in another workspace'
 );
 
@@ -267,8 +274,8 @@ select throws_ok(
       'Outsider cross-workspace note attempt'
     )
   $$,
-  '23503',
-  'CONTACT_NOTE_CONTACT_NOT_FOUND',
+  '42501',
+  null,
   'an outsider cannot create a note in a workspace they do not belong to'
 );
 
@@ -347,6 +354,9 @@ select is(
   'pinning does not change the note content timestamp'
 );
 
+-- Identity and authorship are now unreachable from the browser at the
+-- privilege layer: authenticated holds update only on body and is_pinned, so
+-- the statement is refused before any trigger runs.
 select throws_ok(
   $$
     update public.contact_notes
@@ -359,9 +369,42 @@ select throws_ok(
       created_at = now() + interval '1 day'
     where id = '20000000-0000-4000-8000-000000000401'
   $$,
+  '42501',
+  null,
+  'a member has no privilege to rewrite note identity or the author snapshot'
+);
+
+-- The trigger remains the second line of defence for any path that does hold
+-- the privilege -- service_role today, and whatever internal tooling comes
+-- later. Exercised here as the table owner so the grant is not what rejects it.
+reset role;
+
+select throws_ok(
+  $$
+    update public.contact_notes
+    set
+      author_id = '20000000-0000-4000-8000-000000000102',
+      author_name = 'Mutated Author Snapshot'
+    where id = '20000000-0000-4000-8000-000000000401'
+  $$,
   '23514',
   'CONTACT_NOTE_IDENTITY_IMMUTABLE',
   'note identity fields and the author snapshot are immutable after insert'
+);
+
+-- Nulling author_id is allowed only when the author profile is genuinely gone,
+-- which is the ON DELETE SET NULL case. With the profile still present the
+-- trigger refuses -- the check that was previously blind to other users'
+-- profiles and so accepted this for every author but the caller.
+select throws_ok(
+  $$
+    update public.contact_notes
+    set author_id = null
+    where id = '20000000-0000-4000-8000-000000000401'
+  $$,
+  '23514',
+  'CONTACT_NOTE_IDENTITY_IMMUTABLE',
+  'a live author cannot be anonymised out of their own note'
 );
 
 reset role;

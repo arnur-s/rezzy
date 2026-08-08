@@ -112,6 +112,51 @@ describe('ru counted messages agree with their number', () => {
       '5 новых сообщений',
     )
   })
+
+  it('declines the conversation count in the archive confirmation', () => {
+    expect(m.contact_archive_description({ count: 1 }, ru)).toContain(
+      'и 1 диалог пропадут',
+    )
+    expect(m.contact_archive_description({ count: 3 }, ru)).toContain(
+      'и 3 диалога пропадут',
+    )
+    expect(m.contact_archive_description({ count: 8 }, ru)).toContain(
+      'и 8 диалогов пропадут',
+    )
+    expect(m.contact_archive_description({ count: 21 }, ru)).toContain(
+      'и 21 диалог пропадут',
+    )
+  })
+
+  it('promises the archive is reversible rather than final', () => {
+    // The copy is load-bearing, not decoration: an archived contact returns by
+    // itself on the next inbound message, so wording this as a deletion would
+    // make that reappearance read as a bug.
+    for (const body of [
+      m.contact_archive_description({ count: 2 }, ru),
+      m.contact_archive_description_none(ru),
+    ]) {
+      expect(body).toContain('вернётся сам')
+      expect(body).not.toContain('Удал')
+      expect(body).not.toContain('удал')
+    }
+  })
+
+  it('declines the conversation count on an archived row', () => {
+    expect(m.contacts_archived_conversations({ count: 1 }, ru)).toBe('1 диалог')
+    expect(m.contacts_archived_conversations({ count: 2 }, ru)).toBe(
+      '2 диалога',
+    )
+    expect(m.contacts_archived_conversations({ count: 5 }, ru)).toBe(
+      '5 диалогов',
+    )
+    expect(m.contacts_archived_conversations({ count: 11 }, ru)).toBe(
+      '11 диалогов',
+    )
+    expect(m.contacts_archived_conversations({ count: 21 }, ru)).toBe(
+      '21 диалог',
+    )
+  })
 })
 
 describe('en counted messages agree with their number', () => {

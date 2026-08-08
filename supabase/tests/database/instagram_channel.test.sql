@@ -103,9 +103,9 @@ select throws_ok(
      values ('00000000-0000-4000-8000-0000000000d1',
              (select id from public.workspaces where name = 'IG WS A'),
              null, 'instagram', 'Y') $$,
-  '23514',
+  '23502',
   null,
-  'new contact_channels must be channel-scoped (NOT VALID check)'
+  'new contact_channels must be channel-scoped (NOT NULL column)'
 );
 select throws_ok(
   $$ insert into public.contact_channels

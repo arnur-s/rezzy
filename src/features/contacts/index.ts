@@ -1,5 +1,10 @@
 export { getWorkspaceContact } from './api/contacts'
-export type { ContactListPage, ContactWritePayload } from './api/contacts'
+export type {
+  ArchivedContact,
+  ArchivedContactPage,
+  ContactListPage,
+  ContactWritePayload,
+} from './api/contacts'
 export { matchWorkspaceContacts } from './api/contact-matches'
 export type { ContactMatch, ContactMatchReason } from './api/contact-matches'
 export {
@@ -11,11 +16,15 @@ export type { ContactPhone } from './api/contact-phones'
 export { contactQueryKeys } from './api/query-keys'
 export { useContactMatches } from './hooks/use-contact-matches'
 export {
+  useArchiveContact,
+  useArchivedContacts,
+  useContactConversationCount,
   useContactConversations,
   useContactDetail,
   useContactList,
   useContactPhones,
   useCreateContact,
+  useRestoreContact,
   useUpdateContact,
 } from './hooks/use-contacts'
 export type { ContactWriteInput } from './hooks/use-contacts'
@@ -38,7 +47,11 @@ export {
   EMPTY_CONTACT_LIST_PARAMS,
   hasActiveContactFilters,
 } from './model/contact-list-params'
-export type { ContactListParams } from './model/contact-list-params'
+export type {
+  ContactListParams,
+  ContactListPatch,
+} from './model/contact-list-params'
+export { ArchiveContactDialog } from './ui/archive-contact-dialog'
 export { ContactDetailPage } from './ui/contact-detail-page'
 export { ContactFormDialog } from './ui/contact-form-dialog'
 export { ContactsPage } from './ui/contacts-page'

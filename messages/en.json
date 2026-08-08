@@ -78,6 +78,7 @@
   "workspaces_icon_label": "Icon",
   "workspaces_name_label": "Name",
   "workspaces_name_helper": "Pick a clear name for this workspace",
+  "workspaces_name_max": "Keep the workspace name under 60 characters",
   "workspaces_description_label": "Description",
   "workspaces_description_helper": "Briefly describe what this workspace is for",
   "workspaces_description_placeholder": "Workspace description",
@@ -895,6 +896,39 @@
   "contact_detail_copied": "Copied",
   "contact_detail_copy_failed": "Could not copy",
   "contact_detail_incomplete": "Add a phone number or email so your team can reach this person.",
+  "contact_archive_action": "Archive contact",
+  "contact_archive_title": "Archive this contact?",
+  "contact_archive_description": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "The contact and {count} conversation will disappear from lists and search. The history is kept, and the contact comes back on its own if they write again.",
+        "countPlural=*": "The contact and {count} conversations will disappear from lists and search. The history is kept, and the contact comes back on its own if they write again."
+      }
+    }
+  ],
+  "contact_archive_description_none": "The contact will disappear from lists and search. Its details are kept, and the contact comes back on its own if they write again.",
+  "contact_archive_confirm": "Archive",
+  "contact_archived_toast": "Contact archived",
+  "contact_archive_error": "Could not archive the contact",
+  "contact_restore_action": "Restore from archive",
+  "contact_restored_toast": "Contact restored",
+  "contact_restore_error": "Could not restore the contact",
+  "contacts_filter_archived": "Archived",
+  "contacts_archived_notice": "The archive is visible to owners and admins only.",
+  "contacts_archived_empty_title": "Nothing archived",
+  "contacts_archived_empty_description": "Contacts you hide from your lists show up here. You can bring them back at any time.",
+  "contacts_archived_conversations": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} conversation",
+        "countPlural=*": "{count} conversations"
+      }
+    }
+  ],
   "contact_form_create_title": "Add contact",
   "contact_form_edit_title": "Edit contact",
   "contact_form_name": "Name",

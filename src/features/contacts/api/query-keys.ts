@@ -37,6 +37,20 @@ export const contactQueryKeys = {
     [...contactQueryKeys.workspace(workspaceId), 'list'] as const,
   list: (workspaceId: string, params: ContactListParams) =>
     [...contactQueryKeys.lists(workspaceId), serializeParams(params)] as const,
+  /**
+   * The Archived filter's own cache, a sibling of `lists` rather than a page of
+   * it. They are served by different RPCs with different visibility rules, so
+   * `lists(workspaceId)` must not match archived pages: archiving invalidates
+   * the live directory, and a prefix that swept up both would refetch an
+   * admin-only listing on behalf of members who cannot read it.
+   */
+  archived: (workspaceId: string) =>
+    [...contactQueryKeys.workspace(workspaceId), 'archived'] as const,
+  archivedList: (workspaceId: string, query: string, page: number) =>
+    [
+      ...contactQueryKeys.archived(workspaceId),
+      { query: query.trim().toLowerCase(), page },
+    ] as const,
   details: (workspaceId: string) =>
     [...contactQueryKeys.workspace(workspaceId), 'detail'] as const,
   detail: (workspaceId: string, contactId: string) =>
@@ -45,6 +59,11 @@ export const contactQueryKeys = {
     [
       ...contactQueryKeys.detail(workspaceId, contactId),
       'conversations',
+    ] as const,
+  conversationCount: (workspaceId: string, contactId: string) =>
+    [
+      ...contactQueryKeys.detail(workspaceId, contactId),
+      'conversation-count',
     ] as const,
   phones: (workspaceId: string, contactId: string) =>
     [...contactQueryKeys.detail(workspaceId, contactId), 'phones'] as const,

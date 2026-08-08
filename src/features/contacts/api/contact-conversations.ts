@@ -64,3 +64,28 @@ export async function listContactConversations({
   if (error) throw error
   return data
 }
+
+/**
+ * How many conversations a contact has, exactly.
+ *
+ * `listContactConversations` caps at five, so its length is the wrong number to
+ * put in front of somebody deciding whether to archive: a contact with twelve
+ * threads would be described as having five. A head request with an exact count
+ * costs no rows on the wire.
+ */
+export async function countContactConversations({
+  workspaceId,
+  contactId,
+}: {
+  workspaceId: string
+  contactId: string
+}): Promise<number> {
+  const { count, error } = await supabase
+    .from('conversations')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .eq('contact_id', contactId)
+
+  if (error) throw error
+  return count ?? 0
+}

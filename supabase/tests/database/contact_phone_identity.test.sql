@@ -98,9 +98,11 @@ insert into public.channels (id, workspace_id, type, name)
 values ('20000000-0000-4000-8000-000000000421','20000000-0000-4000-8000-000000000221','whatsapp','WA');
 
 insert into public.contacts (id, workspace_id, name, phone, email, status) values
-  -- Stored in a domestic spelling: the lookup has to find it from +77011234567.
+  -- Stored in one spelling and looked up in another: the lookup compares
+  -- public.phone_digits, so separators never matter. A domestic trunk prefix
+  -- would, which is why the client normalizes to E.164 before writing.
   ('20000000-0000-4000-8000-000000000321','20000000-0000-4000-8000-000000000221',
-   'Dana Abisheva','8 (701) 123-45-67',null,'new'),
+   'Dana Abisheva','+7 (701) 123-45-67',null,'new'),
   ('20000000-0000-4000-8000-000000000322','20000000-0000-4000-8000-000000000221',
    'Aizhan Serik',null,'Aizhan@Example.com','new'),
   ('20000000-0000-4000-8000-000000000323','20000000-0000-4000-8000-000000000221',
@@ -194,13 +196,22 @@ select is(
   'clearing the set clears the primary rather than leaving a stale one'
 );
 
--- Restore the domestic spelling for the matching assertions below.
+-- Restore the number for the matching assertions below, in a spelling nothing
+-- else in this file uses.
+--
+-- Not the domestic '8 (701) …' trunk form: public.phone_digits is a pure digit
+-- strip -- "Country interpretation is the client's job; this is only the
+-- canonical comparison form" -- so the trunk prefix survives normalization as
+-- 87011234567 and does not equal 77011234567. Reading the trunk prefix as a
+-- country code needs the region, which lives on the workspace and cannot reach
+-- an IMMUTABLE generated column; the client resolves it (libphonenumber-js)
+-- before the number is stored or searched.
 select lives_ok(
   $$
     select public.set_contact_phones(
       '20000000-0000-4000-8000-000000000221',
       '20000000-0000-4000-8000-000000000321',
-      array['8 (701) 123-45-67'])
+      array['+7(701)123-45-67'])
   $$,
   'the fixture number is restored through the RPC'
 );

@@ -3,7 +3,11 @@ import type { ContactSort, ContactStatus } from '@/entities/contact'
 import { useDebounce } from '@/hooks/use-debounce'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
-import { useWorkspaceMemberDirectory } from '@/features/workspaces/hooks/use-workspaces'
+import {
+  useIsWorkspaceAdmin,
+  useWorkspaceMemberDirectory,
+} from '@/features/workspaces/hooks/use-workspaces'
+import { useToast } from '@astryxdesign/core/Toast'
 import { Button } from '@astryxdesign/core/Button'
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
@@ -14,12 +18,20 @@ import { TextInput } from '@astryxdesign/core/TextInput'
 import { useNavigate } from '@tanstack/react-router'
 import { UsersRoundIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useContactList } from '../hooks/use-contacts'
+import {
+  useArchivedContacts,
+  useContactList,
+  useRestoreContact,
+} from '../hooks/use-contacts'
 import {
   CONTACTS_PAGE_SIZE,
   hasActiveContactFilters,
 } from '../model/contact-list-params'
-import type { ContactListParams } from '../model/contact-list-params'
+import type {
+  ContactListParams,
+  ContactListPatch,
+} from '../model/contact-list-params'
+import { ArchivedContactRow } from './archived-contact-row'
 import { ContactListRow } from './contact-list-row'
 
 const SORT_LABELS: Record<ContactSort, () => string> = {
@@ -33,8 +45,10 @@ const SORT_LABELS: Record<ContactSort, () => string> = {
 type Props = {
   workspaceId: string
   params: ContactListParams
+  /** Whether the Archived filter is the active view. Lives in the URL. */
+  isArchived: boolean
   /** Partial patch; the route merges it into the URL. */
-  onParamsChange: (patch: Partial<ContactListParams>) => void
+  onParamsChange: (patch: ContactListPatch) => void
   onCreate: () => void
 }
 
@@ -56,14 +70,48 @@ function ContactListSkeleton() {
 export function ContactsPage({
   workspaceId,
   params,
+  isArchived,
   onParamsChange,
   onCreate,
 }: Props) {
   const navigate = useNavigate()
+  const showToast = useToast()
   const [searchText, setSearchText] = useState(params.query)
   const debouncedSearch = useDebounce(searchText, 300)
-  const contactsQuery = useContactList(workspaceId, params)
+  const { isAdmin, isLoaded: isRoleLoaded } = useIsWorkspaceAdmin(workspaceId)
+  // Only ever one of the two runs. `list_archived_contacts` raises 42501 for a
+  // member, so the admin check is a precondition of the request, not decoration
+  // on top of it — and the live directory is not worth fetching underneath a
+  // view that is showing something else.
+  const isArchivedView = isArchived && isAdmin
+  const contactsQuery = useContactList(workspaceId, params, !isArchivedView)
+  const archivedQuery = useArchivedContacts({
+    workspaceId,
+    query: params.query,
+    page: params.page,
+    enabled: isArchivedView,
+  })
+  const restore = useRestoreContact(workspaceId)
   const membersQuery = useWorkspaceMemberDirectory(workspaceId)
+
+  // A member who lands on ?archived=true — a shared link, or a demotion since
+  // the link was made — is put back on the directory rather than shown an empty
+  // panel they cannot explain. Waits for the roster, because "not an admin" and
+  // "not known yet" are the same false before it arrives.
+  useEffect(() => {
+    if (isArchived && isRoleLoaded && !isAdmin) {
+      onParamsChange({ archived: false, page: 1 })
+    }
+  }, [isArchived, isRoleLoaded, isAdmin])
+
+  function restoreContact(contactId: string) {
+    restore.mutate(contactId, {
+      onError: () =>
+        showToast({ body: m.contact_restore_error(), type: 'error' }),
+      onSuccess: () =>
+        showToast({ body: m.contact_restored_toast(), type: 'info' }),
+    })
+  }
 
   // The URL is the source of truth; this only pushes the settled search term
   // into it. Changing the term resets to page 1 — page 4 of the old result set
@@ -91,7 +139,11 @@ export function ContactsPage({
 
   const isFiltered = hasActiveContactFilters(params)
   const items = contactsQuery.data?.items ?? []
-  const totalCount = contactsQuery.data?.totalCount ?? 0
+  const archivedItems = archivedQuery.data?.items ?? []
+  const activeQuery = isArchivedView ? archivedQuery : contactsQuery
+  const totalCount = isArchivedView
+    ? (archivedQuery.data?.totalCount ?? 0)
+    : (contactsQuery.data?.totalCount ?? 0)
 
   function toggleStatus(status: ContactStatus) {
     const next = params.statuses.includes(status)
@@ -172,61 +224,94 @@ export function ContactsPage({
           role="group"
           aria-label={m.contacts_filters_label()}
         >
-          {CONTACT_STATUSES.map((status) => {
-            const isActive = params.statuses.includes(status)
-            return (
-              <button
-                key={status}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => toggleStatus(status)}
-                className={cn(
-                  'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
-                  isActive
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
-                )}
-              >
-                {CONTACT_STATUS_META[status].labelKey()}
-              </button>
-            )
-          })}
+          {/* The archive is served by a different RPC that takes only a search
+              term, so status, owner and sort have nothing to act on there and
+              are hidden rather than left inert. */}
+          {isArchivedView ? null : (
+            <>
+              {CONTACT_STATUSES.map((status) => {
+                const isActive = params.statuses.includes(status)
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => toggleStatus(status)}
+                    className={cn(
+                      'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
+                      isActive
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
+                    )}
+                  >
+                    {CONTACT_STATUS_META[status].labelKey()}
+                  </button>
+                )
+              })}
 
-          <DropdownMenu
-            menuWidth={220}
-            button={{
-              label: m.contacts_filter_owner(),
-              variant: 'ghost',
-              size: 'sm',
-            }}
-            items={ownerItems}
-          />
+              <DropdownMenu
+                menuWidth={220}
+                button={{
+                  label: m.contacts_filter_owner(),
+                  variant: 'ghost',
+                  size: 'sm',
+                }}
+                items={ownerItems}
+              />
 
-          <DropdownMenu
-            menuWidth={200}
-            button={{
-              label: `${m.contacts_sort_label()}: ${SORT_LABELS[params.sort]()}`,
-              variant: 'ghost',
-              size: 'sm',
-            }}
-            items={sortItems}
-          />
+              <DropdownMenu
+                menuWidth={200}
+                button={{
+                  label: `${m.contacts_sort_label()}: ${SORT_LABELS[params.sort]()}`,
+                  variant: 'ghost',
+                  size: 'sm',
+                }}
+                items={sortItems}
+              />
 
-          {isFiltered ? (
-            <Button
-              label={m.contacts_clear_filters()}
-              size="sm"
-              variant="ghost"
-              onClick={clearFilters}
-            />
+              {isFiltered ? (
+                <Button
+                  label={m.contacts_clear_filters()}
+                  size="sm"
+                  variant="ghost"
+                  onClick={clearFilters}
+                />
+              ) : null}
+            </>
+          )}
+
+          {/* Owner/admin only, because the RPC behind it is. Rendering it for a
+              member would offer a view that answers 42501. */}
+          {isAdmin ? (
+            <button
+              type="button"
+              aria-pressed={isArchivedView}
+              onClick={() =>
+                onParamsChange({ archived: !isArchivedView, page: 1 })
+              }
+              className={cn(
+                'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
+                isArchivedView
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
+              )}
+            >
+              {m.contacts_filter_archived()}
+            </button>
           ) : null}
         </div>
+
+        {isArchivedView ? (
+          <p className="text-secondary text-xs">
+            {m.contacts_archived_notice()}
+          </p>
+        ) : null}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {contactsQuery.isPending ? (
+        {activeQuery.isPending ? (
           <ContactListSkeleton />
-        ) : contactsQuery.isError ? (
+        ) : activeQuery.isError ? (
           <div className="px-4 py-4">
             <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
               <span className="text-error text-xs">
@@ -236,11 +321,37 @@ export function ContactsPage({
                 label={m.common_retry()}
                 size="sm"
                 variant="ghost"
-                onClick={() => void contactsQuery.refetch()}
-                isLoading={contactsQuery.isRefetching}
+                onClick={() => void activeQuery.refetch()}
+                isLoading={activeQuery.isRefetching}
               />
             </div>
           </div>
+        ) : isArchivedView ? (
+          archivedItems.length === 0 ? (
+            <div className="flex h-full items-center justify-center p-6">
+              <EmptyState
+                icon={<UsersRoundIcon className="text-secondary size-8" />}
+                title={m.contacts_archived_empty_title()}
+                description={m.contacts_archived_empty_description()}
+              />
+            </div>
+          ) : (
+            <ul
+              aria-label={m.contacts_filter_archived()}
+              className="flex flex-col gap-0.5 px-2 py-2"
+            >
+              {archivedItems.map((contact) => (
+                <ArchivedContactRow
+                  key={contact.id}
+                  contact={contact}
+                  onRestore={() => restoreContact(contact.id)}
+                  isRestoring={
+                    restore.isPending && restore.variables === contact.id
+                  }
+                />
+              ))}
+            </ul>
+          )
         ) : items.length === 0 ? (
           <div className="flex h-full items-center justify-center p-6">
             {isFiltered ? (

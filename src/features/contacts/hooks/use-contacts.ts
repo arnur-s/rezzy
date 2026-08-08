@@ -1,10 +1,19 @@
 import type { ContactDetail } from '@/entities/contact'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { listContactConversations } from '../api/contact-conversations'
+import { attentionQueueQueryKeys } from '@/features/dashboard/api/attention-queue'
+import { homeStatsQueryKeys } from '@/features/dashboard/api/home-stats'
+import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
 import {
+  countContactConversations,
+  listContactConversations,
+} from '../api/contact-conversations'
+import {
+  archiveContact,
   createContact,
   getWorkspaceContact,
+  listArchivedContacts,
+  restoreContact,
   searchWorkspaceContacts,
   updateContact,
 } from '../api/contacts'
@@ -14,12 +23,41 @@ import { listContactPhones, setContactPhones } from '../api/contact-phones'
 import { contactQueryKeys } from '../api/query-keys'
 import type { ContactListParams } from '../model/contact-list-params'
 
-export function useContactList(workspaceId: string, params: ContactListParams) {
+export function useContactList(
+  workspaceId: string,
+  params: ContactListParams,
+  /** False while the Archived view is showing, which is served by its own RPC. */
+  enabled = true,
+) {
   return useQuery({
     queryKey: contactQueryKeys.list(workspaceId, params),
     queryFn: () => searchWorkspaceContacts({ workspaceId, params }),
-    enabled: Boolean(workspaceId),
+    enabled: enabled && Boolean(workspaceId),
     // Paging should not blank the table out from under the reader.
+    placeholderData: (previous) => previous,
+  })
+}
+
+/**
+ * The Archived filter's page. `enabled` is the caller's admin check: the RPC
+ * raises 42501 for a member, so a non-admin must not reach it at all rather
+ * than render an error the UI has no answer for.
+ */
+export function useArchivedContacts({
+  workspaceId,
+  query,
+  page,
+  enabled,
+}: {
+  workspaceId: string
+  query: string
+  page: number
+  enabled: boolean
+}) {
+  return useQuery({
+    queryKey: contactQueryKeys.archivedList(workspaceId, query, page),
+    queryFn: () => listArchivedContacts({ workspaceId, query, page }),
+    enabled: enabled && Boolean(workspaceId),
     placeholderData: (previous) => previous,
   })
 }
@@ -55,6 +93,25 @@ export function useContactConversations(
     queryKey: contactQueryKeys.conversations(workspaceId, contactId),
     queryFn: () => listContactConversations({ workspaceId, contactId }),
     enabled: Boolean(workspaceId && contactId),
+  })
+}
+
+/**
+ * The exact number of conversations a contact has, for the archive dialog.
+ *
+ * Separate from `useContactConversations`, which caps at five for display.
+ * `enabled` keeps it to the moment the dialog opens rather than firing on every
+ * contact anyone opens.
+ */
+export function useContactConversationCount(
+  workspaceId: string,
+  contactId: string,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: contactQueryKeys.conversationCount(workspaceId, contactId),
+    queryFn: () => countContactConversations({ workspaceId, contactId }),
+    enabled: enabled && Boolean(workspaceId && contactId),
   })
 }
 
@@ -210,5 +267,78 @@ export function useUpdateContact(workspaceId: string, contactId: string) {
     },
 
     onSettled: () => queryClient.invalidateQueries({ queryKey: detailKey }),
+  })
+}
+
+/**
+ * Everything that changes shape when one contact is archived or restored.
+ *
+ * Archiving is the only mutation in this feature that moves rows between two
+ * tables' worth of surfaces: the contact leaves the directory, its conversations
+ * leave the inbox, and both leave the dashboard's counts. Realtime cannot be
+ * relied on for the conversation half — Supabase evaluates RLS per subscriber,
+ * so the acting admin is the one client guaranteed NOT to be told about rows
+ * that just became invisible.
+ *
+ * Both directions invalidate the same set, because both change the same
+ * surfaces.
+ */
+function invalidateArchiveSurfaces(
+  queryClient: QueryClient,
+  workspaceId: string,
+) {
+  const keys = [
+    contactQueryKeys.lists(workspaceId),
+    contactQueryKeys.archived(workspaceId),
+    // A shared-contact card in the inbox asks "is this person already in the
+    // CRM?". An archived contact must stop answering yes, or the card offers to
+    // open a contact that no longer resolves.
+    contactQueryKeys.matches(workspaceId),
+    inboxQueryKeys.conversations(workspaceId),
+    inboxQueryKeys.conversationSearchAll(workspaceId),
+    inboxQueryKeys.unreadCountsForWorkspace(workspaceId),
+    // The dashboard filters conversations by assignee, so archiving a thread
+    // assigned to the acting admin changes their own attention queue and home
+    // stats. Invalidated by prefix: both are keyed by user and workspace set.
+    attentionQueueQueryKeys.all,
+    homeStatsQueryKeys.all,
+  ]
+
+  for (const queryKey of keys) {
+    void queryClient.invalidateQueries({ queryKey })
+  }
+}
+
+/**
+ * Archive one contact and, through the database cascade, its conversations.
+ *
+ * Owner/admin only — enforced by `public.archive_contact`, not by the caller
+ * hiding the button. Nothing is deleted and nothing is scrubbed: the rows keep
+ * every field, and an inbound message from the same contact reverses this
+ * automatically.
+ */
+export function useArchiveContact(workspaceId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (contactId: string) => archiveContact(contactId),
+    onSuccess: (_result, contactId) => {
+      // Dropped rather than invalidated: the contact is now invisible to this
+      // caller's SELECT policy, so a refetch would resolve to null and render
+      // the not-found state on a route that is already navigating away.
+      queryClient.removeQueries({
+        queryKey: contactQueryKeys.detail(workspaceId, contactId),
+      })
+      invalidateArchiveSurfaces(queryClient, workspaceId)
+    },
+  })
+}
+
+export function useRestoreContact(workspaceId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (contactId: string) => restoreContact(contactId),
+    onSuccess: () => invalidateArchiveSurfaces(queryClient, workspaceId),
   })
 }

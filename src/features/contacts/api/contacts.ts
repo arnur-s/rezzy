@@ -87,6 +87,78 @@ export async function getWorkspaceContact({
   return data
 }
 
+/**
+ * A row in the Archived filter. `ContactListItem` plus the two things only the
+ * archive view has to say: when it was hidden, and how much comes back with it.
+ */
+export type ArchivedContact = ContactListItem & {
+  deleted_at: string
+  conversation_count: number
+}
+
+export type ArchivedContactPage = {
+  items: Array<ArchivedContact>
+  totalCount: number
+}
+
+/**
+ * Archiving is an RPC rather than an update of `deleted_at`, and not by
+ * preference. The migration put `deleted_at is null` into the contacts UPDATE
+ * policy's WITH CHECK — so a member cannot forge an archive with a direct write
+ * — and into its SELECT policy, so the row leaves the caller's own view the
+ * moment it is stamped and a `.select()` on the way back would find nothing.
+ *
+ * Conversations are not passed or touched here: `trg_cascade_contact_archive`
+ * carries `deleted_at` to them inside the same transaction.
+ */
+export async function archiveContact(contactId: string): Promise<void> {
+  const { error } = await supabase.rpc('archive_contact', {
+    p_contact_id: contactId,
+  })
+
+  if (error) throw error
+}
+
+export async function restoreContact(contactId: string): Promise<void> {
+  const { error } = await supabase.rpc('restore_contact', {
+    p_contact_id: contactId,
+  })
+
+  if (error) throw error
+}
+
+/**
+ * The archive listing. Owner/admin only — the RPC raises 42501 otherwise — and
+ * the single route through the SELECT policy that hides archived rows from
+ * every ordinary query.
+ */
+export async function listArchivedContacts({
+  workspaceId,
+  query,
+  page,
+  pageSize = CONTACTS_PAGE_SIZE,
+}: {
+  workspaceId: string
+  query: string
+  page: number
+  pageSize?: number
+}): Promise<ArchivedContactPage> {
+  const { data, error } = await supabase.rpc('list_archived_contacts', {
+    p_workspace_id: workspaceId,
+    p_query: query.trim() || undefined,
+    p_limit: pageSize,
+    p_offset: Math.max(page - 1, 0) * pageSize,
+  })
+
+  if (error) throw error
+
+  // Same cast as searchWorkspaceContacts, for the same reason: the generated
+  // Returns type marks every column of a RETURNS TABLE non-nullable.
+  const items = data as unknown as Array<ArchivedContact>
+
+  return { items, totalCount: items[0]?.total_count ?? 0 }
+}
+
 export type ContactWritePayload = {
   name: string | null
   phone: string | null

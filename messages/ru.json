@@ -78,6 +78,7 @@
   "workspaces_icon_label": "Иконка",
   "workspaces_name_label": "Название",
   "workspaces_name_helper": "По нему вы найдёте пространство в списке",
+  "workspaces_name_max": "Название должно быть короче 60 символов",
   "workspaces_description_label": "Описание",
   "workspaces_description_helper": "Коротко — чем занимается эта команда",
   "workspaces_description_placeholder": "Описание рабочего пространства",
@@ -929,6 +930,43 @@
   "contact_detail_copied": "Скопировано",
   "contact_detail_copy_failed": "Не удалось скопировать",
   "contact_detail_incomplete": "Добавьте телефон или почту, чтобы команда могла связаться.",
+  "contact_archive_action": "Архивировать контакт",
+  "contact_archive_title": "Архивировать контакт?",
+  "contact_archive_description": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Контакт и {count} диалог пропадут из списков и поиска. Переписка сохранится, а контакт вернётся сам, если напишет снова.",
+        "countPlural=few": "Контакт и {count} диалога пропадут из списков и поиска. Переписка сохранится, а контакт вернётся сам, если напишет снова.",
+        "countPlural=many": "Контакт и {count} диалогов пропадут из списков и поиска. Переписка сохранится, а контакт вернётся сам, если напишет снова.",
+        "countPlural=*": "Контакт и {count} диалога пропадут из списков и поиска. Переписка сохранится, а контакт вернётся сам, если напишет снова."
+      }
+    }
+  ],
+  "contact_archive_description_none": "Контакт пропадёт из списков и поиска. Данные сохранятся, а контакт вернётся сам, если напишет снова.",
+  "contact_archive_confirm": "Архивировать",
+  "contact_archived_toast": "Контакт в архиве",
+  "contact_archive_error": "Не удалось архивировать контакт",
+  "contact_restore_action": "Вернуть из архива",
+  "contact_restored_toast": "Контакт возвращён из архива",
+  "contact_restore_error": "Не удалось вернуть контакт",
+  "contacts_filter_archived": "В архиве",
+  "contacts_archived_notice": "Архив виден только владельцам и администраторам.",
+  "contacts_archived_empty_title": "В архиве пусто",
+  "contacts_archived_empty_description": "Здесь появятся контакты, скрытые из списков. Вернуть их можно в любой момент.",
+  "contacts_archived_conversations": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} диалог",
+        "countPlural=few": "{count} диалога",
+        "countPlural=many": "{count} диалогов",
+        "countPlural=*": "{count} диалога"
+      }
+    }
+  ],
   "contact_form_create_title": "Новый контакт",
   "contact_form_edit_title": "Изменить контакт",
   "contact_form_name": "Имя",

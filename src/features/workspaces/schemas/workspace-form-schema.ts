@@ -25,7 +25,15 @@ export function createWorkspaceFormSchema() {
       .max(240, m.validation_description_max())
       .optional(),
     icon: z.enum(WORKSPACE_CURATED_ICONS, m.workspaces_icon_required()).optional(),
-    name: z.string().trim().min(2, m.validation_name_min()),
+    // Both bounds mirror the workspaces_name_length_check constraint
+    // (20260805090100), which reads btrim(name) exactly as this does. Without
+    // the maximum the form submitted a name the table refuses and surfaced a
+    // raw 23514 instead of a field error.
+    name: z
+      .string()
+      .trim()
+      .min(2, m.validation_name_min())
+      .max(60, m.workspaces_name_max()),
   })
 }
 

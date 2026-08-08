@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(25);
 
 -- =============================================================================
 -- Seed: a workspace with two members (A, B), an outsider (C) who is never a
@@ -319,6 +319,22 @@ delete from public.workspace_members
 where workspace_id = '10000000-0000-4000-8000-000000000201'
   and user_id = '10000000-0000-4000-8000-000000000104';
 
+-- Removal clears the assignment (trg_clear_assignments_for_removed_member).
+-- Before that trigger existed, assigned_to still pointed at D, and
+-- create_message_notifications routes an assigned conversation to the assignee
+-- alone: the notification went to somebody with no seat, and the members who
+-- were still there heard nothing. A thread going quiet is the worst outcome
+-- available here, so removal returns the conversation to unassigned.
+select is(
+  (
+    select assigned_to
+    from public.conversations
+    where id = '10000000-0000-4000-8000-000000000503'
+  ),
+  null,
+  'removing a member clears the conversations they were assigned'
+);
+
 insert into public.messages (
   id, workspace_id, conversation_id, direction, type, content, sender_id, status
 )
@@ -333,14 +349,18 @@ values (
   'delivered'
 );
 
-select is(
-  (
-    select count(*)::int
+select bag_eq(
+  $$
+    select recipient_id::text
     from public.message_notifications
     where message_id = '10000000-0000-4000-8000-000000000605'
-  ),
-  0,
-  'a removed assignee receives no notification, and nobody else is notified in their place'
+  $$,
+  $$
+    values
+      ('10000000-0000-4000-8000-000000000101'),
+      ('10000000-0000-4000-8000-000000000102')
+  $$,
+  'the thread falls back to the remaining roster instead of notifying nobody'
 );
 
 -- =============================================================================

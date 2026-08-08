@@ -37,6 +37,14 @@ describe('createWorkspaceFormSchema', () => {
     expect(schema.safeParse({ name: 'a' }).success).toBe(false)
   })
 
+  // The database gained the same 2-60 bound as a CHECK on workspaces.name, so a
+  // longer name is refused by the table. Catching it here keeps that refusal a
+  // field error rather than a raw constraint violation from the insert.
+  it('enforces the 60-character maximum the table checks', () => {
+    expect(schema.safeParse({ name: 'x'.repeat(60) }).success).toBe(true)
+    expect(schema.safeParse({ name: 'x'.repeat(61) }).success).toBe(false)
+  })
+
   it('ships defaults that satisfy its own schema', () => {
     const result = schema.safeParse({
       ...createWorkspaceDefaultValues,

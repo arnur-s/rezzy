@@ -4,8 +4,17 @@ select plan(2);
 
 -- Every targeted policy must retain an auth.uid() check, and every occurrence
 -- must be inside a scalar SELECT so Postgres can use an initPlan.
+--
+-- Only policies that read auth.uid() belong in this list. Two that used to be
+-- here no longer do: "Workspace members can update workspace messages" was
+-- replaced by "Workspace members can update outbound message status"
+-- (20260804090100), which authorises entirely through is_workspace_member and
+-- a direction check, and the channels write policies below reach auth.uid()
+-- only through their role test.
 with expected_policies(schema_name, table_name, policy_name) as (
   values
+    ('public', 'channels', 'Workspace admins can create channels'),
+    ('public', 'channels', 'Workspace admins can update channels'),
     (
       'public',
       'contact_channels',
@@ -28,11 +37,6 @@ with expected_policies(schema_name, table_name, policy_name) as (
       'public',
       'messages',
       'Workspace members can create outbound messages as themselves'
-    ),
-    (
-      'public',
-      'messages',
-      'Workspace members can update workspace messages'
     ),
     ('public', 'profiles', 'Users can insert own profile'),
     ('public', 'profiles', 'Users can update own profile'),

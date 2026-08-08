@@ -26,6 +26,10 @@ const defaults = {
   unowned: false,
   sort: DEFAULT_CONTACT_SORT,
   page: 1,
+  // The Archived view. In the URL like every other filter, so it survives a
+  // reload and a trip into a contact. `ContactsPage` ignores it for a member —
+  // the RPC behind it is owner/admin only — so a shared link cannot leak a view.
+  archived: false,
 }
 
 // `.catch()` keeps a bad value from throwing, but leaves the key REQUIRED in the
@@ -45,6 +49,7 @@ const contactsSearchSchema = z.object({
   unowned: withDefault(z.boolean(), defaults.unowned),
   sort: withDefault(z.enum(CONTACT_SORTS), defaults.sort),
   page: withDefault(z.number().int().min(1).max(10_000), defaults.page),
+  archived: withDefault(z.boolean(), defaults.archived),
 })
 
 export type ContactsSearch = z.infer<typeof contactsSearchSchema>
@@ -62,6 +67,7 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/contacts')(
           'unowned',
           'sort',
           'page',
+          'archived',
         ]),
         // …and defaults stay out of the URL, so a plain /contacts link is clean.
         stripSearchParams(defaults),

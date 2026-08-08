@@ -97,7 +97,7 @@ export type Database = {
       }
       contact_channels: {
         Row: {
-          channel_id: string | null
+          channel_id: string
           channel_type: string
           contact_id: string
           created_at: string
@@ -110,7 +110,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
-          channel_id?: string | null
+          channel_id: string
           channel_type: string
           contact_id: string
           created_at?: string
@@ -123,7 +123,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
-          channel_id?: string | null
+          channel_id?: string
           channel_type?: string
           contact_id?: string
           created_at?: string
@@ -259,6 +259,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           last_seen_at: string | null
@@ -274,6 +275,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           last_seen_at?: string | null
@@ -289,6 +291,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           last_seen_at?: string | null
@@ -370,6 +373,7 @@ export type Database = {
           channel_id: string
           contact_id: string
           created_at: string
+          deleted_at: string | null
           external_thread_id: string | null
           id: string
           last_inbound_at: string | null
@@ -385,6 +389,7 @@ export type Database = {
           channel_id: string
           contact_id: string
           created_at?: string
+          deleted_at?: string | null
           external_thread_id?: string | null
           id?: string
           last_inbound_at?: string | null
@@ -400,6 +405,7 @@ export type Database = {
           channel_id?: string
           contact_id?: string
           created_at?: string
+          deleted_at?: string | null
           external_thread_id?: string | null
           id?: string
           last_inbound_at?: string | null
@@ -506,11 +512,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "message_attachments_message_id_fkey"
-            columns: ["message_id"]
+            foreignKeyName: "message_attachments_message_workspace_fkey"
+            columns: ["workspace_id", "message_id"]
             isOneToOne: false
             referencedRelation: "messages"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
             foreignKeyName: "message_attachments_workspace_id_fkey"
@@ -551,18 +557,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "message_notifications_conversation_id_fkey"
-            columns: ["conversation_id"]
+            foreignKeyName: "message_notifications_conversation_workspace_fkey"
+            columns: ["workspace_id", "conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
-            foreignKeyName: "message_notifications_message_id_fkey"
-            columns: ["message_id"]
+            foreignKeyName: "message_notifications_message_workspace_fkey"
+            columns: ["workspace_id", "message_id"]
             isOneToOne: false
             referencedRelation: "messages"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
             foreignKeyName: "message_notifications_workspace_id_fkey"
@@ -624,25 +630,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "message_reactions_channel_id_fkey"
-            columns: ["channel_id"]
+            foreignKeyName: "message_reactions_channel_workspace_fkey"
+            columns: ["workspace_id", "channel_id"]
             isOneToOne: false
             referencedRelation: "channels"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
-            foreignKeyName: "message_reactions_conversation_id_fkey"
-            columns: ["conversation_id"]
+            foreignKeyName: "message_reactions_conversation_workspace_fkey"
+            columns: ["workspace_id", "conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
-            foreignKeyName: "message_reactions_message_id_fkey"
-            columns: ["message_id"]
+            foreignKeyName: "message_reactions_message_workspace_fkey"
+            columns: ["workspace_id", "message_id"]
             isOneToOne: false
             referencedRelation: "messages"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
             foreignKeyName: "message_reactions_workspace_id_fkey"
@@ -701,18 +707,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "message_status_events_message_id_fkey"
-            columns: ["message_id"]
+            foreignKeyName: "message_status_events_message_workspace_fkey"
+            columns: ["workspace_id", "message_id"]
             isOneToOne: false
             referencedRelation: "messages"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
-            foreignKeyName: "message_status_events_provider_event_id_fkey"
-            columns: ["provider_event_id"]
+            foreignKeyName: "message_status_events_provider_event_workspace_fkey"
+            columns: ["workspace_id", "provider_event_id"]
             isOneToOne: false
             referencedRelation: "provider_events"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
             foreignKeyName: "message_status_events_workspace_id_fkey"
@@ -792,18 +798,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
+            foreignKeyName: "messages_conversation_workspace_fkey"
+            columns: ["workspace_id", "conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
-            foreignKeyName: "messages_reply_to_message_id_fkey"
-            columns: ["reply_to_message_id"]
+            foreignKeyName: "messages_reply_to_workspace_fkey"
+            columns: ["workspace_id", "reply_to_message_id"]
             isOneToOne: false
             referencedRelation: "messages"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
             foreignKeyName: "messages_workspace_id_fkey"
@@ -943,18 +949,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "provider_events_channel_id_fkey"
-            columns: ["channel_id"]
+            foreignKeyName: "provider_events_channel_workspace_fkey"
+            columns: ["workspace_id", "channel_id"]
             isOneToOne: false
             referencedRelation: "channels"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
-            foreignKeyName: "provider_events_created_message_id_fkey"
-            columns: ["created_message_id"]
+            foreignKeyName: "provider_events_created_message_workspace_fkey"
+            columns: ["workspace_id", "created_message_id"]
             isOneToOne: false
             referencedRelation: "messages"
-            referencedColumns: ["id"]
+            referencedColumns: ["workspace_id", "id"]
           },
           {
             foreignKeyName: "provider_events_workspace_id_fkey"
@@ -1039,7 +1045,7 @@ export type Database = {
       workspaces: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           default_phone_region: string | null
           deleted_at: string | null
           description: string | null
@@ -1052,7 +1058,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           default_phone_region?: string | null
           deleted_at?: string | null
           description?: string | null
@@ -1065,7 +1071,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           default_phone_region?: string | null
           deleted_at?: string | null
           description?: string | null
@@ -1083,6 +1089,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_contact: { Args: { p_contact_id: string }; Returns: undefined }
       begin_instagram_oauth: {
         Args: { p_channel_id?: string; p_workspace_id: string }
         Returns: string
@@ -1157,6 +1164,34 @@ export type Database = {
         Args: { p_workspace_id: string }
         Returns: boolean
       }
+      list_archived_contacts: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_workspace_id: string
+        }
+        Returns: {
+          avatar_url: string
+          channel_types: string[]
+          conversation_count: number
+          created_at: string
+          deleted_at: string
+          display_name: string
+          email: string
+          id: string
+          last_seen_at: string
+          name: string
+          owner_id: string
+          phone: string
+          source: string
+          status: string
+          tags: string[]
+          total_count: number
+          updated_at: string
+          workspace_id: string
+        }[]
+      }
       list_contact_phones: {
         Args: { p_contact_id: string; p_workspace_id: string }
         Returns: {
@@ -1224,6 +1259,7 @@ export type Database = {
           conversation_id: string
         }[]
       }
+      restore_contact: { Args: { p_contact_id: string }; Returns: undefined }
       search_workspace_contacts: {
         Args: {
           p_include_unowned?: boolean

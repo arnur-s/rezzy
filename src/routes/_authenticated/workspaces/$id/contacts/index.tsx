@@ -34,6 +34,7 @@ function RouteComponent() {
       <ContactsPage
         workspaceId={workspaceId}
         params={params}
+        isArchived={search.archived}
         onParamsChange={(patch) =>
           void navigate({
             to: '/workspaces/$id/contacts',
@@ -48,6 +49,7 @@ function RouteComponent() {
               unowned: patch.includeUnowned ?? search.unowned,
               sort: patch.sort ?? search.sort,
               page: patch.page ?? search.page,
+              archived: patch.archived ?? search.archived,
             },
             // List state is navigation, not history: paging and filtering should
             // not stack up entries the back button has to walk through.

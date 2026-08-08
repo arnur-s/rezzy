@@ -8,6 +8,7 @@ import {
   workspaceQueryKeys,
 } from '@/features/workspaces/api/workspaces'
 import type { CreateWorkspaceFormValues } from '@/features/workspaces/schemas/workspace-form-schema'
+import { useAuth } from '@/providers/auth-provider'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
@@ -82,6 +83,32 @@ export function useWorkspaceMemberLookup(workspaceId: string) {
     }),
     [members],
   )
+}
+
+/**
+ * Whether the signed-in user may take owner/admin-only actions in a workspace.
+ *
+ * Derived from the roster query the callers already hold, so this costs no
+ * extra request. It gates affordances only — every action it hides is enforced
+ * again in the database, which is what actually decides.
+ *
+ * `isLoaded` matters for the same reason it does in `useWorkspaceMemberLookup`:
+ * before the roster arrives, "not an admin" and "not known yet" are the same
+ * `false`, and a caller that renders the difference would flash an admin
+ * control away from someone who has it.
+ */
+export function useIsWorkspaceAdmin(workspaceId: string) {
+  const { user } = useAuth()
+  const directory = useWorkspaceMemberDirectory(workspaceId)
+  const members = directory.data
+
+  return useMemo(() => {
+    const role = members?.find((member) => member.userId === user?.id)?.role
+    return {
+      isAdmin: role === 'owner' || role === 'admin',
+      isLoaded: members !== undefined,
+    }
+  }, [members, user?.id])
 }
 
 export function useCreateWorkspace({

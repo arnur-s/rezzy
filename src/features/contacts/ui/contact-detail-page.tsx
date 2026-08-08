@@ -4,25 +4,35 @@ import {
   isContactStatus,
 } from '@/entities/contact'
 import { ContactNotesSection } from '@/features/contact-notes'
-import { useWorkspaceMemberDirectory } from '@/features/workspaces/hooks/use-workspaces'
+import {
+  useIsWorkspaceAdmin,
+  useWorkspaceMemberDirectory,
+} from '@/features/workspaces/hooks/use-workspaces'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { formatDate } from '@/lib/format-date'
 import { CONTACT_DATE_FORMAT } from '../model/date-format'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Button } from '@astryxdesign/core/Button'
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { IconButton } from '@astryxdesign/core/IconButton'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { useToast } from '@astryxdesign/core/Toast'
-import { Link } from '@tanstack/react-router'
-import { ArrowLeftIcon, CopyIcon, UserRoundXIcon } from 'lucide-react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import {
+  ArrowLeftIcon,
+  CopyIcon,
+  MoreHorizontalIcon,
+  UserRoundXIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import {
   useContactConversations,
   useContactDetail,
   useContactPhones,
 } from '../hooks/use-contacts'
+import { ArchiveContactDialog } from './archive-contact-dialog'
 import { ContactFormDialog } from './contact-form-dialog'
 
 type Props = {
@@ -72,7 +82,10 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   const conversationsQuery = useContactConversations(workspaceId, contactId)
   const phonesQuery = useContactPhones(workspaceId, contactId)
   const membersQuery = useWorkspaceMemberDirectory(workspaceId)
+  const { isAdmin } = useIsWorkspaceAdmin(workspaceId)
+  const navigate = useNavigate()
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false)
 
   const backLink = (
     <Link
@@ -166,12 +179,37 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
       <header className="border-border flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4">
         {backLink}
-        <Button
-          label={m.contact_detail_edit()}
-          size="sm"
-          variant="secondary"
-          onClick={() => setIsEditOpen(true)}
-        />
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            label={m.contact_detail_edit()}
+            size="sm"
+            variant="secondary"
+            onClick={() => setIsEditOpen(true)}
+          />
+          {/* Archive goes in a menu rather than beside Edit: two full-width
+              labels ("Изменить контакт", "Архивировать контакт") do not fit a
+              360px header in Russian, and Edit is the action people came for.
+              Owner/admin only, matching public.archive_contact's own guard. */}
+          {isAdmin ? (
+            <DropdownMenu
+              hasChevron={false}
+              menuWidth={220}
+              button={{
+                label: m.contacts_row_actions(),
+                icon: <MoreHorizontalIcon className="size-4" />,
+                isIconOnly: true,
+                variant: 'ghost',
+                size: 'sm',
+              }}
+              items={[
+                {
+                  label: m.contact_archive_action(),
+                  onClick: () => setIsArchiveOpen(true),
+                },
+              ]}
+            />
+          ) : null}
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -365,6 +403,21 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
         contact={contact}
         isOpen={isEditOpen}
         onOpenChange={setIsEditOpen}
+      />
+
+      <ArchiveContactDialog
+        workspaceId={workspaceId}
+        contactId={isArchiveOpen ? contact.id : null}
+        onOpenChange={setIsArchiveOpen}
+        // This route cannot render an archived contact — the SELECT policy
+        // hides it, so staying here would show the not-found state. Back to the
+        // directory, where the Archived filter can find it again.
+        onArchived={() =>
+          void navigate({
+            to: '/workspaces/$id/contacts',
+            params: { id: workspaceId },
+          })
+        }
       />
     </div>
   )

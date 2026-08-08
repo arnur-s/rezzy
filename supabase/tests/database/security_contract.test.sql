@@ -1,15 +1,24 @@
 begin;
 
-select plan(35);
+select plan(55);
 
--- Caller-facing helpers must rely on RLS instead of bypassing it.
+-- Caller-facing helpers must rely on RLS instead of bypassing it, with one
+-- documented exception.
+--
+-- is_workspace_member holds definer rights because 20260805090300 made it read
+-- public.workspaces for the soft-delete check, and the workspaces SELECT policy
+-- calls is_workspace_member. As the invoker that recurses through the policy
+-- until the stack limit -- and only for members who did not create the
+-- workspace, because a creator short-circuits on the created_by branch first.
+-- The reads are pinned to (select auth.uid()) and to the workspace passed in,
+-- so the boolean it returns still describes nobody but the caller.
 select ok(
-  not (
+  (
     select p.prosecdef
     from pg_proc p
     where p.oid = to_regprocedure('public.is_workspace_member(uuid)')
   ),
-  'is_workspace_member runs as the invoker'
+  'is_workspace_member holds definer rights so its workspaces read cannot recurse'
 );
 
 select ok(
@@ -34,8 +43,10 @@ select ok(
 -- internal writes, but they must not inherit a caller-controlled search path.
 with required_definers(signature) as (
   values
-    ('public.auto_assign_conversation_on_outbound_message()'),
+    ('public.enforce_contact_note_integrity()'),
     ('public.ensure_contact_owner_is_workspace_member()'),
+    ('public.ensure_conversation_assignee_is_workspace_member()'),
+    ('public.ensure_message_sender_is_valid()'),
     ('public.get_channel_credentials(uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.handle_inbound_message_insert()'),
@@ -43,6 +54,9 @@ with required_definers(signature) as (
     ('public.handle_outbound_message_insert()'),
     ('public.list_workspace_members(uuid)'),
     ('public.rls_auto_enable()'),
+    -- default_phone_region is deliberately absent from authenticated's update
+    -- grant, so this RPC is the only writer and needs rights the caller lacks.
+    ('public.set_workspace_phone_region(uuid,text)'),
     ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
     ('public.upsert_channel_credentials(uuid,jsonb)')
@@ -61,11 +75,12 @@ select ok(
 
 with empty_search_path_functions(signature) as (
   values
-    ('public.auto_assign_conversation_on_outbound_message()'),
     ('public.get_channel_credentials(uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.enforce_contact_note_integrity()'),
     ('public.ensure_contact_owner_is_workspace_member()'),
+    ('public.ensure_conversation_assignee_is_workspace_member()'),
+    ('public.ensure_message_sender_is_valid()'),
     ('public.handle_inbound_message_insert()'),
     ('public.handle_new_workspace()'),
     ('public.handle_outbound_message_insert()'),
@@ -74,6 +89,7 @@ with empty_search_path_functions(signature) as (
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
     ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
+    ('public.set_workspace_phone_region(uuid,text)'),
     ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
     ('public.upsert_channel_credentials(uuid,jsonb)')
@@ -252,7 +268,6 @@ select ok(
 
 with internal_functions(signature) as (
   values
-    ('public.auto_assign_conversation_on_outbound_message()'),
     ('public.ensure_conversation_assignee_is_workspace_member()'),
     ('public.ensure_message_sender_is_valid()'),
     ('public.enforce_contact_note_integrity()'),
@@ -283,6 +298,111 @@ select ok(
       )
   ),
   'Data API roles cannot execute internal mutation or trigger helpers directly'
+);
+
+-- The browser writes messages and notes through column grants, not a
+-- table-wide privilege. Provenance stays with the provider round trip and with
+-- the trigger that stamps authorship; a member cannot reach either.
+with locked_message_columns(column_name) as (
+  values
+    ('direction'),
+    ('sender_id'),
+    ('conversation_id'),
+    ('workspace_id'),
+    ('content'),
+    ('external_id'),
+    ('external_reply_to_id'),
+    ('provider_timestamp'),
+    ('metadata'),
+    ('created_at'),
+    ('edited_at'),
+    ('deleted_at')
+)
+select ok(
+  not exists (
+    select 1
+    from locked_message_columns locked
+    where has_column_privilege(
+      'authenticated',
+      'public.messages'::regclass,
+      locked.column_name,
+      'update'
+    )
+  ),
+  'a member cannot update message direction, provenance or history columns'
+);
+
+select ok(
+  has_column_privilege(
+    'authenticated',
+    'public.messages'::regclass,
+    'status',
+    'update'
+  ),
+  'a member can still update message status, which is what send retry needs'
+);
+
+with locked_message_insert_columns(column_name) as (
+  values
+    ('external_id'),
+    ('external_reply_to_id'),
+    ('provider_timestamp'),
+    ('metadata'),
+    ('created_at'),
+    ('edited_at'),
+    ('deleted_at')
+)
+select ok(
+  not exists (
+    select 1
+    from locked_message_insert_columns locked
+    where has_column_privilege(
+      'authenticated',
+      'public.messages'::regclass,
+      locked.column_name,
+      'insert'
+    )
+  ),
+  'a member cannot manufacture provider identifiers or backdate a message'
+);
+
+with locked_note_columns(column_name) as (
+  values
+    ('id'),
+    ('workspace_id'),
+    ('contact_id'),
+    ('author_id'),
+    ('author_name'),
+    ('created_at')
+)
+select ok(
+  not exists (
+    select 1
+    from locked_note_columns locked
+    where has_column_privilege(
+      'authenticated',
+      'public.contact_notes'::regclass,
+      locked.column_name,
+      'update'
+    )
+  ),
+  'a member cannot rewrite contact note identity or authorship'
+);
+
+select ok(
+  has_column_privilege(
+    'authenticated',
+    'public.contact_notes'::regclass,
+    'body',
+    'update'
+  )
+  and has_column_privilege(
+    'authenticated',
+    'public.contact_notes'::regclass,
+    'is_pinned',
+    'update'
+  ),
+  'a member can still edit note bodies and pin collaboratively'
 );
 
 -- Anon has no access to CRM tables.
@@ -327,15 +447,81 @@ select ok(
 
 -- Authenticated grants are deliberately narrower than CRUD where the product
 -- has no supported delete/update workflow.
+-- channels: writes are column grants, so has_table_privilege is false for
+-- insert and update even though both are still possible on the granted
+-- columns. The provider-owned columns are the point of the exercise -- they
+-- belong to the connect functions and the webhooks, which run as service_role
+-- and keep their table-wide grant.
 select ok(
   has_table_privilege('authenticated', 'public.channels', 'select')
-  and has_table_privilege('authenticated', 'public.channels', 'insert')
-  and has_table_privilege('authenticated', 'public.channels', 'update')
+  and not has_table_privilege('authenticated', 'public.channels', 'insert')
+  and not has_table_privilege('authenticated', 'public.channels', 'update')
   and not has_table_privilege('authenticated', 'public.channels', 'delete')
   and not has_table_privilege('authenticated', 'public.channels', 'truncate')
   and not has_table_privilege('authenticated', 'public.channels', 'references')
-  and not has_table_privilege('authenticated', 'public.channels', 'trigger'),
+  and not has_table_privilege('authenticated', 'public.channels', 'trigger')
+  and has_any_column_privilege('authenticated', 'public.channels', 'insert')
+  and has_any_column_privilege('authenticated', 'public.channels', 'update'),
   'authenticated has the exact channels privileges'
+);
+
+with locked_channel_columns(column_name) as (
+  values
+    ('provider_account_id'),
+    ('api_version'),
+    ('last_webhook_at'),
+    ('last_outbound_at'),
+    ('last_error_at'),
+    ('last_error_code'),
+    ('id'),
+    ('workspace_id'),
+    ('type'),
+    ('created_at'),
+    ('updated_at')
+), write_privileges(privilege_name) as (
+  values ('insert'), ('update')
+)
+select ok(
+  not exists (
+    select 1
+    from locked_channel_columns locked
+    cross join write_privileges privilege
+    where has_column_privilege(
+      'authenticated',
+      'public.channels'::regclass,
+      locked.column_name,
+      privilege.privilege_name
+    )
+      -- workspace_id and type are insertable (a channel has to be created
+      -- somewhere, as something); neither may be rewritten afterwards.
+      and not (
+        privilege.privilege_name = 'insert'
+        and locked.column_name in ('workspace_id', 'type')
+      )
+  ),
+  'a member cannot write channel routing identity or webhook health columns'
+);
+
+select ok(
+  has_column_privilege(
+    'authenticated', 'public.channels'::regclass, 'name', 'update'
+  )
+  and has_column_privilege(
+    'authenticated', 'public.channels'::regclass, 'is_active', 'update'
+  ),
+  'an admin can still rename a channel and toggle it, which is what the UI does'
+);
+
+select ok(
+  to_regprocedure('public.auto_assign_conversation_on_outbound_message()')
+    is null
+  and not exists (
+    select 1
+    from pg_trigger
+    where tgrelid = 'public.messages'::regclass
+      and tgname = 'trg_auto_assign_conversation_on_outbound_message'
+  ),
+  'the duplicate outbound assign trigger and its function are gone'
 );
 
 select ok(
@@ -349,10 +535,14 @@ select ok(
   'authenticated has the exact contact_channels privileges'
 );
 
+-- Like channels and messages: insert and update are column grants since
+-- 20260804090100, so the table-level privilege is gone while the write is not.
 select ok(
   has_table_privilege('authenticated', 'public.contact_notes', 'select')
-  and has_table_privilege('authenticated', 'public.contact_notes', 'insert')
-  and has_table_privilege('authenticated', 'public.contact_notes', 'update')
+  and not has_table_privilege('authenticated', 'public.contact_notes', 'insert')
+  and not has_table_privilege('authenticated', 'public.contact_notes', 'update')
+  and has_any_column_privilege('authenticated', 'public.contact_notes', 'insert')
+  and has_any_column_privilege('authenticated', 'public.contact_notes', 'update')
   and has_table_privilege('authenticated', 'public.contact_notes', 'delete')
   and not has_table_privilege('authenticated', 'public.contact_notes', 'truncate')
   and not has_table_privilege('authenticated', 'public.contact_notes', 'references')
@@ -395,8 +585,10 @@ select ok(
 
 select ok(
   has_table_privilege('authenticated', 'public.messages', 'select')
-  and has_table_privilege('authenticated', 'public.messages', 'insert')
-  and has_table_privilege('authenticated', 'public.messages', 'update')
+  and not has_table_privilege('authenticated', 'public.messages', 'insert')
+  and not has_table_privilege('authenticated', 'public.messages', 'update')
+  and has_any_column_privilege('authenticated', 'public.messages', 'insert')
+  and has_any_column_privilege('authenticated', 'public.messages', 'update')
   and has_table_privilege('authenticated', 'public.messages', 'delete')
   and not has_table_privilege('authenticated', 'public.messages', 'truncate')
   and not has_table_privilege('authenticated', 'public.messages', 'references')
@@ -705,6 +897,345 @@ select ok(
     'execute'
   ),
   'new public functions are not granted to Data API roles by default'
+);
+
+-- ── Cross-workspace referential integrity ────────────────────────────────────
+--
+-- Every table below carries workspace_id next to a foreign key to a parent that
+-- carries its own. RLS reads the child's workspace_id, so a child whose parent
+-- lives elsewhere is served under the wrong workspace. The writers that can
+-- produce one -- the provider webhooks and the send-* functions -- run as
+-- service_role and bypass RLS entirely, so a policy cannot be the guard. These
+-- statements run at the default role, with RLS out of the way, precisely so a
+-- pass means the *constraint* refused the row.
+
+insert into auth.users (id, email, raw_user_meta_data)
+values
+  (
+    '00000000-0000-4000-8000-000000000902',
+    'security-contract-neighbour@example.com',
+    '{"full_name":"Neighbour workspace creator"}'::jsonb
+  ),
+  (
+    '00000000-0000-4000-8000-000000000907',
+    'security-contract-teammate@example.com',
+    '{"full_name":"Neighbour workspace teammate"}'::jsonb
+  );
+
+insert into public.workspaces (id, name, is_main, created_by)
+values (
+  '00000000-0000-4000-8000-000000000900',
+  'Security contract neighbour workspace',
+  false,
+  '00000000-0000-4000-8000-000000000902'
+);
+
+-- on_workspace_created seated the creator as owner; the teammate is what makes
+-- this a shared workspace rather than a personal one.
+insert into public.workspace_members (workspace_id, user_id, role, invited_by)
+values (
+  '00000000-0000-4000-8000-000000000900',
+  '00000000-0000-4000-8000-000000000907',
+  'member',
+  '00000000-0000-4000-8000-000000000902'
+);
+
+insert into public.channels (id, workspace_id, type, name)
+values (
+  '00000000-0000-4000-8000-000000000903',
+  '00000000-0000-4000-8000-000000000900',
+  'telegram',
+  'Neighbour channel'
+);
+
+insert into public.contacts (id, workspace_id, name, source)
+values (
+  '00000000-0000-4000-8000-000000000904',
+  '00000000-0000-4000-8000-000000000900',
+  'Neighbour contact',
+  'telegram'
+);
+
+insert into public.conversations (id, workspace_id, contact_id, channel_id)
+values (
+  '00000000-0000-4000-8000-000000000905',
+  '00000000-0000-4000-8000-000000000900',
+  '00000000-0000-4000-8000-000000000904',
+  '00000000-0000-4000-8000-000000000903'
+);
+
+insert into public.messages
+  (id, workspace_id, conversation_id, direction, type, content)
+values (
+  '00000000-0000-4000-8000-000000000906',
+  '00000000-0000-4000-8000-000000000900',
+  '00000000-0000-4000-8000-000000000905',
+  'inbound',
+  'text',
+  'Neighbour inbound message'
+);
+
+-- A message in the *first* workspace, so the reply-quote check below has a
+-- parent on the far side of the boundary.
+insert into public.messages
+  (id, workspace_id, conversation_id, direction, type, content)
+values (
+  '00000000-0000-4000-8000-000000000908',
+  (
+    select w.id
+    from public.workspaces w
+    where w.name = 'Security contract workspace updated'
+  ),
+  '00000000-0000-4000-8000-000000000501',
+  'inbound',
+  'text',
+  'Security contract inbound message'
+);
+
+select throws_ok(
+  $$
+    insert into public.messages
+      (workspace_id, conversation_id, direction, type, content)
+    values (
+      '00000000-0000-4000-8000-000000000900',
+      '00000000-0000-4000-8000-000000000501',
+      'inbound',
+      'text',
+      'smuggled in from the neighbouring workspace'
+    )
+  $$,
+  '23503',
+  null,
+  'a message cannot hang off a conversation in another workspace'
+);
+
+select throws_ok(
+  $$
+    insert into public.messages
+      (workspace_id, conversation_id, direction, type, content,
+       reply_to_message_id)
+    values (
+      '00000000-0000-4000-8000-000000000900',
+      '00000000-0000-4000-8000-000000000905',
+      'inbound',
+      'text',
+      'quoting across the boundary',
+      '00000000-0000-4000-8000-000000000908'
+    )
+  $$,
+  '23503',
+  null,
+  'a message cannot quote a message in another workspace'
+);
+
+select throws_ok(
+  $$
+    insert into public.message_attachments
+      (workspace_id, message_id, position, kind)
+    values (
+      (
+        select w.id
+        from public.workspaces w
+        where w.name = 'Security contract workspace updated'
+      ),
+      '00000000-0000-4000-8000-000000000906',
+      0,
+      'image'
+    )
+  $$,
+  '23503',
+  null,
+  'an attachment cannot hang off a message in another workspace'
+);
+
+select throws_ok(
+  $$
+    insert into public.message_status_events
+      (workspace_id, message_id, status)
+    values (
+      (
+        select w.id
+        from public.workspaces w
+        where w.name = 'Security contract workspace updated'
+      ),
+      '00000000-0000-4000-8000-000000000906',
+      'delivered'
+    )
+  $$,
+  '23503',
+  null,
+  'a status event cannot hang off a message in another workspace'
+);
+
+select throws_ok(
+  $$
+    insert into public.message_reactions
+      (workspace_id, channel_id, provider_message_id, reactor_external_id,
+       emoji, action)
+    values (
+      (
+        select w.id
+        from public.workspaces w
+        where w.name = 'Security contract workspace updated'
+      ),
+      '00000000-0000-4000-8000-000000000903',
+      '9001',
+      '555',
+      '👍',
+      'added'
+    )
+  $$,
+  '23503',
+  null,
+  'a reaction cannot hang off a channel in another workspace'
+);
+
+select throws_ok(
+  $$
+    insert into public.message_notifications
+      (workspace_id, conversation_id, message_id, recipient_id)
+    values (
+      (
+        select w.id
+        from public.workspaces w
+        where w.name = 'Security contract workspace updated'
+      ),
+      '00000000-0000-4000-8000-000000000905',
+      '00000000-0000-4000-8000-000000000906',
+      '00000000-0000-4000-8000-000000000101'
+    )
+  $$,
+  '23503',
+  null,
+  'a notification cannot hang off a message in another workspace'
+);
+
+select throws_ok(
+  $$
+    insert into public.provider_events
+      (workspace_id, channel_id, provider, event_type, event_fingerprint,
+       payload)
+    values (
+      (
+        select w.id
+        from public.workspaces w
+        where w.name = 'Security contract workspace updated'
+      ),
+      '00000000-0000-4000-8000-000000000903',
+      'telegram',
+      'message',
+      'fingerprint-cross-workspace',
+      '{}'::jsonb
+    )
+  $$,
+  '23503',
+  null,
+  'a provider event cannot hang off a channel in another workspace'
+);
+
+-- The constraints must not have become a blanket refusal: the same insert
+-- inside one workspace still lands.
+select lives_ok(
+  $$
+    insert into public.message_status_events
+      (workspace_id, message_id, status)
+    values (
+      '00000000-0000-4000-8000-000000000900',
+      '00000000-0000-4000-8000-000000000906',
+      'delivered'
+    )
+  $$,
+  'a child row whose workspace matches its parent is still accepted'
+);
+
+-- ── Deleting an account does not delete a shared workspace ───────────────────
+--
+-- workspaces.created_by cascaded from auth.users, so deleting one account
+-- deleted every workspace it had created and, through the cascades below
+-- workspaces, that team's channels, contacts, conversations and messages. The
+-- optional actor columns were NO ACTION, which blocked the delete instead.
+
+-- Align auth.uid() with the sender so ensure_message_sender_is_valid accepts the
+-- outbound seed; reset role above left the earlier claims in place.
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-000000000902","role":"authenticated"}';
+
+insert into public.messages
+  (id, workspace_id, conversation_id, direction, type, content, sender_id,
+   status)
+values (
+  '00000000-0000-4000-8000-000000000909',
+  '00000000-0000-4000-8000-000000000900',
+  '00000000-0000-4000-8000-000000000905',
+  'outbound',
+  'text',
+  'Sent before the account was deleted',
+  '00000000-0000-4000-8000-000000000902',
+  'sent'
+);
+
+update public.conversations
+set assigned_to = '00000000-0000-4000-8000-000000000902'
+where id = '00000000-0000-4000-8000-000000000905';
+
+update public.workspaces
+set updated_by = '00000000-0000-4000-8000-000000000902'
+where id = '00000000-0000-4000-8000-000000000900';
+
+select lives_ok(
+  $$
+    delete from auth.users
+    where id = '00000000-0000-4000-8000-000000000902'
+  $$,
+  'an account that created a workspace and sent messages can be deleted'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.workspaces w
+    where w.id = '00000000-0000-4000-8000-000000000900'
+      and w.created_by is null
+      and w.updated_by is null
+  )
+  and exists (
+    select 1
+    from public.conversations c
+    where c.id = '00000000-0000-4000-8000-000000000905'
+  ),
+  'the shared workspace and its conversations survive the creator''s deletion'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.messages m
+    where m.id = '00000000-0000-4000-8000-000000000909'
+      and m.sender_id is null
+  )
+  and exists (
+    select 1
+    from public.conversations c
+    where c.id = '00000000-0000-4000-8000-000000000905'
+      and c.assigned_to is null
+  ),
+  'the sent message and the assignment survive with the actor cleared'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.workspace_members wm
+    where wm.workspace_id = '00000000-0000-4000-8000-000000000900'
+      and wm.user_id = '00000000-0000-4000-8000-000000000907'
+      and wm.invited_by is null
+  )
+  and not exists (
+    select 1
+    from public.workspace_members wm
+    where wm.user_id = '00000000-0000-4000-8000-000000000902'
+  ),
+  'the remaining member keeps their seat and loses only the inviter reference'
 );
 
 select * from finish();
