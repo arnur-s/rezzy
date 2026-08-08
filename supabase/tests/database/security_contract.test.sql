@@ -47,7 +47,7 @@ with required_definers(signature) as (
     ('public.ensure_contact_owner_is_workspace_member()'),
     ('public.ensure_conversation_assignee_is_workspace_member()'),
     ('public.ensure_message_sender_is_valid()'),
-    ('public.get_channel_credentials(uuid)'),
+    ('public.get_channel_credentials(uuid,uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.handle_inbound_message_insert()'),
     ('public.handle_new_workspace()'),
@@ -59,7 +59,7 @@ with required_definers(signature) as (
     ('public.set_workspace_phone_region(uuid,text)'),
     ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
-    ('public.upsert_channel_credentials(uuid,jsonb)')
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
 )
 select ok(
   not exists (
@@ -75,7 +75,7 @@ select ok(
 
 with empty_search_path_functions(signature) as (
   values
-    ('public.get_channel_credentials(uuid)'),
+    ('public.get_channel_credentials(uuid,uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.enforce_contact_note_integrity()'),
     ('public.ensure_contact_owner_is_workspace_member()'),
@@ -92,7 +92,7 @@ with empty_search_path_functions(signature) as (
     ('public.set_workspace_phone_region(uuid,text)'),
     ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
-    ('public.upsert_channel_credentials(uuid,jsonb)')
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
 )
 select ok(
   not exists (
@@ -199,9 +199,9 @@ select ok(
 
 with credential_rpcs(signature) as (
   values
-    ('public.get_channel_credentials(uuid)'),
+    ('public.get_channel_credentials(uuid,uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
-    ('public.upsert_channel_credentials(uuid,jsonb)')
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
 )
 select ok(
   not exists (
@@ -222,9 +222,9 @@ select ok(
 
 with credential_rpcs(signature) as (
   values
-    ('public.get_channel_credentials(uuid)'),
+    ('public.get_channel_credentials(uuid,uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
-    ('public.upsert_channel_credentials(uuid,jsonb)')
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
 )
 select ok(
   not exists (
@@ -245,9 +245,9 @@ select ok(
 
 with credential_rpcs(signature) as (
   values
-    ('public.get_channel_credentials(uuid)'),
+    ('public.get_channel_credentials(uuid,uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
-    ('public.upsert_channel_credentials(uuid,jsonb)')
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
 )
 select ok(
   not exists (

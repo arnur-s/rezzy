@@ -206,6 +206,7 @@ export default {
           bot_token: rawToken,
           webhook_secret: webhookSecret,
         },
+        p_workspace_id: workspaceId,
       },
     )
 

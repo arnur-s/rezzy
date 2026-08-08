@@ -248,7 +248,7 @@ export default {
 
       const { data: credentials, error: credentialsError } = await admin.rpc(
         'get_channel_credentials',
-        { p_channel_id: reconnectChannelId },
+        { p_channel_id: reconnectChannelId, p_workspace_id: workspaceId },
       )
 
       if (credentialsError) {
@@ -640,6 +640,7 @@ export default {
           ...(!isManual || previousPin ? { pin } : {}),
           ...(tokenExpiresAt ? { token_expires_at: tokenExpiresAt } : {}),
         },
+        p_workspace_id: workspaceId,
       },
     )
 

@@ -19,7 +19,7 @@ select ok(
   to_regprocedure('public.begin_instagram_oauth(uuid,uuid)') is not null
   and to_regprocedure('public.consume_oauth_state(text,text)') is not null
   and to_regprocedure('public.resolve_instagram_conversation(uuid,text,text,text,text)') is not null
-  and to_regprocedure('public.finalize_instagram_channel_connection(uuid,text,text,jsonb)') is not null
+  and to_regprocedure('public.finalize_instagram_channel_connection(uuid,text,text,jsonb,uuid)') is not null
   and to_regprocedure('public.mark_outbound_message_read(uuid,uuid,text)') is not null,
   'Instagram RPCs exist'
 );
@@ -40,7 +40,7 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.resolve_instagram_conversation(uuid,text,text,text,text)', 'execute')
   and not has_function_privilege('authenticated', 'public.resolve_instagram_conversation(uuid,text,text,text,text)', 'execute')
-  and has_function_privilege('service_role', 'public.finalize_instagram_channel_connection(uuid,text,text,jsonb)', 'execute')
+  and has_function_privilege('service_role', 'public.finalize_instagram_channel_connection(uuid,text,text,jsonb,uuid)', 'execute')
   and has_function_privilege('service_role', 'public.mark_outbound_message_read(uuid,uuid,text)', 'execute'),
   'ingestion / finalization RPCs are service_role-only'
 );

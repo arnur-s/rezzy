@@ -1125,10 +1125,14 @@ export type Database = {
           p_credentials: Json
           p_name: string
           p_provider_account_id: string
+          p_workspace_id?: string
         }
         Returns: undefined
       }
-      get_channel_credentials: { Args: { p_channel_id: string }; Returns: Json }
+      get_channel_credentials: {
+        Args: { p_channel_id: string; p_workspace_id?: string }
+        Returns: Json
+      }
       get_unread_counts_for_workspaces: {
         Args: { p_workspace_ids: string[] }
         Returns: {
@@ -1309,7 +1313,11 @@ export type Database = {
         Returns: undefined
       }
       upsert_channel_credentials: {
-        Args: { p_channel_id: string; p_credentials: Json }
+        Args: {
+          p_channel_id: string
+          p_credentials: Json
+          p_workspace_id?: string
+        }
         Returns: undefined
       }
     }

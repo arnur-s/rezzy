@@ -445,6 +445,7 @@ export default {
           p_provider_account_id: providerAccountId,
           p_name: displayName ?? null,
           p_credentials: credentials,
+          p_workspace_id: workspaceId,
         },
       )
       if (finalizeError) {
@@ -486,7 +487,11 @@ export default {
       channelId = typeof inserted.id === 'string' ? inserted.id : ''
       const { error: secretError } = await admin.rpc(
         'upsert_channel_credentials',
-        { p_channel_id: channelId, p_credentials: credentials },
+        {
+          p_channel_id: channelId,
+          p_credentials: credentials,
+          p_workspace_id: workspaceId,
+        },
       )
       if (secretError) {
         console.error('Failed to store Instagram credentials:', secretError)
