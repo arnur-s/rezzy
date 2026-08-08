@@ -17,6 +17,7 @@ const CONTACT_DETAIL_SELECT = `
   last_seen_at,
   created_at,
   updated_at,
+  deleted_at,
   contact_channels(id, channel_type, external_id, external_name, channel_id)
 ` as const
 

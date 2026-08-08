@@ -21,6 +21,7 @@ function row(
     last_inbound_at: null,
     created_at: '2020-01-01',
     updated_at: '2020-01-01',
+    deleted_at: null,
     channel: { id: 'c', type: 'telegram', name: null },
     contact: {
       id: 'p',

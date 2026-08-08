@@ -107,6 +107,7 @@ function contactDetail(overrides: Partial<ContactDetail> = {}): ContactDetail {
     last_seen_at: null,
     created_at: '2026-08-03T10:00:00Z',
     updated_at: '2026-08-03T10:00:00Z',
+    deleted_at: null,
     contact_channels: [],
     ...overrides,
   }

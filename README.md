@@ -1,15 +1,25 @@
 # Rezzy
 
-Rezzy is a React single-page application for multi-workspace customer and
-conversation management. The current product centers on a unified inbox with
-Telegram and WhatsApp channels.
+Rezzy is an **inbox-first, AI-powered customer engagement platform** for
+customer-facing teams.
 
-The frontend uses React 19, TypeScript, Vite, TanStack Router, TanStack Query,
-HeroUI v3, Tailwind CSS v4, React Hook Form, Zod, Supabase, and Paraglide/Inlang.
-English and Russian catalogs live in `messages/`.
+The current implementation centers on a multi-workspace shared inbox, lightweight
+CRM, and Telegram/WhatsApp channel integrations. The product direction expands
+that foundation into public social engagement, social publishing, AI assistance,
+and carefully scoped automation. Planned capabilities are not assumed to be
+implemented; the repository remains the source of truth for current behavior.
 
-Current status, known blockers, and the prioritized handoff are tracked in
-[`docs/future-work.md`](docs/future-work.md).
+The frontend uses React, TypeScript, Vite, TanStack Router, TanStack Query,
+Astryx (`@astryxdesign/core`), Tailwind CSS v4, React Hook Form, Zod, Supabase,
+and Paraglide/Inlang. English and Russian catalogs live in `messages/`.
+
+Repository documentation:
+
+- [`PRODUCT.md`](PRODUCT.md) — product definition, direction, and boundaries
+- [`PRICING.md`](PRICING.md) — working pricing and AI-metering strategy
+- [`DESIGN.md`](DESIGN.md) — visual-system and interaction decisions
+- [`AGENTS.md`](AGENTS.md) — canonical repository instructions for coding agents
+- [`CLAUDE.md`](CLAUDE.md) — Claude-specific operating notes
 
 ## Prerequisites
 
@@ -223,25 +233,22 @@ and [Edge Function secrets](https://supabase.com/docs/guides/functions/secrets).
 
 ## Validation
 
-Run the standard frontend validation before finishing a change:
-
-```bash
-pnpm verify
-```
-
-This runs type checking, linting, unit/component tests, and the production
-build. Database changes also require a running local stack and `pnpm test:db`.
-GitHub CI runs both validation paths on pushes to `main` and on pull requests.
-Useful individual commands are:
+Use the smallest relevant validation set for the change, with `pnpm typecheck`
+as the minimum expected check for code changes.
 
 ```bash
 pnpm typecheck
 pnpm lint
 pnpm test
-pnpm test:watch
+pnpm test:e2e
 pnpm build
-pnpm check
+pnpm test:db
 ```
+
+Database changes require a running local Supabase stack and `pnpm test:db`.
+
+`pnpm verify` chains typecheck, lint, test, and build in that order and stops at
+the first failure. See `AGENTS.md` for the current validation rules.
 
 ## Production build
 
@@ -257,18 +264,24 @@ configured for that environment before building or registering integrations.
 
 ## Project structure
 
-- `src/features/`: feature-owned API calls, components, hooks, schemas, types,
-  and utilities
-- `src/components/`: shared reusable UI only
+Rezzy follows a pragmatic Feature-Sliced Design direction:
+
+`routes -> widgets -> features -> entities -> shared infrastructure`
+
 - `src/routes/`: thin TanStack Router file-based routes
-- `src/api/`: shared Supabase setup and generated database types
-- `src/providers/`: application-wide providers
-- `src/utils/`: pure shared utilities
+- `src/widgets/`: large page/shell composition units
+- `src/features/`: user-facing capabilities and business workflows
+- `src/entities/`: reusable domain models and domain UI
+- `src/components/`: generic reusable UI without feature-specific business logic
+- `src/hooks/`, `src/lib/`, `src/utils/`, `src/providers/`: shared application infrastructure
+- `src/api/`: generated Supabase database types and truly global API setup/types
 - `supabase/migrations/`: versioned database changes
-- `supabase/functions/`: Deno Edge Functions for channel connections, sending,
-  and webhooks
+- `supabase/functions/`: trusted Deno Edge Functions for provider connections,
+  sending, webhooks, and other server-side integration work
 - `supabase/tests/database/`: pgTAP database contract tests
 
-Keep feature business logic inside `src/features/`, use TanStack Query for
-server state, use React Hook Form with Zod for forms, prefer HeroUI v3 before
-custom UI, and route every user-facing string through Paraglide/Inlang.
+Keep route files thin, keep business logic in the owning feature/domain, use
+TanStack Query for server state, React Hook Form with Zod for forms, Astryx
+components when they fit the interaction, and route user-facing strings through
+Paraglide/Inlang. `AGENTS.md` is authoritative when this summary and the current
+repository diverge.

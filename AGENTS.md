@@ -19,20 +19,42 @@ When writing a task prompt for another coding agent:
 
 ## Product
 
-The repository contains **Rezzy**, a production-oriented, multi-workspace CRM and shared customer inbox for sales and account-management teams.
+The repository contains **Rezzy**, an inbox-first, AI-powered customer engagement platform for customer-facing teams. The current product centers on a multi-workspace shared inbox and lightweight CRM; the product direction expands that foundation into public social engagement, publishing, AI assistance, and carefully scoped automation.
+
+The inbox remains the operational center and the primary product wedge. New capabilities should strengthen the same customer-engagement loop rather than turn Rezzy into a generic CRM, a standalone AI wrapper, or a broad social-media suite.
 
 Build real workflows, not tutorial CRUD screens. Prioritize:
 
 - clear information hierarchy
-- fast inbox and contact workflows
+- fast inbox, engagement, and contact workflows
 - realistic business states and failure handling
 - responsive and accessible interactions
 - polished loading, empty, error, optimistic, and disabled states
+- AI that reduces work inside existing workflows
+- explicit human control for higher-risk automated actions
 - maintainable architecture over shortcuts
 
-Avoid placeholder content, generic admin-dashboard patterns, decorative complexity, and speculative abstractions.
+Avoid placeholder content, generic admin-dashboard patterns, decorative complexity, speculative abstractions, and feature work that exists only to imitate a larger CRM or social suite.
 
-For product decisions, consult `PRODUCT.md`. For visual-system work, consult `DESIGN.md` and the existing implementation.
+### Product direction is not implementation state
+
+`PRODUCT.md` describes both the current product and its intended direction. The repository remains the source of truth for what is implemented today.
+
+Do not create planned modules, tables, routes, AI infrastructure, publishing systems, automation engines, or provider abstractions merely because the product vision mentions them. Add architecture only when a concrete task requires it, and preserve existing working boundaries until then.
+
+When a task introduces a new product domain, use these conceptual boundaries where useful:
+
+- **Inbox** — private conversations, triage, assignment, replies, and conversation state
+- **Engage** — comments, mentions, reviews, and other public customer interactions
+- **Publish** — content drafts, scheduling, publishing, and content performance
+- **Contacts / CRM** — shared customer context across interaction types
+- **AI** — cross-cutting assistance, classification, generation, and grounded reasoning
+- **Automation** — event-driven actions built from concrete Rezzy workflows
+- **Integrations** — provider-specific ingress/egress and credential handling at system boundaries
+
+These are product/domain boundaries, not a required folder tree or microservice map. Prefer the smallest implementation that fits the existing Feature-Sliced structure.
+
+For product decisions, consult `PRODUCT.md`. For pricing and AI metering decisions, consult `PRICING.md` when present. For visual-system work, consult `DESIGN.md` and the existing implementation.
 
 ## Stack and Tooling
 
@@ -71,6 +93,35 @@ A lower layer must not import a higher layer:
 - shared infrastructure must not depend on product features
 
 Do not reorganize files merely to make the structure look more theoretical. Preserve established boundaries unless the task requires an architectural change.
+
+### Cross-domain integration principles
+
+When Rezzy expands beyond private messages, keep external-provider details at the boundary rather than leaking provider payloads through product features.
+
+- Verify webhook signatures and credentials at trusted server boundaries.
+- Acknowledge provider webhooks quickly; persist/deduplicate before expensive downstream work when the provider contract requires fast delivery.
+- Keep raw provider payloads available when useful for debugging/auditing, but normalize events before shared business logic consumes them.
+- Prefer explicit internal event types such as message received, comment created, mention created, or publish completed over branching throughout the application on raw provider payload shapes.
+- Preserve provider external IDs for idempotency and reconciliation.
+- Expect duplicate delivery, retries, partial payloads, out-of-order events, token expiry, and provider API failure.
+- Do not force comments, mentions, posts, and private messages into one database model solely because they share UI concepts. Reuse shared abstractions only where their invariants genuinely match.
+- Keep workspace scoping on every normalized event and downstream record.
+
+Do not add an event bus, queue, or generic adapter framework speculatively. Introduce the minimum reliable mechanism required by the real integration being built.
+
+### AI and automation architecture
+
+Treat AI as a cross-cutting capability rather than a feature that owns unrelated domain state.
+
+- Keep model/provider calls behind a trusted server boundary; never expose provider secrets to the browser.
+- Separate customer-visible AI outcomes from internal model calls. One generated reply may require classification, retrieval, and generation internally but is still one user-visible operation.
+- Record enough internal usage data to understand cost and reliability: workspace, feature/operation, model/provider, token or equivalent usage when available, monetary cost when available, latency, outcome, and whether the operation is billable.
+- Do not expose raw token accounting as the primary customer pricing abstraction. Product billing should follow the rules in `PRICING.md`.
+- Route simple tasks to appropriately inexpensive models when quality permits; model selection is an implementation detail, not a user-facing contract unless a product requirement explicitly says otherwise.
+- Ground generated factual replies in authoritative workspace/product knowledge when the task depends on business facts.
+- Make autonomous actions auditable. Store what triggered the action, what policy/rule allowed it, what AI output was used, and the resulting external action when the feature requires unattended execution.
+- Default high-impact or ambiguous actions to human review unless the product requirement explicitly defines an approved automation boundary.
+- Preserve deterministic business rules outside the model when ordinary code is sufficient. Do not ask an LLM to enforce permissions, billing limits, workspace isolation, webhook verification, or other security invariants.
 
 ### Folder responsibilities
 
@@ -188,8 +239,8 @@ product defect, not a localization chore.
   through `useLocalizedSchema`.
 - **Never hardcode user-facing English**, including in validation messages and
   API-layer fallbacks. Key parity, undefined keys, and placeholder mismatches
-  between locales matter just as much — all four used to be enforced by
-  `pnpm i18n:audit`, which no longer exists, so check them by reading.
+  between locales matter just as much, and nothing checks any of the four
+  automatically — read the two catalogues against each other.
 - **Astryx is English-only.** It ships no Russian catalogue, and a few of its
   strings (`isRequired` / `isOptional` on `Field`) are hardcoded past its own
   translator. Prefer the app's catalogue: see `src/lib/field-label.ts`.
@@ -198,10 +249,8 @@ product defect, not a localization chore.
   a budget in `src/lib/message-lengths.test.ts` for any string inside a
   fixed-width control.
 
-The only i18n command left is `pnpm i18n:compile`, which `pnpm typecheck` runs
-for you. The audit and the screenshot sweep (`pnpm i18n:audit`,
-`pnpm i18n:shots`) were removed with `scripts/`; nothing enforces key parity or
-Russian layout automatically now.
+The only i18n command is `pnpm i18n:compile`, which `pnpm typecheck` runs for
+you. Nothing enforces key parity or Russian layout automatically.
 
 jsdom has no layout, so overflow and truncation are invisible to the unit
 suite. For copy or layout changes, view the affected route in Russian at phone
@@ -241,11 +290,10 @@ selector from the installed `astryx.css` in a generator rather than transcribing
 it.
 
 `src/generated/astryx-font-floor.css` is the one file that does this, for the
-12px readable floor. Its generator (`scripts/font-floor-build.mjs`) and its
-drift check were removed along with the rest of `scripts/`, so the file is
-effectively pinned to `@astryxdesign/core@0.1.8`. Re-derive the hashes from the
-installed package before upgrading, or those rules stop matching without
-failing anything.
+12px readable floor. It has no generator and no drift check, so it is
+effectively pinned to `@astryxdesign/core@0.1.8` — the installed version.
+Re-derive the hashes from the installed package by hand before upgrading, or
+those rules stop matching without failing anything.
 
 ## Test Account
 
@@ -273,18 +321,14 @@ pnpm build
 pnpm test:db
 ```
 
-**The browser-check suite is gone.** `scripts/` was removed, and with it
-`pnpm smoke`, `check:password-reset`, `check:overflow`, `check:mobile-nav`,
-`i18n:audit`, `i18n:shots`, `theme:build`, `check:contrast`, `check:font-size`,
-`check:shell-elevation`, `astryx:font-floor`, and `check:font-floor`. Do not
-cite them, and do not assume the invariants they used to guard are still
-enforced — several are load-bearing and are now held by review alone (see the
-"Known drift" list in `DESIGN.md`).
+`pnpm verify` chains typecheck, lint, test, and build in that order and stops at
+the first failure.
 
-`pnpm verify` is currently broken for the same reason: it chains
-`pnpm i18n:audit`, which no longer exists, so the whole script fails before
-running lint, test, or build. Until that is resolved, run the individual
-commands above rather than `pnpm verify`.
+`package.json` is the complete list of what can be run. There is no browser-check
+suite: contrast, font size, overflow, mobile navigation, shell elevation, and
+i18n key parity have no automated check at all, so do not assume those invariants
+are enforced. Several are load-bearing and are now held by review alone (see the
+"Known drift" list in `DESIGN.md`).
 
 jsdom has no layout and does not run the real bundle, so overflow, truncation,
 and anything that depends on computed styles remain invisible to the unit

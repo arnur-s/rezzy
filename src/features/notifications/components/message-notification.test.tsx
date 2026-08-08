@@ -49,6 +49,7 @@ function buildDetails(
       last_inbound_at: null,
       created_at: now,
       updated_at: now,
+      deleted_at: null,
       channel: { id: 'ch1', type: 'telegram', name: 'Support' },
       contact: {
         id: 'ct1',

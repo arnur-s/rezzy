@@ -15,6 +15,7 @@ const CONTACT_SELECT = `
   tags,
   created_at,
   updated_at,
+  deleted_at,
   contact_channels(id, channel_type, external_name)
 ` as const
 

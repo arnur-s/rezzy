@@ -1,6 +1,6 @@
 ---
 name: Rezzy
-description: Multi-workspace customer inbox and CRM for sales and account-management teams
+description: Inbox-first AI-powered customer engagement platform for customer-facing teams
 colors:
   # The neutral theme is the source of truth: src/themes/neutral/neutralTheme.ts,
   # applied at runtime by `<Theme theme={neutralTheme}>` in src/main.tsx. If this
@@ -231,11 +231,10 @@ document deliberately disagree, with this document describing the target.
 5. **`border-border/60` is close to invisible in light mode.** The `/60` modifier
    was tuned for an alpha border token; the current one is an opaque `#ebebeb`.
    See The Hairline Is Already Thin Rule.
-6. **Every verification command this document used to cite is gone.**
-   `scripts/` no longer exists, so `pnpm theme:build`, `check:contrast`,
-   `check:font-size`, `check:shell-elevation`, and `astryx:font-floor` are not
-   runnable. Contrast figures below are computed from the token values rather
-   than measured in a browser, and are marked as such.
+6. **No command verifies anything in this document.** Contrast, font size, and
+   shell elevation have no automated check, so every rule here is held by
+   review alone. Contrast figures below are computed from the token values
+   rather than measured in a browser, and are marked as such.
 
 ## Colors
 
@@ -428,10 +427,9 @@ initials from the avatar's pixel size (`size * 0.4`) and writes an inline
 `--x-fontSize`; `Table`'s sort indicator carries a literal `font-size: 10px`.
 Both are raised with `max()`, so larger avatars keep their proportional initials.
 The selectors are StyleX atomic hashes read out of the installed package rather
-than written by hand — **but the generator that produced that file
-(`scripts/font-floor-build.mjs`) no longer exists**, so the file cannot currently
-be regenerated after an `@astryxdesign/core` upgrade. Treat it as pinned to
-0.1.8.
+than written by hand — **but there is no generator**, so the file cannot be
+regenerated after an `@astryxdesign/core` upgrade without re-deriving the hashes
+by hand. Treat it as pinned to 0.1.8.
 
 **The Two-Tier Rule.** The interface has two tiers: **body at `text-base`
 (14px)** and **metadata at the 12px floor**. `text-lg` and above are theme
@@ -559,9 +557,8 @@ invisible to every cheap check. A theme that collapses the two still renders,
 still typechecks, still passes the unit suite; the app just quietly becomes one
 flat sheet with unexplained gaps in it. An earlier theme did collapse them and
 the shell was rebuilt around hairlines as a result, so this is a live failure
-mode rather than a hypothetical one. It used to be asserted against the built
-page by `pnpm check:shell-elevation`; **that check no longer exists**, so the
-constraint is now enforced by reading alone.
+mode rather than a hypothetical one. **No check asserts it**, so the constraint
+is enforced by reading alone.
 
 **`bg-surface` is the only background token that behaves in both modes.** The
 others collapse in dark:
@@ -872,4 +869,4 @@ moving its neighbors. It is disabled under `prefers-reduced-motion`.
 - **Don't** add a decorative background. `src/styles.css` has no pattern, gradient, or texture, and the auth screens do not want one.
 - **Don't** add a top bar. Identity, navigation, notifications, and the account live in the rail; color mode and language live in Settings under Appearance; every page owns its own title. Breadcrumbs restating the nav selection two rows away are duplication, not wayfinding.
 - **Don't** redirect on a failed query. Render the error with a retry — a failed check is not a known-empty result.
-- **Don't** cite `pnpm theme:build`, `check:contrast`, `check:font-size`, `check:shell-elevation`, or `astryx:font-floor`. `scripts/` was removed; none of them exist.
+- **Don't** cite a verification command for anything in this document. None exists; `package.json` is the complete list of what can be run.

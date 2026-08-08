@@ -36,6 +36,7 @@ function conversation(
     last_inbound_at: null,
     created_at: '2026-05-01T10:00:00Z',
     updated_at: '2026-05-01T10:00:00Z',
+    deleted_at: null,
     channel: { id: 'channel-1', type: 'telegram', name: null },
     contact: {
       id: 'contact-1',
