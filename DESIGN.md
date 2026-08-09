@@ -532,6 +532,17 @@ reflow:
 - **Tablet (below `lg`):** list plus thread. The contact panel becomes a right-side overlay sheet (`w-80 max-w-[85vw]`) over a `bg-black/50` scrim, so the thread never collapses to an unusable width. The sheet is itself an `AppPane` inset by the same gutter the docked panes use, so it reads as the same kind of object arriving from the edge rather than as a full-height slab.
 - **`lg` and up:** all three panes as columns, contact panel fixed at 320px.
 
+**Toast placement.** Bottom-trailing corner at `lg` and up, top center below it.
+Astryx only offers four corners (`LayerProvider`'s `toast.position`), so the
+centered variant is a `@layer components` override in `src/styles.css` rather
+than a prop. The corner is wrong on a phone or a tablet because that is exactly
+where the composer's send button, the scroll-to-bottom button, the iOS browser
+chrome, and the on-screen keyboard all live; the top edge holds nothing but the
+generated AppShell strip. The override reaches the viewport by the same
+`[popover="manual"][role="region"]` selector `AppLayerProvider` uses — the two
+have to move together — and wins on layer order, not specificity, since StyleX
+inflates its own rules past anything hand-written.
+
 ### Named Rules
 
 **The Measure Rule.** The transcript, its skeleton, and the composer share one

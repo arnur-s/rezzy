@@ -6,6 +6,9 @@ import { useEffect } from 'react'
  * Astryx's `ToastViewport` is the only element it renders as a manual popover
  * with `role="region"`: `Carousel` uses the role without a popover, and the
  * manual popovers `useLayer` creates carry no role.
+ *
+ * `src/styles.css` matches the same element to move the toast stack to top
+ * center below `lg`. Change one and change the other.
  */
 const TOAST_VIEWPORT_SELECTOR = '[popover="manual"][role="region"]'
 
