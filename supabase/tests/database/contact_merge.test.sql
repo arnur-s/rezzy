@@ -1,15 +1,16 @@
 begin;
 
-select plan(10);
+select plan(32);
 
 -- Task 1 covers the columns, the merged-is-archived invariant, the restore
 -- refusal, the unarchive-on-inbound-message guard, and what
--- list_archived_contacts reports for a merged row. Tasks 2 and 3 append to
--- this plan count.
+-- list_archived_contacts reports for a merged row. Task 2 appends the
+-- merge_contacts assertions below. Task 3 appends to this plan count in turn.
 --
 -- Fixture numbering, 80000000 range, unused elsewhere:
---   users …01{01,02}  workspace …0201  channel …0301
---   contacts …04{01..04}  conversations …05{01,02}  messages …0601
+--   users …01{01,02}  workspace …0201  channels …03{01,02}
+--   contacts …04{01..04}  conversations …05{01..04}  messages …0601
+--   channel identity …0701  note …0801
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -145,6 +146,314 @@ select is(
   ) where id = '80000000-0000-4000-8000-000000000402'),
   'Иван Петров',
   'and the survivor''s display name, computed the same way search_workspace_contacts computes it'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Task 2: merge_contacts
+-- ═══════════════════════════════════════════════════════════════════════════
+
+reset role;
+
+-- Undo the Task 1 fixture merge so …401 and …402 are two live contacts again,
+-- and repoint conversation …501 back onto …401. Task 1's inbound-message test
+-- created …501 under …402 (the loser here) after stamping the merge, to prove
+-- an inbound message on it does not lose the write, so it is left pointing at
+-- the wrong contact for this fixture: …501 is meant to be the survivor's own
+-- telegram thread. The message already sitting on it (…601) needs no changes
+-- -- its content plays no part in any assertion below.
+update public.contacts
+set deleted_at = null, merged_into_id = null, merged_at = null, merged_by = null
+where id = '80000000-0000-4000-8000-000000000402';
+
+update public.conversations
+set contact_id = '80000000-0000-4000-8000-000000000401'
+where id = '80000000-0000-4000-8000-000000000501';
+
+-- Channel …301 (telegram) and conversation …501 (now repointed to …401)
+-- already exist from Task 1's fixture; only the whatsapp channel is new here.
+insert into public.channels (id, workspace_id, type, name, is_active)
+values
+  ('80000000-0000-4000-8000-000000000302',
+   '80000000-0000-4000-8000-000000000201', 'whatsapp', 'Merge WA', true);
+
+-- …402 the loser: a whatsapp thread, a shared number spelled differently, a
+-- number the survivor does not have, a channel identity, and a note.
+insert into public.conversations (id, workspace_id, contact_id, channel_id)
+values ('80000000-0000-4000-8000-000000000502',
+        '80000000-0000-4000-8000-000000000201',
+        '80000000-0000-4000-8000-000000000402',
+        '80000000-0000-4000-8000-000000000302');
+
+insert into public.contact_phones (workspace_id, contact_id, phone, position)
+values
+  ('80000000-0000-4000-8000-000000000201',
+   '80000000-0000-4000-8000-000000000401', '+7 999 123-45-67', 0),
+  -- Same digits as the survivor's, spelled differently: must collapse, not 23505.
+  ('80000000-0000-4000-8000-000000000201',
+   '80000000-0000-4000-8000-000000000402', '+79991234567', 0),
+  ('80000000-0000-4000-8000-000000000201',
+   '80000000-0000-4000-8000-000000000402', '+7 916 000-11-22', 1);
+
+insert into public.contact_channels
+  (id, contact_id, workspace_id, channel_id, channel_type, external_id, external_name)
+values ('80000000-0000-4000-8000-000000000701',
+        '80000000-0000-4000-8000-000000000402',
+        '80000000-0000-4000-8000-000000000201',
+        '80000000-0000-4000-8000-000000000302',
+        'whatsapp', '79991234567', 'Ivan P.');
+
+insert into public.contact_notes (id, workspace_id, contact_id, body)
+values ('80000000-0000-4000-8000-000000000801',
+        '80000000-0000-4000-8000-000000000201',
+        '80000000-0000-4000-8000-000000000402',
+        'note that must survive the merge');
+
+set local role authenticated;
+
+-- ── Authority ────────────────────────────────────────────────────────────────
+
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000102","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-000000000402')
+  $$,
+  '42501',
+  'NOT_A_WORKSPACE_ADMIN',
+  'a plain member cannot merge contacts'
+);
+
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-000000000401')
+  $$,
+  '22023',
+  'CONTACT_MERGE_SAME_CONTACT',
+  'a contact cannot be merged into itself'
+);
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-0000000004ff')
+  $$,
+  '42501',
+  'NOT_A_WORKSPACE_ADMIN',
+  'a contact that does not exist is refused exactly like one the caller may not touch'
+);
+
+-- ── Field validation ─────────────────────────────────────────────────────────
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-000000000402',
+      '{"deleted_at": "2020-01-01"}'::jsonb)
+  $$,
+  '22023',
+  'CONTACT_MERGE_UNKNOWN_FIELD: deleted_at',
+  'p_fields cannot name a column outside the allowlist'
+);
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-000000000402',
+      '{"status": "archived"}'::jsonb)
+  $$,
+  '22023',
+  'CONTACT_MERGE_INVALID_FIELD: status',
+  'p_fields cannot set a status the column check would reject'
+);
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-000000000402',
+      '{"owner_id": "80000000-0000-4000-8000-0000000001ff"}'::jsonb)
+  $$,
+  '22023',
+  'CONTACT_MERGE_INVALID_FIELD: owner_id',
+  'p_fields cannot assign an owner who is not a member of the workspace'
+);
+
+-- ── The merge itself ─────────────────────────────────────────────────────────
+
+select lives_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-000000000402',
+      '{"name": "Ivan P.", "email": "ivan@example.com"}'::jsonb)
+  $$,
+  'an admin merges two contacts in the same workspace'
+);
+
+reset role;
+
+select is(
+  (select count(*)::int from public.conversations
+    where contact_id = '80000000-0000-4000-8000-000000000401'),
+  2,
+  'both conversations belong to the survivor'
+);
+
+-- The hazard the ordering in merge_contacts exists to prevent: the loser is
+-- archived LAST, so trg_cascade_contact_archive finds no conversations of its
+-- own to stamp and the moved threads stay live.
+select is(
+  (select count(*)::int from public.conversations
+    where contact_id = '80000000-0000-4000-8000-000000000401'
+      and deleted_at is null),
+  2,
+  'the moved conversations were not archived by the cascade trigger'
+);
+
+select is(
+  (select contact_id from public.contact_notes
+    where id = '80000000-0000-4000-8000-000000000801'),
+  '80000000-0000-4000-8000-000000000401'::uuid,
+  'the note moved to the survivor'
+);
+
+select is(
+  (select contact_id from public.contact_channels
+    where id = '80000000-0000-4000-8000-000000000701'),
+  '80000000-0000-4000-8000-000000000401'::uuid,
+  'the channel identity moved to the survivor'
+);
+
+-- Three phone rows existed; two spelled the same number. The survivor keeps two.
+select is(
+  (select count(*)::int from public.contact_phones
+    where contact_id = '80000000-0000-4000-8000-000000000401'),
+  2,
+  'a number the survivor already held collapsed instead of raising 23505'
+);
+
+select is(
+  (select count(*)::int from public.contact_phones
+    where contact_id = '80000000-0000-4000-8000-000000000402'),
+  0,
+  'the loser keeps no phone rows'
+);
+
+select is(
+  (select array_agg(position order by position)
+     from public.contact_phones
+    where contact_id = '80000000-0000-4000-8000-000000000401'),
+  array[0, 1],
+  'the survivor''s phone positions are renumbered contiguously from zero'
+);
+
+select is(
+  (select phone from public.contacts
+    where id = '80000000-0000-4000-8000-000000000401'),
+  '+7 999 123-45-67',
+  'contacts.phone still holds the survivor''s position-0 number'
+);
+
+select is(
+  (select name from public.contacts
+    where id = '80000000-0000-4000-8000-000000000401'),
+  'Ivan P.',
+  'the picked name overwrote the survivor''s'
+);
+
+select is(
+  (select name from public.contacts
+    where id = '80000000-0000-4000-8000-000000000402'),
+  'Ivan P.',
+  'the loser''s own scalars are untouched: its row is the record of what it was'
+);
+
+select is(
+  (select merged_by from public.contacts
+    where id = '80000000-0000-4000-8000-000000000402'),
+  '80000000-0000-4000-8000-000000000101'::uuid,
+  'merged_by records the acting admin'
+);
+
+select ok(
+  (select deleted_at is not null and merged_at is not null
+     from public.contacts where id = '80000000-0000-4000-8000-000000000402'),
+  'the loser is archived and stamped in the same statement'
+);
+
+-- ── Already merged, and the conversation clash ───────────────────────────────
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000401',
+      '80000000-0000-4000-8000-000000000402')
+  $$,
+  '42501',
+  'NOT_A_WORKSPACE_ADMIN',
+  'a contact that has already been merged cannot be merged again'
+);
+
+reset role;
+
+-- Two fresh contacts, each with a thread on the SAME channel row. That pair
+-- cannot be merged: conversations_contact_channel_unique (contact_id,
+-- channel_id) would be violated, and folding the threads is a separate feature.
+insert into public.contacts (id, workspace_id, name, source)
+values
+  ('80000000-0000-4000-8000-000000000403',
+   '80000000-0000-4000-8000-000000000201', 'Clash A', 'telegram'),
+  ('80000000-0000-4000-8000-000000000404',
+   '80000000-0000-4000-8000-000000000201', 'Clash B', 'telegram');
+
+insert into public.conversations (id, workspace_id, contact_id, channel_id)
+values
+  ('80000000-0000-4000-8000-000000000503',
+   '80000000-0000-4000-8000-000000000201',
+   '80000000-0000-4000-8000-000000000403',
+   '80000000-0000-4000-8000-000000000301'),
+  ('80000000-0000-4000-8000-000000000504',
+   '80000000-0000-4000-8000-000000000201',
+   '80000000-0000-4000-8000-000000000404',
+   '80000000-0000-4000-8000-000000000301');
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000403',
+      '80000000-0000-4000-8000-000000000404')
+  $$,
+  'P0001',
+  'CONTACT_MERGE_CONVERSATION_CONFLICT',
+  'two contacts holding a thread on the same channel cannot be merged'
+);
+
+reset role;
+
+select is(
+  (select contact_id from public.conversations
+    where id = '80000000-0000-4000-8000-000000000504'),
+  '80000000-0000-4000-8000-000000000404'::uuid,
+  'the refused merge moved nothing: the whole statement rolled back'
 );
 
 select * from finish();
