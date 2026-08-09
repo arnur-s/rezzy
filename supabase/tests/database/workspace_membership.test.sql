@@ -1,6 +1,6 @@
 begin;
 
-select plan(26);
+select plan(30);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -406,6 +406,86 @@ select throws_ok(
 );
 
 reset role;
+
+-- ── Responding ───────────────────────────────────────────────────────────────
+--
+-- The Revoking block above resolved the only pending invitation this fixture
+-- had (the same row created at "an admin can invite an existing user" and
+-- re-invited to 'admin'): it is now status = 'revoked', not 'pending'. Seed a
+-- fresh pending invitation for the invitee to accept.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+select public.invite_workspace_member(
+  '60000000-0000-4000-8000-000000000101', 'mm-invitee@example.com', 'admin');
+
+reset role;
+
+-- Captured at the ambient role for the same reason as mm_pending_invitation
+-- above: workspace_invitations RLS scopes SELECT to invited_user_id =
+-- auth.uid(). Resolving "the pending invitation" inline under a caller other
+-- than the invitee (003) would see zero rows under RLS and pass the throws_ok
+-- below for the wrong reason -- a NULL id fed to the RPC, not an authorization
+-- mismatch it actually caught.
+create temporary table mm_new_invitation as
+select id
+from public.workspace_invitations
+where workspace_id = '60000000-0000-4000-8000-000000000101'
+  and invited_user_id = '60000000-0000-4000-8000-000000000003'
+  and status = 'pending';
+grant select on mm_new_invitation to authenticated;
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000001","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.respond_to_workspace_invitation(
+      (select id from mm_new_invitation),
+      true)
+  $$,
+  'P0002',
+  'INVITATION_NOT_FOUND',
+  'somebody who is not the invitee cannot accept the invitation'
+);
+
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000003","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    select public.respond_to_workspace_invitation(
+      (select id from mm_new_invitation),
+      true)
+  $$,
+  'the invitee accepts'
+);
+
+reset role;
+
+select results_eq(
+  $$
+    select wm.role, wm.invited_by
+    from public.workspace_members wm
+    where wm.workspace_id = '60000000-0000-4000-8000-000000000101'
+      and wm.user_id = '60000000-0000-4000-8000-000000000003'
+  $$,
+  $$ values ('admin', '60000000-0000-4000-8000-000000000002'::uuid) $$,
+  'acceptance seats them at the invited role, carrying invited_by'
+);
+
+select results_eq(
+  $$
+    select status, resolved_by
+    from public.workspace_invitations
+    where id = (select id from mm_new_invitation)
+  $$,
+  $$ values ('accepted', '60000000-0000-4000-8000-000000000003'::uuid) $$,
+  'and stamps the invitation'
+);
 
 select * from finish();
 
