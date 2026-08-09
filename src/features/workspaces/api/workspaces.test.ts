@@ -4,6 +4,7 @@ import { createWorkspace, getUserWorkspaces } from './workspaces'
 
 const supabaseMock = vi.hoisted(() => ({
   from: vi.fn(),
+  rpc: vi.fn(),
 }))
 
 vi.mock('@/utils/supabase', () => ({
@@ -27,6 +28,7 @@ const memberWorkspace = {
 describe('workspace API', () => {
   beforeEach(() => {
     supabaseMock.from.mockReset()
+    supabaseMock.rpc.mockReset()
   })
 
   it('returns every workspace allowed by membership RLS', async () => {
@@ -48,20 +50,10 @@ describe('workspace API', () => {
     })
   })
 
-  it('leaves owner membership creation to the database trigger', async () => {
-    const single = vi.fn().mockResolvedValue({
+  it('creates the workspace through the create_workspace RPC, leaving owner membership to the database trigger', async () => {
+    supabaseMock.rpc.mockResolvedValue({
       data: memberWorkspace,
       error: null,
-    })
-    const select = vi.fn().mockReturnValue({ single })
-    const insert = vi.fn().mockReturnValue({ select })
-
-    supabaseMock.from.mockImplementation((table: string) => {
-      if (table !== 'workspaces') {
-        throw new Error(`Unexpected table: ${table}`)
-      }
-
-      return { insert }
     })
 
     await expect(
@@ -74,14 +66,13 @@ describe('workspace API', () => {
       }),
     ).resolves.toEqual(memberWorkspace)
 
-    expect(supabaseMock.from).toHaveBeenCalledOnce()
-    expect(supabaseMock.from).toHaveBeenCalledWith('workspaces')
-    expect(insert).toHaveBeenCalledWith({
-      created_by: 'owner-1',
-      description: 'Shared sales workspace',
-      icon: 'briefcase',
-      is_main: false,
-      name: 'Sales',
+    expect(supabaseMock.from).not.toHaveBeenCalled()
+    expect(supabaseMock.rpc).toHaveBeenCalledOnce()
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_workspace', {
+      p_name: 'Sales',
+      p_description: 'Shared sales workspace',
+      p_icon: 'briefcase',
+      p_is_main: false,
     })
   })
 })

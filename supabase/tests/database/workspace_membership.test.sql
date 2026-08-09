@@ -1,6 +1,6 @@
 begin;
 
-select plan(5);
+select plan(9);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -79,6 +79,27 @@ select throws_ok(
 
 reset role;
 
+-- ── The ghost workspace is gone ──────────────────────────────────────────────
+--
+-- The creator was removed from the roster above. Without the create_workspace
+-- RPC dropping the created_by branch from the workspaces SELECT policy, they
+-- would still be able to read the workspace row itself even though they can no
+-- longer read anything inside it.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000001","role":"authenticated"}';
+
+select is_empty(
+  $$
+    select id from public.workspaces
+    where id = '60000000-0000-4000-8000-000000000101'
+  $$,
+  'a removed creator no longer reads the workspace they created'
+);
+
+reset role;
+
 select ok(
   not has_table_privilege('authenticated', 'public.workspace_members', 'insert')
   and not has_table_privilege('authenticated', 'public.workspace_members', 'update')
@@ -98,6 +119,37 @@ select throws_ok(
   null,
   'viewer is no longer an accepted role'
 );
+
+-- ── Workspace creation moved behind an RPC ───────────────────────────────────
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+select ok(
+  not has_table_privilege('authenticated', 'public.workspaces', 'insert'),
+  'authenticated can no longer insert workspaces directly'
+);
+
+select is(
+  (select name from public.create_workspace('RPC Made', null, 'briefcase', false)),
+  'RPC Made',
+  'create_workspace returns the row it created'
+);
+
+select is(
+  (
+    select wm.role
+    from public.workspace_members wm
+    join public.workspaces w on w.id = wm.workspace_id
+    where w.name = 'RPC Made'
+      and wm.user_id = '60000000-0000-4000-8000-000000000002'
+  ),
+  'owner',
+  'the trigger seated the caller as owner inside the RPC'
+);
+
+reset role;
 
 select * from finish();
 

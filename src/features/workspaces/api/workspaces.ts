@@ -1,4 +1,4 @@
-import type { Tables, TablesInsert, TablesUpdate } from '@/api/types'
+import type { Tables, TablesUpdate } from '@/api/types'
 import type { WorkspaceMember } from '@/entities/workspace'
 import { supabase } from '@/utils/supabase'
 import type { CreateWorkspaceFormValues } from '../schemas/workspace-form-schema'
@@ -125,27 +125,22 @@ export async function createWorkspace({
   icon,
   isMain,
   name,
-  userId,
 }: CreateWorkspaceFormValues & { isMain: boolean; userId: string }) {
-  const insertPayload: TablesInsert<'workspaces'> = {
-    created_by: userId,
-    description: normalizeDescription(description),
-    icon: icon ?? null,
-    is_main: isMain,
-    name: name.trim(),
-  }
-
-  const { data, error } = await supabase
-    .from('workspaces')
-    .insert(insertPayload)
-    .select()
-    .single()
+  // Not an insert: public.workspaces has no INSERT grant for authenticated.
+  // The RPC exists so the browser never issues INSERT ... RETURNING here — see
+  // the header of 20260809140000. `userId` stays in the parameter list because
+  // useCreateWorkspace passes it, but identity comes from auth.uid() inside the
+  // function and cannot be supplied by the caller.
+  const { data, error } = await supabase.rpc('create_workspace', {
+    p_name: name.trim(),
+    p_description: normalizeDescription(description),
+    p_icon: icon ?? null,
+    p_is_main: isMain,
+  })
 
   if (error) {
     throw error
   }
-
-  // The on_workspace_created database trigger creates the owner membership.
 
   return data
 }
