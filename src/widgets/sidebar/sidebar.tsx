@@ -44,8 +44,13 @@ export interface SidebarProps {
   onNavigate?: () => void
 }
 
-/** Route prefixes scoped to the person rather than to a workspace. */
-const ACCOUNT_ROUTE_PREFIXES = ['/settings', '/profile']
+/**
+ * Route prefixes scoped to the person rather than to a workspace.
+ * `/notifications` belongs here for the same reason home does: it aggregates
+ * every workspace, so pinning the rail to an arbitrary "current" one would name
+ * a workspace the page is not showing.
+ */
+const ACCOUNT_ROUTE_PREFIXES = ['/settings', '/profile', '/notifications']
 
 function isAccountRoute(pathname: string) {
   return ACCOUNT_ROUTE_PREFIXES.some(
@@ -193,7 +198,10 @@ export function Sidebar({
             isSelected={pathname === '/'}
             onClick={onNavigate}
           />
-          <UnreadNotificationsNavItem workspaceId={currentWorkspaceId} />
+          <UnreadNotificationsNavItem
+            workspaceId={currentWorkspaceId}
+            onNavigate={onNavigate}
+          />
         </SideNavSection>
       </SideNav>
 
