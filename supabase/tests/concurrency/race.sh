@@ -11,7 +11,17 @@
 # poison the next one.
 set -uo pipefail
 
-DB="docker exec -i supabase_db_cms psql -U postgres -d postgres -qtAX"
+# The container name is derived from the local checkout's directory name
+# (docker-compose project naming), so it varies between machines and CI --
+# it is not necessarily "supabase_db_cms" outside this worktree. Resolve it
+# from the running containers instead of hardcoding it.
+DB_CONTAINER=$(docker ps --filter "name=supabase_db_" --format '{{.Names}}' | head -n1)
+if [ -z "$DB_CONTAINER" ]; then
+  echo "race.sh: no running container matching 'supabase_db_*' found -- is 'supabase start' (or 'pnpm supabase:start') running?" >&2
+  exit 1
+fi
+
+DB="docker exec -i $DB_CONTAINER psql -U postgres -d postgres -qtAX"
 WS=70000000-0000-4000-8000-000000000001
 OWNER_A=70000000-0000-4000-8000-000000000011
 OWNER_B=70000000-0000-4000-8000-000000000012
@@ -74,6 +84,25 @@ wait
 owners=$($DB -c "select count(*) from public.workspace_members where workspace_id='$WS' and role='owner';")
 check "concurrent demotions leave at least one owner" "$owners" "1"
 check "the second demotion is refused with LAST_OWNER" "$b_err" "1"
+teardown
+
+# ── Race 1b: two concurrent self-removals cannot reach zero owners ──────────
+#
+# remove_workspace_member's roster lock is a separate "perform ... for
+# update" statement from update_workspace_member_role's -- stripping only
+# this one previously left the whole race suite green, because nothing here
+# exercised it. Same shape as Race 1, through the leaving path instead of the
+# demotion path: two owners leave (remove themselves) at the same time.
+# Without this function's own lock, both read two owners, both pass the
+# last-owner check, and both commit -- zero owners left.
+seed
+$DB -c "begin; $(claims $OWNER_A) select public.remove_workspace_member('$WS','$OWNER_A'); select pg_sleep(2); commit;" >/dev/null 2>&1 &
+sleep 1
+b_err=$($DB -c "begin; $(claims $OWNER_B) select public.remove_workspace_member('$WS','$OWNER_B'); commit;" 2>&1 | grep -c 'LAST_OWNER')
+wait
+owners=$($DB -c "select count(*) from public.workspace_members where workspace_id='$WS' and role='owner';")
+check "concurrent self-removals leave at least one owner" "$owners" "1"
+check "the second removal is refused with LAST_OWNER" "$b_err" "1"
 teardown
 
 # ── Race 2: a concurrent promotion cannot slip under an admin's demotion ────
