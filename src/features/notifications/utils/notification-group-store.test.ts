@@ -4,7 +4,9 @@ import {
   NOTIFICATION_GROUP_LIMIT,
   appendToNotificationGroup,
   clearNotificationGroup,
+  getNotificationGroupPin,
   resetNotificationGroups,
+  setNotificationGroupPin,
 } from './notification-group-store'
 
 function message(id: string, conversationId = 'c1') {
@@ -68,5 +70,42 @@ describe('notification group store', () => {
     const second = appendToNotificationGroup(message('n2'))
     expect(second).not.toBe(first)
     expect(first.items).toHaveLength(1)
+  })
+
+  describe('expand pin', () => {
+    it('has no opinion until one is recorded', () => {
+      appendToNotificationGroup(message('n1'))
+      expect(getNotificationGroupPin('c1')).toBeNull()
+    })
+
+    it('keeps a pin across regrouping, which is what remounts the toast', () => {
+      appendToNotificationGroup(message('n1'))
+      setNotificationGroupPin('c1', true)
+      appendToNotificationGroup(message('n2'))
+      expect(getNotificationGroupPin('c1')).toBe(true)
+    })
+
+    it('records an explicit collapse distinctly from no opinion', () => {
+      setNotificationGroupPin('c1', false)
+      expect(getNotificationGroupPin('c1')).toBe(false)
+    })
+
+    it('resets to no opinion on null', () => {
+      setNotificationGroupPin('c1', true)
+      setNotificationGroupPin('c1', null)
+      expect(getNotificationGroupPin('c1')).toBeNull()
+    })
+
+    it('keeps pins independent per conversation', () => {
+      setNotificationGroupPin('c1', true)
+      expect(getNotificationGroupPin('c2')).toBeNull()
+    })
+
+    it('drops the pin with the group, so the next toast starts collapsed', () => {
+      appendToNotificationGroup(message('n1'))
+      setNotificationGroupPin('c1', true)
+      clearNotificationGroup('c1')
+      expect(getNotificationGroupPin('c1')).toBeNull()
+    })
   })
 })

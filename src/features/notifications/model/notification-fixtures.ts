@@ -16,7 +16,6 @@ export function buildMessageNotificationDetails(
   return {
     id: 'n1',
     workspaceId: 'w1',
-    workspaceName: 'Acme Support',
     conversationId: 'c1',
     messageId: 'm1',
     createdAt: now,

@@ -16,6 +16,8 @@ import type { NotificationGroup } from '../utils/notification-group-store'
 import {
   appendToNotificationGroup,
   clearNotificationGroup,
+  getNotificationGroupPin,
+  setNotificationGroupPin,
 } from '../utils/notification-group-store'
 import type { NotificationTarget } from '../utils/notification-navigation'
 import { buildNotificationPreview } from '../utils/notification-preview'
@@ -60,18 +62,32 @@ function NotificationLine({
  * old `pe-6` reserve was unnecessary.
  *
  * Older messages of the same conversation sit in a `grid-template-rows` region
- * *above* the newest one, so expanding grows the toast downward and the newest
- * message never moves.
+ * *above* the newest one, so the newest message stays the last line of the
+ * column and expanding only inserts rows before it. Which way the toast grows
+ * on screen depends on where the viewport is anchored — bottom-trailing from
+ * `lg` up, top-center below it (see the toast rules in `src/styles.css`) — so
+ * the newest line can shift; it never changes place in the reading order.
  */
 export function MessageNotification({ group, previewMode, onOpen }: Props) {
-  // Hover opens the reveal region; a click pins it open or closed until the
-  // next pointer leave. This is tracked in state rather than via CSS
+  // Hover opens the reveal region; a chip press pins it open or closed until
+  // the next pointer leave. This is tracked in state rather than via CSS
   // `group-hover` because a pointer user is by definition hovering the toast
   // when they reach the chip — `group-hover:` and a toggled utility class
   // both target the same property, and twMerge keeps only one, so the hover
   // variant would permanently win and the chip would have no visible effect.
   const [hovered, setHovered] = useState(false)
-  const [pinned, setPinned] = useState<boolean | null>(null)
+  // Every new message in the conversation mints a new toast entry, whose id is
+  // the React key, so this subtree remounts. The pin therefore lives in the
+  // group store, which survives regrouping; only `hovered` — which describes
+  // the pointer right now — is allowed to reset.
+  const conversationId = group.items.at(-1)?.conversationId ?? null
+  const [pinned, setPinnedState] = useState<boolean | null>(() =>
+    conversationId === null ? null : getNotificationGroupPin(conversationId),
+  )
+  const setPinned = (next: boolean | null) => {
+    setPinnedState(next)
+    if (conversationId !== null) setNotificationGroupPin(conversationId, next)
+  }
   const open = pinned ?? hovered
   const revealId = useId()
 
@@ -102,15 +118,11 @@ export function MessageNotification({ group, previewMode, onOpen }: Props) {
   })
   const newestTime = formatRelativeShort(newest.createdAt)
 
-  // Announce the action, the message and the time in one label; the row's
-  // visual children stay decorative for assistive technology.
-  const openLabel = [
-    m.notifications_item_open_aria({ name: preview.title }),
-    preview.body,
-    newestTime,
-  ]
-    .filter(Boolean)
-    .join(', ')
+  // The overlay is a *sibling* of the avatar and text column, not their parent,
+  // so its label suppresses nothing: anything named here is announced a second
+  // time as ordinary text inside Astryx's `aria-atomic` live region. The label
+  // therefore carries only the action; the visible content carries the rest.
+  const openLabel = m.notifications_item_open_aria({ name: preview.title })
 
   const revealClass = cn(
     'transition-[grid-template-rows] duration-200 ease-out',
@@ -127,10 +139,19 @@ export function MessageNotification({ group, previewMode, onOpen }: Props) {
   return (
     <div
       data-expanded={open}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => {
+      // Tailwind gates `hover:` behind `@media (hover: hover)`; these handlers
+      // have to gate themselves, because `pointerenter` fires for touch too.
+      // Ungated, a tap would expand under the finger, collapse on the
+      // compatibility `pointerleave`, and then re-expand on the compatibility
+      // `click` — leaving the chip permanently expand-only.
+      onPointerEnter={(event) => {
+        if (event.pointerType !== 'mouse') return
+        setHovered(true)
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType !== 'mouse') return
         setHovered(false)
-        // Clears any click-pinned override so the next hover starts fresh.
+        // Clears any chip-pinned override so the next hover starts fresh.
         setPinned(null)
       }}
       className={cn(
@@ -147,7 +168,7 @@ export function MessageNotification({ group, previewMode, onOpen }: Props) {
         onClick={onOpen}
         className={cn(
           // -inset-1 bleeds the hit area 4px outward. The gap to Astryx's
-          // close button is 12px, so this cannot reach it.
+          // close button measures 8px at phone width, so this cannot reach it.
           'absolute -inset-1 cursor-pointer rounded-lg outline-none',
           listItemStyle.transition,
           listItemStyle.hover,

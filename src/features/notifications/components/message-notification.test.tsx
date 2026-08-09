@@ -5,7 +5,10 @@ import { isValidElement } from 'react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildMessageNotificationDetails } from '../model/notification-fixtures'
 import type { NotificationGroup } from '../utils/notification-group-store'
-import { resetNotificationGroups } from '../utils/notification-group-store'
+import {
+  clearNotificationGroup,
+  resetNotificationGroups,
+} from '../utils/notification-group-store'
 import {
   MessageNotification,
   showMessageNotificationToast,
@@ -26,6 +29,16 @@ function groupOf(
     items: items.map((overrides) => buildMessageNotificationDetails(overrides)),
     total: items.length,
   }
+}
+
+/** The expand/collapse chip, whose accessible name flips with its state. */
+function groupChip(): HTMLElement {
+  return screen.getByRole('button', { name: /^Show / })
+}
+
+/** The chip's `aria-expanded`, as a boolean. */
+function expandedState(): boolean {
+  return groupChip().getAttribute('aria-expanded') === 'true'
 }
 
 /** A `showToast` stub that records every call instead of rendering anything. */
@@ -51,6 +64,12 @@ describe('MessageNotification', () => {
     setLocale('en')
   })
 
+  // The expand pin now lives in the module-level group store, so a chip press
+  // in one test would otherwise leak into the next.
+  beforeEach(() => {
+    resetNotificationGroups()
+  })
+
   it('renders name, preview and relative time only', () => {
     render(
       <MessageNotification
@@ -61,11 +80,28 @@ describe('MessageNotification', () => {
     )
     expect(screen.getByText('Maria')).toBeTruthy()
     expect(screen.getByText(/I still need help with my order/i)).toBeTruthy()
-    expect(screen.queryByText('Acme Support')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Open thread' })).toBeNull()
     expect(
       screen.queryByRole('button', { name: 'Show full message' }),
     ).toBeNull()
+  })
+
+  it('names the overlay by the action alone, so the atomic live region does not repeat the message', () => {
+    render(
+      <MessageNotification
+        group={groupOf({})}
+        previewMode="full"
+        onOpen={vi.fn()}
+      />,
+    )
+    // An exact-name match: the label must not carry the preview or the time,
+    // which the visible siblings already expose to assistive technology.
+    const overlay = screen.getByRole('button', {
+      name: 'Open conversation with Maria',
+    })
+    expect(overlay.getAttribute('aria-label')).toBe(
+      'Open conversation with Maria',
+    )
   })
 
   it('navigates when the toast body is clicked', () => {
@@ -146,25 +182,94 @@ describe('MessageNotification', () => {
     const row = container.firstElementChild
     if (!row) throw new Error('expected a root row element')
 
-    expect(
-      screen
-        .getByRole('button', { name: 'Show 1 more message' })
-        .getAttribute('aria-expanded'),
-    ).toBe('false')
+    expect(expandedState()).toBe(false)
 
-    fireEvent.pointerEnter(row)
-    expect(
-      screen
-        .getByRole('button', { name: 'Show fewer messages' })
-        .getAttribute('aria-expanded'),
-    ).toBe('true')
+    fireEvent.pointerEnter(row, { pointerType: 'mouse' })
+    expect(expandedState()).toBe(true)
 
-    fireEvent.pointerLeave(row)
-    expect(
-      screen
-        .getByRole('button', { name: 'Show 1 more message' })
-        .getAttribute('aria-expanded'),
-    ).toBe('false')
+    fireEvent.pointerLeave(row, { pointerType: 'mouse' })
+    expect(expandedState()).toBe(false)
+  })
+
+  it('ignores touch pointers, which have no hover to report', () => {
+    const group = groupOf({ id: 'n1' }, { id: 'n2' })
+    const { container } = render(
+      <MessageNotification group={group} previewMode="full" onOpen={vi.fn()} />,
+    )
+    const row = container.firstElementChild
+    if (!row) throw new Error('expected a root row element')
+
+    fireEvent.pointerEnter(row, { pointerType: 'touch' })
+    expect(expandedState()).toBe(false)
+  })
+
+  it('lets a second tap collapse the group again on touch', () => {
+    const group = groupOf({ id: 'n1' }, { id: 'n2' })
+    const { container } = render(
+      <MessageNotification group={group} previewMode="full" onOpen={vi.fn()} />,
+    )
+    const row = container.firstElementChild
+    if (!row) throw new Error('expected a root row element')
+
+    // A touch dispatches the compatibility boundary events around the tap, so
+    // the chip's click always lands after a pointerenter/pointerleave pair.
+    const tapChip = () => {
+      fireEvent.pointerEnter(row, { pointerType: 'touch' })
+      fireEvent.pointerLeave(row, { pointerType: 'touch' })
+      fireEvent.click(groupChip())
+    }
+
+    tapChip()
+    expect(expandedState()).toBe(true)
+
+    tapChip()
+    expect(expandedState()).toBe(false)
+  })
+
+  it('keeps an expanded group expanded when the next message remounts the toast', () => {
+    const view = render(
+      <MessageNotification
+        group={groupOf({ id: 'n1' }, { id: 'n2' })}
+        previewMode="full"
+        onOpen={vi.fn()}
+      />,
+    )
+    fireEvent.click(groupChip())
+    expect(expandedState()).toBe(true)
+
+    // Astryx's `overwrite` path mints a new toast entry — a new React key — so
+    // the body unmounts and a fresh one renders with the larger group.
+    view.unmount()
+    render(
+      <MessageNotification
+        group={groupOf({ id: 'n1' }, { id: 'n2' }, { id: 'n3' })}
+        previewMode="full"
+        onOpen={vi.fn()}
+      />,
+    )
+    expect(expandedState()).toBe(true)
+  })
+
+  it('starts collapsed again once the toast is gone and the group is cleared', () => {
+    const view = render(
+      <MessageNotification
+        group={groupOf({ id: 'n1' }, { id: 'n2' })}
+        previewMode="full"
+        onOpen={vi.fn()}
+      />,
+    )
+    fireEvent.click(groupChip())
+    view.unmount()
+    clearNotificationGroup('c1')
+
+    render(
+      <MessageNotification
+        group={groupOf({ id: 'n1' }, { id: 'n2' })}
+        previewMode="full"
+        onOpen={vi.fn()}
+      />,
+    )
+    expect(expandedState()).toBe(false)
   })
 
   it('hides the reveal region from assistive tech until expanded, via aria-controls', () => {
