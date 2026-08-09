@@ -1,22 +1,11 @@
 import { callRpc } from '@/utils/supabase-rpc'
 import { z } from 'zod'
+import { MERGE_FIELD_KEYS } from '../model/merge-candidate'
+import type { MergeFieldKey } from '../model/merge-candidate'
 
-/**
- * The scalar fields a merge may overwrite on the survivor.
- *
- * The same allowlist exists in `public.merge_contacts`, which raises rather
- * than trusting this one — the client chooses which VALUE wins, never which
- * column. This copy is here so the picker can only build a legal payload.
- */
-export const MERGE_FIELD_KEYS = [
-  'name',
-  'email',
-  'owner_id',
-  'status',
-  'avatar_url',
-  'source',
-] as const
-export type MergeFieldKey = (typeof MERGE_FIELD_KEYS)[number]
+// Re-export for backward compatibility with existing imports
+export { MERGE_FIELD_KEYS }
+export type { MergeFieldKey }
 
 export const DUPLICATE_MATCH_REASONS = ['phone', 'channel', 'email'] as const
 export type DuplicateMatchReason = (typeof DUPLICATE_MATCH_REASONS)[number]

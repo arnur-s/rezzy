@@ -1,6 +1,22 @@
 import type { ContactListItem } from '@/entities/contact'
-import { MERGE_FIELD_KEYS } from '../api/contact-merges'
-import type { DuplicateContact, MergeFieldKey } from '../api/contact-merges'
+import type { DuplicateContact } from '../api/contact-merges'
+
+/**
+ * The scalar fields a merge may overwrite on the survivor.
+ *
+ * The same allowlist exists in `public.merge_contacts`, which raises rather
+ * than trusting this one — the client chooses which VALUE wins, never which
+ * column. This copy is here so the picker can only build a legal payload.
+ */
+export const MERGE_FIELD_KEYS = [
+  'name',
+  'email',
+  'owner_id',
+  'status',
+  'avatar_url',
+  'source',
+] as const
+export type MergeFieldKey = (typeof MERGE_FIELD_KEYS)[number]
 
 /**
  * One side of a merge, normalized.
