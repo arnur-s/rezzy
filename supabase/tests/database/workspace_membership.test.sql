@@ -1,6 +1,6 @@
 begin;
 
-select plan(31);
+select plan(37);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -486,6 +486,96 @@ select results_eq(
   $$ values ('accepted', '60000000-0000-4000-8000-000000000003'::uuid) $$,
   'and stamps the invitation'
 );
+
+-- ── Role changes and removal ─────────────────────────────────────────────────
+--
+-- Roster at this point: 001 member (reseated in the "Inviting" block above,
+-- because the escalation test earlier removed the creator entirely), 002
+-- admin (seeded), 003 admin (accepted in "Responding" above). The workspace
+-- currently has no owner. Move 001 to the owning role with an UPDATE, not an
+-- INSERT: 001 is already a workspace_members row, and a second insert for the
+-- same (workspace_id, user_id) would collide with
+-- workspace_members_workspace_user_key.
+
+update public.workspace_members
+set role = 'owner'
+where workspace_id = '60000000-0000-4000-8000-000000000101'
+  and user_id = '60000000-0000-4000-8000-000000000001';
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.update_workspace_member_role(
+      '60000000-0000-4000-8000-000000000101',
+      '60000000-0000-4000-8000-000000000001', 'member')
+  $$,
+  '42501',
+  'OWNER_ROLE_REQUIRES_OWNER',
+  'an admin cannot demote an owner'
+);
+
+select throws_ok(
+  $$
+    select public.update_workspace_member_role(
+      '60000000-0000-4000-8000-000000000101',
+      '60000000-0000-4000-8000-000000000003', 'owner')
+  $$,
+  '42501',
+  'OWNER_ROLE_REQUIRES_OWNER',
+  'nor promote anyone to owner'
+);
+
+select throws_ok(
+  $$
+    select public.remove_workspace_member(
+      '60000000-0000-4000-8000-000000000101',
+      '60000000-0000-4000-8000-000000000001')
+  $$,
+  '42501',
+  'OWNER_ROLE_REQUIRES_OWNER',
+  'nor remove an owner'
+);
+
+select lives_ok(
+  $$
+    select public.update_workspace_member_role(
+      '60000000-0000-4000-8000-000000000101',
+      '60000000-0000-4000-8000-000000000003', 'member')
+  $$,
+  'an admin can move another admin down to member'
+);
+
+-- The last owner is immovable, by any path.
+
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000001","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.update_workspace_member_role(
+      '60000000-0000-4000-8000-000000000101',
+      '60000000-0000-4000-8000-000000000001', 'admin')
+  $$,
+  '23514',
+  'LAST_OWNER',
+  'the last owner cannot demote themselves'
+);
+
+select throws_ok(
+  $$
+    select public.remove_workspace_member(
+      '60000000-0000-4000-8000-000000000101',
+      '60000000-0000-4000-8000-000000000001')
+  $$,
+  '23514',
+  'LAST_OWNER',
+  'nor leave'
+);
+
+reset role;
 
 -- ── Accepting into a soft-deleted workspace is refused ──────────────────────
 --
