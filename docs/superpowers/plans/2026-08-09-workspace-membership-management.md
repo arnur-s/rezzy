@@ -519,6 +519,96 @@ git commit -m "feat(db): create workspaces through an RPC and drop the created_b
 
 ---
 
+## Task 2b: Reseed the fixtures the grant changes broke
+
+**Added during execution.** Tasks 1 and 2 removed three client grants —
+INSERT/UPDATE/DELETE on `public.workspace_members`, and INSERT on
+`public.workspaces` — and a large number of pgTAP fixtures across the suite seed
+their test data by writing those tables under `set local role authenticated`.
+They were not testing the grant; they were using it as cheap setup. pgTAP runs
+each file as a single transaction, so one denied insert aborts the whole file
+and every later assertion in it never executes.
+
+The plan did not anticipate this. It was escalated and the decision is to repair
+it here, next to its cause, rather than let it accumulate to Task 7.
+
+**Goal: `pnpm test:db` is fully green at the end of this task.** Nothing else in
+the plan is expected to break it before Task 7.
+
+**Files:** the nine below, plus any other file the run identifies.
+
+**The verified failure set** (confirmed by two independent runs):
+
+| File | Failure |
+| --- | --- |
+| `attachments.test.sql` | aborts at line 16 — planned 9, ran 0 |
+| `auth_workspace_flow.test.sql` | tests 16, 19, 21, 22, 23, 24 |
+| `channel_credentials.test.sql` | aborts at line 134 — planned 21, ran 7 |
+| `instagram_channel.test.sql` | aborts at line 59 — planned 17, ran 7 |
+| `message_pipeline.test.sql` | aborts at line 13 — planned 14, ran 0 |
+| `performance_contract.test.sql` | test 1 |
+| `provider_events.test.sql` | aborts at line 59 — planned 16, ran 7 |
+| `reactions.test.sql` | aborts at line 16 — planned 16, ran 0 |
+| `security_contract.test.sql` | tests 32, 33, 35, 36, 38 — planned 55, ran 38 |
+| `status_events.test.sql` | aborts at line 16 — planned 13, ran 0 |
+
+Two distinct causes, and they need different fixes:
+
+- **Fixture seeding.** A `set local role authenticated` wrapper around an
+  `insert into public.workspaces` or `insert into public.workspace_members` that
+  exists only to create test data. Drop the wrapper and seed at the ambient
+  role. Seed rows must still pass `created_by` explicitly rather than relying on
+  the `auth.uid()` column default, which returns null without the JWT claims the
+  wrapper used to set.
+- **Assertions about the grants themselves.** `security_contract.test.sql`
+  test 35 asserts "authenticated users can create a workspace" — deliberately no
+  longer true. That is a contract change, so rewrite the assertion to state the
+  new contract: `authenticated` holds no INSERT on `public.workspaces`, and
+  creation goes through `public.create_workspace`. Do not delete it.
+
+- [ ] **Step 1: Establish the real failure set**
+
+```bash
+supabase migration up --local
+pnpm test:db
+```
+
+`pnpm test:db` does **not** apply pending migrations — it runs pgTAP against
+whatever schema is live, so the migration step is required first. Record the
+actual failing files and test numbers. Work from your own run, not from the
+table above; the table is a starting point, not the authority.
+
+- [ ] **Step 2: Fix each file, one commit per file**
+
+For each failing file: read the failing line, decide which of the two causes it
+is, apply the matching fix, re-run that file, and commit it alone. One file per
+commit keeps a mistake in one fixture from being buried in a nine-file diff.
+
+```bash
+pnpm test:db
+git add supabase/tests/database/<file>.test.sql
+git commit -m "test(db): seed <file> fixtures without the client insert grant"
+```
+
+Where an assertion is genuinely about the contract rather than the fixture, say
+so in the commit message instead: `test(db): assert the new workspace creation contract`.
+
+- [ ] **Step 3: Prove the suite is green**
+
+```bash
+pnpm test:db
+```
+
+Expected: every file passes. If anything still fails, it is either a real
+regression from Tasks 1–2 that the plan missed — report it, do not paper over
+it — or a fixture you have not reached yet.
+
+Do not change any migration, any `src/` file, or any assertion's *meaning* to
+make a test pass. If an assertion can only pass by weakening what it checks,
+stop and report that instead.
+
+---
+
 ## Task 3: The `workspace_invitations` table
 
 **Files:**
