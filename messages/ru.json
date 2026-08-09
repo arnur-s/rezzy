@@ -746,6 +746,8 @@
   "inbox_shared_contact_unnamed": "Контакт из сообщения",
   "inbox_shared_contact_create": "Создать контакт",
   "inbox_shared_contact_open": "Открыть контакт",
+  "inbox_shared_contact_add_phones": "Добавить в контакт",
+  "inbox_shared_contact_phones_missing": "В контакте есть не все номера с этой карточки.",
   "inbox_shared_contact_review": "Проверить совпадения",
   "inbox_shared_contact_checking": "Проверяем контакты…",
   "inbox_shared_contact_lookup_failed": "Не удалось проверить контакты",

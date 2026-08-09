@@ -4,7 +4,7 @@ import {
   contactIdentityKey,
   contactQueryKeys,
 } from '@/features/contacts'
-import type { ContactMatch } from '@/features/contacts'
+import type { ContactMatch, ContactPhone } from '@/features/contacts'
 import { MessageContactCard } from '@/features/inbox/components/message-thread/message-contact-card'
 import { workspacePhoneRegionQueryKeys } from '@/features/workspaces/api/workspace-phone-region'
 import { setLocale } from '@/paraglide/runtime'
@@ -24,6 +24,7 @@ import { useState } from 'react'
  *
  *   /e2e-shared-contact?scenario=unknown
  *   /e2e-shared-contact?scenario=existing
+ *   /e2e-shared-contact?scenario=incomplete
  *   /e2e-shared-contact?scenario=duplicate
  *   /e2e-shared-contact?scenario=ambiguous
  *   /e2e-shared-contact?scenario=loading
@@ -86,9 +87,31 @@ function match(id: string, name: string): ContactMatch {
 const MATCHES: Record<string, Array<ContactMatch>> = {
   unknown: [],
   existing: [match('contact-1', 'Dana Abisheva')],
+  incomplete: [match('contact-1', 'Dana Abisheva')],
   duplicate: [
     match('contact-1', 'Dana Abisheva'),
     match('contact-2', 'D. Abisheva'),
+  ],
+}
+
+function phone(id: string, value: string, position: number): ContactPhone {
+  return { id, phone: value, digits: value.replace(/\D/g, ''), position }
+}
+
+/**
+ * The matched contact's own numbers, which decide whether the card has anything
+ * to offer beyond opening it. `incomplete` is the case this fixture exists for:
+ * the card carries two numbers and the contact knows one.
+ */
+const PHONES: Record<string, Array<ContactPhone>> = {
+  existing: [
+    phone('phone-1', '+77011234567', 0),
+    phone('phone-2', '+77019998877', 1),
+  ],
+  incomplete: [phone('phone-1', '+77011234567', 0)],
+  duplicate: [
+    phone('phone-1', '+77011234567', 0),
+    phone('phone-2', '+77019998877', 1),
   ],
 }
 
@@ -116,10 +139,20 @@ function RouteComponent() {
       const lookup = contactIdentityFromSharedContact(contacts[0], {
         workspaceRegion: region,
       })
+      const matches = MATCHES[scenario] ?? []
       queryClient.setQueryData(
         contactQueryKeys.match(WORKSPACE_ID, contactIdentityKey(lookup)),
-        MATCHES[scenario] ?? [],
+        matches,
       )
+      // Seeded for the same reason as the match itself: a matched card asks the
+      // contact which numbers it already has, and the harness answers from the
+      // cache rather than from Supabase.
+      for (const entry of matches) {
+        queryClient.setQueryData(
+          contactQueryKeys.phones(WORKSPACE_ID, entry.id),
+          PHONES[scenario] ?? [],
+        )
+      }
     }
     return true
   })

@@ -1244,6 +1244,7 @@ export type Database = {
       }
       normalize_reaction_emoji: { Args: { emoji: string }; Returns: string }
       phone_digits: { Args: { p_value: string }; Returns: string }
+      phone_from_wa_id: { Args: { p_external_id: string }; Returns: string }
       resolve_instagram_conversation: {
         Args: {
           p_avatar_url?: string

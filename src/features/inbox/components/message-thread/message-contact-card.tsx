@@ -1,3 +1,4 @@
+import type { ContactDetail } from '@/entities/contact'
 import type { SharedContact } from '@/entities/message'
 import {
   hasSharedContactIdentity,
@@ -9,6 +10,7 @@ import {
   contactQueryKeys,
   getWorkspaceContact,
   useContactMatches,
+  useContactPhones,
 } from '@/features/contacts'
 import { useWorkspacePhoneRegion } from '@/features/workspaces/hooks/use-workspace-phone-region'
 import { cn } from '@/lib/cn'
@@ -16,6 +18,9 @@ import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import {
   formatPhoneForDisplay,
   formatPhoneForStorage,
+  phoneDigits,
+  phoneLookupDigits,
+  phoneNumbersMatch,
   regionFromExplicitNumber,
 } from '@/lib/phone-identity'
 import type { PhoneRegionContext } from '@/lib/phone-identity'
@@ -59,12 +64,14 @@ export function MessageContactCard({ contacts, isOutbound, workspaceId }: Props)
  *
  *   unknown             Create contact  (opens the contact form, prefilled)
  *   already in the CRM  Open contact    (navigates to the contact)
+ *   in the CRM, but     Open contact + Add to contact, which opens that
+ *   missing a number    contact's form with the missing numbers filled in
  *   several candidates  Review match    (asks, never guesses)
  *   nothing to match on Copy details
  *   country unknown     Copy details + Create, and says why it could not check
  *
- * Receiving one of these never writes anything: no contact is created, and no
- * toast is raised, until the user asks for it.
+ * Receiving one of these never writes anything: no contact is created, no
+ * number is added, and no toast is raised, until the user asks for it.
  */
 function SharedContactCard({
   contact,
@@ -88,6 +95,19 @@ function SharedContactCard({
    */
   const [createdContactId, setCreatedContactId] = useState<string | null>(null)
   const [isOpening, setIsOpening] = useState(false)
+  const [isExtending, setIsExtending] = useState(false)
+  /**
+   * The contact whose form is open to receive numbers off this card, with the
+   * numbers as they stood when the user asked for them.
+   *
+   * Held together, and frozen, because saving invalidates the contact's phone
+   * set: recomputing the missing numbers mid-dialog would empty the rows the
+   * user is looking at.
+   */
+  const [extendTarget, setExtendTarget] = useState<{
+    contact: ContactDetail
+    phones: Array<string>
+  } | null>(null)
   const queryClient = useQueryClient()
 
   // A number written without a country code is read under the workspace's
@@ -125,29 +145,97 @@ function SharedContactCard({
 
   const matchedContactId =
     createdContactId ?? (matches.length === 1 ? matches[0].id : null)
+  const matchedContact =
+    matches.find((entry) => entry.id === matchedContactId) ?? null
+  // The matched contact's whole set, not just the primary the match reports:
+  // "the contact already has this number" has to be true of every number it has.
+  const matchedPhonesQuery = useContactPhones(workspaceId, matchedContactId ?? '')
 
   /**
-   * Opens a matched contact, having first checked it is still there.
+   * Numbers on this card that the matched contact does not carry.
+   *
+   * This is the case the CRM used to lose silently. A card can name a person by
+   * two numbers while the contact record — opened from a conversation, or saved
+   * before the second number existed — knows only one, and the card would then
+   * offer to open a record it could see was incomplete.
+   *
+   * Compared through {@link phoneLookupDigits}, so a stored `+7 701 747 3004`
+   * and a shared `+77017473004` are one number. A card number that cannot be
+   * placed in a country is skipped: it can be neither compared with what the
+   * contact has nor stored as something dialable, and the card already says so.
+   */
+  const missingPhones = useMemo(() => {
+    const loaded = matchedPhonesQuery.data
+    if (!matchedContactId || !loaded) return []
+    // Nothing to compare against: no rows, and no match row to read a primary
+    // from (a contact this card created itself). Saying "add" here would be a
+    // guess, and the guess would duplicate a number.
+    if (loaded.length === 0 && !matchedContact) return []
+
+    const known = new Set<string>()
+    const remember = (value: string | null) => {
+      const trimmed = value?.trim()
+      if (!trimmed) return
+      // The literal digits as well as the resolved forms, so a stored number
+      // that cannot be placed still shadows an identical one on the card.
+      known.add(phoneDigits(trimmed))
+      for (const digits of phoneLookupDigits(trimmed, regionContext)) {
+        known.add(digits)
+      }
+    }
+    for (const entry of loaded) remember(entry.phone)
+    remember(matchedContact?.phone ?? null)
+
+    const missing: Array<string> = []
+    for (const phone of contact.phoneNumbers) {
+      const cardDigits = phoneLookupDigits(phone, regionContext)
+      if (cardDigits.length === 0) continue
+      if (cardDigits.some((digits) => known.has(digits))) continue
+      const stored = formatPhoneForStorage(phone, regionContext)
+      if (
+        missing.some((existing) =>
+          phoneNumbersMatch(existing, stored, regionContext),
+        )
+      ) {
+        continue
+      }
+      missing.push(stored)
+    }
+    return missing
+  }, [
+    contact.phoneNumbers,
+    matchedContact,
+    matchedContactId,
+    matchedPhonesQuery.data,
+    regionContext,
+  ])
+
+  /**
+   * Reads a matched contact back, to check it is still there.
    *
    * A match can be stale — someone else deleted the contact since the lookup
-   * ran — and navigating to a not-found page would be the card blaming the user
-   * for its own stale answer. Instead the lookup is dropped, the local
-   * "just created" id with it, and the card falls back to offering a create.
+   * ran — and acting on it would be the card blaming the user for its own stale
+   * answer. Instead the lookup is dropped, the local "just created" id with it,
+   * and the card falls back to offering a create.
    */
+  const resolveMatch = async (contactId: string) => {
+    const stillThere = await getWorkspaceContact({ workspaceId, contactId })
+    if (stillThere) return stillThere
+
+    setCreatedContactId(null)
+    setIsReviewOpen(false)
+    await queryClient.invalidateQueries({
+      queryKey: contactQueryKeys.matches(workspaceId),
+    })
+    showToast({ body: m.inbox_shared_contact_missing(), type: 'error' })
+    return null
+  }
+
   const openContact = async (contactId: string) => {
     if (isOpening) return
     setIsOpening(true)
     try {
-      const stillThere = await getWorkspaceContact({ workspaceId, contactId })
-      if (!stillThere) {
-        setCreatedContactId(null)
-        setIsReviewOpen(false)
-        await queryClient.invalidateQueries({
-          queryKey: contactQueryKeys.matches(workspaceId),
-        })
-        showToast({ body: m.inbox_shared_contact_missing(), type: 'error' })
-        return
-      }
+      if (!(await resolveMatch(contactId))) return
       setIsReviewOpen(false)
       await navigate({
         to: '/workspaces/$id/contacts/$contactId',
@@ -157,6 +245,25 @@ function SharedContactCard({
       showToast({ body: m.inbox_shared_contact_open_failed(), type: 'error' })
     } finally {
       setIsOpening(false)
+    }
+  }
+
+  /**
+   * Opens the matched contact's own form with the missing numbers already in
+   * it. Deliberately not a direct write: the user sees which numbers are being
+   * added to whom, and saves — the same bargain "Create contact" makes.
+   */
+  const addMissingPhones = async (contactId: string) => {
+    if (isExtending || missingPhones.length === 0) return
+    setIsExtending(true)
+    try {
+      const record = await resolveMatch(contactId)
+      if (!record) return
+      setExtendTarget({ contact: record, phones: missingPhones })
+    } catch {
+      showToast({ body: m.inbox_shared_contact_open_failed(), type: 'error' })
+    } finally {
+      setIsExtending(false)
     }
   }
 
@@ -244,7 +351,7 @@ function SharedContactCard({
     }
 
     if (matchedContactId) {
-      return (
+      const openAction = (
         <Button
           label={m.inbox_shared_contact_open()}
           size="sm"
@@ -253,6 +360,28 @@ function SharedContactCard({
           isDisabled={isOpening}
           onClick={() => void openContact(matchedContactId)}
         />
+      )
+
+      if (missingPhones.length === 0) return openAction
+
+      // Said before it is offered: without the sentence, a second button beside
+      // "Open contact" is a mystery, and the number it would add is one the
+      // reader can already see two lines above.
+      return (
+        <>
+          <span role="status" className={cn('text-xs', muted)}>
+            {m.inbox_shared_contact_phones_missing()}
+          </span>
+          {openAction}
+          <Button
+            label={m.inbox_shared_contact_add_phones()}
+            size="sm"
+            variant="ghost"
+            isLoading={isExtending}
+            isDisabled={isExtending}
+            onClick={() => void addMissingPhones(matchedContactId)}
+          />
+        </>
       )
     }
 
@@ -352,6 +481,21 @@ function SharedContactCard({
           // Stay in the conversation: this was started from a message, not from
           // the directory.
           onCreated={(created) => setCreatedContactId(created.id)}
+        />
+      ) : null}
+
+      {/* The matched contact's own edit form, carrying the numbers this card
+        knows and it does not. Mounted only once the record has been read back,
+        so it never opens on a contact that has since been deleted. */}
+      {extendTarget ? (
+        <ContactFormDialog
+          workspaceId={workspaceId}
+          contact={extendTarget.contact}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setExtendTarget(null)
+          }}
+          additionalPhones={extendTarget.phones}
         />
       ) : null}
 

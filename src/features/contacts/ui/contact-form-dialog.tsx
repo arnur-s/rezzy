@@ -4,6 +4,7 @@ import { useWorkspacePhoneRegion } from '@/features/workspaces/hooks/use-workspa
 import { useWorkspaceMemberDirectory } from '@/features/workspaces/hooks/use-workspaces'
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { fieldLabel } from '@/lib/field-label'
+import { phoneNumbersMatch } from '@/lib/phone-identity'
 import { m } from '@/paraglide/messages'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { Button } from '@astryxdesign/core/Button'
@@ -45,6 +46,17 @@ type Props = {
    */
   initialValues?: Partial<ContactFormValues>
   /**
+   * Numbers to append to an *edit*, as extra rows below the ones the contact
+   * already has. For a caller that knows a number the record does not — a
+   * contact card shared in a conversation, matched to someone already in the
+   * CRM. Numbers the contact already carries, in any spelling, are dropped
+   * rather than added a second time.
+   *
+   * Seeding rather than saving is the whole point: the rows arrive filled in,
+   * and it is still the user who reads them and presses Save.
+   */
+  additionalPhones?: Array<string>
+  /**
    * Replaces the default "go to the new contact" navigation. A caller that
    * opened this dialog from somewhere the user is in the middle of something —
    * an open conversation — passes this to stay put.
@@ -68,10 +80,36 @@ function toPhoneRows(
   return primary ? [{ value: primary }] : [{ value: '' }]
 }
 
+/**
+ * The record's own numbers, followed by the seeded ones it does not carry.
+ *
+ * Compared with `phoneNumbersMatch` rather than by string equality: the card
+ * offers `+77017473004` for a contact that stored `+7 701 747 3004`, and the
+ * same number twice in one form is not a correction, it is a mistake the
+ * database would then have to collapse.
+ */
+function withAdditionalPhones(
+  rows: ContactFormValues['phones'],
+  additional: Array<string>,
+): ContactFormValues['phones'] {
+  const merged = rows.filter((row) => row.value.trim() !== '')
+
+  for (const candidate of additional) {
+    const value = candidate.trim()
+    if (!value) continue
+    if (merged.some((row) => phoneNumbersMatch(row.value, value))) continue
+    merged.push({ value })
+  }
+
+  // Every row was blank and nothing was added: the form still needs one field.
+  return merged.length > 0 ? merged : [{ value: '' }]
+}
+
 function toFormValues(
   contact: ContactDetail | null,
   phones: Array<ContactPhone> | undefined,
   initialValues?: Partial<ContactFormValues>,
+  additionalPhones?: Array<string>,
 ): ContactFormValues {
   const base: ContactFormValues = {
     name: contact?.name ?? '',
@@ -81,8 +119,13 @@ function toFormValues(
     ownerId: contact?.owner_id ?? '',
     tags: contact?.tags ?? [],
   }
-  // Only a create can be seeded; an edit's values are the record's.
-  if (contact) return base
+  // An edit's values are the record's, except for numbers a caller explicitly
+  // brought with it — those arrive as extra rows, never as replacements.
+  if (contact) {
+    return additionalPhones?.length
+      ? { ...base, phones: withAdditionalPhones(base.phones, additionalPhones) }
+      : base
+  }
   const seeded = { ...base, ...initialValues }
   // An empty seeded list would render a form with no phone field at all.
   return seeded.phones.length > 0 ? seeded : { ...seeded, phones: [{ value: '' }] }
@@ -94,6 +137,7 @@ export function ContactFormDialog({
   isOpen,
   onOpenChange,
   initialValues,
+  additionalPhones,
   onCreated,
 }: Props) {
   const showToast = useToast()
@@ -121,7 +165,12 @@ export function ContactFormDialog({
 
   const { control, formState, handleSubmit, reset } =
     useForm<ContactFormValues>({
-      defaultValues: toFormValues(contact, phonesQuery.data, initialValues),
+      defaultValues: toFormValues(
+        contact,
+        phonesQuery.data,
+        initialValues,
+        additionalPhones,
+      ),
       disabled: isPending,
       resolver: standardSchemaResolver(schema),
     })
@@ -129,10 +178,11 @@ export function ContactFormDialog({
   const phoneRows = useFieldArray({ control, name: 'phones' })
 
   // Re-baseline each time the dialog opens, so a cancelled edit does not leak
-  // into the next one. `initialValues` is read through a ref-like dependency on
-  // its serialized form so a caller passing an inline object literal does not
-  // reset the fields on every render.
+  // into the next one. `initialValues` and `additionalPhones` are read through a
+  // ref-like dependency on their serialized form so a caller passing an inline
+  // literal does not reset the fields on every render.
   const initialValuesKey = JSON.stringify(initialValues ?? null)
+  const additionalPhonesKey = JSON.stringify(additionalPhones ?? null)
   const loadedPhones = phonesQuery.data
   useEffect(() => {
     if (!isOpen) return
@@ -142,9 +192,17 @@ export function ContactFormDialog({
         loadedPhones,
         (JSON.parse(initialValuesKey) as Partial<ContactFormValues> | null) ??
           undefined,
+        (JSON.parse(additionalPhonesKey) as Array<string> | null) ?? undefined,
       ),
     )
-  }, [contact, initialValuesKey, isOpen, loadedPhones, reset])
+  }, [
+    additionalPhonesKey,
+    contact,
+    initialValuesKey,
+    isOpen,
+    loadedPhones,
+    reset,
+  ])
 
   function onSubmit(values: ContactFormValues) {
     // Belt and braces with the disabled button: a queued Enter keypress must not

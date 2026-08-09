@@ -14,6 +14,7 @@ import { MessageContactCard } from './message-contact-card'
 const api = vi.hoisted(() => ({
   matchWorkspaceContacts: vi.fn(),
   createContact: vi.fn(),
+  updateContact: vi.fn(),
   getWorkspaceContact: vi.fn(),
   setContactPhones: vi.fn(),
   listContactPhones: vi.fn(),
@@ -51,6 +52,7 @@ vi.mock('@/features/contacts/api/contacts', async () => {
   return {
     ...actual,
     createContact: api.createContact,
+    updateContact: api.updateContact,
     getWorkspaceContact: api.getWorkspaceContact,
   }
 })
@@ -71,6 +73,19 @@ const WHATSAPP_CARD = {
     {
       name: 'Dana Abisheva',
       phones: [{ phone: '+7 701 123 45 67', wa_id: '77011234567' }],
+    },
+  ],
+}
+
+/** One person, two numbers — a real WhatsApp card carries several. */
+const TWO_NUMBER_CARD = {
+  contacts: [
+    {
+      name: 'Dana Abisheva',
+      phones: [
+        { phone: '+7 701 123 45 67', wa_id: '77011234567' },
+        { phone: '+7 705 994 9082', wa_id: '77059949082' },
+      ],
     },
   ],
 }
@@ -397,6 +412,62 @@ describe('MessageContactCard', () => {
         phones: ['+77011234567', '+77019998877'],
       }),
     )
+  })
+
+  it('offers to add a number the matched contact does not have', async () => {
+    // The case the CRM used to lose: the card names Dana by two numbers, the
+    // contact it matches knows only the first, and opening it would show a
+    // record the card can see is incomplete.
+    api.matchWorkspaceContacts.mockResolvedValue([contactMatch()])
+    api.listContactPhones.mockResolvedValue([
+      { id: 'phone-1', phone: '+77011234567', digits: '77011234567', position: 0 },
+    ])
+    api.updateContact.mockResolvedValue(contactDetail({ id: 'contact-1' }))
+
+    renderCard(sharedContact(TWO_NUMBER_CARD))
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add to contact' }),
+    )
+
+    // The contact's own number first, the card's addition after it — the form
+    // shows exactly what is about to be saved, and to whom.
+    expect(
+      (await screen.findByLabelText<HTMLInputElement>(/^Phone ·/)).value,
+    ).toBe('+77011234567')
+    expect(screen.getByLabelText<HTMLInputElement>(/^Phone 2 ·/).value).toBe(
+      '+77059949082',
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(api.setContactPhones).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        contactId: 'contact-1',
+        phones: ['+77011234567', '+77059949082'],
+      }),
+    )
+  })
+
+  it('says nothing when the contact already has every number on the card', async () => {
+    api.matchWorkspaceContacts.mockResolvedValue([contactMatch()])
+    api.listContactPhones.mockResolvedValue([
+      { id: 'phone-1', phone: '+77011234567', digits: '77011234567', position: 0 },
+      // The same second number, spelled the way somebody typed it. Identity is
+      // compared by number, not by string, so this is not a missing one.
+      {
+        id: 'phone-2',
+        phone: '+7 705 994 90 82',
+        digits: '77059949082',
+        position: 1,
+      },
+    ])
+
+    renderCard(sharedContact(TWO_NUMBER_CARD))
+
+    await screen.findByRole('button', { name: 'Open contact' })
+    expect(screen.queryByRole('button', { name: 'Add to contact' })).toBeNull()
   })
 
   it('falls back to copying when the card identifies nobody', async () => {
