@@ -16,6 +16,13 @@ select plan(2);
 -- delete contacts" and "Workspace admins can delete conversations". Hard
 -- deletion of either is no longer reachable -- the policy and the grant both
 -- went -- so there is no longer a policy to cache anything in.
+--
+-- 20260809130000 and 20260809140000 dropped two more the same way: "Workspace
+-- creators can create owner membership" and "Users can create workspaces".
+-- Both direct-insert paths are gone -- workspace_members is now written only
+-- by the SECURITY DEFINER on_workspace_created trigger, and workspaces only by
+-- the SECURITY DEFINER public.create_workspace RPC -- so neither policy exists
+-- to cache an auth.uid() call in.
 with expected_policies(schema_name, table_name, policy_name) as (
   values
     ('public', 'channels', 'Workspace admins can create channels'),
@@ -49,12 +56,6 @@ with expected_policies(schema_name, table_name, policy_name) as (
       'workspace_members',
       'Users can view own workspace memberships'
     ),
-    (
-      'public',
-      'workspace_members',
-      'Workspace creators can create owner membership'
-    ),
-    ('public', 'workspaces', 'Users can create workspaces'),
     (
       'public',
       'workspaces',
