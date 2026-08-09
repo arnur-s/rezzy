@@ -1,6 +1,6 @@
 begin;
 
-select plan(4);
+select plan(5);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -36,6 +36,21 @@ select is(
   private.workspace_role('60000000-0000-4000-8000-000000000101'),
   'admin',
   'workspace_role returns the caller''s role in a live workspace'
+);
+
+-- Pin the no-client-caller property itself, not just its side effect above.
+-- The previous assertion only shows what the function returns when reached at
+-- an elevated role; it says nothing about whether authenticated could reach
+-- it at all. Assert both halves of that directly -- schema USAGE and function
+-- EXECUTE -- so a future migration that re-grants either on `private` fails
+-- this test instead of passing green while quietly reopening the escalation
+-- this task closes.
+select ok(
+  not has_schema_privilege('authenticated', 'private', 'usage')
+  and not has_function_privilege(
+    'authenticated', 'private.workspace_role(uuid)', 'execute'
+  ),
+  'authenticated cannot reach private.workspace_role at all'
 );
 
 -- ── The creator escalation is closed ─────────────────────────────────────────
