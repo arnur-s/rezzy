@@ -144,8 +144,28 @@ export function SettingsShell({
           field flush against both screen edges, and the tab row's `-mx-4`
           bleed has nothing to bleed out of. The bottom half of `py-6 md:py-8`
           is what the last row scrolls to, so it does not end against the
-          pane's own edge. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+          pane's own edge.
+
+          The reserved scrollbar gutter is what keeps the sections from moving
+          under each other. Profile is the only account section tall enough to
+          scroll, so it was the only one with a scrollbar, and a classic 15px
+          scrollbar narrows this box — which re-centers `mx-auto` and slid the
+          whole column 7.5px left on Profile and back again on every other tab.
+          The header sits outside this box and never moved, so the same 15px
+          also pulled the title off the axis it shares with the fields.
+
+          `both-edges` rather than plain `stable`: reserving on one side alone
+          fixes the jump between sections but leaves the column permanently
+          half a gutter off the header. Reserving on both keeps the box
+          symmetric, so the two stay centered on the same axis.
+
+          `md:` because that is where the column starts being centered at all —
+          below 768px it is narrower than `max-w-3xl` and simply fills the
+          pane, so there is nothing to re-center, and reserving 15px a side
+          there would eat into the phone inset and the tab row's bleed. Where
+          this row does overflow on a phone, the scrollbar is an overlay and
+          reserves nothing anyway. */}
+      <div className="min-h-0 flex-1 overflow-y-auto md:[scrollbar-gutter:stable_both-edges]">
         <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
           <p className="text-secondary text-xs font-medium">{kicker}</p>
 

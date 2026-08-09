@@ -124,6 +124,15 @@ describe('settings shell mobile contract', () => {
     expect(shell).toMatch(/max-w-3xl px-4 py-6 sm:px-8 md:py-8/)
   })
 
+  it('reserves the scrollbar gutter, so sections do not shift under each other', () => {
+    // Only some sections are tall enough to scroll — Profile is, Appearance is
+    // not — so without a reserved gutter a 15px scrollbar appears and vanishes
+    // between tabs, re-centering `mx-auto` and sliding the whole column 7.5px.
+    // `both-edges` keeps the box symmetric so the column stays on the header's
+    // axis; `md:` because that is where the column starts being centered.
+    expect(shell).toContain('md:[scrollbar-gutter:stable_both-edges]')
+  })
+
   for (const [name, path] of [
     ['account', ACCOUNT_ROUTE],
     ['workspace', WORKSPACE_ROUTE],
