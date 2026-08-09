@@ -343,9 +343,14 @@ export default {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // The workspace is embedded rather than fetched separately: this runs as
+    // service_role on every update Telegram sends, so it must stay one round
+    // trip. Telegram has no channel-lookup RPC -- unlike WhatsApp and Instagram
+    // it addresses the channel by id in the URL -- so this is where the
+    // soft-delete guard lives for it. See 20260809120000.
     const { data: channel, error: channelError } = await supabase
       .from('channels')
-      .select('id, workspace_id, is_active')
+      .select('id, workspace_id, is_active, workspaces(deleted_at)')
       .eq('id', channelId)
       .eq('type', 'telegram')
       .single()
@@ -353,6 +358,16 @@ export default {
     if (channelError || !channel) {
       console.error('Channel not found:', channelId)
       return new Response('Channel not found', { status: 404 })
+    }
+
+    // Acknowledged and dropped, not refused: a 404 would keep Telegram retrying
+    // an update that will never be accepted. Checked before the credentials are
+    // loaded so a deleted workspace's secret is never decrypted.
+    if (channel.workspaces?.deleted_at) {
+      console.log(
+        `telegram-webhook: workspace ${channel.workspace_id} is deleted, dropping update`,
+      )
+      return new Response('OK', { status: 200 })
     }
 
     const { data: credentials, error: secretError } = await supabase.rpc(

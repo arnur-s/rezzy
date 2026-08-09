@@ -561,9 +561,15 @@ export default {
       const igAccountId = entry.id?.trim()
       if (!igAccountId) continue
 
+      // The workspace is embedded so the guard costs no extra round trip on the
+      // hot path. resolve_instagram_conversation() carries the same check (see
+      // 20260809120000) and is the authoritative one; this stops the work that
+      // happens before it -- the provider-event claim, the credential decrypt,
+      // and the channel-activity touch -- from running for a workspace nobody
+      // can open.
       const { data: channel, error: lookupError } = await supabase
         .from('channels')
-        .select('id, workspace_id, is_active')
+        .select('id, workspace_id, is_active, workspaces(deleted_at)')
         .eq('type', 'instagram')
         .eq('provider_account_id', igAccountId)
         .maybeSingle()
@@ -575,6 +581,12 @@ export default {
       }
       if (!channel) {
         console.log(`instagram-webhook: no channel for entry.id=${igAccountId}`)
+        continue
+      }
+      if (channel.workspaces?.deleted_at) {
+        console.log(
+          `instagram-webhook: workspace ${channel.workspace_id} is deleted, skipping entry`,
+        )
         continue
       }
 

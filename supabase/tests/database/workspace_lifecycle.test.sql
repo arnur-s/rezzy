@@ -1,13 +1,13 @@
 begin;
 
-select plan(20);
+select plan(27);
 
 -- What happens to a workspace and its people over time: the name it may carry,
 -- what a soft delete withdraws, whether a replacement can be created, and what
 -- is left behind when somebody is removed from the roster.
 --
 -- Fixture numbering avoids the ranges used by the other files:
---   users …01{51..53}   workspaces …02{51..53}   channels …04{51}
+--   users …01{51..53}   workspaces …02{51..53}   channels …04{51..53}
 --   contacts …03{51,52} conversations …05{51}    messages …06{51}
 
 insert into auth.users (id, email, raw_user_meta_data)
@@ -118,6 +118,44 @@ select ok(
 
 reset role;
 
+-- ── The webhook ingress, while the workspace is live ─────────────────────────
+--
+-- Every provider webhook runs as service_role, where RLS -- and therefore
+-- is_workspace_member() -- never executes, so the delete has to be visible to
+-- the lookups themselves. Seeded after the count assertions above so those keep
+-- reading one channel.
+
+insert into public.channels (id, workspace_id, type, name)
+values
+  ('50000000-0000-4000-8000-000000000452',
+   '50000000-0000-4000-8000-000000000251', 'whatsapp', 'Lifecycle WA'),
+  ('50000000-0000-4000-8000-000000000453',
+   '50000000-0000-4000-8000-000000000251', 'instagram', 'Lifecycle IG');
+
+select public.upsert_channel_credentials(
+  '50000000-0000-4000-8000-000000000452',
+  '{"access_token":"lifecycle-wa-token","phone_number_id":"5551110000"}'::jsonb,
+  '50000000-0000-4000-8000-000000000251'
+);
+
+select results_eq(
+  $$
+    select channel_id from public.get_whatsapp_channel_by_phone('5551110000')
+  $$,
+  $$ values ('50000000-0000-4000-8000-000000000452'::uuid) $$,
+  'an inbound WhatsApp webhook routes to its channel while the workspace is live'
+);
+
+select lives_ok(
+  $$
+    select public.resolve_instagram_conversation(
+      '50000000-0000-4000-8000-000000000453', 'LIFECYCLE_SENDER',
+      null, null, null
+    )
+  $$,
+  'an inbound Instagram webhook resolves a conversation while the workspace is live'
+);
+
 -- ── Soft delete withdraws the whole workspace, not just its own row ──────────
 --
 -- soft_delete_workspace is REVOKEd from PUBLIC and never granted to
@@ -194,6 +232,66 @@ select throws_ok(
   '42501',
   null,
   'writes into a deleted workspace are refused, not merely hidden'
+);
+
+reset role;
+
+-- ── …and the service-role paths stop with them ───────────────────────────────
+--
+-- Without these two joins the webhooks kept creating contacts, conversations
+-- and messages in a workspace nobody could read, for as long as the provider
+-- kept delivering. Channels are deliberately left active: is_active describes
+-- the provider connection, not the workspace, and overwriting it would make a
+-- restore guess which channels had been switched off on purpose. 20260809120000
+-- has the reasoning.
+
+select is_empty(
+  $$ select * from public.get_whatsapp_channel_by_phone('5551110000') $$,
+  'an inbound WhatsApp webhook routes nowhere once the workspace is deleted'
+);
+
+select throws_ok(
+  $$
+    select public.resolve_instagram_conversation(
+      '50000000-0000-4000-8000-000000000453', 'LIFECYCLE_SENDER_2',
+      null, null, null
+    )
+  $$,
+  'P0001',
+  'unknown or unavailable Instagram channel 50000000-0000-4000-8000-000000000453',
+  'an inbound Instagram webhook cannot create a conversation in a deleted workspace'
+);
+
+select ok(
+  (
+    select is_active
+    from public.channels
+    where id = '50000000-0000-4000-8000-000000000452'
+  ),
+  'the channel itself is untouched, so a restore stays a single flag flip'
+);
+
+-- ── Archive and restore go with the workspace too ────────────────────────────
+--
+-- Both read workspace_members directly for the owner/admin check and omitted
+-- the join to workspaces that their sibling list_archived_contacts carries.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"50000000-0000-4000-8000-000000000151","role":"authenticated"}';
+
+select throws_ok(
+  $$ select public.archive_contact('50000000-0000-4000-8000-000000000351') $$,
+  '42501',
+  'NOT_A_WORKSPACE_ADMIN',
+  'the owner cannot archive a contact in the workspace they deleted'
+);
+
+select throws_ok(
+  $$ select public.restore_contact('50000000-0000-4000-8000-000000000351') $$,
+  '42501',
+  'NOT_A_WORKSPACE_ADMIN',
+  'nor restore one'
 );
 
 reset role;
