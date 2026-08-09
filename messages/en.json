@@ -941,6 +941,115 @@
       }
     }
   ],
+  "contacts_filter_duplicates": "Duplicates",
+  "contacts_duplicates_notice": "Contacts sharing a phone number, channel or email. Name matches are not considered.",
+  "contacts_duplicates_empty_title": "No duplicates",
+  "contacts_duplicates_empty_description": "Contacts sharing a phone number, channel or email will appear here.",
+  "contacts_duplicates_load_error": "Could not load duplicates",
+  "contacts_duplicates_reason_phone": "Same phone number",
+  "contacts_duplicates_reason_channel": "Same channel",
+  "contacts_duplicates_reason_email": "Same email",
+  "contacts_duplicates_merge_action": "Merge",
+  "contacts_duplicates_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} match",
+        "countPlural=*": "{count} matches"
+      }
+    }
+  ],
+  "contacts_duplicates_group_size": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} contact",
+        "countPlural=*": "{count} contacts"
+      }
+    }
+  ],
+  "contacts_merge_selected": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} contact selected",
+        "countPlural=*": "{count} contacts selected"
+      }
+    }
+  ],
+  "contacts_merge_selection_hint": "Select exactly two contacts to merge them.",
+  "contacts_merge_selection_clear": "Clear selection",
+  "contacts_merge_title": "Merge contacts",
+  "contacts_merge_subtitle": "Choose which contact stays and which details to keep.",
+  "contacts_merge_keep_label": "Contact to keep",
+  "contacts_merge_conflicts_label": "Details to keep",
+  "contacts_merge_no_conflicts": "These contacts do not disagree on anything — merging overwrites nothing.",
+  "contacts_merge_always_kept": "Phones, channels, conversations, notes and tags from both contacts are kept.",
+  "contacts_merge_field_name": "Name",
+  "contacts_merge_field_email": "Email",
+  "contacts_merge_field_owner": "Owner",
+  "contacts_merge_field_status": "Status",
+  "contacts_merge_field_avatar": "Photo",
+  "contacts_merge_field_source": "Source",
+  "contacts_merge_value_empty": "Not set",
+  "contacts_merge_continue": "Continue",
+  "contacts_merge_back": "Back",
+  "contacts_merge_confirm_title": "Merge these contacts?",
+  "contacts_merge_confirm_body": "\"{merged}\" will be merged into \"{survivor}\" and archived.",
+  "contacts_merge_confirm_moves": "Moving to \"{survivor}\": {summary}.",
+  "contacts_merge_confirm_override": "{field}: \"{before}\" will be replaced with \"{after}\".",
+  "contacts_merge_confirm_irreversible": "This cannot be undone.",
+  "contacts_merge_confirm_action": "Merge",
+  "contacts_merge_clash_title": "These contacts cannot be merged",
+  "contacts_merge_clash_body": "Both have a conversation on \"{channel}\". Merging conversations is not supported yet.",
+  "contacts_merge_error": "Could not merge the contacts",
+  "contacts_merge_error_not_admin": "Only the owner and admins can merge contacts",
+  "contacts_merged_toast": "Contacts merged",
+  "contacts_archived_merged_into": "Merged into \"{name}\"",
+  "contact_detail_merged_redirect": "This contact was merged into another one",
+  "contacts_merge_moves_conversations": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} conversation",
+        "countPlural=*": "{count} conversations"
+      }
+    }
+  ],
+  "contacts_merge_moves_notes": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} note",
+        "countPlural=*": "{count} notes"
+      }
+    }
+  ],
+  "contacts_merge_moves_phones": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} phone number",
+        "countPlural=*": "{count} phone numbers"
+      }
+    }
+  ],
+  "contacts_merge_moves_channels": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} channel",
+        "countPlural=*": "{count} channels"
+      }
+    }
+  ],
   "contact_form_create_title": "Add contact",
   "contact_form_edit_title": "Edit contact",
   "contact_form_name": "Name",

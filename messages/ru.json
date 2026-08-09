@@ -981,6 +981,122 @@
       }
     }
   ],
+  "contacts_filter_duplicates": "Дубликаты",
+  "contacts_duplicates_notice": "Контакты, у которых совпадает номер, канал или email. Совпадение по имени не учитывается.",
+  "contacts_duplicates_empty_title": "Дубликатов нет",
+  "contacts_duplicates_empty_description": "Здесь появятся контакты с одинаковым номером, каналом или email.",
+  "contacts_duplicates_load_error": "Не удалось загрузить дубликаты",
+  "contacts_duplicates_reason_phone": "Совпадает номер",
+  "contacts_duplicates_reason_channel": "Совпадает канал",
+  "contacts_duplicates_reason_email": "Совпадает email",
+  "contacts_duplicates_merge_action": "Объединить",
+  "contacts_duplicates_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} совпадение",
+        "countPlural=few": "{count} совпадения",
+        "countPlural=*": "{count} совпадений"
+      }
+    }
+  ],
+  "contacts_duplicates_group_size": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} контакт",
+        "countPlural=few": "{count} контакта",
+        "countPlural=*": "{count} контактов"
+      }
+    }
+  ],
+  "contacts_merge_selected": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Выбран {count} контакт",
+        "countPlural=few": "Выбрано {count} контакта",
+        "countPlural=*": "Выбрано {count} контактов"
+      }
+    }
+  ],
+  "contacts_merge_selection_hint": "Выберите ровно два контакта, чтобы объединить их.",
+  "contacts_merge_selection_clear": "Снять выделение",
+  "contacts_merge_title": "Объединение контактов",
+  "contacts_merge_subtitle": "Выберите, какой контакт останется и какие данные сохранить.",
+  "contacts_merge_keep_label": "Какой контакт останется",
+  "contacts_merge_conflicts_label": "Что сохранить",
+  "contacts_merge_no_conflicts": "Данные контактов не противоречат друг другу — объединение ничего не перезапишет.",
+  "contacts_merge_always_kept": "Телефоны, каналы, диалоги, заметки и теги обоих контактов сохранятся.",
+  "contacts_merge_field_name": "Имя",
+  "contacts_merge_field_email": "Email",
+  "contacts_merge_field_owner": "Ответственный",
+  "contacts_merge_field_status": "Статус",
+  "contacts_merge_field_avatar": "Фото",
+  "contacts_merge_field_source": "Источник",
+  "contacts_merge_value_empty": "Не указано",
+  "contacts_merge_continue": "Продолжить",
+  "contacts_merge_back": "Назад",
+  "contacts_merge_confirm_title": "Объединить контакты?",
+  "contacts_merge_confirm_body": "«{merged}» будет объединён с «{survivor}» и отправлен в архив.",
+  "contacts_merge_confirm_moves": "Перейдут к «{survivor}»: {summary}.",
+  "contacts_merge_confirm_override": "{field}: «{before}» будет заменено на «{after}».",
+  "contacts_merge_confirm_irreversible": "Это действие нельзя отменить.",
+  "contacts_merge_confirm_action": "Объединить",
+  "contacts_merge_clash_title": "Эти контакты нельзя объединить",
+  "contacts_merge_clash_body": "У обоих есть диалог в канале «{channel}». Объединение таких диалогов пока не поддерживается.",
+  "contacts_merge_error": "Не удалось объединить контакты",
+  "contacts_merge_error_not_admin": "Объединять контакты могут только владелец и администраторы",
+  "contacts_merged_toast": "Контакты объединены",
+  "contacts_archived_merged_into": "Объединён с «{name}»",
+  "contact_detail_merged_redirect": "Этот контакт был объединён с другим",
+  "contacts_merge_moves_conversations": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} диалог",
+        "countPlural=few": "{count} диалога",
+        "countPlural=*": "{count} диалогов"
+      }
+    }
+  ],
+  "contacts_merge_moves_notes": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} заметка",
+        "countPlural=few": "{count} заметки",
+        "countPlural=*": "{count} заметок"
+      }
+    }
+  ],
+  "contacts_merge_moves_phones": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} номер",
+        "countPlural=few": "{count} номера",
+        "countPlural=*": "{count} номеров"
+      }
+    }
+  ],
+  "contacts_merge_moves_channels": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} канал",
+        "countPlural=few": "{count} канала",
+        "countPlural=*": "{count} каналов"
+      }
+    }
+  ],
   "contact_form_create_title": "Новый контакт",
   "contact_form_edit_title": "Изменить контакт",
   "contact_form_name": "Имя",
