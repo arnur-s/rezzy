@@ -299,4 +299,101 @@ revoke all on function public.list_archived_contacts(uuid, text, integer, intege
 grant execute on function public.list_archived_contacts(uuid, text, integer, integer)
   to authenticated;
 
+
+-- =========================================================
+-- unarchive_on_inbound_message: don't unarchive a merged shell
+-- =========================================================
+--
+-- This function clears deleted_at with no merged_into_id predicate, and
+-- contacts_merged_is_archived_check above allows deleted_at is not null and
+-- merged_into_id is not null, but not the reverse. Reachability is narrow --
+-- merge_contacts (part 2 of 3) repoints a contact's conversations before
+-- archiving it, so an inbound message on one of them should already be
+-- landing on the survivor's conversation by the time this trigger runs -- but
+-- a conversation created by a concurrent resolve_*_conversation between the
+-- repoint and the archive stamp would still point at the loser, and without
+-- this predicate an inbound message on it would try to clear deleted_at on a
+-- contact that still carries merged_into_id. That UPDATE matches the check
+-- constraint's failing case, and because this trigger is BEFORE INSERT on
+-- public.messages, the 23514 aborts the whole insert -- the inbound message
+-- is lost rather than the unarchive simply doing nothing.
+--
+-- CREATE OR REPLACE preserves the grants (there are none to revoke; this
+-- function is never callable directly) and the existing comment from
+-- 20260808090200. Everything about the function is unchanged except the one
+-- added predicate below.
+
+create or replace function public.unarchive_on_inbound_message()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_contact_id uuid;
+  v_conversation_archived boolean;
+  v_contact_archived boolean;
+begin
+  if new.direction <> 'inbound' then
+    return new;
+  end if;
+
+  -- One primary-key probe on the hot path. Reading both states before writing
+  -- anything keeps the overwhelmingly common case -- a live conversation -- to a
+  -- single SELECT rather than two UPDATEs that match no rows.
+  select
+    cv.contact_id,
+    cv.deleted_at is not null,
+    c.deleted_at is not null
+  into v_contact_id, v_conversation_archived, v_contact_archived
+  from public.conversations cv
+  join public.contacts c
+    on c.id = cv.contact_id
+   and c.workspace_id = cv.workspace_id
+  where cv.id = new.conversation_id;
+
+  if v_contact_id is null then
+    -- No conversation, or no contact behind it. The foreign key on the insert
+    -- about to happen is what reports that; this trigger stays out of it.
+    return new;
+  end if;
+
+  if not v_conversation_archived and not v_contact_archived then
+    return new;
+  end if;
+
+  -- Clearing the contact is enough in the normal case:
+  -- trg_cascade_contact_archive carries the null down to every conversation of
+  -- this contact, which is what keeps the two in one shared state.
+  --
+  -- merged_into_id is null: a merged contact's children belong to the
+  -- survivor now, so this trigger leaves it archived rather than writing a
+  -- deleted_at/merged_into_id combination contacts_merged_is_archived_check
+  -- rejects. The message still inserts; the shell just stays a shell.
+  if v_contact_archived then
+    update public.contacts
+    set
+      deleted_at = null,
+      updated_at = now()
+    where id = v_contact_id
+      and deleted_at is not null
+      and merged_into_id is null;
+  end if;
+
+  -- Reached when a conversation is archived while its contact is not -- which
+  -- the cascade never produces, but a direct write could. Guarded on deleted_at
+  -- so it is a no-op when the cascade above already cleared it.
+  if v_conversation_archived then
+    update public.conversations
+    set
+      deleted_at = null,
+      updated_at = now()
+    where id = new.conversation_id
+      and deleted_at is not null;
+  end if;
+
+  return new;
+end;
+$$;
+
 commit;
