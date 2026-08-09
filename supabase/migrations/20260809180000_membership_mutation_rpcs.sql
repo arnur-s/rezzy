@@ -23,8 +23,17 @@ begin;
 -- owner set together and gives concurrent callers a single scan order to
 -- serialize on. A workspace roster is tens of rows; the cost is irrelevant.
 --
--- Every read after that -- the target's role, the owner count -- runs inside
--- the lock and observes a roster nobody else can move.
+-- Every read after the lock -- the actor's own role, the target's role, the
+-- owner count -- runs inside it and observes a roster nobody else can move.
+-- The actor's role is also read once *before* the lock, but only as a cheap
+-- reject for a caller who plainly never had permission, so an unauthorized
+-- caller does not pay for taking a roster-wide lock. That pre-lock read is
+-- provisional: the actor's own role can change, or the actor can be removed
+-- from the workspace entirely, while their transaction is waiting for the
+-- lock a concurrent caller holds. Every authorization decision that matters
+-- -- OWNER_ROLE_REQUIRES_OWNER above all -- is therefore taken from a second,
+-- authoritative read of the actor's role performed immediately after the
+-- lock is acquired, never from the pre-lock value.
 
 create or replace function public.update_workspace_member_role(
   p_workspace_id uuid,
@@ -46,6 +55,10 @@ begin
     raise exception 'NOT_AUTHENTICATED' using errcode = '28000';
   end if;
 
+  -- Cheap pre-lock reject: a caller who plainly has no membership, or holds
+  -- neither owner nor admin, should not pay for a roster-wide lock. This
+  -- read is provisional -- see the header comment -- and is re-taken,
+  -- authoritatively, immediately after the lock below.
   if v_actor_role is null or v_actor_role not in ('owner', 'admin') then
     raise exception 'NOT_A_WORKSPACE_ADMIN' using errcode = '42501';
   end if;
@@ -59,6 +72,19 @@ begin
   where wm.workspace_id = p_workspace_id
   order by wm.user_id
   for update;
+
+  -- Authoritative re-read. A concurrent transaction may have demoted or
+  -- removed the actor between the provisional check above and this lock;
+  -- every decision from here on must use this value, not the stale one.
+  select wm.role
+  into v_actor_role
+  from public.workspace_members wm
+  where wm.workspace_id = p_workspace_id
+    and wm.user_id = v_actor;
+
+  if v_actor_role is null or v_actor_role not in ('owner', 'admin') then
+    raise exception 'NOT_A_WORKSPACE_ADMIN' using errcode = '42501';
+  end if;
 
   select wm.role
   into v_target_role
@@ -129,11 +155,15 @@ begin
     raise exception 'NOT_AUTHENTICATED' using errcode = '28000';
   end if;
 
+  v_is_self := (p_user_id = v_actor);
+
+  -- Cheap pre-lock reject, same reasoning as update_workspace_member_role's
+  -- header comment: a caller who plainly has no membership, or is trying to
+  -- remove somebody else without owner/admin rights, should not pay for a
+  -- roster-wide lock. Provisional -- re-taken authoritatively after the lock.
   if v_actor_role is null then
     raise exception 'NOT_A_WORKSPACE_ADMIN' using errcode = '42501';
   end if;
-
-  v_is_self := (p_user_id = v_actor);
 
   -- Leaving is removing yourself, so a plain member needs no admin rights for
   -- it -- but they may not remove anybody else.
@@ -146,6 +176,26 @@ begin
   where wm.workspace_id = p_workspace_id
   order by wm.user_id
   for update;
+
+  -- Authoritative re-read. A concurrent transaction may have demoted or
+  -- removed the actor between the provisional checks above and this lock;
+  -- every decision from here on -- including the self/admin gate and
+  -- OWNER_ROLE_REQUIRES_OWNER -- must use this value, not the stale one.
+  -- v_is_self itself needs no re-read: it compares two user ids, neither of
+  -- which this statement can change.
+  select wm.role
+  into v_actor_role
+  from public.workspace_members wm
+  where wm.workspace_id = p_workspace_id
+    and wm.user_id = v_actor;
+
+  if v_actor_role is null then
+    raise exception 'NOT_A_WORKSPACE_ADMIN' using errcode = '42501';
+  end if;
+
+  if not v_is_self and v_actor_role not in ('owner', 'admin') then
+    raise exception 'NOT_A_WORKSPACE_ADMIN' using errcode = '42501';
+  end if;
 
   select wm.role
   into v_target_role
