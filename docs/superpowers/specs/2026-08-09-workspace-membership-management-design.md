@@ -177,7 +177,7 @@ the address that was actually resolved, not the spoofable `profiles.email`.
 
 `invited_by` and `resolved_by` follow the actor-FK convention established by
 `20260804100000_actor_fks_on_delete_set_null.sql`: an actor who leaves does not
-delete the audit row.
+delete the history row.
 
 Indexes:
 
@@ -429,6 +429,14 @@ is its own module rather than growing that file further.
 
 - The invite section loses its `Badge variant="warning"` and its `isDisabled`.
   Email field plus a role select (`Администратор` / `Участник`).
+- **The email field carries permanent helper text**, rendered before any
+  submission, stating that only people who already have a Rezzy account can be
+  invited and that the invitee must sign up first and share the address they
+  registered with. This is a standing constraint of the invite model, not an
+  error: it must be readable by an inviter who has typed nothing yet, so it
+  cannot be deferred to validation state. It is separate from, and does not
+  replace, the `USER_NOT_FOUND` error — the error explains a failed attempt,
+  the helper prevents one.
 - A pending-invitations section listing invitee, role, inviter, and a revoke
   action. Hidden entirely for non-admins, who cannot read it anyway.
 - Roster rows gain a role menu and a remove action.
@@ -474,12 +482,40 @@ are an unread-**conversations** view, as
 them, not a notification centre.
 
 **So: no new mechanism is introduced.** `useMessageNotifications` gains a second
-`.on('postgres_changes', ...)` binding on the same per-user channel —
-`INSERT on public.workspace_invitations` filtered
-`invited_user_id=eq.${userId}` — reusing the deduper, the tab coordinator, and
+`.on('postgres_changes', ...)` binding on the same per-user channel, filtered
+`invited_user_id=eq.${userId}`, reusing the deduper, the tab coordinator, and
 the sound, and presenting a distinct invitation toast with Accept / Decline and
 a link to the switcher. The hook keeps its name or gains a neutral one; either
 way it stays mounted once, from the same provider.
+
+**It must bind `INSERT` *and* `UPDATE`.** A re-invite is an `ON CONFLICT
+DO UPDATE`, so an invitation that was already pending produces an UPDATE and no
+INSERT. Binding INSERT alone means the one case where an admin actively tries
+again — because the first attempt went unnoticed — is the one case that
+notifies nobody.
+
+**Re-invite notifies again.** `role`, `invited_by`, and `created_at` can all
+change, so the invitee is being told something new. Present an UPDATE only when
+the resulting row is still `pending`; accept, reject, and revoke all move
+`status` away from it. In practice the server filters these out already — the
+SELECT policy is `... and status = 'pending'`, and realtime evaluates it against
+the new record, so a row leaving `pending` fails the policy and no event is
+delivered. Guard on `status === 'pending'` in the client regardless: relying on
+a policy predicate to carry presentation logic is how the two drift apart.
+
+**The dedupe key cannot be the row id.** `NotificationDeduper.add(id)` is a
+bounded FIFO of the last 500 ids seen in a tab, and `coordinator.claim(id)` has
+a 60-second TTL — both permanent enough to swallow a re-invite, which carries
+the *same* primary key as the invitation it replaces. Key presentation on
+`` `${row.id}:${row.created_at}` `` instead. The upsert sets `created_at = now()`,
+so every genuine re-invite mints a fresh key while duplicate deliveries of one
+event still collapse to a single toast. These two details interlock: if the
+`DO UPDATE` ever stops bumping `created_at`, re-invite notifications go silent
+and nothing fails.
+
+A re-invite after a rejection is an INSERT, not an UPDATE — the partial unique
+index covers `status = 'pending'` only, so the rejected row does not conflict
+and a new one is created. That path needs nothing special.
 
 Two consequences already recorded in the data model: `workspace_invitations`
 needs the invitee's own-row SELECT policy for the subscription to receive
@@ -515,8 +551,26 @@ translation of the English. New keys are grouped under the existing
 in both catalogues, checked against each other by hand — nothing enforces key
 parity.
 
-The not-found message renders as «Пользователь не найден. Сначала он должен
-зарегистрироваться и сообщить вам адрес, на который создан аккаунт.»
+**Existing copy that is now wrong.** `workspace_settings_members_invite_description`
+reads «Отправим коллеге ссылку — по ней он войдёт в пространство» / "Email a
+teammate a link that adds them to this workspace". That describes the
+token-and-link model this design rejected: no email is sent and no link exists.
+It must be rewritten, not supplemented.
+`workspace_settings_members_invite_coming_soon` is deleted with the badge.
+
+| key | ru (base) | en |
+| --- | --- | --- |
+| `workspace_settings_members_invite_description` | Приглашённый коллега получит уведомление и сам решит, присоединяться ли | The person you invite gets a notification and decides whether to join |
+| `workspace_settings_members_invite_help` | Пригласить можно только тех, у кого уже есть аккаунт в Rezzy. Попросите коллегу зарегистрироваться и сообщить адрес, который он указал при регистрации | You can only invite people who already have a Rezzy account. Ask them to sign up first and share the email address they registered with |
+| `workspace_settings_members_invite_error_user_not_found` | Пользователь не найден. Сначала он должен зарегистрироваться и сообщить вам адрес, на который создан аккаунт | User not found. This person must sign up first and share the email address associated with their account |
+| `workspace_settings_members_invite_error_already_member` | Этот человек уже участник пространства | This person is already a member of the workspace |
+| `workspace_settings_members_invite_error_self` | Нельзя пригласить самого себя | You cannot invite yourself |
+
+The helper text is the longest string in the section and sits under a
+full-width field rather than inside a fixed-width control, so it wraps rather
+than truncates — but it is also the copy most likely to be shortened later
+without checking. Read it at phone width in Russian before calling the section
+done.
 
 The role select is a fixed-width control, so `администратор` and `участник` get
 a budget in `src/lib/message-lengths.test.ts`. Nothing here is counted, so no
@@ -577,6 +631,19 @@ Both statements stop being true; update them rather than working around them.
 
 Unit tests for the error-token → i18n mapping, the last-owner affordance gating,
 and the switcher's invitation section rendering and mutations.
+
+Two that specifically pin the notification behaviour, because both fail silently
+rather than loudly:
+
+- A re-invite — same row id, later `created_at` — presents a second toast; the
+  same event delivered twice presents one. This is the assertion that keeps the
+  `` `${id}:${created_at}` `` key from being "simplified" back to `id`.
+- An UPDATE whose new `status` is not `pending` presents nothing, even if one is
+  delivered.
+
+The invite section's helper text is asserted as present on first render, with no
+input and no submission — it is the requirement most easily lost to a refactor
+that moves it into an error slot.
 
 ### Validation
 
