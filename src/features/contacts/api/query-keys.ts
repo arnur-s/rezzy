@@ -51,6 +51,16 @@ export const contactQueryKeys = {
       ...contactQueryKeys.archived(workspaceId),
       { query: query.trim().toLowerCase(), page },
     ] as const,
+  /**
+   * The duplicates view's own cache, a sibling of `lists` for the same reason
+   * `archived` is: a different RPC with a different shape. A directory edit
+   * should not refetch a workspace-wide group-by, and a merge invalidates both
+   * explicitly rather than relying on one prefix to sweep up the other.
+   */
+  duplicates: (workspaceId: string) =>
+    [...contactQueryKeys.workspace(workspaceId), 'duplicates'] as const,
+  duplicatesPage: (workspaceId: string, page: number) =>
+    [...contactQueryKeys.duplicates(workspaceId), { page }] as const,
   details: (workspaceId: string) =>
     [...contactQueryKeys.workspace(workspaceId), 'detail'] as const,
   detail: (workspaceId: string, contactId: string) =>
@@ -67,6 +77,12 @@ export const contactQueryKeys = {
     ] as const,
   phones: (workspaceId: string, contactId: string) =>
     [...contactQueryKeys.detail(workspaceId, contactId), 'phones'] as const,
+  /** What a merge would move off this contact, for the confirmation step. */
+  mergeChildren: (workspaceId: string, contactId: string) =>
+    [
+      ...contactQueryKeys.detail(workspaceId, contactId),
+      'merge-children',
+    ] as const,
   /**
    * Identity lookups ("is this shared contact already in the CRM?"). Under the
    * workspace segment like everything else, so creating a contact invalidates

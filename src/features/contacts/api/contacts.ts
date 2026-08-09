@@ -98,6 +98,13 @@ export async function getWorkspaceContact({
 export type ArchivedContact = ContactListItem & {
   deleted_at: string
   conversation_count: number
+  /**
+   * Non-null when the row was merged rather than archived. Such a row is not
+   * restorable — `restore_contact` refuses it — so the view shows where it went
+   * instead of a button that errors.
+   */
+  merged_into_id: string | null
+  merged_into_name: string | null
 }
 
 export type ArchivedContactPage = {
