@@ -165,12 +165,12 @@ remains callable at the owning role exactly as today.
 | `workspace_id` | uuid | not null → `public.workspaces(id)` on delete cascade |
 | `invited_user_id` | uuid | not null → `public.profiles(id)` on delete cascade |
 | `invited_email` | text | not null; the address resolved from `auth.users` at invite time |
-| `invited_by` | uuid | → `public.profiles(id)` on delete set null |
+| `invited_by` | uuid | → `auth.users(id)` on delete set null (actor-FK convention, `20260804100000`) |
 | `role` | text | not null, check `in ('admin','member')` |
 | `status` | text | not null default `'pending'`, check `in ('pending','accepted','rejected','revoked')` |
 | `created_at` | timestamptz | not null default `now()` |
 | `resolved_at` | timestamptz | set when status leaves `pending` |
-| `resolved_by` | uuid | → `public.profiles(id)` on delete set null; distinguishes a revoke from a rejection |
+| `resolved_by` | uuid | → `auth.users(id)` on delete set null; distinguishes a revoke from a rejection |
 
 `invited_email` is stored rather than joined so the admin's pending list renders
 the address that was actually resolved, not the spoofable `profiles.email`.
@@ -449,9 +449,7 @@ the same rule, so the UI never becomes the boundary.
 ### Workspace switcher
 
 `WorkspaceSwitcher` is defined inside `src/widgets/sidebar/sidebar.tsx`. Its
-popover gains a pending-invitations section below the workspace list, each row
-carrying the workspace name, the offered role, who invited, and Accept /
-Decline. A dot on the switcher trigger when any are pending.
+popover gains a pending-invitations section below the workspace list. Astryx `DropdownMenu` items are single-action rows, so the accept/decline choice cannot live inside the menu. The switcher shows a `{type: 'section', title: 'Приглашения'}` group with one row per invitation, labelled with the workspace name; activating a row opens an Astryx `Dialog` carrying who invited, at what role, and the Accept / Decline buttons. This is better than the menu-row form regardless: at `menuWidth: 220` two buttons would not fit, and the decision deserves the room. A dot on the switcher trigger when any are pending.
 
 Accepting invalidates `workspaceQueryKeys.list` and the member directory, so the
 new workspace appears in the same interaction.
@@ -459,6 +457,8 @@ new workspace appears in the same interaction.
 The indicator is the persistent surface. It does not satisfy the notification
 requirement on its own — a user who never opens the switcher never learns they
 were invited.
+
+The in-app toast body is arbitrary JSX (`showToast({ body: <JSX/> })` returns a dismiss function — see `showMessageNotificationToast`), so the toast *does* carry Accept / Decline inline. The dialog is the switcher's path; the toast is the notification's.
 
 ### In-app notification
 
