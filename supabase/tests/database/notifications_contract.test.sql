@@ -1,6 +1,6 @@
 begin;
 
-select plan(32);
+select plan(36);
 
 -- =============================================================================
 -- Seed: a workspace with two members (A, B), an outsider (C) who is never a
@@ -362,6 +362,53 @@ select bag_eq(
   $$,
   'the thread falls back to the remaining roster instead of notifying nobody'
 );
+
+-- Both message_notifications policies used to be `recipient_id = auth.uid()`
+-- and nothing else -- the one table in the message graph that does not
+-- authorise through is_workspace_member(). D kept reading the conversation ids,
+-- message ids and arrival times of a workspace they had been removed from.
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"10000000-0000-4000-8000-000000000104","role":"authenticated"}';
+
+select is_empty(
+  $$ select id from public.message_notifications $$,
+  'a removed member reads no notification rows for the workspace they left'
+);
+
+reset role;
+
+-- Withdrawn, not destroyed. 20260809120000 chose the policy predicate over
+-- deleting the rows on removal, so read state survives and a re-add is
+-- reversible -- see its header for why.
+select is(
+  (
+    select count(*)::int
+    from public.message_notifications
+    where recipient_id = '10000000-0000-4000-8000-000000000104'
+  ),
+  1,
+  'the row itself survives the removal rather than being deleted'
+);
+
+insert into public.workspace_members (workspace_id, user_id, role)
+values (
+  '10000000-0000-4000-8000-000000000201',
+  '10000000-0000-4000-8000-000000000104',
+  'member'
+);
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"10000000-0000-4000-8000-000000000104","role":"authenticated"}';
+
+select is(
+  (select count(*)::int from public.message_notifications),
+  1,
+  'and a re-added member gets their notification history back'
+);
+
+reset role;
 
 -- =============================================================================
 -- RLS: message_notifications. Recipients see only their own rows and cannot
@@ -735,6 +782,27 @@ select results_eq(
   $$,
   $$ values (1) $$,
   'another agent''s unread count for the same conversation is unaffected'
+);
+
+reset role;
+
+-- =============================================================================
+-- Soft delete withdraws the notification rows with the rest of the workspace.
+-- The same predicate covers this case, which a delete-on-removal trigger could
+-- not have: memberships are retained across a soft delete on purpose, so there
+-- is no removal to hang one on.
+-- =============================================================================
+
+set local request.jwt.claims =
+  '{"sub":"10000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select public.soft_delete_workspace('10000000-0000-4000-8000-000000000201');
+
+set local role authenticated;
+
+select is_empty(
+  $$ select id from public.message_notifications $$,
+  'a member of a soft-deleted workspace reads none of its notification rows'
 );
 
 reset role;
