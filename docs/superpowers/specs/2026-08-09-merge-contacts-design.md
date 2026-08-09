@@ -269,7 +269,21 @@ reads identically in all three views.
 `p_limit` is clamped `least(greatest(coalesce(p_limit, 20), 1), 50)` and
 `p_offset` floored at 0, matching the other directory RPCs.
 
-**Cost.** This is a group-by over the workspace's contacts, not a point lookup.
+### 6.4 `count_contact_merge_children`
+
+```sql
+public.count_contact_merge_children(p_workspace_id uuid, p_contact_id uuid)
+  returns table (conversation_count integer, note_count integer,
+                 phone_count integer, channel_count integer)
+```
+
+`SECURITY INVOKER`. What a merge would move off one contact, in one round trip,
+so the confirmation in §7.3 can state exact numbers rather than a vague "and its
+history". Both entry points get the same answer from the same place; assembling
+it from four separate queries in the dialog would be four requests and two
+different answers depending on which view opened it.
+
+**Cost of the duplicate scan.** It is a group-by over the workspace's contacts, not a point lookup.
 It is off the inbound hot path, it runs only while the duplicates view is open,
 and it is fine at the ~100k scale that
 `20260731170000_add_contact_owner_and_directory_indexes.sql` names as its revisit
@@ -318,9 +332,19 @@ only, so a member can spot a duplicate and ask someone to resolve it. Each group
 renders its contacts as a small stack with the match reason stated ("совпадает
 номер телефона"), and a Merge button.
 
-### 7.3 The two dialogs
+### 7.3 The dialog: one component, two steps
 
-**Step 1 — `MergeContactsDialog`.** A two-column comparison. The survivor is
+An earlier draft made the confirmation a separate `AlertDialog` layered over the
+picker. Astryx forbids that outright — "Don't: Nest dialogs inside other dialogs;
+restructure the flow into steps within a single dialog instead" (`astryx
+component Dialog`) — and `AlertDialog` takes a plain string `description` and
+could not host the picker anyway. So it is one `Dialog` with `purpose="form"`
+(the backdrop must not discard a half-made choice) carrying two internal steps.
+Separating *choose* from *commit* is preserved; only the mechanism changes.
+
+`DialogHeader` supplies `startContent`, which carries the Back button on step 2.
+
+**Step 1 — the picker.** A two-column comparison. The survivor is
 pre-selected as the contact with the most conversations, tie-broken by the most
 recent `last_seen_at`, and can be switched. Only fields that actually differ get
 a radio pair; identical fields are shown once, and fields set on one side only
@@ -331,11 +355,9 @@ and commits nothing.
 When the two contacts share a channel, the dialog says so, names the channel, and
 disables the action — the user never reaches a confirmation that would fail.
 
-**Step 2 — `AlertDialog`, `actionVariant="destructive"`.** Astryx's `AlertDialog`
-takes a plain string `description` and cannot host the picker, and it is
-documented as the component for irreversible actions — which is also this repo's
-idiom at `src/features/contact-notes/ui/delete-contact-note-dialog.tsx`. So the
-confirm is a second dialog over the first, describing the resolved outcome:
+**Step 2 — the confirmation.** The same dialog, its body replaced by a
+`Banner status="error"` and a `variant="destructive"` action button, describing
+the resolved outcome:
 
 - which contact is merged into which, and that it goes to the archive
 - the counts of what moves (phones, channels, conversations, notes)
@@ -348,7 +370,7 @@ danger when nothing is being destroyed. Every number and value in it is computed
 client-side from data the picker already loaded, so the confirmation is exact
 rather than generic.
 
-Separating *choose* from *commit* is the point of the two steps.
+Back returns to step 1 with every choice intact.
 
 ### 7.4 Redirect and invalidation
 
@@ -412,7 +434,9 @@ nothing enforces key parity automatically.
 - `merged_at` and `merged_by` record the acting admin
 - the survivor's overwritten fields hold the picked values; the loser's own
   scalars are untouched
-- `p_fields` naming a column outside the allowlist changes nothing
+- `p_fields` naming a column outside the allowlist raises
+  `CONTACT_MERGE_UNKNOWN_FIELD` and changes nothing — refusing beats silently
+  dropping a key the caller believed in, and it is the easier thing to test
 - `p_fields` with an invalid `status`, `source`, or a non-member `owner_id` is
   rejected
 - `contacts_merged_is_archived_check` rejects a merged row with `deleted_at is null`
