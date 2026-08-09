@@ -111,7 +111,10 @@ export function AvatarField({ avatarUrl, displayName }: AvatarFieldProps) {
         />
 
         {avatarUrl ? (
-          <div>
+          // `size="sm"` puts this at 28px, which is a fine mouse target beside
+          // the file input and too small for a thumb. Raised on coarse pointers
+          // only, so the quiet secondary action stays quiet on the desktop.
+          <div className="pointer-coarse:[&_button]:min-h-11">
             <Button
               label={m.profile_avatar_remove()}
               variant="ghost"

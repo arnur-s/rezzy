@@ -102,19 +102,27 @@ export function ChangePasswordForm({
         />
       ) : null}
 
-      <div className="flex items-center gap-3">
-        <Button
-          label={
-            isPending
-              ? m.security_password_submit_pending()
-              : m.security_password_submit()
-          }
-          type="submit"
-          variant="primary"
-          isLoading={isPending}
-          isDisabled={!canChangePassword || isPending}
-          tooltip={canChangePassword ? undefined : m.security_password_unavailable()}
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {/* Same treatment as the profile form's Save: this is the form's one
+            primary action, so on a phone it takes the full column and a 44px
+            thumb target. The two live one settings tab apart and would read as
+            two different button styles otherwise. */}
+        <div className="[&_button]:w-full pointer-coarse:[&_button]:min-h-11 sm:[&_button]:w-auto">
+          <Button
+            label={
+              isPending
+                ? m.security_password_submit_pending()
+                : m.security_password_submit()
+            }
+            type="submit"
+            variant="primary"
+            isLoading={isPending}
+            isDisabled={!canChangePassword || isPending}
+            tooltip={
+              canChangePassword ? undefined : m.security_password_unavailable()
+            }
+          />
+        </div>
 
         {hasChanged ? (
           <p

@@ -98,8 +98,10 @@ function RouteComponent() {
           {/* Same construction as the account settings tabs: TabList lays its
               tabs in a row but does not scroll them, and a longer translation
               or a fourth section would push the last one off a phone screen
-              with no way to reach it. See `src/routes/_authenticated/settings.tsx`. */}
-          <div className="-mx-4 px-4 pt-6 sm:-mx-8 sm:px-8">
+              with no way to reach it. The scroll container has to be ours, or
+              the overflow lands on the pane's `overflow-y-auto` and pans the
+              whole page sideways. See `src/routes/_authenticated/settings.tsx`. */}
+          <div className="-mx-4 scroll-px-4 overflow-x-auto px-4 pt-6 pointer-coarse:[&_button]:min-h-11 sm:-mx-8 sm:scroll-px-8 sm:px-8">
             <TabList
               value={selectedKey}
               onChange={(key) => handleSectionChange(key)}

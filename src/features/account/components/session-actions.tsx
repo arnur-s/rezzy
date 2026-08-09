@@ -81,14 +81,19 @@ export function SessionActions() {
             {m.security_sign_out_others_description()}
           </p>
         </div>
-        <Button
-          ref={otherDevicesRef}
-          label={m.security_sign_out_others_action()}
-          variant="secondary"
-          isLoading={signOutOthers.isPending}
-          isDisabled={signOutOthers.isPending || isSigningOut}
-          onClick={() => setConfirmation('other-devices')}
-        />
+        {/* A row action rather than a form submit, so it keeps hugging its
+            label — only the thumb target grows. Ending sessions is not
+            something to make easier to hit by accident than it needs to be. */}
+        <div className="pointer-coarse:[&_button]:min-h-11">
+          <Button
+            ref={otherDevicesRef}
+            label={m.security_sign_out_others_action()}
+            variant="secondary"
+            isLoading={signOutOthers.isPending}
+            isDisabled={signOutOthers.isPending || isSigningOut}
+            onClick={() => setConfirmation('other-devices')}
+          />
+        </div>
       </div>
 
       <div className="border-border/60 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -100,14 +105,16 @@ export function SessionActions() {
             {m.security_sign_out_description()}
           </p>
         </div>
-        <Button
-          ref={thisDeviceRef}
-          label={m.security_sign_out_action()}
-          variant="destructive"
-          isLoading={isSigningOut}
-          isDisabled={isSigningOut || signOutOthers.isPending}
-          onClick={() => setConfirmation('this-device')}
-        />
+        <div className="pointer-coarse:[&_button]:min-h-11">
+          <Button
+            ref={thisDeviceRef}
+            label={m.security_sign_out_action()}
+            variant="destructive"
+            isLoading={isSigningOut}
+            isDisabled={isSigningOut || signOutOthers.isPending}
+            onClick={() => setConfirmation('this-device')}
+          />
+        </div>
       </div>
 
       <AlertDialog
