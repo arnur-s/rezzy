@@ -1,6 +1,6 @@
 begin;
 
-select plan(12);
+select plan(19);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -181,6 +181,103 @@ select ok(
       and tablename = 'workspace_invitations'
   ),
   'workspace_invitations is in the supabase_realtime publication'
+);
+
+-- ── Inviting ─────────────────────────────────────────────────────────────────
+
+insert into auth.users (id, email, raw_user_meta_data)
+values ('60000000-0000-4000-8000-000000000003', 'mm-invitee@example.com',
+        '{"full_name":"MM Invitee"}'::jsonb);
+
+-- The "creator escalation" block above removed the owner (001) from
+-- workspace_members entirely, so the ALREADY_A_MEMBER case below has nobody
+-- to collide with otherwise: the only remaining member is 002, the actor
+-- itself, which would exercise CANNOT_INVITE_SELF instead. Reseat 001 as an
+-- ordinary member -- the role value is irrelevant to the check, only
+-- membership existence is.
+insert into public.workspace_members (workspace_id, user_id, role)
+values ('60000000-0000-4000-8000-000000000101',
+        '60000000-0000-4000-8000-000000000001', 'member');
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.invite_workspace_member(
+      '60000000-0000-4000-8000-000000000101', 'nobody@example.com', 'member')
+  $$,
+  'P0002',
+  'USER_NOT_FOUND',
+  'inviting an address no user holds is refused'
+);
+
+select is(
+  (select count(*)::int from public.workspace_invitations),
+  0,
+  'and writes nothing'
+);
+
+select throws_ok(
+  $$
+    select public.invite_workspace_member(
+      '60000000-0000-4000-8000-000000000101', 'MM-Owner@Example.com ', 'member')
+  $$,
+  '42710',
+  'ALREADY_A_MEMBER',
+  'inviting an existing member is refused, and the lookup is case- and space-insensitive'
+);
+
+select throws_ok(
+  $$
+    select public.invite_workspace_member(
+      '60000000-0000-4000-8000-000000000101', 'mm-admin@example.com', 'member')
+  $$,
+  '22023',
+  'CANNOT_INVITE_SELF',
+  'inviting yourself is refused'
+);
+
+select throws_ok(
+  $$
+    select public.invite_workspace_member(
+      '60000000-0000-4000-8000-000000000101', 'mm-invitee@example.com', 'owner')
+  $$,
+  '22023',
+  'INVALID_ROLE',
+  'an invitation cannot grant owner'
+);
+
+select lives_ok(
+  $$
+    select public.invite_workspace_member(
+      '60000000-0000-4000-8000-000000000101', 'mm-invitee@example.com', 'member')
+  $$,
+  'an admin can invite an existing user'
+);
+
+-- Re-invite: same row, new role, no second pending invitation, no 23505.
+select public.invite_workspace_member(
+  '60000000-0000-4000-8000-000000000101', 'mm-invitee@example.com', 'admin');
+
+-- Reset role before reading workspace_invitations directly: its RLS policy
+-- scopes SELECT to invited_user_id = auth.uid(), so the inviting admin's own
+-- session sees none of the rows it just wrote (they are addressed to the
+-- invitee, 003, not to the admin, 002). The client never queries this table
+-- directly either way -- list_workspace_invitations is definer and bypasses
+-- RLS -- so this assertion reads at the ambient role, same as the earlier
+-- privilege and RLS checks above.
+reset role;
+
+select results_eq(
+  $$
+    select count(*)::int, max(role)
+    from public.workspace_invitations
+    where status = 'pending'
+  $$,
+  $$ values (1, 'admin') $$,
+  're-inviting updates the pending row rather than creating a second'
 );
 
 select * from finish();
