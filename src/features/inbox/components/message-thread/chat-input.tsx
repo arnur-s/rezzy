@@ -1,3 +1,4 @@
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useVoiceInput } from '@/hooks/use-voice-input'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
@@ -123,6 +124,7 @@ export function ChatInput({
   const [attachment, setAttachment] = useState<File | null>(null)
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
   const showToast = useToast()
+  const isMobile = useIsMobile()
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -285,6 +287,184 @@ export function ChatInput({
 
   const hasDrawerContent = drawer != null || attachment !== null
 
+  // px-3 puts drawer content on the composer's own content column (the field
+  // box starts 12px in on desktop, 8px in the compact mobile row), so the dock
+  // reads as one stack instead of a reply strip hanging off its left edge.
+  const drawerSlot = hasDrawerContent ? (
+    <span
+      className={cn('flex flex-col gap-2', isMobile ? 'px-2 pb-2' : 'px-3')}
+    >
+      {drawer}
+      {attachment ? (
+        <AttachmentChip
+          file={attachment}
+          onRemove={() => setAttachment(null)}
+        />
+      ) : null}
+    </span>
+  ) : undefined
+
+  const inputSlot = (
+    <span className="relative flex min-w-0 flex-1 items-center">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={acceptedMimeTypes}
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+      {showStyledMirror && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm pointer-coarse:text-[16px] leading-6 wrap-break-word whitespace-pre-wrap"
+        >
+          <FormattedMessageText as="span" content={text} variant="composer" />
+          {showInterimOverlay ? (
+            <span className="text-secondary">{interimText}</span>
+          ) : null}
+        </span>
+      )}
+      <textarea
+        ref={textareaRef}
+        rows={1}
+        value={text}
+        // A stable accessible name: the placeholder doubles as the visible
+        // label but mutates to "Listening…" mid-dictation, which would
+        // otherwise rename the field under a screen reader.
+        aria-label={m.inbox_composer_message_label()}
+        placeholder={effectivePlaceholder}
+        disabled={disabled}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        className={cn(
+          // Transparent: the composer surface around it is the field.
+          'w-full resize-none bg-transparent px-2 py-1 text-sm leading-6 shadow-none',
+          // One line at rest, then `resize()` grows it to the 5-line cap. The
+          // floor differs per layout because it is what an empty composer
+          // measures: 32px on mobile so the field matches the 32px controls it
+          // now shares a row with, 36px on desktop where it owns its own row.
+          isMobile ? 'h-8 min-h-8' : 'h-9 min-h-9',
+          // iOS Safari zooms the viewport when a focused control computes
+          // to under 16px, and `text-sm` is 12px here. 16px is Safari's
+          // threshold, not a type-scale step: the nearest token above it
+          // (`text-lg`, 17px) would also rebind the line-height that the
+          // 5-line `MAX_HEIGHT` cap is measured against. The emoji mirror
+          // above carries the same pair or the caret drifts under it.
+          'pointer-coarse:text-[16px]',
+          'ring-0 outline-none focus:ring-0 focus-visible:ring-0',
+          showStyledMirror && 'caret-primary text-transparent',
+        )}
+      />
+    </span>
+  )
+
+  const attachButton = (
+    <IconButton
+      size="sm"
+      variant="ghost"
+      isDisabled={disabled}
+      onClick={() => fileInputRef.current?.click()}
+      label={m.inbox_composer_attach_file_label()}
+      icon={<PaperclipIcon className="size-4" />}
+    />
+  )
+
+  const emojiButton = (
+    <Popover
+      isOpen={emojiPickerOpen}
+      onOpenChange={setEmojiPickerOpen}
+      placement="above"
+      hasCloseButton={false}
+      label={m.inbox_composer_emoji_label()}
+      className="p-0"
+      content={
+        emojiPickerOpen ? (
+          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+        ) : null
+      }
+    >
+      <IconButton
+        size="sm"
+        variant="ghost"
+        isDisabled={disabled}
+        label={m.inbox_composer_emoji_label()}
+        icon={<SmileIcon className="size-4" />}
+      />
+    </Popover>
+  )
+
+  // The terminal action swaps: hold-to-record mic while the input is empty
+  // (and voice is supported), the send commit once there is something to send.
+  const terminalButton = showMicButton ? (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-label={m.inbox_composer_voice_label()}
+      aria-pressed={isRecording}
+      title={m.inbox_composer_voice_hold_to_record()}
+      onPointerDown={handleMicPointerDown}
+      onPointerUp={handleMicPointerEnd}
+      onPointerCancel={handleMicPointerEnd}
+      onPointerLeave={handleMicPointerEnd}
+      onKeyDown={handleMicKeyDown}
+      onKeyUp={handleMicKeyUp}
+      onContextMenu={(e) => e.preventDefault()}
+      className={cn(
+        'relative inline-flex size-8 items-center justify-center rounded-md text-primary/70 hover:bg-primary/5',
+        isRecording && 'text-error ring-error/40 ring-2',
+      )}
+    >
+      {isRecording && (
+        <span
+          aria-hidden
+          className="bg-error/15 absolute inset-0 animate-ping rounded-full motion-reduce:animate-none"
+        />
+      )}
+      <MicIcon className="relative size-4" />
+    </button>
+  ) : (
+    <IconButton
+      size="sm"
+      variant="primary"
+      isDisabled={!canSend}
+      onClick={handleSend}
+      label={m.inbox_composer_send_label()}
+      icon={<SendIcon className="size-4" />}
+    />
+  )
+
+  // Phone-sized viewports get a single row instead of `ChatComposer`'s
+  // three-slot column (header actions / input / send footer), which stacks to
+  // ~136px before a word is typed and costs a fifth of a phone screen while
+  // the transcript is the thing being read. `ChatComposer` cannot collapse to
+  // one row: its footer is always rendered and carries a 32px floor, and its
+  // footer-actions group is content-sized, so a field placed there cannot
+  // grow. The surface below is the same grammar its body draws — popover fill,
+  // chat radius, low shadow lifting to medium on hover and focus, click
+  // anywhere to type — rebuilt from the same tokens rather than from its
+  // hashed StyleX classes, which are a build output and not a supported API.
+  if (isMobile) {
+    return (
+      <div
+        className={cn(
+          'flex flex-col',
+          disabled && 'pointer-events-none opacity-60',
+        )}
+      >
+        {drawerSlot}
+        {/* items-end keeps the controls on the last text line as the field
+            grows upward, so they never float in the middle of a tall field. */}
+        <div className="flex cursor-text items-end gap-1 rounded-xl bg-popover p-2 shadow-sm transition-shadow hover:shadow-md focus-within:shadow-md">
+          {attachButton}
+          {emojiButton}
+          {inputSlot}
+          {terminalButton}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <ChatComposer
       value={text}
@@ -292,150 +472,15 @@ export function ChatInput({
       onSubmit={handleSend}
       placeholder={effectivePlaceholder}
       isDisabled={disabled}
-      drawer={
-        hasDrawerContent ? (
-          // px-3 puts drawer content on the composer's own content column
-          // (the field box starts 12px in), so the dock reads as one stack
-          // instead of a reply strip hanging off its left edge.
-          <span className="flex flex-col gap-2 px-3">
-            {drawer}
-            {attachment ? (
-              <AttachmentChip
-                file={attachment}
-                onRemove={() => setAttachment(null)}
-              />
-            ) : null}
-          </span>
-        ) : undefined
-      }
-      input={
-        <span className="relative flex min-w-0 flex-1 items-center">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={acceptedMimeTypes}
-            className="hidden"
-            onChange={handleFileInputChange}
-          />
-          {showStyledMirror && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-hidden px-2 py-1 text-sm pointer-coarse:text-[16px] leading-6 wrap-break-word whitespace-pre-wrap"
-            >
-              <FormattedMessageText
-                as="span"
-                content={text}
-                variant="composer"
-              />
-              {showInterimOverlay ? (
-                <span className="text-secondary">{interimText}</span>
-              ) : null}
-            </span>
-          )}
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={text}
-            // A stable accessible name: the placeholder doubles as the visible
-            // label but mutates to "Listening…" mid-dictation, which would
-            // otherwise rename the field under a screen reader.
-            aria-label={m.inbox_composer_message_label()}
-            placeholder={effectivePlaceholder}
-            disabled={disabled}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            className={cn(
-              // Transparent: the composer surface around it is the field.
-              'h-9 min-h-9 w-full resize-none bg-transparent px-2 py-1 text-sm leading-6 shadow-none',
-              // iOS Safari zooms the viewport when a focused control computes
-              // to under 16px, and `text-sm` is 12px here. 16px is Safari's
-              // threshold, not a type-scale step: the nearest token above it
-              // (`text-lg`, 17px) would also rebind the line-height that the
-              // 5-line `MAX_HEIGHT` cap is measured against. The emoji mirror
-              // above carries the same pair or the caret drifts under it.
-              'pointer-coarse:text-[16px]',
-              'ring-0 outline-none focus:ring-0 focus-visible:ring-0',
-              showStyledMirror && 'caret-primary text-transparent',
-            )}
-          />
-        </span>
-      }
+      drawer={drawerSlot}
+      input={inputSlot}
       headerActions={
         <>
-          <IconButton
-            size="sm"
-            variant="ghost"
-            isDisabled={disabled}
-            onClick={() => fileInputRef.current?.click()}
-            label={m.inbox_composer_attach_file_label()}
-            icon={<PaperclipIcon className="size-4" />}
-          />
-          <Popover
-            isOpen={emojiPickerOpen}
-            onOpenChange={setEmojiPickerOpen}
-            placement="above"
-            hasCloseButton={false}
-            label={m.inbox_composer_emoji_label()}
-            className="p-0"
-            content={
-              emojiPickerOpen ? (
-                <EmojiPicker onEmojiSelect={handleEmojiSelect} />
-              ) : null
-            }
-          >
-            <IconButton
-              size="sm"
-              variant="ghost"
-              isDisabled={disabled}
-              label={m.inbox_composer_emoji_label()}
-              icon={<SmileIcon className="size-4" />}
-            />
-          </Popover>
+          {attachButton}
+          {emojiButton}
         </>
       }
-      sendButton={
-        // The terminal action swaps: hold-to-record mic while the input is
-        // empty (and voice is supported), the send commit once there is
-        // something to send.
-        showMicButton ? (
-          <button
-            type="button"
-            disabled={disabled}
-            aria-label={m.inbox_composer_voice_label()}
-            aria-pressed={isRecording}
-            title={m.inbox_composer_voice_hold_to_record()}
-            onPointerDown={handleMicPointerDown}
-            onPointerUp={handleMicPointerEnd}
-            onPointerCancel={handleMicPointerEnd}
-            onPointerLeave={handleMicPointerEnd}
-            onKeyDown={handleMicKeyDown}
-            onKeyUp={handleMicKeyUp}
-            onContextMenu={(e) => e.preventDefault()}
-            className={cn(
-              'relative inline-flex size-8 items-center justify-center rounded-md text-primary/70 hover:bg-primary/5',
-              isRecording && 'text-error ring-error/40 ring-2',
-            )}
-          >
-            {isRecording && (
-              <span
-                aria-hidden
-                className="bg-error/15 absolute inset-0 animate-ping rounded-full motion-reduce:animate-none"
-              />
-            )}
-            <MicIcon className="relative size-4" />
-          </button>
-        ) : (
-          <IconButton
-            size="sm"
-            variant="primary"
-            isDisabled={!canSend}
-            onClick={handleSend}
-            label={m.inbox_composer_send_label()}
-            icon={<SendIcon className="size-4" />}
-          />
-        )
-      }
+      sendButton={terminalButton}
     />
   )
 }

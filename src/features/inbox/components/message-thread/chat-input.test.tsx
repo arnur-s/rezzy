@@ -56,6 +56,22 @@ vi.mock('@astryxdesign/core/Toast', () => ({
 
 const micName = m.inbox_composer_voice_label()
 const sendName = m.inbox_composer_send_label()
+const attachName = m.inbox_composer_attach_file_label()
+
+// `useIsMobile` reads a max-width media query, and the shared setup stubs
+// `matchMedia` to never match. Re-stub it so a test can pick a viewport.
+function setViewportIsMobile(isMobile: boolean) {
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: isMobile && query.includes('max-width'),
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }))
+}
 
 describe('ChatInput voice/send toggle', () => {
   beforeEach(() => {
@@ -272,5 +288,87 @@ describe('ChatInput mobile zoom guard', () => {
     expect(mirror?.className).toContain('pointer-coarse:text-[16px]')
     // Same line box as the textarea, so the two stay glyph-for-glyph aligned.
     expect(mirror?.className).toContain('leading-6')
+  })
+})
+
+// `ChatComposer` stacks header actions, the field, and the send footer into
+// three rows; on a phone that is ~136px of chrome above the keyboard before a
+// word is typed. jsdom has no layout, so these assertions pin the structure —
+// one row containing every control — rather than the measured height.
+describe('ChatInput mobile single row', () => {
+  beforeEach(() => {
+    voiceMock.reset()
+    setViewportIsMobile(false)
+  })
+
+  it('puts the field and every control in one row on phone widths', () => {
+    setViewportIsMobile(true)
+    render(<ChatInput onSend={vi.fn()} />)
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    // The field's own wrapper is a <span>; the nearest <div> is the row.
+    const row = textarea.closest('div')
+
+    expect(row).not.toBeNull()
+    expect(
+      row?.contains(screen.getByRole('button', { name: attachName })),
+    ).toBe(true)
+    expect(row?.contains(screen.getByRole('button', { name: micName }))).toBe(
+      true,
+    )
+  })
+
+  it('keeps the stacked composer on wider viewports', () => {
+    render(<ChatInput onSend={vi.fn()} />)
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    const row = textarea.closest('div')
+
+    expect(
+      row?.contains(screen.getByRole('button', { name: attachName })),
+    ).toBe(false)
+    expect(row?.contains(screen.getByRole('button', { name: micName }))).toBe(
+      false,
+    )
+  })
+
+  it('drops the field floor to the control height so the row is 32px', () => {
+    // The empty field is what sets the row's height, and a 36px floor next to
+    // 32px controls would leave the row taller than anything in it.
+    setViewportIsMobile(true)
+    render(<ChatInput onSend={vi.fn()} />)
+
+    expect(screen.getByRole('textbox').className).toContain('min-h-8')
+  })
+
+  it('still grows with the typed text, up to the five-line cap', () => {
+    setViewportIsMobile(true)
+    render(<ChatInput onSend={vi.fn()} />)
+
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox')
+    expect(textarea.rows).toBe(1)
+
+    // jsdom has no layout, so scrollHeight is always 0; stub it to stand in
+    // for the height the typed text would actually occupy.
+    let scrollHeight = 72
+    Object.defineProperty(textarea, 'scrollHeight', {
+      configurable: true,
+      get: () => scrollHeight,
+    })
+
+    act(() => {
+      fireEvent.change(textarea, { target: { value: 'one\ntwo\nthree' } })
+    })
+    expect(textarea.style.height).toBe('72px')
+    expect(textarea.style.overflowY).toBe('hidden')
+
+    // Past five lines it stops growing and scrolls instead, so a long draft
+    // cannot push the transcript off a phone screen.
+    scrollHeight = 400
+    act(() => {
+      fireEvent.change(textarea, { target: { value: 'a\nb\nc\nd\ne\nf\ng' } })
+    })
+    expect(textarea.style.height).toBe('120px')
+    expect(textarea.style.overflowY).toBe('auto')
   })
 })
