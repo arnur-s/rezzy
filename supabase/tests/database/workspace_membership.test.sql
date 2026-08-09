@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(12);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -150,6 +150,38 @@ select is(
 );
 
 reset role;
+
+-- ── The invitations table ────────────────────────────────────────────────────
+
+select ok(
+  has_table_privilege('authenticated', 'public.workspace_invitations', 'select')
+  and not has_table_privilege('authenticated', 'public.workspace_invitations', 'insert')
+  and not has_table_privilege('authenticated', 'public.workspace_invitations', 'update')
+  and not has_table_privilege('authenticated', 'public.workspace_invitations', 'delete'),
+  'authenticated may read invitations and write none'
+);
+
+select ok(
+  (
+    select relrowsecurity
+    from pg_class
+    where oid = 'public.workspace_invitations'::regclass
+  ),
+  'RLS is enabled on workspace_invitations'
+);
+
+-- Realtime cannot deliver an event for a table outside the publication, and the
+-- invitee's notification depends on it.
+select ok(
+  exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'workspace_invitations'
+  ),
+  'workspace_invitations is in the supabase_realtime publication'
+);
 
 select * from finish();
 
