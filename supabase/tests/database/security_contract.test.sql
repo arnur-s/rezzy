@@ -633,9 +633,12 @@ select ok(
   'authenticated has the exact profiles privileges'
 );
 
+-- 20260809130000 revoked INSERT/UPDATE/DELETE on workspace_members from
+-- authenticated: the creator-owner policy it dropped was the only legitimate
+-- reason a client held the grant. Only the SECURITY DEFINER trigger writes now.
 select ok(
   has_table_privilege('authenticated', 'public.workspace_members', 'select')
-  and has_table_privilege('authenticated', 'public.workspace_members', 'insert')
+  and not has_table_privilege('authenticated', 'public.workspace_members', 'insert')
   and not has_table_privilege('authenticated', 'public.workspace_members', 'update')
   and not has_table_privilege('authenticated', 'public.workspace_members', 'delete')
   and not has_table_privilege('authenticated', 'public.workspace_members', 'truncate')
@@ -644,6 +647,10 @@ select ok(
   'authenticated has the exact workspace_members privileges'
 );
 
+-- 20260809140000 revoked table-wide INSERT on workspaces from authenticated
+-- and moved creation behind public.create_workspace, so every column-scoped
+-- insert grant that used to ride along with the table grant is gone too, not
+-- only the ones the RPC's own validation would have refused anyway.
 select ok(
   has_table_privilege('authenticated', 'public.workspaces', 'select')
   and not has_table_privilege('authenticated', 'public.workspaces', 'insert')
@@ -652,11 +659,11 @@ select ok(
   and not has_table_privilege('authenticated', 'public.workspaces', 'truncate')
   and not has_table_privilege('authenticated', 'public.workspaces', 'references')
   and not has_table_privilege('authenticated', 'public.workspaces', 'trigger')
-  and has_column_privilege('authenticated', 'public.workspaces', 'name', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'description', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'icon', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'is_main', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'created_by', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'name', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'description', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'icon', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'is_main', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'created_by', 'insert')
   and not has_column_privilege('authenticated', 'public.workspaces', 'id', 'insert')
   and not has_column_privilege('authenticated', 'public.workspaces', 'created_at', 'insert')
   and not has_column_privilege('authenticated', 'public.workspaces', 'deleted_at', 'insert')
@@ -727,7 +734,10 @@ set local role authenticated;
 set local request.jwt.claims =
   '{"sub":"00000000-0000-4000-8000-000000000101","role":"authenticated"}';
 
-select lives_ok(
+-- 20260809140000 moved workspace creation behind public.create_workspace and
+-- revoked the table-wide INSERT that used to let the client do this directly.
+-- The contract is now the RPC, not the table, so the assertion states that.
+select throws_ok(
   $$
     insert into public.workspaces (name, description, is_main)
     values (
@@ -736,7 +746,18 @@ select lives_ok(
       false
     )
   $$,
-  'authenticated users can create a workspace'
+  '42501',
+  null,
+  'authenticated cannot insert a workspace directly; creation goes through public.create_workspace'
+);
+
+-- Seed the workspace the rest of this file exercises through the RPC that
+-- replaced the direct insert, so the fixture below still has a live row.
+select public.create_workspace(
+  'Security contract workspace',
+  'Created by the pgTAP security contract',
+  null,
+  false
 );
 
 select results_eq(
