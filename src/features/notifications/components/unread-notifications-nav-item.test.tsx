@@ -13,8 +13,32 @@ import { UnreadNotificationsNavItem } from './unread-notifications-nav-item'
 const navigateMock = vi.hoisted(() => vi.fn())
 vi.mock('@tanstack/react-router', async () => {
   const actual = await vi.importActual('@tanstack/react-router')
-  return { ...actual, useNavigate: () => navigateMock }
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+    // The row reads the pathname to mark itself current; there is no
+    // RouterProvider here, so the real hook would throw.
+    useRouterState: () => '/',
+  }
 })
+
+/**
+ * `useIsMobile` reads `matchMedia`, which the shared setup stubs as always
+ * false. Flip it per test: the row is a popover trigger above `md` and a link
+ * to the full-page list below it.
+ */
+function setIsMobile(isMobile: boolean) {
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: isMobile,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }))
+}
 
 const supabaseMock = vi.hoisted(() => {
   const channel = {
@@ -111,7 +135,7 @@ type Seed = {
   activeWorkspaceId?: string
 }
 
-function renderNavItem(seed: Seed) {
+function renderNavItem(seed: Seed, onNavigate?: () => void) {
   const {
     conversations,
     counts,
@@ -119,9 +143,8 @@ function renderNavItem(seed: Seed) {
   } = seed
   // `in` rather than a default parameter: an explicit `undefined` means "home
   // page", and a default would silently substitute a workspace instead.
-  const activeWorkspaceId = 'activeWorkspaceId' in seed
-    ? seed.activeWorkspaceId
-    : 'w1'
+  const activeWorkspaceId =
+    'activeWorkspaceId' in seed ? seed.activeWorkspaceId : 'w1'
   const queryClient = createSeededClient()
   queryClient.setQueryData(workspaceQueryKeys.list('u1'), workspaces)
   for (const workspace of workspaces) {
@@ -142,7 +165,10 @@ function renderNavItem(seed: Seed) {
     )
   }
   return renderWithQueryClient(
-    <UnreadNotificationsNavItem workspaceId={activeWorkspaceId} />,
+    <UnreadNotificationsNavItem
+      workspaceId={activeWorkspaceId}
+      onNavigate={onNavigate}
+    />,
     { queryClient },
   )
 }
@@ -150,6 +176,7 @@ function renderNavItem(seed: Seed) {
 describe('UnreadNotificationsNavItem', () => {
   beforeEach(() => {
     setLocale('en', { reload: false })
+    setIsMobile(false)
   })
 
   it('hides the badge and shows the empty state when nothing is unread', async () => {
@@ -161,9 +188,7 @@ describe('UnreadNotificationsNavItem', () => {
     expect(screen.queryByText('0')).toBeNull()
 
     fireEvent.click(trigger)
-    expect(
-      await screen.findByText(m.notifications_popover_empty_title()),
-    ).toBeTruthy()
+    expect(await screen.findByText(m.notifications_empty_title())).toBeTruthy()
     expect(screen.queryByText('Alice Johnson')).toBeNull()
   })
 
@@ -190,7 +215,9 @@ describe('UnreadNotificationsNavItem', () => {
       counts: { c1: 3 },
       activeWorkspaceId: undefined,
     })
-    expect(await screen.findByRole('button', { name: /Notifications/ })).toBeTruthy()
+    expect(
+      await screen.findByRole('button', { name: /Notifications/ }),
+    ).toBeTruthy()
     expect(screen.getByText('3')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }))
@@ -208,7 +235,9 @@ describe('UnreadNotificationsNavItem', () => {
       counts: { c1: 3 },
       activeWorkspaceId: 'w1',
     })
-    fireEvent.click(await screen.findByRole('button', { name: /Notifications/ }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Notifications/ }),
+    )
     fireEvent.click(
       await screen.findByRole('button', { name: 'View all messages' }),
     )
@@ -231,7 +260,9 @@ describe('UnreadNotificationsNavItem', () => {
       ],
       activeWorkspaceId: undefined,
     })
-    expect(await screen.findByRole('button', { name: /Notifications/ })).toBeTruthy()
+    expect(
+      await screen.findByRole('button', { name: /Notifications/ }),
+    ).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }))
     expect(await screen.findByText('Acme Support')).toBeTruthy()
@@ -240,9 +271,7 @@ describe('UnreadNotificationsNavItem', () => {
 
   it('opens a conversation in its own workspace without marking it read', async () => {
     renderNavItem({
-      conversations: [
-        conversationFixture('c2', 'Bob', { workspace_id: 'w2' }),
-      ],
+      conversations: [conversationFixture('c2', 'Bob', { workspace_id: 'w2' })],
       counts: { c2: 2 },
       workspaces: [
         workspaceFixture('w1', 'Acme Support'),
@@ -250,7 +279,9 @@ describe('UnreadNotificationsNavItem', () => {
       ],
       activeWorkspaceId: 'w1',
     })
-    fireEvent.click(await screen.findByRole('button', { name: /Notifications/ }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Notifications/ }),
+    )
     fireEvent.click(
       await screen.findByRole('button', { name: /Open conversation with Bob/ }),
     )
@@ -298,5 +329,45 @@ describe('UnreadNotificationsNavItem', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Notifications' }))
     expect(await screen.findByText('Could not load notifications')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
+  })
+
+  // Below `md` the rail is a drawer, so there is nothing beside it to anchor a
+  // popover to; the row becomes a link to the full-page list instead.
+  describe('below the mobile breakpoint', () => {
+    beforeEach(() => {
+      setIsMobile(true)
+    })
+
+    it('links to the notifications page instead of anchoring a popover', async () => {
+      renderNavItem({
+        conversations: [conversationFixture('c1')],
+        counts: { c1: 3 },
+      })
+
+      const link = await screen.findByRole('link', { name: /Notifications/ })
+      expect(link.getAttribute('href')).toBe('/notifications')
+      // Nothing left that could open a popover over the closing drawer.
+      expect(screen.queryByRole('button', { name: /Notifications/ })).toBeNull()
+      // The count still rides the row, so the drawer says how much is waiting.
+      expect(screen.getByText('3')).toBeTruthy()
+    })
+
+    it('closes the mobile drawer when the row is followed', async () => {
+      const onNavigate = vi.fn()
+      renderNavItem(
+        { conversations: [conversationFixture('c1')], counts: { c1: 1 } },
+        onNavigate,
+      )
+
+      const link = await screen.findByRole('link', { name: /Notifications/ })
+      // jsdom cannot navigate and logs an unimplemented-navigation error for a
+      // live anchor default. In the app, `RouterLink` swallows it the same way.
+      const swallowDefault = (event: Event) => event.preventDefault()
+      document.addEventListener('click', swallowDefault)
+      fireEvent.click(link)
+      document.removeEventListener('click', swallowDefault)
+
+      expect(onNavigate).toHaveBeenCalledTimes(1)
+    })
   })
 })
