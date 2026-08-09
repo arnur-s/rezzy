@@ -65,6 +65,44 @@
   }
 }
 
+/* Toasts at top center below `lg`.
+
+   Astryx anchors the toast stack to a corner — `LayerProvider`'s `position`
+   takes `topStart | topEnd | bottomStart | bottomEnd` and nothing else — so the
+   default `bottomEnd` puts a toast in the bottom-trailing corner at every
+   width. On a phone or a tablet that is the worst corner available: it lands on
+   the composer's send button and the thread's scroll-to-bottom button, and on
+   iOS the browser chrome and the on-screen keyboard both grow from that edge.
+   There is no center position to select, so the corner has to be overridden.
+
+   The selector is the one `AppLayerProvider` uses to find the same element —
+   keep the two in step (`src/providers/app-layer-provider.tsx`). Astryx's
+   StyleX rules inflate their specificity with repeated `:not(#\#)`, so nothing
+   written here could outweigh them on specificity alone; what wins is the layer
+   order declared at the top of this file, `components` sitting above
+   `astryx-base`.
+
+   `column-reverse` matches what Astryx does for its own top-anchored positions:
+   the newest toast stacks nearest the anchored edge. The breakpoint is
+   Tailwind's `lg` (1024px), the same one `useIsLg` reads and the same one the
+   inbox uses to decide its pane count. */
+@layer components {
+  @media (width < 64rem) {
+    [popover='manual'][role='region'] {
+      top: 0;
+      bottom: auto;
+      inset-inline: 0;
+      /* The UA stylesheet gives every `[popover]` `width: fit-content`, which
+         survives both insets being 0: the box shrinks to one toast and settles
+         against the leading edge, leaving `align-items` nothing to center in.
+         `auto` is what lets the two insets resolve into a full-width box. */
+      width: auto;
+      flex-direction: column-reverse;
+      align-items: center;
+    }
+  }
+}
+
 html,
 body {
   height: 100%;
