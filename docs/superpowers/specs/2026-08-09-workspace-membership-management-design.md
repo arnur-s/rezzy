@@ -30,11 +30,14 @@ that removes a membership today" — which this work builds.
 
 1. Owners and admins can invite an existing Rezzy user by email, change roles,
    and remove members. Anyone can leave.
-2. A workspace can never reach zero owners.
-3. A removed creator cannot re-add themselves as owner, and loses the workspace.
-4. Every membership mutation goes through a SECURITY DEFINER RPC. No direct
+2. An invited user is notified in-app when the invitation is created, and can
+   accept or reject it.
+3. A workspace can never reach zero owners, under concurrency as well as in
+   sequence.
+4. A removed creator cannot re-add themselves as owner, and loses the workspace.
+5. Every membership mutation goes through a SECURITY DEFINER RPC. No direct
    client INSERT/UPDATE/DELETE on membership or invitation rows.
-5. `soft_delete_workspace` stops appearing in the generated client surface.
+6. `soft_delete_workspace` stops appearing in the generated client surface.
 
 ## Non-goals
 
@@ -67,6 +70,13 @@ Rejected also: direct add with no acceptance step. Being added to a shared inbox
 without consent is a surprise, and the invited user is the only party who should
 decide.
 
+**Creating an invitation must raise an in-app notification to the invitee.** An
+invitation the recipient has to go looking for is not an invitation. The
+workspace-switcher indicator described below **supplements** that notification;
+it is the persistent place to act on a pending invite, not the thing that
+announces one. Requirement and mechanism are set out under
+"In-app notification" in the client section.
+
 ### The email lookup reads `auth.users`, not `public.profiles`
 
 `public.profiles.email` is `text` with no unique index and no index at all, and
@@ -86,7 +96,16 @@ simply does not depend on it.
 An invitation stays pending until accepted, rejected, or revoked. Inviting an
 address that already has a pending invitation updates that row rather than
 creating a second. Inviting an existing member is refused with its own error.
-Rejected and revoked rows are retained for audit and do not block a fresh invite.
+Rejected and revoked rows are retained as **history** and do not block a fresh
+invite.
+
+History, not durable audit, and the distinction is deliberate.
+`invited_user_id` is `ON DELETE CASCADE`, so deleting a user's profile takes
+their invitation rows with it. That is the right trade here: the invitee is the
+subject of the row, not an incidental actor on it, and a deleted account should
+not leave its email address behind in workspaces that never admitted it. If
+durable audit is ever required, it needs an append-only log that survives the
+account, not a nullable FK on this table.
 
 No expiry, so no scheduled job: `pg_cron` is not installed on this project, and
 an expiry that lives only in a WHERE clause produces silence rather than an
@@ -174,9 +193,25 @@ Indexes:
   `(table, index, column)` triples it expects rather than sweeping `pg_constraint`,
   so both must be added to that list or the contract will not cover them.
 
-RLS is enabled and **no policy is created and no grant is issued to
-`authenticated`**. Every read and write goes through a definer RPC, so there is
-no direct path to fall back to.
+RLS is enabled. `authenticated` receives **`SELECT` only, under a single policy
+`invited_user_id = (select auth.uid()) and status = 'pending'`**. There is no
+INSERT, UPDATE, or DELETE grant and no policy for them, so every write goes
+through a definer RPC.
+
+The SELECT grant is not a convenience — it is load-bearing. `postgres_changes`
+evaluates RLS as the subscribing user, so a table with no SELECT policy delivers
+no realtime events, and the invitee would never be notified (see
+"In-app notification" below). The policy is scoped so an invitee sees their own
+pending row and nothing else: not other people's invitations, not the workspace's
+roster, and not their own rejected history.
+
+The table must also be added to the `supabase_realtime` publication, or the
+subscription is silently inert.
+
+Note that this makes `list_my_workspace_invitations()` a convenience rather than
+a boundary — it exists for the joins to workspace name, icon, and inviter name,
+which the invitee cannot read directly. Keep the guard inside it regardless; a
+read RPC that trusts its caller is how the next one gets written.
 
 ### Changes to `public.workspace_members`
 
@@ -202,24 +237,46 @@ Three changes, each closing a specific path:
    drop policy `"Users can create workspaces"`, and revoke `INSERT` on
    `public.workspaces` from `authenticated`.
 
-Plus a shared helper `public.workspace_role(p_workspace_id uuid) returns text` —
-definer, stable, `search_path = ''`, returning the caller's role in a workspace
-whose `deleted_at is null`, or null. Every RPC below authorizes through it, so
-the boundary is stated once.
+Plus a shared helper `private.workspace_role(p_workspace_id uuid) returns text` —
+definer, stable, `search_path = ''`, returning the caller's role, or null. Every
+RPC below authorizes through it, so the boundary is stated once.
+
+**It lives in `private`, not `public`.** It is internal authorization
+infrastructure with no client caller, and `private` is not exposed through the
+Data API, so it can never be reached as an RPC and never appears in
+`src/api/types.ts`. The definer RPCs call it fully qualified as
+`private.workspace_role(...)`; because they execute as their owner, they reach it
+without `authenticated` holding `USAGE` on the schema. Confirm no such grant
+exists before relying on that — `private.channel_secrets` implies it does not.
+
+**It preserves exactly the boundary `public.is_workspace_member` draws.** Same
+join to `public.workspaces`, same `w.deleted_at is null` predicate, same
+`(select auth.uid())` identity: a soft-deleted workspace yields null for every
+caller, so "no role" and "workspace withdrawn" collapse into one answer and no
+RPC below needs its own `deleted_at` check.
 
 Note for the implementer: `public.is_workspace_member` is SECURITY DEFINER for a
 reason documented at length in
 `20260805090300_deleted_workspaces_lose_child_access.sql` — an invoker-rights
 read of `workspaces` from inside it recurses through the `workspaces` SELECT
 policy until the stack limit, and does so only for non-creators.
-`workspace_role` reads the same two tables and must be definer for the same
-reason.
+`private.workspace_role` reads the same two tables and must be definer for the
+same reason.
 
 ## RPC surface
 
 All seven are `security definer`, `set search_path = ''`, revoked from
 `public, anon, service_role` and granted to `authenticated`. All refuse in a
 workspace whose `deleted_at` is set.
+
+Five of them authorize through `private.workspace_role`, which carries the
+`deleted_at` predicate for free. The two invitee-facing ones —
+`respond_to_workspace_invitation` and `list_my_workspace_invitations` — cannot:
+the invitee is not a member yet, so `workspace_role` correctly returns null for
+them. Those two identify the caller as `invited_user_id` and must **join
+`public.workspaces` and check `deleted_at is null` themselves**. Forgetting it
+there is how someone accepts their way into a workspace the product has already
+withdrawn.
 
 ### Writes
 
@@ -236,8 +293,27 @@ Caller must be owner or admin. `p_role` must be `admin` or `member`. Resolves
 | resolved user is the caller | `CANNOT_INVITE_SELF` (22023) |
 | `p_role` not in (`admin`,`member`) | `INVALID_ROLE` (22023) |
 
-On an existing pending invitation for the same pair, updates `role`,
-`invited_by`, and `created_at` and returns the same id.
+**Re-invite must be atomic.** On an existing pending invitation for the same
+pair, the row's `role`, `invited_by`, and `created_at` are updated and the same
+id is returned. This must be one statement that infers the partial unique index,
+not a `select` followed by an `insert` or `update`:
+
+```sql
+insert into public.workspace_invitations
+  (workspace_id, invited_user_id, invited_email, invited_by, role)
+values (...)
+on conflict (workspace_id, invited_user_id) where status = 'pending'
+do update set
+  role       = excluded.role,
+  invited_by = excluded.invited_by,
+  created_at = now()
+returning id;
+```
+
+Two admins inviting the same person at the same moment must leave exactly one
+pending invitation, and neither call may surface a raw `23505` — the read-then-
+write shape loses that race and returns a unique-violation to whichever admin
+arrives second.
 
 **`respond_to_workspace_invitation(p_invitation_id uuid, p_accept boolean) returns uuid`**
 
@@ -261,37 +337,66 @@ Owner or admin of the invitation's workspace. Stamps `status = 'revoked'` and
 | rule | error when violated |
 | --- | --- |
 | caller is owner or admin | `NOT_A_WORKSPACE_ADMIN` (42501) |
+| the target must be a member of this workspace | `MEMBER_NOT_FOUND` (P0002) |
 | only an owner may set `role = 'owner'`, or change a row that currently holds it | `OWNER_ROLE_REQUIRES_OWNER` (42501) |
 | admins may move member ↔ admin | — |
 | the workspace must retain at least one owner | `LAST_OWNER` (23514) |
 | `p_role` in (`owner`,`admin`,`member`) | `INVALID_ROLE` (22023) |
 
+The target's current role is read from the locked roster described below, never
+from an unlocked read.
+
 **`remove_workspace_member(p_workspace_id uuid, p_user_id uuid) returns void`**
 
 Owner or admin may remove anyone; any member may remove themselves (this is
 "leave"). An admin may not remove an owner (`OWNER_ROLE_REQUIRES_OWNER`). The
-last owner may not be removed and may not leave (`LAST_OWNER`).
+last owner may not be removed and may not leave (`LAST_OWNER`). A target who is
+not a member is `MEMBER_NOT_FOUND`. Same locked-roster rule as above: the
+target's role is read from the locked tuple, not before it.
 
 `trg_clear_assignments_for_removed_member` already clears
 `conversations.assigned_to` and `contacts.owner_id` on DELETE — shipped ahead of
 this path by `20260805090400`, and asserted in `workspace_lifecycle.test.sql`.
 Nothing new is needed for cleanup.
 
-### The last-owner rule needs a lock
+### Both write paths lock the roster before deciding anything
 
-Demote, remove, and leave each take
+`update_workspace_member_role` and `remove_workspace_member` must lock **the
+target row** and **the owner set** before any authorization check reads either.
+Two distinct races otherwise:
+
+- **The target row.** An admin reads the target as `member` and, while the
+  decision is being made, an owner promotes that same user to `owner`. The
+  admin's write then lands on an owner's row — precisely what
+  `OWNER_ROLE_REQUIRES_OWNER` exists to prevent. The target's role must be read
+  from a locked tuple and every owner/admin check must run against that value,
+  never against a role read before the lock or re-read after it.
+- **The owner set.** Two concurrent demotions each read two owners, both
+  succeed, and the workspace reaches zero.
+
+**Acquire both with one statement, not two.** Two separate `FOR UPDATE`
+statements deadlock against each other whenever the target is itself an owner:
+a transaction demoting owner A locks A, then asks for the owner set containing
+B; a concurrent transaction demoting owner B holds B and asks for the set
+containing A. Neither can proceed. So both functions open with a single lock
+over the whole workspace roster in a deterministic order:
 
 ```sql
 select 1
 from public.workspace_members
 where workspace_id = p_workspace_id
-  and role = 'owner'
+order by user_id
 for update;
 ```
 
-before counting owners. Without it, two concurrent demotions each read two
-owners, both succeed, and the workspace reaches zero — the one defect in this
-feature that a test written the obvious way will not catch.
+One statement, one scan order, so concurrent callers serialize instead of
+deadlocking. It covers the target row and the owner set together, and a
+workspace roster is tens of rows, so the cost is irrelevant. Every subsequent
+read — the target's role, the owner count — then runs inside that lock and
+observes a roster nobody else can move.
+
+A target with no row is `MEMBER_NOT_FOUND` (P0002), decided first, inside the
+lock.
 
 ### Reads
 
@@ -343,6 +448,55 @@ Decline. A dot on the switcher trigger when any are pending.
 Accepting invalidates `workspaceQueryKeys.list` and the member directory, so the
 new workspace appears in the same interaction.
 
+The indicator is the persistent surface. It does not satisfy the notification
+requirement on its own — a user who never opens the switcher never learns they
+were invited.
+
+### In-app notification
+
+**The infrastructure exists, and it is half-general.** Documented here because
+the split decides how much is new work:
+
+*Generic and reusable as-is* — the Astryx `useToast` host; `NotificationDeduper`
+and `createTabCoordinator`, both keyed by an opaque row id so only one tab
+presents a given event; `playNotificationSound`; the notification preferences
+record (`inAppEnabled`, `soundEnabled`, `previewMode`); and the per-user realtime
+channel `notifications:${userId}` that `useMessageNotifications` opens once from
+the notifications provider.
+
+*Message-shaped, and not reusable* — `public.message_notifications` is a
+conversation/message join table, not a general notification store;
+`shouldPresentInApp` takes a `MessageNotificationRow` and applies exact-thread
+suppression; `showMessageNotificationToast` and `getMessageNotificationDetails`
+render and hydrate a conversation; the `/notifications` route and the header bell
+are an unread-**conversations** view, as
+`docs/superpowers/specs/2026-08-09-notification-toast-redesign-design.md` treats
+them, not a notification centre.
+
+**So: no new mechanism is introduced.** `useMessageNotifications` gains a second
+`.on('postgres_changes', ...)` binding on the same per-user channel —
+`INSERT on public.workspace_invitations` filtered
+`invited_user_id=eq.${userId}` — reusing the deduper, the tab coordinator, and
+the sound, and presenting a distinct invitation toast with Accept / Decline and
+a link to the switcher. The hook keeps its name or gains a neutral one; either
+way it stays mounted once, from the same provider.
+
+Two consequences already recorded in the data model: `workspace_invitations`
+needs the invitee's own-row SELECT policy for the subscription to receive
+anything, and the table must join the `supabase_realtime` publication.
+
+Invitations respect `inAppEnabled` and `soundEnabled`. `previewMode` does not
+apply — there is no message body — and the exact-thread suppression rule does
+not either, so invitations get their own small predicate rather than being
+forced through `shouldPresentInApp`.
+
+**Out of scope: OS/push notification for invitations.** The `send-message-push`
+edge function is message-specific and is triggered from the message path;
+extending Web Push to a second event type is its own piece of work. An invitee
+who is not in the app learns about the invitation the next time they open it,
+from the switcher indicator. Stated here so the gap is a decision rather than an
+oversight.
+
 ### `viewer` removal
 
 Out of `WORKSPACE_ROLES` in `src/features/account/model/types.ts` and the role
@@ -378,15 +532,37 @@ dot if it renders a number, which takes `one`/`few`/`many`.
 - Inviting an address no user holds raises `USER_NOT_FOUND` and writes nothing.
 - Inviting an existing member raises `ALREADY_A_MEMBER`.
 - Re-inviting a pending invitee updates the row; the partial unique index holds.
+- **Two concurrent invitations** for the same `(workspace_id, invited_user_id)`
+  leave exactly one pending row, and neither call raises `23505`.
 - Accept creates the membership carrying `invited_by`, and stamps the
   invitation.
 - A user who is not the invitee cannot accept or reject that invitation.
 - An admin cannot demote or remove an owner, and cannot promote anyone to owner.
 - The last owner cannot be demoted, removed, or leave.
 - Two concurrent demotions cannot reach zero owners.
+- **The promote-under-an-admin race:** an admin's role change or removal, racing
+  a concurrent promotion of the same target to `owner`, cannot land on an owner's
+  row. One of the two transactions must observe the other's result and refuse
+  with `OWNER_ROLE_REQUIRES_OWNER`.
 - Every write path refuses in a soft-deleted workspace.
 - `authenticated` holds no INSERT/UPDATE/DELETE on `workspace_members` and no
-  privilege at all on `workspace_invitations`.
+  INSERT/UPDATE/DELETE on `workspace_invitations`.
+- An invitee reads their own pending invitation row directly and **cannot** read
+  another user's, a non-pending one of their own, or any other column of the
+  workspace — the SELECT policy is scoped, not a general read grant.
+
+The three concurrency tests need two sessions, and **nothing in
+`supabase/tests/database/` runs more than one today** — no `dblink`, no
+connection helper, and every file is a single transaction ending in `rollback`.
+Introducing `dblink` for this is a defensible call and should be made
+deliberately; it is a new extension on the project.
+
+If it is not introduced, do not write a single-session test that appears to
+cover the race and cannot. Assert what one session can — that the lock statement
+is present in the function body, and that the serialized order produces the
+right answer — and record in the test file that the true interleaving is
+unverified. A test that quietly proves less than it claims is worse here than an
+acknowledged gap, because the next person deletes the lock and stays green.
 
 ### Existing tests that must change
 
