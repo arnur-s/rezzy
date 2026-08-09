@@ -48,6 +48,7 @@ declare
   v_source text;
   v_owner uuid;
   v_primary_phone text;
+  v_survivor_phone_ids uuid[];
 begin
   if v_actor is null then
     raise exception 'NOT_AUTHENTICATED'
@@ -234,6 +235,16 @@ begin
   where contact_id = p_merged_id
     and workspace_id = v_workspace_id;
 
+  -- Snapshot which rows were the survivor's own *before* the repoint below, so
+  -- the renumbering ranking after it can tell "always was the survivor's" from
+  -- "just arrived from the loser" -- see the comment on that ranking for why
+  -- that distinction is load-bearing, not cosmetic.
+  select coalesce(array_agg(cp.id), array[]::uuid[])
+  into v_survivor_phone_ids
+  from public.contact_phones cp
+  where cp.contact_id = p_survivor_id
+    and cp.workspace_id = v_workspace_id;
+
   -- contact_phones_contact_digits_key is (contact_id, digits): a number the
   -- survivor already holds cannot move, so it is left behind and deleted below.
   -- Nothing is lost -- the survivor has that number, however it was spelled.
@@ -255,10 +266,25 @@ begin
   -- Moved rows arrive carrying the loser's positions, so the survivor can end up
   -- with two position-0 numbers and no defined primary. Renumber, then re-sync
   -- contacts.phone the way set_contact_phones does.
+  --
+  -- The survivor's own rows are ranked first, ahead of position/created_at/id:
+  -- without that, a moved row and a kept row competing for the same position
+  -- are ordered by created_at, and every row touched by this merge shares one
+  -- timestamp -- `now()` is constant for the whole transaction -- so the real
+  -- tiebreak would fall to a random contact_phones.id and the survivor's own
+  -- primary number could be silently replaced by whichever the loser held.
+  -- p_fields has no phone key precisely so a human has to choose that
+  -- deliberately; this ranking is what keeps a merge from choosing it instead.
   with ordered as (
     select
       cp.id,
-      (row_number() over (order by cp.position, cp.created_at, cp.id) - 1)::integer as rank
+      (row_number() over (
+        order by
+          (cp.id = any (v_survivor_phone_ids)) desc,
+          cp.position,
+          cp.created_at,
+          cp.id
+      ) - 1)::integer as rank
     from public.contact_phones cp
     where cp.contact_id = p_survivor_id
       and cp.workspace_id = v_workspace_id

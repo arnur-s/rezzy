@@ -188,11 +188,18 @@ insert into public.contact_phones (workspace_id, contact_id, phone, position)
 values
   ('80000000-0000-4000-8000-000000000201',
    '80000000-0000-4000-8000-000000000401', '+7 999 123-45-67', 0),
+  -- A genuine second position-0 number, distinct digits, so it moves rather
+  -- than collapses: after the repoint the survivor holds two rows both
+  -- claiming position 0, which is the real collision the renumbering step (and
+  -- the ranking fix it needed) exists to resolve. This row's created_at ties
+  -- the survivor's own -- every row this fixture writes shares one
+  -- transaction timestamp -- so without that ranking fix, which one lands on
+  -- position 0 would come down to a coin-flip on contact_phones.id.
+  ('80000000-0000-4000-8000-000000000201',
+   '80000000-0000-4000-8000-000000000402', '+7 916 000-11-22', 0),
   -- Same digits as the survivor's, spelled differently: must collapse, not 23505.
   ('80000000-0000-4000-8000-000000000201',
-   '80000000-0000-4000-8000-000000000402', '+79991234567', 0),
-  ('80000000-0000-4000-8000-000000000201',
-   '80000000-0000-4000-8000-000000000402', '+7 916 000-11-22', 1);
+   '80000000-0000-4000-8000-000000000402', '+79991234567', 1);
 
 insert into public.contact_channels
   (id, contact_id, workspace_id, channel_id, channel_type, external_id, external_name)
@@ -296,7 +303,7 @@ select lives_ok(
     select public.merge_contacts(
       '80000000-0000-4000-8000-000000000401',
       '80000000-0000-4000-8000-000000000402',
-      '{"name": "Ivan P.", "email": "ivan@example.com"}'::jsonb)
+      '{"name": "Иван П.", "email": "ivan@example.com"}'::jsonb)
   $$,
   'an admin merges two contacts in the same workspace'
 );
@@ -368,7 +375,7 @@ select is(
 select is(
   (select name from public.contacts
     where id = '80000000-0000-4000-8000-000000000401'),
-  'Ivan P.',
+  'Иван П.',
   'the picked name overwrote the survivor''s'
 );
 
