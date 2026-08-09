@@ -282,7 +282,7 @@ git commit -m "feat: add a per-conversation notification group store"
 
 **Interfaces:**
 - Produces: `m.notifications_group_expand({ count })` and `m.notifications_group_collapse()`, consumed by Task 3.
-- Removes: `m.notifications_open_thread` and `m.notifications_show_full_message`. Task 3 removes their last call sites; this task must land first so the plural test can be written against the new keys, and Task 3's typecheck will fail until Task 3 removes the old call sites. Run this task and Task 3 back to back.
+- This task is **purely additive**. `notifications_open_thread` and `notifications_show_full_message` are retired in Task 3, in the same commit that deletes their last call sites — removing them here would leave the tree unable to typecheck, which the Global Constraints forbid at a commit boundary.
 
 `notifications_group_expand` takes the number of *hidden* messages (`total - 1`), not the total. The chip's visible numeral is the total; its accessible name describes what expanding reveals.
 
@@ -290,7 +290,7 @@ git commit -m "feat: add a per-conversation notification group store"
 
 - [ ] **Step 1: Add the new keys to `messages/en.json`**
 
-Insert after the `"notifications_preview_sticker"` line, and delete the `"notifications_open_thread"` and `"notifications_show_full_message"` lines:
+Insert after the `"notifications_preview_sticker"` line. Do **not** delete anything — `notifications_open_thread` and `notifications_show_full_message` still have call sites until Task 3.
 
 ```json
   "notifications_group_expand": [
@@ -308,7 +308,7 @@ Insert after the `"notifications_preview_sticker"` line, and delete the `"notifi
 
 - [ ] **Step 2: Add the new keys to `messages/ru.json`**
 
-Insert at the matching position, and delete the `"notifications_open_thread"` and `"notifications_show_full_message"` lines:
+Insert at the matching position. Again, delete nothing.
 
 ```json
   "notifications_group_expand": [
@@ -359,7 +359,7 @@ Expected: PASS.
 
 - [ ] **Step 6: Verify key parity by hand**
 
-Nothing automated checks that the two catalogues carry the same keys. Confirm both files gained exactly `notifications_group_expand` and `notifications_group_collapse`, and both lost exactly `notifications_open_thread` and `notifications_show_full_message`:
+Nothing automated checks that the two catalogues carry the same keys. Confirm both files gained exactly `notifications_group_expand` and `notifications_group_collapse`:
 
 ```bash
 node --input-type=module -e "import {readFileSync} from 'node:fs';const k=f=>Object.keys(JSON.parse(readFileSync(f,'utf8')));const a=k('messages/en.json'),b=k('messages/ru.json');const d=[...a.filter(x=>!b.includes(x)),...b.filter(x=>!a.includes(x))];console.log(d.length?d:'parity ok')"
@@ -367,11 +367,18 @@ node --input-type=module -e "import {readFileSync} from 'node:fs';const k=f=>Obj
 
 Expected: `parity ok`.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Typecheck**
+
+Run: `pnpm typecheck`
+Expected: no errors. Nothing was removed, so the existing call sites still resolve.
+
+- [ ] **Step 8: Commit**
+
+`src/paraglide/` is gitignored — the compiled output is not committed. Stage only the sources:
 
 ```bash
-git add messages/en.json messages/ru.json src/lib/message-plurals.test.ts src/paraglide
-git commit -m "i18n: add notification group expand/collapse, retire toast button copy"
+git add messages/en.json messages/ru.json src/lib/message-plurals.test.ts
+git commit -m "i18n: add notification group expand and collapse copy"
 ```
 
 ---
@@ -388,6 +395,7 @@ independently.
 - Modify: `src/features/notifications/components/message-notification.tsx`
 - Delete: `src/features/notifications/components/notification-preview.tsx`
 - Modify: `src/features/notifications/components/message-notification.test.tsx`
+- Modify: `messages/en.json`, `messages/ru.json` (retire two keys)
 
 **Interfaces:**
 - Consumes: `NotificationGroup`, `appendToNotificationGroup`, `clearNotificationGroup`, from Task 1. `m.notifications_group_expand` / `m.notifications_group_collapse`, from Task 2.
@@ -857,25 +865,50 @@ grep -rn "components/notification-preview\|NotificationPreview\b" src/ --include
 
 Expected: only hits inside `utils/notification-preview.ts` and its test, which export a *type* named `NotificationPreview` and the `buildNotificationPreview` function. Those stay.
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [ ] **Step 5: Retire the two now-unused message keys**
+
+This step lands in the same commit as the code that removed their call sites, so the tree never has a commit that cannot typecheck.
+
+Delete the `"notifications_open_thread"` and `"notifications_show_full_message"` lines from **both** `messages/en.json` and `messages/ru.json`.
+
+Confirm no call sites remain:
+
+```bash
+grep -rn "notifications_open_thread\|notifications_show_full_message" src/ messages/
+```
+
+Expected: no output.
+
+Recompile and re-check parity:
+
+```bash
+pnpm i18n:compile
+node --input-type=module -e "import {readFileSync} from 'node:fs';const k=f=>Object.keys(JSON.parse(readFileSync(f,'utf8')));const a=k('messages/en.json'),b=k('messages/ru.json');const d=[...a.filter(x=>!b.includes(x)),...b.filter(x=>!a.includes(x))];console.log(d.length?d:'parity ok')"
+```
+
+Expected: `parity ok`.
+
+- [ ] **Step 6: Run the test to verify it passes**
 
 Run: `pnpm vitest run src/features/notifications/components/message-notification.test.tsx`
 Expected: PASS, 7 tests.
 
-- [ ] **Step 6: Typecheck**
+- [ ] **Step 7: Typecheck**
 
 Run: `pnpm typecheck`
 Expected: no errors.
 
-- [ ] **Step 7: Run the whole notifications suite**
+- [ ] **Step 8: Run the whole notifications suite**
 
 Run: `pnpm vitest run src/features/notifications`
 Expected: PASS. `use-message-notifications.ts` is untouched, so any failure there is a real regression rather than an expected update.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
+
+`src/paraglide/` is gitignored; stage only sources. The deleted component is staged by `git rm` in Step 4.
 
 ```bash
-git add src/features/notifications/components/message-notification.tsx src/features/notifications/components/message-notification.test.tsx
+git add src/features/notifications/components/message-notification.tsx src/features/notifications/components/message-notification.test.tsx messages/en.json messages/ru.json
 git commit -m "feat: reduce the notification toast to a clickable grouped row"
 ```
 
