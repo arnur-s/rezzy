@@ -10,17 +10,11 @@ values
   ('00000000-0000-4000-8000-0000000000a8', 'at-outsider@example.com',
    '{"full_name":"Attachment outsider"}'::jsonb);
 
-set local role authenticated;
-set local request.jwt.claims =
-  '{"sub":"00000000-0000-4000-8000-0000000000a7","role":"authenticated"}';
-insert into public.workspaces (name, is_main) values ('AT WS', false);
-reset role;
+insert into public.workspaces (name, is_main, created_by)
+values ('AT WS', false, '00000000-0000-4000-8000-0000000000a7');
 
-set local role authenticated;
-set local request.jwt.claims =
-  '{"sub":"00000000-0000-4000-8000-0000000000a8","role":"authenticated"}';
-insert into public.workspaces (name, is_main) values ('AT WS OTHER', false);
-reset role;
+insert into public.workspaces (name, is_main, created_by)
+values ('AT WS OTHER', false, '00000000-0000-4000-8000-0000000000a8');
 
 insert into public.channels (id, workspace_id, type, name)
 values ('00000000-0000-4000-8000-0000000000b7',
