@@ -250,17 +250,28 @@ export function ProfileForm({ profile }: { profile: UserProfile }) {
         />
       ) : null}
 
-      <div className="flex items-center gap-3">
-        <Button
-          label={
-            isPending ? m.profile_save_pending() : m.common_save_changes()
-          }
-          type="submit"
-          variant="primary"
-          isLoading={isPending}
-          isDisabled={!isDirty || isPending}
-          tooltip={!isDirty && !isPending ? m.profile_save_no_changes() : undefined}
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {/* The form's one primary action, so on a phone it takes the full
+            column and a 44px thumb target rather than sitting 177px wide
+            against the left edge with the rest of the row empty. Both are
+            phone-only: from `sm` up the button hugs its label again, and the
+            height floor is scoped to coarse pointers so Astryx's own 32px
+            density survives on the desktop. Astryx `Button` takes no
+            `className`, hence the wrapper. */}
+        <div className="[&_button]:w-full pointer-coarse:[&_button]:min-h-11 sm:[&_button]:w-auto">
+          <Button
+            label={
+              isPending ? m.profile_save_pending() : m.common_save_changes()
+            }
+            type="submit"
+            variant="primary"
+            isLoading={isPending}
+            isDisabled={!isDirty || isPending}
+            tooltip={
+              !isDirty && !isPending ? m.profile_save_no_changes() : undefined
+            }
+          />
+        </div>
 
         {/* Text and an icon, not colour alone. */}
         {hasSaved && !isDirty && !isPending ? (
