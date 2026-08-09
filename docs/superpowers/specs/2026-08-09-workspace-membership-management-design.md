@@ -1,0 +1,422 @@
+# Workspace membership management
+
+Date: 2026-08-09
+Status: approved, not yet implemented
+
+Answers prompt 5 of `docs/schema-review-2026-08-09-prompts.md`.
+
+## Problem
+
+Rezzy is built on multi-workspace shared inboxes, and nothing can change who is
+in a workspace. `public.workspace_members` has one SELECT policy
+(`user_id = auth.uid()`) and one INSERT policy; `authenticated` holds
+`SELECT, INSERT` and no UPDATE or DELETE. There is no invite, no role change, no
+removal, and no way to leave. `invited_by` exists as a column, is indexed, and is
+written by nothing.
+
+`src/features/workspaces/components/workspace-members-stub.tsx` already renders
+the roster with a disabled email field under a "coming soon" badge, so the
+absence is visible in the product.
+
+There is also a privilege path. The INSERT policy admits any row where
+`role = 'owner'` and `workspaces.created_by = auth.uid()`, and the `workspaces`
+SELECT policy keeps a creator visible through `created_by = auth.uid()`. A
+creator who is removed from their own workspace can re-insert themselves as
+owner. `20260803090000_workspace_creator_can_read_own_insert.sql` names the
+trade-off in its header and justifies it with "there is no client-reachable path
+that removes a membership today" — which this work builds.
+
+## Goals
+
+1. Owners and admins can invite an existing Rezzy user by email, change roles,
+   and remove members. Anyone can leave.
+2. A workspace can never reach zero owners.
+3. A removed creator cannot re-add themselves as owner, and loses the workspace.
+4. Every membership mutation goes through a SECURITY DEFINER RPC. No direct
+   client INSERT/UPDATE/DELETE on membership or invitation rows.
+5. `soft_delete_workspace` stops appearing in the generated client surface.
+
+## Non-goals
+
+- Inviting people who have no Rezzy account. Email delivery, invite tokens, and
+  a signup-linked accept flow are all out of scope; the invitee must already
+  have an account.
+- Seat billing. `PRICING.md` describes per-seat pricing; nothing here counts,
+  limits, or meters seats.
+- Read-only access. See "The `viewer` role is dropped" below.
+- Restoring a soft-deleted workspace.
+- Transferring workspace ownership as a single atomic operation. Promote, then
+  demote.
+
+## Decisions
+
+### Invite model: existing users only, with an in-app accept
+
+An owner or admin types an email. If no registered user holds it, the invite is
+refused and nothing is written; the UI says the person must sign up first and
+share the address they registered with. If a user is found, a **pending
+invitation** is created and the invited user accepts or rejects it in-app.
+
+Rejected because they cost more than they are worth here: a token-and-link
+invitation (needs an accept route, an expiry story, and email delivery that does
+not exist — no Resend, no SMTP, `[auth.email.smtp]` commented out in
+`supabase/config.toml`), and `auth.admin.inviteUserByEmail` (needs production
+SMTP, and does not fit an existing user being invited to a second workspace).
+
+Rejected also: direct add with no acceptance step. Being added to a shared inbox
+without consent is a surprise, and the invited user is the only party who should
+decide.
+
+### The email lookup reads `auth.users`, not `public.profiles`
+
+`public.profiles.email` is `text` with no unique index and no index at all, and
+`authenticated` holds a **table-wide UPDATE grant** on `profiles`. Any user can
+therefore set their own `profiles.email` to a colleague's address and receive
+invitations meant for them. `auth.users.email` is the authoritative value,
+lowercased by GoTrue and uniquely indexed. `public.complete_onboarding` already
+reads `auth.users` from inside a definer function; the invite RPC does the same,
+filtering `deleted_at is null`.
+
+The `profiles` UPDATE grant is a real defect in its own right. It belongs to
+prompt 11 of the schema review and is deliberately not fixed here — this design
+simply does not depend on it.
+
+### Invitation lifecycle: no expiry, revocable, re-invite replaces
+
+An invitation stays pending until accepted, rejected, or revoked. Inviting an
+address that already has a pending invitation updates that row rather than
+creating a second. Inviting an existing member is refused with its own error.
+Rejected and revoked rows are retained for audit and do not block a fresh invite.
+
+No expiry, so no scheduled job: `pg_cron` is not installed on this project, and
+an expiry that lives only in a WHERE clause produces silence rather than an
+explanation for a user who took two weeks to look.
+
+### The `viewer` role is dropped
+
+`workspace_members_role_check` allows `owner`/`admin`/`member`/`viewer`, and
+`viewer` is labelled in two UI switches and ordered in two RPCs. No policy
+anywhere distinguishes it from `member`: every check is either
+`public.is_workspace_member(...)` or `role in ('owner','admin')`. It is a label
+that promises read-only and delivers full member access.
+
+Rather than ship a control whose label is a lie, or expand scope into read-only
+RLS across the whole inbox, `viewer` is removed: the CHECK tightens to
+`('owner','admin','member')` and the label disappears from the client.
+
+### Invitations grant `admin` or `member`, never `owner`
+
+An owner who wants a second owner invites them and then promotes them, so the
+"only owners may grant owner" rule lives in exactly one function.
+
+Admins may invite at `admin` level, because the agreed role rules already let an
+admin promote a member to admin; refusing it on the invite path would only mean
+two operations instead of one.
+
+### Workspace creation moves to an RPC
+
+The `created_by = auth.uid()` branch in the `workspaces` SELECT policy exists for
+one reason, documented in `20260803090000`: the client creates a workspace with
+`.insert(...).select()`, and for `INSERT ... RETURNING` Postgres applies the
+SELECT policy as an extra WITH CHECK in `ExecInsert`, **before** AFTER ROW
+triggers fire — so `public.handle_new_workspace()` has not yet seated the owner
+and a membership-only policy rejects the creator's own row.
+
+A definer RPC that inserts and returns the row removes that ordering problem, so
+the `created_by` branch can go. Without it, a removed creator keeps reading the
+workspace row, and `getUserWorkspaces()` — which selects `workspaces` with no
+membership join — keeps a ghost workspace in their switcher.
+
+### `soft_delete_workspace` moves to the `private` schema
+
+It stays unreachable from the browser, as
+`supabase/tests/database/workspace_lifecycle.test.sql` records is deliberate.
+`src/api/types.ts` is generated from the database, so the only way to stop
+generating it is to take it out of the Data API:
+`alter function public.soft_delete_workspace(uuid) set schema private`. It
+remains callable at the owning role exactly as today.
+
+## Data model
+
+### New table `public.workspace_invitations`
+
+| column | type | notes |
+| --- | --- | --- |
+| `id` | uuid | pk, `gen_random_uuid()` |
+| `workspace_id` | uuid | not null → `public.workspaces(id)` on delete cascade |
+| `invited_user_id` | uuid | not null → `public.profiles(id)` on delete cascade |
+| `invited_email` | text | not null; the address resolved from `auth.users` at invite time |
+| `invited_by` | uuid | → `public.profiles(id)` on delete set null |
+| `role` | text | not null, check `in ('admin','member')` |
+| `status` | text | not null default `'pending'`, check `in ('pending','accepted','rejected','revoked')` |
+| `created_at` | timestamptz | not null default `now()` |
+| `resolved_at` | timestamptz | set when status leaves `pending` |
+| `resolved_by` | uuid | → `public.profiles(id)` on delete set null; distinguishes a revoke from a rejection |
+
+`invited_email` is stored rather than joined so the admin's pending list renders
+the address that was actually resolved, not the spoofable `profiles.email`.
+
+`invited_by` and `resolved_by` follow the actor-FK convention established by
+`20260804100000_actor_fks_on_delete_set_null.sql`: an actor who leaves does not
+delete the audit row.
+
+Indexes:
+
+- `unique (workspace_id, invited_user_id) where status = 'pending'` — this is
+  what makes "re-invite updates the existing row" a constraint rather than a
+  convention, and what stops two concurrent invites producing two rows.
+- `(invited_user_id) where status = 'pending'` — the invitee's switcher query.
+- `(workspace_id, status)` — the members page, and the cascade delete.
+- FK-supporting indexes on `invited_by` and `resolved_by`, named
+  `workspace_invitations_invited_by_fkey_idx` and
+  `workspace_invitations_resolved_by_fkey_idx`.
+  `supabase/tests/database/performance_contract.test.sql` enumerates the
+  `(table, index, column)` triples it expects rather than sweeping `pg_constraint`,
+  so both must be added to that list or the contract will not cover them.
+
+RLS is enabled and **no policy is created and no grant is issued to
+`authenticated`**. Every read and write goes through a definer RPC, so there is
+no direct path to fall back to.
+
+### Changes to `public.workspace_members`
+
+- `workspace_members_role_check` tightens to `('owner','admin','member')`. The
+  migration first migrates any `viewer` rows to `member`, so the constraint
+  cannot fail on data.
+- `invited_by` starts being written, by the accept RPC.
+- Grants become `SELECT` only for `authenticated`.
+
+## Authorization changes
+
+Three changes, each closing a specific path:
+
+1. Drop policy `"Workspace creators can create owner membership"` on
+   `public.workspace_members` and revoke `INSERT`. Creation is unaffected:
+   `public.handle_new_workspace()` is a SECURITY DEFINER AFTER INSERT trigger on
+   `workspaces` that already seats the creator as owner. This alone closes the
+   re-add escalation.
+2. Add `public.create_workspace(p_name, p_description, p_icon, p_is_main)`,
+   modelled on `public.complete_onboarding`: definer, `search_path = ''`,
+   seats via the same trigger, returns the row.
+3. Drop `created_by = (select auth.uid())` from the `workspaces` SELECT policy,
+   drop policy `"Users can create workspaces"`, and revoke `INSERT` on
+   `public.workspaces` from `authenticated`.
+
+Plus a shared helper `public.workspace_role(p_workspace_id uuid) returns text` —
+definer, stable, `search_path = ''`, returning the caller's role in a workspace
+whose `deleted_at is null`, or null. Every RPC below authorizes through it, so
+the boundary is stated once.
+
+Note for the implementer: `public.is_workspace_member` is SECURITY DEFINER for a
+reason documented at length in
+`20260805090300_deleted_workspaces_lose_child_access.sql` — an invoker-rights
+read of `workspaces` from inside it recurses through the `workspaces` SELECT
+policy until the stack limit, and does so only for non-creators.
+`workspace_role` reads the same two tables and must be definer for the same
+reason.
+
+## RPC surface
+
+All seven are `security definer`, `set search_path = ''`, revoked from
+`public, anon, service_role` and granted to `authenticated`. All refuse in a
+workspace whose `deleted_at` is set.
+
+### Writes
+
+**`invite_workspace_member(p_workspace_id uuid, p_email text, p_role text) returns uuid`**
+
+Caller must be owner or admin. `p_role` must be `admin` or `member`. Resolves
+`lower(btrim(p_email))` against `auth.users` where `deleted_at is null`.
+
+| condition | error |
+| --- | --- |
+| caller is not owner/admin | `NOT_A_WORKSPACE_ADMIN` (42501) |
+| no user holds that email | `USER_NOT_FOUND` (P0002) |
+| resolved user is already a member | `ALREADY_A_MEMBER` (42710) |
+| resolved user is the caller | `CANNOT_INVITE_SELF` (22023) |
+| `p_role` not in (`admin`,`member`) | `INVALID_ROLE` (22023) |
+
+On an existing pending invitation for the same pair, updates `role`,
+`invited_by`, and `created_at` and returns the same id.
+
+**`respond_to_workspace_invitation(p_invitation_id uuid, p_accept boolean) returns uuid`**
+
+Caller must be `invited_user_id` and the invitation must be pending in a live
+workspace. Accept inserts the `workspace_members` row — carrying `invited_by`
+from the invitation — and stamps `status = 'accepted'`, in one transaction.
+Reject stamps `status = 'rejected'`. Both set `resolved_at` and `resolved_by`.
+
+Every failing case raises the single error `INVITATION_NOT_FOUND` (P0002):
+not yours, not pending, and workspace-is-gone are indistinguishable to the
+caller, so the function reveals nothing about invitations addressed to others.
+
+**`revoke_workspace_invitation(p_invitation_id uuid) returns void`**
+
+Owner or admin of the invitation's workspace. Stamps `status = 'revoked'` and
+`resolved_by = auth.uid()`. Raises `NOT_A_WORKSPACE_ADMIN` or
+`INVITATION_NOT_FOUND`.
+
+**`update_workspace_member_role(p_workspace_id uuid, p_user_id uuid, p_role text) returns void`**
+
+| rule | error when violated |
+| --- | --- |
+| caller is owner or admin | `NOT_A_WORKSPACE_ADMIN` (42501) |
+| only an owner may set `role = 'owner'`, or change a row that currently holds it | `OWNER_ROLE_REQUIRES_OWNER` (42501) |
+| admins may move member ↔ admin | — |
+| the workspace must retain at least one owner | `LAST_OWNER` (23514) |
+| `p_role` in (`owner`,`admin`,`member`) | `INVALID_ROLE` (22023) |
+
+**`remove_workspace_member(p_workspace_id uuid, p_user_id uuid) returns void`**
+
+Owner or admin may remove anyone; any member may remove themselves (this is
+"leave"). An admin may not remove an owner (`OWNER_ROLE_REQUIRES_OWNER`). The
+last owner may not be removed and may not leave (`LAST_OWNER`).
+
+`trg_clear_assignments_for_removed_member` already clears
+`conversations.assigned_to` and `contacts.owner_id` on DELETE — shipped ahead of
+this path by `20260805090400`, and asserted in `workspace_lifecycle.test.sql`.
+Nothing new is needed for cleanup.
+
+### The last-owner rule needs a lock
+
+Demote, remove, and leave each take
+
+```sql
+select 1
+from public.workspace_members
+where workspace_id = p_workspace_id
+  and role = 'owner'
+for update;
+```
+
+before counting owners. Without it, two concurrent demotions each read two
+owners, both succeed, and the workspace reaches zero — the one defect in this
+feature that a test written the obvious way will not catch.
+
+### Reads
+
+**`list_my_workspace_invitations()`** — pending invitations for `auth.uid()` in
+live workspaces, joined to workspace name and icon and to the inviter's
+`full_name`. Feeds the switcher. Returns an empty set, never an error, for a
+user with none.
+
+**`list_workspace_invitations(p_workspace_id uuid)`** — pending invitations for
+the members settings page. **Owner/admin only**, because it returns email
+addresses: `list_workspace_members` deliberately excludes email (see the header
+of `20260731183000_member_directory_contact_fields.sql`) and this must not
+become the back door around that decision.
+
+## Client and UI
+
+### Feature layer
+
+`src/features/workspaces/api/workspace-membership.ts` and
+`hooks/use-workspace-membership.ts`: the seven RPCs, one query-key group added
+to `workspaceQueryKeys`, and one place that maps a Postgres error message token
+onto an i18n key. Existing `workspaces.ts` keeps the workspace CRUD; membership
+is its own module rather than growing that file further.
+
+`createWorkspace()` switches from `.insert().select()` to the new RPC.
+
+### Members settings page
+
+`workspace-members-stub.tsx` is rebuilt in place (and renamed off "stub"):
+
+- The invite section loses its `Badge variant="warning"` and its `isDisabled`.
+  Email field plus a role select (`Администратор` / `Участник`).
+- A pending-invitations section listing invitee, role, inviter, and a revoke
+  action. Hidden entirely for non-admins, who cannot read it anyway.
+- Roster rows gain a role menu and a remove action.
+
+Every control is gated on `useIsWorkspaceAdmin`, which already exists and
+already distinguishes "not an admin" from "roster not loaded". Affordances that
+the last-owner rule forbids are disabled with an explanation; the RPC enforces
+the same rule, so the UI never becomes the boundary.
+
+### Workspace switcher
+
+`WorkspaceSwitcher` is defined inside `src/widgets/sidebar/sidebar.tsx`. Its
+popover gains a pending-invitations section below the workspace list, each row
+carrying the workspace name, the offered role, who invited, and Accept /
+Decline. A dot on the switcher trigger when any are pending.
+
+Accepting invalidates `workspaceQueryKeys.list` and the member directory, so the
+new workspace appears in the same interaction.
+
+### `viewer` removal
+
+Out of `WORKSPACE_ROLES` in `src/features/account/model/types.ts` and the role
+list in `src/entities/workspace/model/member.ts`; out of the label switches in
+`workspace-members-stub.tsx` and
+`src/features/account/components/workspace-membership-list.tsx`; its message
+keys deleted from `messages/en.json` and `messages/ru.json`. The now-dead
+`when 'viewer' then 3` ordering branches in `list_workspace_members` and the
+contacts directory RPC go in the same migration.
+
+### Internationalization
+
+`ru` is `baseLocale`, so the Russian copy is the product rather than a
+translation of the English. New keys are grouped under the existing
+`workspace_settings_members_*` prefix and a new `workspace_invitations_*` group,
+in both catalogues, checked against each other by hand — nothing enforces key
+parity.
+
+The not-found message renders as «Пользователь не найден. Сначала он должен
+зарегистрироваться и сообщить вам адрес, на который создан аккаунт.»
+
+The role select is a fixed-width control, so `администратор` and `участник` get
+a budget in `src/lib/message-lengths.test.ts`. Nothing here is counted, so no
+plural variants are needed — except the pending-invitation count on the switcher
+dot if it renders a number, which takes `one`/`few`/`many`.
+
+## Tests
+
+### New `supabase/tests/database/workspace_membership.test.sql`
+
+- A removed creator cannot re-insert themselves as owner, and cannot read the
+  workspace row. Asserted directly, as the escalation it is.
+- Inviting an address no user holds raises `USER_NOT_FOUND` and writes nothing.
+- Inviting an existing member raises `ALREADY_A_MEMBER`.
+- Re-inviting a pending invitee updates the row; the partial unique index holds.
+- Accept creates the membership carrying `invited_by`, and stamps the
+  invitation.
+- A user who is not the invitee cannot accept or reject that invitation.
+- An admin cannot demote or remove an owner, and cannot promote anyone to owner.
+- The last owner cannot be demoted, removed, or leave.
+- Two concurrent demotions cannot reach zero owners.
+- Every write path refuses in a soft-deleted workspace.
+- `authenticated` holds no INSERT/UPDATE/DELETE on `workspace_members` and no
+  privilege at all on `workspace_invitations`.
+
+### Existing tests that must change
+
+- `security_contract.test.sql` asserts the current grant set on
+  `workspace_members` and the current `workspaces` policies.
+- `workspace_lifecycle.test.sql` states in a comment that removal is unreachable
+  from the browser, and calls `public.soft_delete_workspace` by that name.
+
+Both statements stop being true; update them rather than working around them.
+
+### Application tests
+
+Unit tests for the error-token → i18n mapping, the last-owner affordance gating,
+and the switcher's invitation section rendering and mutations.
+
+### Validation
+
+`pnpm test:db` and `pnpm verify`. Then a browser pass in Russian at phone width:
+the switcher's invitation rows are new UI inside a width-constrained control,
+and jsdom has no layout, so truncation there is invisible to the unit suite.
+
+## Risks
+
+- **Migration ordering.** Revoking INSERT on `workspaces` before
+  `create_workspace` is granted breaks workspace creation for the length of the
+  deploy. The migration must create and grant the RPC before revoking anything,
+  and the client change must ship with it.
+- **`one_main_workspace_per_user`.** `create_workspace` inherits the unique
+  violation handling that `complete_onboarding` documents; it must not silently
+  return a different workspace than the caller asked to create.
+- **Dropping the `created_by` SELECT branch** is the change most likely to
+  surface an unrelated dependency. Search for every reader of `workspaces` that
+  assumes a creator can see their own row before removing it.
