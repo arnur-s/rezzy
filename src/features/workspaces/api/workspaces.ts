@@ -133,8 +133,13 @@ export async function createWorkspace({
   // function and cannot be supplied by the caller.
   const { data, error } = await supabase.rpc('create_workspace', {
     p_name: name.trim(),
-    p_description: normalizeDescription(description),
-    p_icon: icon ?? null,
+    // RPC args map a `default null` Postgres parameter to an optional key
+    // typed as `string | undefined`, not `string | null` — unlike a table
+    // column, which accepts null directly. Omitting the key reaches the same
+    // default as passing null explicitly, so this coerces rather than
+    // changing normalizeDescription's contract for updateWorkspace below.
+    p_description: normalizeDescription(description) ?? undefined,
+    p_icon: icon,
     p_is_main: isMain,
   })
 

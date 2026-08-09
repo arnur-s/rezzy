@@ -132,6 +132,16 @@ with expected_indexes(table_name, index_name, column_name) as (
     ),
     ('messages', 'messages_sender_id_fkey_idx', 'sender_id'),
     (
+      'workspace_invitations',
+      'workspace_invitations_invited_by_fkey_idx',
+      'invited_by'
+    ),
+    (
+      'workspace_invitations',
+      'workspace_invitations_resolved_by_fkey_idx',
+      'resolved_by'
+    ),
+    (
       'workspace_members',
       'workspace_members_invited_by_fkey_idx',
       'invited_by'

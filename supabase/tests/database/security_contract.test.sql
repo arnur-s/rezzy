@@ -34,7 +34,7 @@ select ok(
   (
     select p.prosecdef
     from pg_proc p
-    where p.oid = to_regprocedure('public.soft_delete_workspace(uuid)')
+    where p.oid = to_regprocedure('private.soft_delete_workspace(uuid)')
   ),
   'soft_delete_workspace retains definer rights for its owner-only update'
 );
@@ -43,6 +43,7 @@ select ok(
 -- internal writes, but they must not inherit a caller-controlled search path.
 with required_definers(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
     ('public.enforce_contact_note_integrity()'),
     ('public.ensure_contact_owner_is_workspace_member()'),
     ('public.ensure_conversation_assignee_is_workspace_member()'),
@@ -52,14 +53,22 @@ with required_definers(signature) as (
     ('public.handle_inbound_message_insert()'),
     ('public.handle_new_workspace()'),
     ('public.handle_outbound_message_insert()'),
+    ('public.invite_workspace_member(uuid,text,text)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
     ('public.rls_auto_enable()'),
     -- default_phone_region is deliberately absent from authenticated's update
     -- grant, so this RPC is the only writer and needs rights the caller lacks.
     ('public.set_workspace_phone_region(uuid,text)'),
-    ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
-    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
+    ('public.update_workspace_member_role(uuid,uuid,text)'),
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)'),
+    ('private.soft_delete_workspace(uuid)'),
+    ('private.workspace_role(uuid)')
 )
 select ok(
   not exists (
@@ -75,6 +84,7 @@ select ok(
 
 with empty_search_path_functions(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
     ('public.get_channel_credentials(uuid,uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.enforce_contact_note_integrity()'),
@@ -85,14 +95,22 @@ with empty_search_path_functions(signature) as (
     ('public.handle_new_workspace()'),
     ('public.handle_outbound_message_insert()'),
     ('public.handle_updated_at()'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
     ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
     ('public.set_workspace_phone_region(uuid,text)'),
-    ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
-    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
+    ('public.update_workspace_member_role(uuid,uuid,text)'),
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)'),
+    ('private.soft_delete_workspace(uuid)'),
+    ('private.workspace_role(uuid)')
 )
 select ok(
   not exists (
@@ -122,10 +140,18 @@ select is(
 -- Only the documented RPCs are callable through each Data API role.
 with user_rpcs(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
-    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
+    ('public.update_workspace_member_role(uuid,uuid,text)')
 )
 select ok(
   not exists (
@@ -146,10 +172,18 @@ select ok(
 
 with user_rpcs(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
-    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
+    ('public.update_workspace_member_role(uuid,uuid,text)')
 )
 select ok(
   not exists (
@@ -170,10 +204,18 @@ select ok(
 
 with user_rpcs(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
-    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
+    ('public.update_workspace_member_role(uuid,uuid,text)')
 )
 select ok(
   not exists (
@@ -277,8 +319,8 @@ with internal_functions(signature) as (
     ('public.handle_updated_at()'),
     ('public.prevent_messages_for_inactive_channels()'),
     ('public.rls_auto_enable()'),
-    ('public.soft_delete_workspace(uuid)'),
-    ('public.sync_contact_last_seen()')
+    ('public.sync_contact_last_seen()'),
+    ('private.soft_delete_workspace(uuid)')
 ), api_roles(role_name) as (
   values ('anon'), ('authenticated'), ('service_role')
 )
@@ -416,6 +458,7 @@ with exposed_tables(relation_name) as (
     ('public.conversations'),
     ('public.messages'),
     ('public.profiles'),
+    ('public.workspace_invitations'),
     ('public.workspace_members'),
     ('public.workspaces')
 ), table_privileges(privilege_name) as (

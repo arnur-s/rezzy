@@ -607,10 +607,11 @@ select public.invite_workspace_member(
 -- way it can be called today: at the owning/ambient role, with the caller's
 -- claims still in place so its auth.uid() ownership check is the thing being
 -- exercised. request.jwt.claims is a GUC independent of role, so it survives
--- the reset below.
+-- the reset below. It lives in private (20260809190000); the ambient role is
+-- unaffected by that move.
 reset role;
 
-select public.soft_delete_workspace((select id from mm_withdrawn_workspace));
+select private.soft_delete_workspace((select id from mm_withdrawn_workspace));
 
 -- Captured at the ambient role for the same RLS reason as mm_new_invitation
 -- above.
