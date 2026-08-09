@@ -210,8 +210,10 @@ Unit (`vitest` + Testing Library):
 
 Plural coverage: add the two new keys to `src/lib/message-plurals.test.ts`.
 
-Length budget: the contact name and the chip share a fixed-width row, so add the
-name to `src/lib/message-lengths.test.ts` if it is not already budgeted.
+No entry is needed in `src/lib/message-lengths.test.ts`. That guard covers
+catalogue strings inside fixed-width controls; the two new keys are accessible
+names that are never painted, and the contact name is user data rather than a
+catalogue string.
 
 Commands: `pnpm typecheck`, `pnpm test`, `pnpm lint`.
 
