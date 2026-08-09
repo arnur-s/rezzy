@@ -82,7 +82,7 @@ type AppPaneProps = {
  *
  * Carries the fill, the radius, the lift, and the scroll containment. Content
  * inside is edge-to-edge — the pane has no padding of its own, because its
- * children (a 64px header, a scroll region, a composer) each own their insets
+ * children (a 56px header, a scroll region, a composer) each own their insets
  * and a pane-level pad would double them.
  *
  * `overflow-hidden` is not cosmetic here: it is what clips a child's square

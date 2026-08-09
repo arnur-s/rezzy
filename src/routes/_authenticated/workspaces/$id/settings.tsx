@@ -1,23 +1,8 @@
-import { AppPane } from '@/components/app-pane'
+import type { SettingsShellSection } from '@/components/settings-shell'
+import { SettingsShell } from '@/components/settings-shell'
 import { useWorkspace } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
-import { Tab, TabList } from '@astryxdesign/core/TabList'
-import {
-  Outlet,
-  createFileRoute,
-  useNavigate,
-  useParams,
-  useRouterState,
-} from '@tanstack/react-router'
-
-type SettingsNavItem = {
-  key: 'general' | 'channels' | 'members'
-  to:
-    | '/workspaces/$id/settings'
-    | '/workspaces/$id/settings/channels'
-    | '/workspaces/$id/settings/members'
-  label: string
-}
+import { Outlet, createFileRoute, useParams } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/workspaces/$id/settings')(
   {
@@ -30,94 +15,39 @@ function RouteComponent() {
     from: '/_authenticated/workspaces/$id/settings',
   })
   const workspaceId = params.id
-  const navigate = useNavigate()
 
   const workspaceQuery = useWorkspace(workspaceId)
 
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
-
-  const navItems: Array<SettingsNavItem> = [
+  const basePath = `/workspaces/${workspaceId}/settings`
+  const sections: Array<SettingsShellSection> = [
     {
       key: 'general',
-      to: '/workspaces/$id/settings',
+      path: basePath,
       label: m.workspace_settings_general_label(),
     },
     {
       key: 'channels',
-      to: '/workspaces/$id/settings/channels',
+      path: `${basePath}/channels`,
       label: m.workspace_settings_channels_label(),
     },
     {
       key: 'members',
-      to: '/workspaces/$id/settings/members',
+      path: `${basePath}/members`,
       label: m.workspace_settings_members_label(),
     },
   ]
 
-  let selectedKey: SettingsNavItem['key'] = 'general'
-  for (const item of [...navItems].reverse()) {
-    const fullPath = item.to.replace('$id', workspaceId).replace(/\/$/, '')
-    if (pathname === fullPath || pathname.startsWith(`${fullPath}/`)) {
-      selectedKey = item.key
-      break
-    }
-  }
-
-  const handleSectionChange = (key: string) => {
-    const basePath = `/workspaces/${workspaceId}/settings`
-    const to = key === 'general' ? basePath : `${basePath}/${key}`
-    navigate({
-      to,
-      params: { id: workspaceId },
-    })
-  }
-
   return (
-    // One pane on the canvas, same construction as the account settings pane.
-    <AppPane>
-      {/* 64px and a hairline — the shared pane-header contract, matching the
-          conversation list, the thread, and the contact panel. */}
-      <header className="border-border/60 flex h-14 shrink-0 items-center border-b">
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
-          <h1 className="truncate text-base font-semibold">
-            {workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
-          </h1>
-        </div>
-      </header>
-
-      {/* The pane owns the scroll edge-to-edge; the column inside it owns the
-          measure, so the scrollbar rides the pane rather than the text. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
-          <p className="text-secondary text-xs font-medium">
-            {m.workspace_settings_kicker()}
-          </p>
-
-          {/* Same construction as the account settings tabs: TabList lays its
-              tabs in a row but does not scroll them, and a longer translation
-              or a fourth section would push the last one off a phone screen
-              with no way to reach it. The scroll container has to be ours, or
-              the overflow lands on the pane's `overflow-y-auto` and pans the
-              whole page sideways. See `src/routes/_authenticated/settings.tsx`. */}
-          <div className="-mx-4 scroll-px-4 overflow-x-auto px-4 pt-6 pointer-coarse:[&_button]:min-h-11 sm:-mx-8 sm:scroll-px-8 sm:px-8">
-            <TabList
-              value={selectedKey}
-              onChange={(key) => handleSectionChange(key)}
-              aria-label={m.workspace_settings_sections_nav_aria_label()}
-            >
-              {navItems.map((item) => (
-                <Tab key={item.key} value={item.key} label={item.label} />
-              ))}
-            </TabList>
-          </div>
-
-          <div className="pt-8">
-            <Outlet />
-          </div>
-        </div>
-      </div>
-    </AppPane>
+    <SettingsShell
+      // The name is what this pane is about, so it holds the title slot and the
+      // fallback carries the loading state rather than a skeleton pushing the
+      // header around.
+      title={workspaceQuery.data?.name ?? m.workspace_settings_loading_title()}
+      kicker={m.workspace_settings_kicker()}
+      navLabel={m.workspace_settings_sections_nav_aria_label()}
+      sections={sections}
+    >
+      <Outlet />
+    </SettingsShell>
   )
 }

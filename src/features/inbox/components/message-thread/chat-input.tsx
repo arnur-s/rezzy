@@ -367,6 +367,7 @@ export function ChatInput({
       onClick={() => fileInputRef.current?.click()}
       label={m.inbox_composer_attach_file_label()}
       icon={<PaperclipIcon className="size-4" />}
+      className="size-8"
     />
   )
 
@@ -390,6 +391,7 @@ export function ChatInput({
         isDisabled={disabled}
         label={m.inbox_composer_emoji_label()}
         icon={<SmileIcon className="size-4" />}
+        className="size-8"
       />
     </Popover>
   )
@@ -431,6 +433,7 @@ export function ChatInput({
       onClick={handleSend}
       label={m.inbox_composer_send_label()}
       icon={<SendIcon className="size-4" />}
+      className="size-8 rounded-full"
     />
   )
 

@@ -44,8 +44,8 @@ export function NotificationsPage() {
 
   return (
     <AppPane as="section" label={m.header_notifications_label()}>
-      {/* 64px and a hairline — the shared pane-header contract. */}
-      <header className="border-border/60 flex h-16 shrink-0 items-center border-b">
+      {/* 56px and a hairline — the shared pane-header contract. */}
+      <header className="border-border/60 flex h-14 shrink-0 items-center border-b">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4">
           <h1 className="truncate text-base font-semibold">
             {m.header_notifications_label()}

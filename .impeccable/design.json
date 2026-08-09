@@ -8,181 +8,451 @@
         "role": "neutral",
         "displayName": "Panel White",
         "canonical": "#ffffff",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "canvas-gray": {
         "role": "neutral",
         "displayName": "Canvas Gray",
         "canonical": "#f1f1f1",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "rule-gray": {
         "role": "neutral",
         "displayName": "Rule Gray",
         "canonical": "#ebebeb",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "chip-gray": {
         "role": "neutral",
         "displayName": "Chip Gray",
         "canonical": "#e5e5e5",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "border-strong": {
         "role": "neutral",
         "displayName": "Border Strong",
         "canonical": "#d4d4d4",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "soft-gray": {
         "role": "neutral",
         "displayName": "Soft Gray",
         "canonical": "#a3a3a3",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "mid-gray": {
         "role": "neutral",
         "displayName": "Mid Gray",
         "canonical": "#737373",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "dim-gray": {
         "role": "neutral",
         "displayName": "Dim Gray",
         "canonical": "#525252",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "panel-graphite": {
         "role": "primary",
         "displayName": "Panel Graphite",
         "canonical": "#262626",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "canvas-black": {
         "role": "neutral",
         "displayName": "Canvas Black",
         "canonical": "#1b1b1b",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "text-black": {
         "role": "primary",
         "displayName": "Text Black",
         "canonical": "#171717",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "text-white": {
         "role": "primary",
         "displayName": "Near White",
         "canonical": "#fafafa",
-        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#fafafa"]
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#737373",
+          "#a3a3a3",
+          "#d4d4d4",
+          "#fafafa"
+        ]
       },
       "deep-green": {
         "role": "tertiary",
         "displayName": "Deep Green",
         "canonical": "#007004",
-        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
+        "tonalRamp": [
+          "#06300a",
+          "#0c5700",
+          "#007004",
+          "#198100",
+          "#3f9a34",
+          "#64af4c",
+          "#84c980",
+          "#c5e5c0"
+        ]
       },
       "deep-red": {
         "role": "tertiary",
         "displayName": "Deep Red",
         "canonical": "#a50c25",
-        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
+        "tonalRamp": [
+          "#3d0009",
+          "#89001a",
+          "#a50c25",
+          "#e33f4a",
+          "#ff705d",
+          "#ff9e97",
+          "#ffc6c1",
+          "#facecb"
+        ]
       },
       "deep-amber": {
         "role": "tertiary",
         "displayName": "Deep Amber",
         "canonical": "#745b00",
-        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
+        "tonalRamp": [
+          "#2b2000",
+          "#584400",
+          "#745b00",
+          "#c0990e",
+          "#deb433",
+          "#ffce2f",
+          "#fdcf4f",
+          "#f8da9d"
+        ]
       },
       "pastel-green": {
         "role": "tertiary",
         "displayName": "Pastel Green",
         "canonical": "#9fe59b",
-        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
+        "tonalRamp": [
+          "#06300a",
+          "#0c5700",
+          "#007004",
+          "#198100",
+          "#3f9a34",
+          "#64af4c",
+          "#84c980",
+          "#c5e5c0"
+        ]
       },
       "pastel-red": {
         "role": "tertiary",
         "displayName": "Pastel Red",
         "canonical": "#ffc6c1",
-        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
+        "tonalRamp": [
+          "#3d0009",
+          "#89001a",
+          "#a50c25",
+          "#e33f4a",
+          "#ff705d",
+          "#ff9e97",
+          "#ffc6c1",
+          "#facecb"
+        ]
       },
       "pastel-amber": {
         "role": "tertiary",
         "displayName": "Pastel Amber",
         "canonical": "#fdcf4f",
-        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
+        "tonalRamp": [
+          "#2b2000",
+          "#584400",
+          "#745b00",
+          "#c0990e",
+          "#deb433",
+          "#ffce2f",
+          "#fdcf4f",
+          "#f8da9d"
+        ]
       },
       "green-plate": {
         "role": "secondary",
         "displayName": "Green Plate",
         "canonical": "#c5e5c0",
-        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
+        "tonalRamp": [
+          "#06300a",
+          "#0c5700",
+          "#007004",
+          "#198100",
+          "#3f9a34",
+          "#64af4c",
+          "#84c980",
+          "#c5e5c0"
+        ]
       },
       "red-plate": {
         "role": "secondary",
         "displayName": "Red Plate",
         "canonical": "#facecb",
-        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
+        "tonalRamp": [
+          "#3d0009",
+          "#89001a",
+          "#a50c25",
+          "#e33f4a",
+          "#ff705d",
+          "#ff9e97",
+          "#ffc6c1",
+          "#facecb"
+        ]
       },
       "amber-plate": {
         "role": "secondary",
         "displayName": "Amber Plate",
         "canonical": "#f8da9d",
-        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
+        "tonalRamp": [
+          "#2b2000",
+          "#584400",
+          "#745b00",
+          "#c0990e",
+          "#deb433",
+          "#ffce2f",
+          "#fdcf4f",
+          "#f8da9d"
+        ]
       },
       "blue-plate": {
         "role": "secondary",
         "displayName": "Blue Plate",
         "canonical": "#c4ddfb",
-        "tonalRamp": ["#00284f", "#00458c", "#0060c4", "#0074e2", "#6d9cfe", "#9eb7ff", "#c4ddfb", "#e8f1ff"]
+        "tonalRamp": [
+          "#00284f",
+          "#00458c",
+          "#0060c4",
+          "#0074e2",
+          "#6d9cfe",
+          "#9eb7ff",
+          "#c4ddfb",
+          "#e8f1ff"
+        ]
       },
       "green-vivid": {
         "role": "secondary",
         "displayName": "Green Vivid",
         "canonical": "#0c5700",
-        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
+        "tonalRamp": [
+          "#06300a",
+          "#0c5700",
+          "#007004",
+          "#198100",
+          "#3f9a34",
+          "#64af4c",
+          "#84c980",
+          "#c5e5c0"
+        ]
       },
       "red-vivid": {
         "role": "secondary",
         "displayName": "Red Vivid",
         "canonical": "#89001a",
-        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
+        "tonalRamp": [
+          "#3d0009",
+          "#89001a",
+          "#a50c25",
+          "#e33f4a",
+          "#ff705d",
+          "#ff9e97",
+          "#ffc6c1",
+          "#facecb"
+        ]
       },
       "amber-vivid": {
         "role": "secondary",
         "displayName": "Amber Vivid",
         "canonical": "#584400",
-        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
+        "tonalRamp": [
+          "#2b2000",
+          "#584400",
+          "#745b00",
+          "#c0990e",
+          "#deb433",
+          "#ffce2f",
+          "#fdcf4f",
+          "#f8da9d"
+        ]
       },
       "blue-vivid": {
         "role": "secondary",
         "displayName": "Blue Vivid",
         "canonical": "#00458c",
-        "tonalRamp": ["#00284f", "#00458c", "#0060c4", "#0074e2", "#6d9cfe", "#9eb7ff", "#c4ddfb", "#e8f1ff"]
+        "tonalRamp": [
+          "#00284f",
+          "#00458c",
+          "#0060c4",
+          "#0074e2",
+          "#6d9cfe",
+          "#9eb7ff",
+          "#c4ddfb",
+          "#e8f1ff"
+        ]
       },
       "signal-blue": {
         "role": "secondary",
         "displayName": "Signal Blue",
         "canonical": "#0074e2",
-        "tonalRamp": ["#00284f", "#00458c", "#0060c4", "#0074e2", "#6d9cfe", "#9eb7ff", "#c4ddfb", "#e8f1ff"]
+        "tonalRamp": [
+          "#00284f",
+          "#00458c",
+          "#0060c4",
+          "#0074e2",
+          "#6d9cfe",
+          "#9eb7ff",
+          "#c4ddfb",
+          "#e8f1ff"
+        ]
       },
       "signal-green": {
         "role": "secondary",
         "displayName": "Signal Green",
         "canonical": "#198100",
-        "tonalRamp": ["#06300a", "#0c5700", "#007004", "#198100", "#3f9a34", "#64af4c", "#84c980", "#c5e5c0"]
+        "tonalRamp": [
+          "#06300a",
+          "#0c5700",
+          "#007004",
+          "#198100",
+          "#3f9a34",
+          "#64af4c",
+          "#84c980",
+          "#c5e5c0"
+        ]
       },
       "signal-amber": {
         "role": "secondary",
         "displayName": "Signal Amber",
         "canonical": "#ffce2f",
-        "tonalRamp": ["#2b2000", "#584400", "#745b00", "#c0990e", "#deb433", "#ffce2f", "#fdcf4f", "#f8da9d"]
+        "tonalRamp": [
+          "#2b2000",
+          "#584400",
+          "#745b00",
+          "#c0990e",
+          "#deb433",
+          "#ffce2f",
+          "#fdcf4f",
+          "#f8da9d"
+        ]
       },
       "signal-red": {
         "role": "secondary",
         "displayName": "Signal Red",
         "canonical": "#e33f4a",
-        "tonalRamp": ["#3d0009", "#89001a", "#a50c25", "#e33f4a", "#ff705d", "#ff9e97", "#ffc6c1", "#facecb"]
+        "tonalRamp": [
+          "#3d0009",
+          "#89001a",
+          "#a50c25",
+          "#e33f4a",
+          "#ff705d",
+          "#ff9e97",
+          "#ffc6c1",
+          "#facecb"
+        ]
       }
     },
     "typographyMeta": {
@@ -234,10 +504,26 @@
       }
     ],
     "motion": [
-      { "name": "duration-fast", "value": "125ms", "purpose": "Hover and selection tints. Min 95ms, max 165ms." },
-      { "name": "duration-medium", "value": "300ms", "purpose": "Panel and sheet transitions. Min 225ms, max 400ms." },
-      { "name": "duration-slow", "value": "700ms", "purpose": "Theme capacity; nothing in the shell runs this long." },
-      { "name": "unread-count-emphasis", "value": "280ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The one authored animation. Scales 0.92 to 1 and fades 0.55 to 1 from left center so a changing count draws the eye without moving its neighbors. Disabled under prefers-reduced-motion." }
+      {
+        "name": "duration-fast",
+        "value": "125ms",
+        "purpose": "Hover and selection tints. Min 95ms, max 165ms."
+      },
+      {
+        "name": "duration-medium",
+        "value": "300ms",
+        "purpose": "Panel and sheet transitions. Min 225ms, max 400ms."
+      },
+      {
+        "name": "duration-slow",
+        "value": "700ms",
+        "purpose": "Theme capacity; nothing in the shell runs this long."
+      },
+      {
+        "name": "unread-count-emphasis",
+        "value": "280ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The one authored animation. Scales 0.92 to 1 and fades 0.55 to 1 from left center so a changing count draws the eye without moving its neighbors. Disabled under prefers-reduced-motion."
+      }
     ],
     "breakpoints": [
       { "name": "md", "value": "768px" },
@@ -305,9 +591,9 @@
       "name": "App Pane",
       "kind": "card",
       "refersTo": "card-default",
-      "description": "One elevated region of the shell. Carries the fill, the radius, and the lift; content inside is edge-to-edge because a pane has no padding of its own. The 64px header rule is intra-pane, never between panes.",
+      "description": "One elevated region of the shell. Carries the fill, the radius, and the lift; content inside is edge-to-edge because a pane has no padding of its own. The 56px header rule is intra-pane, never between panes.",
       "html": "<div class=\"ds-pane\"><div class=\"ds-pane-header\">Входящие</div><div class=\"ds-pane-body\">Содержимое панели</div></div>",
-      "css": ".ds-pane { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.10); font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; width: 280px; } .ds-pane-header { height: 64px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid #ebebeb; font-size: 14px; font-weight: 600; color: #171717; } .ds-pane-body { padding: 12px; font-size: 14px; color: #737373; }"
+      "css": ".ds-pane { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.10); font-family: 'Golos Text', -apple-system, 'Segoe UI', sans-serif; width: 280px; } .ds-pane-header { height: 56px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid #ebebeb; font-size: 14px; font-weight: 600; color: #171717; } .ds-pane-body { padding: 12px; font-size: 14px; color: #737373; }"
     },
     {
       "name": "Side Nav Item",
@@ -340,28 +626,116 @@
       "Snappy motion: 125 / 300 / 700ms"
     ],
     "rules": [
-      { "name": "The Grayscale Spine Rule", "body": "Every structural surface, rule, and running-text tone in this system is chroma 0. Nothing that is merely structure may take a tint. The corollary is the valuable half: because the field is achromatic, a single chip is loud without being large, and adding a second decorative hue costs more here than it would in a tinted system.", "section": "colors" },
-      { "name": "The Two Reds Rule", "body": "#a50c25 and #e33f4a are both red and they are not interchangeable. The deep one is a text tone, calibrated to sit on a pastel well or on the page; the bright one is a fill, calibrated to carry white text as a solid object. Putting the fill red on text gives you 3.1:1 on white; putting the text red on a dot gives you a maroon smudge at 8px. Reach for the component variant and let the theme pick.", "section": "colors" },
-      { "name": "The Chip Carries Its Own Text Rule", "body": "A categorical plate is never combined with text-primary. Each hue's *-vivid token is the only correct foreground on its *-subtle plate, and the theme's Card and Banner variants rebind --color-text-primary locally so nested Text children inherit it. Use the variant; do not hand-assemble a plate.", "section": "colors" },
-      { "name": "The Chip Is Not A Field Rule", "body": "A plate is calibrated for chip area. A pastel that is right behind 12px text at 60px wide is a slab at 700px, where it outshouts the graphite primary button beside it. A status surface that runs the full measure fills with the -muted well and spends its hue on the icon, the copy, and the action — the field goes quiet, the meaning does not.", "section": "colors" },
-      { "name": "The Overlay Composites Rule", "body": "In dark mode a categorical background is an alpha overlay, not a solid tone. Do not simplify one to a flat hex: the overlay is what lets the same chip sit correctly on the canvas, on a pane, and in a popover, which in dark mode are three different tones behind one transparent plate.", "section": "colors" },
-      { "name": "The Brand-Hex Exception", "body": "Platform brand colors — Telegram #26A5E4, WhatsApp #25D366, Instagram #E1306C, in src/entities/channel/lib/platform.ts — are the only raw hex values permitted in component code, because they are other companies' identities and must not drift with the theme. Every other color comes from a token.", "section": "colors" },
-      { "name": "The Remapped Scale Rule", "body": "Tailwind's size names do not mean their Tailwind values here. text-base is 14px, text-lg is 17px, text-xl is 20px — and critically, text-sm is 12px, not 14px. Never convert a design spec's px value by assuming Tailwind's defaults. The same bridge rebinds --spacing to 4px, so p-4 is 16px as expected: spacing is safe, type is not.", "section": "typography" },
-      { "name": "The 12px Floor Rule", "body": "Nothing in this product renders below 12px. baseLocale is ru, whose diacritics and soft signs are the first things to go as size drops. Base 14 at ratio 1.2 produces 10 / 8 / 7 / 6px at xs through 4xs, and the theme clamps all four to 0.75rem rather than rescaling, which would move every size in the system. Two sizes outside a token's reach are floored in src/generated/astryx-font-floor.css, whose generator no longer exists — treat that file as pinned to @astryxdesign/core 0.1.8.", "section": "typography" },
-      { "name": "The Two-Tier Rule", "body": "The interface has two tiers: body at text-base (14px) and metadata at the 12px floor. Escalate through weight (400 to 500 to 600) and opacity, not through size. This is the target, not the current state — under the neutral theme's floor text-sm and text-xs both resolve to 12px, so roughly 160 usages need an audit onto the correct tier.", "section": "typography" },
-      { "name": "The Opacity Step Is Mode-Asymmetric Rule", "body": "text-primary/55 computes to 4.0:1 in light and 5.4:1 in dark, so an opacity step tuned in one mode can be under AA in the other. /70 is the lowest rung that clears both. Prefer text-secondary, which is a designed tone rather than an arithmetic one.", "section": "typography" },
-      { "name": "The Cyrillic Coverage Rule", "body": "Any face that carries interface text must ship a Cyrillic subset. baseLocale is ru, so a Latin-only body font leaves the primary locale in the system fallback and styles only the Latin strings beside it. This rule has now caught two faces: Fustat (Arabic + Latin) and Figtree (Latin + Latin-ext), which the neutral theme named on arrival and which had no @font-face anywhere in the repo. Judge a candidate by its unicode-range coverage before its shapes, and confirm the @font-face exists — naming a family in the theme does not load it.", "section": "typography" },
-      { "name": "The Measure Rule", "body": "The transcript, its skeleton, and the composer share one exported measure constant. Tailwind's container is wrong here — it tracks the breakpoint up to 1536px and lets messages sprawl across an empty page on a wide display. Change the measure in one place or not at all.", "section": "layout" },
-      { "name": "The Pane Owns Its Scroll Rule", "body": "Scrolling belongs to the pane, never to the shell or to a wrapper around several panes. A pane that does not carry min-h-0 in its flex chain will push its scroll up to an ancestor and take the whole shell with it.", "section": "layout" },
-      { "name": "The Surface-Above-Canvas Rule", "body": "bg-surface must paint something against bg-body. A theme is free to choose the two tones, but not to make them equal: the shell's entire structure rests on that gap, and collapsing it removes every region boundary in the app at once. The check that used to assert this against the built page no longer exists.", "section": "elevation" },
-      { "name": "The Rim Is The Edge Rule", "body": "In dark mode, elevation is a light effect, not a tonal one — card, popover, muted, and canvas are all #1b1b1b. A surface that should read as raised must carry a shadow token so it gets the inset rim. Hand-rolling a card with bg-card and no shadow produces an invisible rectangle in dark mode.", "section": "elevation" },
-      { "name": "The Recess Is Pane-Relative Rule", "body": "bg-muted is byte-identical to bg-body in both modes, so it recesses only inside a pane, against bg-surface. On the canvas it paints nothing — a full-bleed bg-muted region outside a pane is a no-op, not a subtle effect.", "section": "elevation" },
-      { "name": "The Hairline Is Already Thin Rule", "body": "Use border-border at full strength. border-border/60 is a holdover from a theme whose border token was the accent at 10% alpha, where /60 landed a visible 6% rule. The current light token is an opaque #ebebeb; at /60 it composites to roughly #f3f3f3 on a white pane — about 1.06:1, which is not a rule, it is a rumor.", "section": "elevation" },
-      { "name": "The Gutter Rule", "body": "The canvas showing between panes is what separates regions. It is owned by AppPaneGroup in one place, so the seam is one value everywhere and a route cannot hand-roll its own. A pane never carries a border: a shadow and an outline together read as a card drawn on top of a card.", "section": "elevation" },
-      { "name": "The Hairline Rule", "body": "A rule divides within a pane — a header and the body that scrolls under it, a filter strip and its list, one row of a dense list and the next. It is not used between panes, where the gutter does the work, and it is never a full outline around a large surface.", "section": "elevation" },
-      { "name": "The Shadow-Is-Theme-Only Rule", "body": "Component code carries no ad hoc shadow-* utilities beyond the bridge names. Shadows live in --shadow-low/med/high and are applied by Astryx's Card, Popover, and Dialog, or by AppPane, which maps shadow-sm to --shadow-low. The pane vocabulary has exactly one elevation, and a second one competing with it makes the frame read as unstable.", "section": "elevation" },
-      { "name": "The Radius-Name Trap", "body": "Tailwind's radius names are rebound to the theme scale: rounded-sm = 6px, rounded-md = 10px, rounded-lg = 12px, and rounded-xl = 28px. A spec that says 12px corner is rounded-lg here. rounded-xl is more than double rounded-lg, not one step up from it.", "section": "shapes" },
-      { "name": "The Plate Went Round", "body": "--radius-page moved from 24px to 28px, which exceeds half the width of every plate that uses it: a 36px plate clamps to an 18px radius and a 48px plate to 24px — both are circles. The product's recurring silhouette used to be a squircle holding a brand glyph, repeated down every list. It is now a circle, and nobody chose that.", "section": "shapes" }
+      {
+        "name": "The Grayscale Spine Rule",
+        "body": "Every structural surface, rule, and running-text tone in this system is chroma 0. Nothing that is merely structure may take a tint. The corollary is the valuable half: because the field is achromatic, a single chip is loud without being large, and adding a second decorative hue costs more here than it would in a tinted system.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Reds Rule",
+        "body": "#a50c25 and #e33f4a are both red and they are not interchangeable. The deep one is a text tone, calibrated to sit on a pastel well or on the page; the bright one is a fill, calibrated to carry white text as a solid object. Putting the fill red on text gives you 3.1:1 on white; putting the text red on a dot gives you a maroon smudge at 8px. Reach for the component variant and let the theme pick.",
+        "section": "colors"
+      },
+      {
+        "name": "The Chip Carries Its Own Text Rule",
+        "body": "A categorical plate is never combined with text-primary. Each hue's *-vivid token is the only correct foreground on its *-subtle plate, and the theme's Card and Banner variants rebind --color-text-primary locally so nested Text children inherit it. Use the variant; do not hand-assemble a plate.",
+        "section": "colors"
+      },
+      {
+        "name": "The Chip Is Not A Field Rule",
+        "body": "A plate is calibrated for chip area. A pastel that is right behind 12px text at 60px wide is a slab at 700px, where it outshouts the graphite primary button beside it. A status surface that runs the full measure fills with the -muted well and spends its hue on the icon, the copy, and the action — the field goes quiet, the meaning does not.",
+        "section": "colors"
+      },
+      {
+        "name": "The Overlay Composites Rule",
+        "body": "In dark mode a categorical background is an alpha overlay, not a solid tone. Do not simplify one to a flat hex: the overlay is what lets the same chip sit correctly on the canvas, on a pane, and in a popover, which in dark mode are three different tones behind one transparent plate.",
+        "section": "colors"
+      },
+      {
+        "name": "The Brand-Hex Exception",
+        "body": "Platform brand colors — Telegram #26A5E4, WhatsApp #25D366, Instagram #E1306C, in src/entities/channel/lib/platform.ts — are the only raw hex values permitted in component code, because they are other companies' identities and must not drift with the theme. Every other color comes from a token.",
+        "section": "colors"
+      },
+      {
+        "name": "The Remapped Scale Rule",
+        "body": "Tailwind's size names do not mean their Tailwind values here. text-base is 14px, text-lg is 17px, text-xl is 20px — and critically, text-sm is 12px, not 14px. Never convert a design spec's px value by assuming Tailwind's defaults. The same bridge rebinds --spacing to 4px, so p-4 is 16px as expected: spacing is safe, type is not.",
+        "section": "typography"
+      },
+      {
+        "name": "The 12px Floor Rule",
+        "body": "Nothing in this product renders below 12px. baseLocale is ru, whose diacritics and soft signs are the first things to go as size drops. Base 14 at ratio 1.2 produces 10 / 8 / 7 / 6px at xs through 4xs, and the theme clamps all four to 0.75rem rather than rescaling, which would move every size in the system. Two sizes outside a token's reach are floored in src/generated/astryx-font-floor.css, whose generator no longer exists — treat that file as pinned to @astryxdesign/core 0.1.8.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two-Tier Rule",
+        "body": "The interface has two tiers: body at text-base (14px) and metadata at the 12px floor. Escalate through weight (400 to 500 to 600) and opacity, not through size. This is the target, not the current state — under the neutral theme's floor text-sm and text-xs both resolve to 12px, so roughly 160 usages need an audit onto the correct tier.",
+        "section": "typography"
+      },
+      {
+        "name": "The Opacity Step Is Mode-Asymmetric Rule",
+        "body": "text-primary/55 computes to 4.0:1 in light and 5.4:1 in dark, so an opacity step tuned in one mode can be under AA in the other. /70 is the lowest rung that clears both. Prefer text-secondary, which is a designed tone rather than an arithmetic one.",
+        "section": "typography"
+      },
+      {
+        "name": "The Cyrillic Coverage Rule",
+        "body": "Any face that carries interface text must ship a Cyrillic subset. baseLocale is ru, so a Latin-only body font leaves the primary locale in the system fallback and styles only the Latin strings beside it. This rule has now caught two faces: Fustat (Arabic + Latin) and Figtree (Latin + Latin-ext), which the neutral theme named on arrival and which had no @font-face anywhere in the repo. Judge a candidate by its unicode-range coverage before its shapes, and confirm the @font-face exists — naming a family in the theme does not load it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Measure Rule",
+        "body": "The transcript, its skeleton, and the composer share one exported measure constant. Tailwind's container is wrong here — it tracks the breakpoint up to 1536px and lets messages sprawl across an empty page on a wide display. Change the measure in one place or not at all.",
+        "section": "layout"
+      },
+      {
+        "name": "The Pane Owns Its Scroll Rule",
+        "body": "Scrolling belongs to the pane, never to the shell or to a wrapper around several panes. A pane that does not carry min-h-0 in its flex chain will push its scroll up to an ancestor and take the whole shell with it.",
+        "section": "layout"
+      },
+      {
+        "name": "The Surface-Above-Canvas Rule",
+        "body": "bg-surface must paint something against bg-body. A theme is free to choose the two tones, but not to make them equal: the shell's entire structure rests on that gap, and collapsing it removes every region boundary in the app at once. The check that used to assert this against the built page no longer exists.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Rim Is The Edge Rule",
+        "body": "In dark mode, elevation is a light effect, not a tonal one — card, popover, muted, and canvas are all #1b1b1b. A surface that should read as raised must carry a shadow token so it gets the inset rim. Hand-rolling a card with bg-card and no shadow produces an invisible rectangle in dark mode.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Recess Is Pane-Relative Rule",
+        "body": "bg-muted is byte-identical to bg-body in both modes, so it recesses only inside a pane, against bg-surface. On the canvas it paints nothing — a full-bleed bg-muted region outside a pane is a no-op, not a subtle effect.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Hairline Is Already Thin Rule",
+        "body": "Use border-border at full strength. border-border/60 is a holdover from a theme whose border token was the accent at 10% alpha, where /60 landed a visible 6% rule. The current light token is an opaque #ebebeb; at /60 it composites to roughly #f3f3f3 on a white pane — about 1.06:1, which is not a rule, it is a rumor.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Gutter Rule",
+        "body": "The canvas showing between panes is what separates regions. It is owned by AppPaneGroup in one place, so the seam is one value everywhere and a route cannot hand-roll its own. A pane never carries a border: a shadow and an outline together read as a card drawn on top of a card.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Hairline Rule",
+        "body": "A rule divides within a pane — a header and the body that scrolls under it, a filter strip and its list, one row of a dense list and the next. It is not used between panes, where the gutter does the work, and it is never a full outline around a large surface.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Shadow-Is-Theme-Only Rule",
+        "body": "Component code carries no ad hoc shadow-* utilities beyond the bridge names. Shadows live in --shadow-low/med/high and are applied by Astryx's Card, Popover, and Dialog, or by AppPane, which maps shadow-sm to --shadow-low. The pane vocabulary has exactly one elevation, and a second one competing with it makes the frame read as unstable.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Radius-Name Trap",
+        "body": "Tailwind's radius names are rebound to the theme scale: rounded-sm = 6px, rounded-md = 10px, rounded-lg = 12px, and rounded-xl = 28px. A spec that says 12px corner is rounded-lg here. rounded-xl is more than double rounded-lg, not one step up from it.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Plate Went Round",
+        "body": "--radius-page moved from 24px to 28px, which exceeds half the width of every plate that uses it: a 36px plate clamps to an 18px radius and a 48px plate to 24px — both are circles. The product's recurring silhouette used to be a squircle holding a brand glyph, repeated down every list. It is now a circle, and nobody chose that.",
+        "section": "shapes"
+      }
     ],
     "dos": [
       "Do treat src/themes/neutral/neutralTheme.ts as the source of truth for every token. It is applied at runtime by <Theme> in src/main.tsx; there is no build step and no compiled theme.css to regenerate.",
@@ -377,7 +751,7 @@
       "Do reach for text-secondary when copy needs to recede; it is a designed tone. If an opacity step is unavoidable, /70 is the lowest rung that clears AA in both modes.",
       "Do give every pane overflow-hidden, its own overflow-y-auto scroll region, and min-h-0 through its flex chain.",
       "Do share TRANSCRIPT_MEASURE between the transcript, its skeleton, and the composer.",
-      "Do honor the 64px h-16 pane-header contract on every pane that has a header, so the inbox columns align across the gutters between them.",
+      "Do honor the 56px h-14 pane-header contract on every pane that has a header, so the inbox columns align across the gutters between them.",
       "Do guard every transition and animation with motion-reduce:."
     ],
     "donts": [

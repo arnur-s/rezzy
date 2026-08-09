@@ -1,3 +1,4 @@
+import { SettingsSectionHeader } from '@/components/settings-section'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
@@ -33,14 +34,10 @@ export function WorkspaceMembersStub({ workspaceId }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold">
-          {m.workspace_settings_members_title()}
-        </h2>
-        <p className="text-secondary mt-1 text-sm">
-          {m.workspace_settings_members_description()}
-        </p>
-      </div>
+      <SettingsSectionHeader
+        title={m.workspace_settings_members_title()}
+        description={m.workspace_settings_members_description()}
+      />
 
       <InviteByEmailStub />
 
@@ -135,7 +132,7 @@ function MemberRow({ profile, role }: { profile: ProfileLite; role: string }) {
   const roleLabel = getRoleLabel(role)
 
   return (
-    <div className="flex min-h-16 items-center gap-3 py-3">
+    <div className="flex min-h-14 items-center gap-3 py-3">
       <Avatar
         name={knownName ?? undefined}
         src={profile?.avatar_url ?? undefined}
@@ -162,7 +159,7 @@ function MembersSkeleton() {
   return (
     <div className="divide-border/60 border-border/60 divide-y border-y">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="flex min-h-16 items-center gap-3 py-3">
+        <div key={i} className="flex min-h-14 items-center gap-3 py-3">
           <Skeleton width={32} height={32} radius="rounded" />
           <div className="flex-1 space-y-1.5">
             <Skeleton width="33%" height={12} radius={2} />

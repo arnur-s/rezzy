@@ -1,5 +1,45 @@
 import type { ReactNode } from 'react'
 
+type SettingsSectionHeaderProps = {
+  title: string
+  description?: string
+  /** Set when the surrounding `section` points here with `aria-labelledby`. */
+  id?: string
+  /**
+   * `h2` for a top-level section of a settings page, `h3` for a group nested
+   * inside one. Level only — both render at the same size.
+   */
+  as?: 'h2' | 'h3'
+}
+
+/**
+ * The title and supporting line above a group of settings.
+ *
+ * One size, on purpose. Account settings set these at `text-base` and workspace
+ * settings at `text-lg`, so the same role arrived two sizes depending on which
+ * half of the app you were in. DESIGN.md's title tier is `text-base
+ * font-semibold`, and a shell that needs a third size has failed at weight
+ * first — so the heading escalates by weight, and the description recedes by
+ * tone rather than by shrinking further.
+ */
+export function SettingsSectionHeader({
+  title,
+  description,
+  id,
+  as: Heading = 'h2',
+}: SettingsSectionHeaderProps) {
+  return (
+    <div>
+      <Heading id={id} className="text-primary text-base font-semibold">
+        {title}
+      </Heading>
+      {description && (
+        <p className="text-secondary mt-1 text-sm">{description}</p>
+      )}
+    </div>
+  )
+}
+
 type SettingsSectionProps = {
   children: ReactNode
 }

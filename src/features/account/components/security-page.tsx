@@ -1,3 +1,4 @@
+import { SettingsSectionHeader } from '@/components/settings-section'
 import { m } from '@/paraglide/messages'
 import { useAccountSecurity } from '../hooks/use-account-security'
 import { ChangePasswordForm } from './change-password-form'
@@ -9,16 +10,14 @@ export function SecurityPage() {
   return (
     <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-primary text-base font-semibold">
-            {m.security_password_title()}
-          </h2>
-          <p className="text-secondary mt-1 text-sm">
-            {canChangePassword
+        <SettingsSectionHeader
+          title={m.security_password_title()}
+          description={
+            canChangePassword
               ? m.security_password_description()
-              : m.security_password_unavailable()}
-          </p>
-        </div>
+              : m.security_password_unavailable()
+          }
+        />
 
         <ChangePasswordForm canChangePassword={canChangePassword} />
       </section>

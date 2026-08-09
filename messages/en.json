@@ -731,6 +731,7 @@
   "inbox_shared_contact_missing": "That contact no longer exists",
   "inbox_shared_contact_open_failed": "Could not open that contact",
   "account_settings_title": "Account",
+  "account_settings_kicker": "Your profile and Rezzy settings",
   "account_settings_description": "Your profile and how Rezzy works for you. Workspace settings live inside each workspace.",
   "account_settings_sections_nav_aria_label": "Account settings sections",
   "account_settings_profile_label": "Profile",

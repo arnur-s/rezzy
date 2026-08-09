@@ -1,9 +1,9 @@
 import { listItemStyle } from '@/components/list'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { useWorkspaceMemberLookup } from '@/features/workspaces/hooks/use-workspaces'
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
-import { cn } from '@/lib/cn'
 import { useMemo } from 'react'
 import { ConversationListItem } from './conversation-list-item'
 import { ConversationListSkeleton } from './conversation-list-skeleton'
@@ -99,7 +99,7 @@ export function ConversationList({
 
   return (
     <div className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden">
-      <div className="flex h-16 shrink-0 items-center justify-center px-1">
+      <div className="flex h-14 shrink-0 items-center justify-center px-1">
         <ConversationSearch value={searchQuery} onChange={onSearchChange} />
       </div>
       <div className="border-border/60 shrink-0 border-b">

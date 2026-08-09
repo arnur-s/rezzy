@@ -165,7 +165,7 @@ components:
   pane-header:
     backgroundColor: 'transparent'
     textColor: '{colors.text-black}'
-    height: '64px'
+    height: '56px'
     padding: '0 12px'
 ---
 
@@ -186,7 +186,7 @@ hue worn thin, with light and dark trading roles. It is now a **pure grayscale
 spine at chroma zero** — Tailwind's neutral ramp, no tint anywhere in the
 structure — with a from-scratch OKLCH categorical palette bolted on for meaning.
 Because the neutrals have no hue at all, chroma is not merely informative when it
-appears, it is the *only* thing on screen carrying meaning. A blue badge is the
+appears, it is the _only_ thing on screen carrying meaning. A blue badge is the
 single saturated object in a field of gray, and that is the whole point.
 
 Depth changed with it. In light mode the panes still lift by tone: white sheets
@@ -195,12 +195,12 @@ canvas are all `#1b1b1b` — and a pane is instead cut out of the dark by a **1p
 inset rim of white at 8-15%** carried inside `--shadow-low/med/high`. That rim,
 not the drop shadow, is what gives a panel an edge against a dark field. It is
 the most distinctive thing the theme does and the reason for the North Star:
-in dark mode the interface is not layered, it is *lit*.
+in dark mode the interface is not layered, it is _lit_.
 
 **Key Characteristics:**
 
 - Canvas and panes: the shell is a canvas, each region is an inset pane with a fill, a radius, a gap, and a lift
-- Gutter separation: the canvas showing between panes divides regions; hairlines rule only *within* a pane
+- Gutter separation: the canvas showing between panes divides regions; hairlines rule only _within_ a pane
 - Grayscale spine: the entire structure is chroma 0, so any hue on screen is a signal
 - Two color languages: pastel plates with same-hue text for categories, saturated opaque fills for status signals
 - Lift by tone in light, lift by rim-light in dark — dark mode collapses card/popover/muted onto the canvas
@@ -226,7 +226,7 @@ document deliberately disagree, with this document describing the target.
    28px, which exceeds half the width of every 36-48px plate that uses
    `rounded-xl`. See The Plate Went Round.
 4. **`bg-muted` no longer recesses against the canvas.** It is byte-identical to
-   `bg-body` in both modes. It still recesses *inside* a pane. See The Recess Is
+   `bg-body` in both modes. It still recesses _inside_ a pane. See The Recess Is
    Pane-Relative Rule.
 5. **`border-border/60` is close to invisible in light mode.** The `/60` modifier
    was tuned for an alpha border token; the current one is an opaque `#ebebeb`.
@@ -240,17 +240,17 @@ document deliberately disagree, with this document describing the target.
 
 A grayscale structure and a chromatic vocabulary, kept strictly apart. The
 neutrals carry every surface, every rule, and every piece of running text; hue
-appears only where something needs to be *told* to the user.
+appears only where something needs to be _told_ to the user.
 
 ### Primary
 
 The accent is not a hue. It is the far end of the neutral ramp, and it inverts
 between modes.
 
-- **Panel Graphite** (`#262626`): The accent in light mode (`bg-accent-bg`, `text-accent`) — primary buttons, active nav, links, the workspace mark, focus rings. In dark mode this same value is the *pane surface*, which is the clearest illustration of how far the ramp is reused.
+- **Panel Graphite** (`#262626`): The accent in light mode (`bg-accent-bg`, `text-accent`) — primary buttons, active nav, links, the workspace mark, focus rings. In dark mode this same value is the _pane surface_, which is the clearest illustration of how far the ramp is reused.
 - **Bone** (`#ebebeb`): The dark-mode accent. On any accent fill the label is `text-on-accent` (`#ffffff` light / `#171717` dark), which inverts with it — never a literal tone.
 
-Interactive state is this accent's *text* sibling at low alpha: `bg-primary/4`
+Interactive state is this accent's _text_ sibling at low alpha: `bg-primary/4`
 (hover), `bg-primary/10` (selected), `bg-primary/5` (quiet plate), where
 `bg-primary` bridges to `--color-text-primary`. Those three percentages are the
 whole state vocabulary.
@@ -261,7 +261,7 @@ Tailwind's `neutral` ramp, chroma 0 throughout. Unlike the theme this replaced,
 light and dark are genuine pairs rather than one ramp read backwards, so read
 each role as a pair.
 
-- **Panel White** (`#ffffff`) / **Canvas Black** (`#1b1b1b`): The raised surfaces — `bg-card`, `bg-popover`. Note the dark value is *the canvas value*; see Elevation.
+- **Panel White** (`#ffffff`) / **Canvas Black** (`#1b1b1b`): The raised surfaces — `bg-card`, `bg-popover`. Note the dark value is _the canvas value_; see Elevation.
 - **Canvas Gray** (`#f1f1f1`) / **Canvas Black** (`#1b1b1b`): The canvas — `bg-body`. Also `bg-muted`, at the same hex in both modes.
 - **Panel White** (`#ffffff`) / **Panel Graphite** (`#262626`): The pane — `bg-surface`. The one background token that is reliably a step away from the canvas in both modes, which is why the shell is built on it.
 - **Text Black** (`#171717`) / **Near White** (`#fafafa`): `text-primary`. Computed 17.9:1 light, 14.5:1 dark against the pane.
@@ -279,8 +279,8 @@ gray. Each ships four tokens, bridged to Tailwind as `*-subtle` (plate),
 `*-ring` (border), and `*-vivid` (text); the icon slot uses the vivid color.
 
 **These invert by mode, and that is new.** Light mode is an opaque pastel plate
-(T87-T90) carrying deep same-hue text (T30). Dark mode is a *hue-tinted alpha
-overlay* — the T70 stop at 24% — carrying light pastel text (T80). The overlay
+(T87-T90) carrying deep same-hue text (T30). Dark mode is a _hue-tinted alpha
+overlay_ — the T70 stop at 24% — carrying light pastel text (T80). The overlay
 matters: it composites onto whatever sits behind it, so a chip reads the same on
 the canvas, on a pane, and inside a popover, instead of stamping a hard colored
 panel onto a dark field.
@@ -305,7 +305,7 @@ Status is two separate languages and conflating them is the most likely mistake
 in this palette.
 
 **The tone language** — `--color-success` / `-error` / `-warning` — is drawn as
-*text and icon*, on a pastel well or on the page. It never fills a large surface.
+_text and icon_, on a pastel well or on the page. It never fills a large surface.
 
 - **Deep Green** (`#007004`) / **Pastel Green** (`#9fe59b`)
 - **Deep Red** (`#a50c25`) / **Pastel Red** (`#ffc6c1`)
@@ -315,7 +315,7 @@ Computed against the light pane: 6.33:1, 7.84:1, and 6.48:1 respectively. Agains
 their own wells: deep red on `#facecb` is 5.51:1. All clear AA with room.
 
 **The signal language** — the saturated opaque fills — is the opposite. These are
-mode-locked, high-chroma, and used only where a small object has to *be* the
+mode-locked, high-chroma, and used only where a small object has to _be_ the
 status rather than describe it: filled semantic badges, `StatusDot`, and
 `ProgressBar`.
 
@@ -331,7 +331,7 @@ on them fails AA-large.
 ### Named Rules
 
 **The Grayscale Spine Rule.** Every structural surface, rule, and running-text
-tone in this system is chroma 0. Nothing that is merely *structure* may take a
+tone in this system is chroma 0. Nothing that is merely _structure_ may take a
 tint. The corollary is the valuable half: because the field is achromatic, a
 single chip is loud without being large, and adding a second decorative hue costs
 more here than it would in a tinted system.
@@ -437,7 +437,7 @@ capacity, not shell vocabulary. Escalate through weight (400 → 500 → 600) an
 opacity, not through size. Introducing a third size into a shell means the
 hierarchy failed at weight first.
 
-*This is the target, not the current state.* The previous theme ran on a 13px
+_This is the target, not the current state._ The previous theme ran on a 13px
 body via `text-sm` and a 12px label via `text-xs`. Under the neutral theme's
 floor both resolve to 12px, so ~84 `text-sm` and ~76 `text-xs` usages are now the
 same size, the body tier lost a step, and hierarchy is carried entirely by weight
@@ -485,7 +485,7 @@ shell root, so a route contributes panes and can never forget the inset. The
 inbox contributes three sibling panes; a single-pane route contributes one.
 `contentPadding={0}` on AppShell is what keeps the two from doubling the seam.
 
-A pane has no padding of its own. Its children — a 64px header, a scroll region,
+A pane has no padding of its own. Its children — a 56px header, a scroll region,
 a composer — each own their insets, and a pane-level pad would double them.
 `overflow-hidden` on the pane is structural rather than cosmetic: it is what
 clips a child's square corners to the pane's radius, so a header rule or a
@@ -495,7 +495,7 @@ Below `md` the frame is dropped entirely. A phone has no room to spend on a
 gutter, so panes go full-bleed and the canvas stops being visible — which is why
 the radius, the shadow, and the inset are all `md:`-prefixed.
 
-**The pane header contract.** 64px (`h-16`) plus a bottom rule, attached to the
+**The pane header contract.** 56px (`h-14`) plus a bottom rule, attached to the
 pane's top edge. That rule is intra-pane: it separates the fixed title from the
 region that scrolls under it, not one pane from the next. The conversation list,
 the thread, the contact panel, and workspace settings all honor those two
@@ -574,13 +574,13 @@ is enforced by reading alone.
 **`bg-surface` is the only background token that behaves in both modes.** The
 others collapse in dark:
 
-| token | light | dark |
-| --- | --- | --- |
+| token        | light     | dark      |
+| ------------ | --------- | --------- |
 | `bg-surface` | `#ffffff` | `#262626` |
-| `bg-body` | `#f1f1f1` | `#1b1b1b` |
-| `bg-card` | `#ffffff` | `#1b1b1b` |
+| `bg-body`    | `#f1f1f1` | `#1b1b1b` |
+| `bg-card`    | `#ffffff` | `#1b1b1b` |
 | `bg-popover` | `#ffffff` | `#1b1b1b` |
-| `bg-muted` | `#f1f1f1` | `#1b1b1b` |
+| `bg-muted`   | `#f1f1f1` | `#1b1b1b` |
 
 Read that column: in dark mode a card, a popover, the muted well, and the canvas
 are one tone. Nothing tonal separates them. What separates them is the rim.
@@ -598,7 +598,7 @@ weaker than it used to be:
 2. **Raise** — `bg-card` (`#ffffff` / `#1b1b1b`), plus `--shadow-low` where Astryx's `Card` applies it. Auth and onboarding sheets, popovers, dialogs. Light mode raises with tone plus shadow; dark mode raises with the rim alone.
 
 Region boundaries in the authenticated shell are gutters. Hairlines remain for
-boundaries *within* a pane.
+boundaries _within_ a pane.
 
 ### Shadow Vocabulary
 
@@ -625,7 +625,7 @@ Hand-rolling a "card" with `bg-card` and no shadow produces an invisible
 rectangle in dark mode.
 
 **The Recess Is Pane-Relative Rule.** `bg-muted` is byte-identical to `bg-body`
-in both modes, so it recesses only *inside* a pane, against `bg-surface`. On the
+in both modes, so it recesses only _inside_ a pane, against `bg-surface`. On the
 canvas it paints nothing. Anything that needs to read as recessed must therefore
 live inside a pane — which in this shell it always does, but a full-bleed
 `bg-muted` region outside one is a no-op, not a subtle effect.
@@ -643,7 +643,7 @@ It is owned by `AppPaneGroup` in one place, so the seam is one value everywhere
 and a route cannot hand-roll its own. A pane never carries a border: a shadow and
 an outline together read as a card drawn on top of a card.
 
-**The Hairline Rule.** A rule divides *within* a pane — a header and the body
+**The Hairline Rule.** A rule divides _within_ a pane — a header and the body
 that scrolls under it, a filter strip and its list, one row of a dense list and
 the next. It is not used between panes, where the gutter does the work, and it is
 never a full outline around a large surface.
@@ -753,7 +753,7 @@ variant family is the most common way to get this wrong.
 
 - **Shape:** 10px (`--radius-element`).
 - **State:** Astryx `TextInput` takes a `status` object (`{ type: 'error', message }`) driven from React Hook Form's `fieldState`. Validation copy renders below the field at label size. The theme adds no per-status overrides: `--color-{success,error,warning}` already clear AA non-text 3:1 against both surfaces the border and icon touch — the input surface and the status message bubble — in both modes.
-- **Composer field:** transparent and borderless (`bg-transparent shadow-none`, `resize-none leading-6`). The composer surface *is* the field; a filled input inside it would be a box inside a box. The floor is the height of an empty composer, so it tracks the layout: `min-h-9` on desktop, where the field owns its own row, and `min-h-8` below 768px, where it shares a row with 32px controls. Either way `resize()` grows it from there to the five-line cap and then scrolls.
+- **Composer field:** transparent and borderless (`bg-transparent shadow-none`, `resize-none leading-6`). The composer surface _is_ the field; a filled input inside it would be a box inside a box. The floor is the height of an empty composer, so it tracks the layout: `min-h-9` on desktop, where the field owns its own row, and `min-h-8` below 768px, where it shares a row with 32px controls. Either way `resize()` grows it from there to the five-line cap and then scrolls.
 - **Composer layout:** two shapes, chosen at the 768px `useIsMobile` breakpoint. Desktop uses Astryx `ChatComposer` and its three-slot column — header actions, field, send footer. Phones get a single row (attach, emoji, field, send/mic) at 48px empty, because that column stacks to ~136px before a word is typed and the transcript is what the screen is for. `ChatComposer` cannot collapse into one row: its footer always renders with a 32px floor, and its footer-actions group is content-sized, so a field placed there cannot grow. The mobile row therefore rebuilds the same surface grammar from tokens — `bg-popover`, `rounded-xl` (28px, the chat radius), `shadow-sm` lifting to `shadow-md` on hover and focus-within, `cursor-text` — rather than from Astryx's hashed StyleX classes. Keep the two in sync by token, not by copied class.
 - **Disabled:** driven by the form's `disabled` flag rather than per-field styling, so a submitting form locks uniformly.
 
@@ -799,7 +799,7 @@ right.
 ### Empty and Error States
 
 - **In-pane:** Astryx `EmptyState` centered in the pane (`flex h-full items-center justify-center`), with a `title`, optional `description`, a muted Lucide icon at `size-8`, and an action button.
-- **Hand-composed variant:** a 64px `rounded-2xl bg-primary/5 text-primary/40` icon plate, a semibold heading, and a `text-primary/60` description at `max-w-xs`.
+- **Hand-composed variant:** a 56px `rounded-2xl bg-primary/5 text-primary/40` icon plate, a semibold heading, and a `text-primary/60` description at `max-w-xs`.
 - **Inline query errors:** `bg-error/10 rounded-lg px-3 py-2` with `text-error` copy and a ghost retry button on the trailing edge. Never a toast for a state the user can retry in place.
 - **Blocking errors:** `Banner status="error"` with a title, a description that distinguishes the recoverable case (session expired → sign in) from the generic one, and an action in `endContent`.
 - **Banner fill:** the `-muted` well at 10px (`--radius-element`), no border — a status surface at full measure is a tinted field, not a plate and not an outlined box. The theme's banner overrides rebind `--color-text-primary`, `--color-text-secondary`, and the status token itself to the hue's `*-vivid` value, so the icon, the title, the description, and the `endContent` chip all arrive in one tone. All four statuses move together; success is not a special case.
@@ -843,18 +843,17 @@ moving its neighbors. It is disabled under `prefers-reduced-motion`.
 
 - **Do** treat `src/themes/neutral/neutralTheme.ts` as the source of truth for every token. It is applied at runtime by `<Theme>` in `src/main.tsx`; there is no build step and no compiled `theme.css` to regenerate.
 - **Do** add a self-hosted `@font-face` in `src/fonts/fonts.css` for any family the theme names, with the `unicode-range` split intact, and confirm the family ships Cyrillic. Naming a family in the theme does not load it.
-- **Do** separate sibling regions with the canvas gutter — compose `AppPane`s and let `AppPaneGroup` own the space between them. Rule *within* a pane with `border-border`.
+- **Do** separate sibling regions with the canvas gutter — compose `AppPane`s and let `AppPaneGroup` own the space between them. Rule _within_ a pane with `border-border`.
 - **Do** give a surface a shadow token when it should read as raised. In dark mode the inset rim is the only thing distinguishing a card from the canvas.
 - **Do** use the Tailwind bridge names (`text-primary`, `text-secondary`, `bg-muted`, `bg-card`, `bg-surface`, `bg-accent-bg`, `text-on-accent`, `border-border`, `text-error`, `bg-blue-subtle`, `text-blue-vivid`) rather than raw `var(--color-*)` in class strings.
 - **Do** express state as the accent at low alpha: `bg-primary/4` hover, `bg-primary/10` selected, `bg-primary/5` quiet plate.
 - **Do** put `text-on-accent` on any accent fill, so labels invert with their background.
-- **Do** reach for a `Badge` / `Banner` / `Card` variant to get a hue, so the plate and its text arrive as a matched pair — and pick the variant *family* deliberately: semantic variants are loud saturated fills, categorical variants are quiet pastel plates.
+- **Do** reach for a `Badge` / `Banner` / `Card` variant to get a hue, so the plate and its text arrive as a matched pair — and pick the variant _family_ deliberately: semantic variants are loud saturated fills, categorical variants are quiet pastel plates.
 - **Do** fill a full-measure status surface with the hue's `-muted` well and spend the hue on the icon, the copy, and the action. A chip plate stretched to a region is a slab.
 - **Do** put body copy on `text-base` (14px) and metadata on the 12px floor, and escalate through weight and opacity.
 - **Do** reach for `text-secondary` when copy needs to recede; it is a designed tone. If an opacity step is unavoidable, `/70` is the lowest rung that clears AA in both modes.
 - **Do** give every pane `overflow-hidden`, its own `overflow-y-auto` scroll region, and `min-h-0` through its flex chain.
 - **Do** share `TRANSCRIPT_MEASURE` between the transcript, its skeleton, and the composer.
-- **Do** honor the 64px `h-16` pane-header contract on every pane that has a header, so the inbox columns align across the gutters between them.
 - **Do** guard every transition and animation with `motion-reduce:`.
 
 ### Don't:

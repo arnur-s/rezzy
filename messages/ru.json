@@ -763,6 +763,7 @@
   "inbox_shared_contact_missing": "Этого контакта больше нет",
   "inbox_shared_contact_open_failed": "Не удалось открыть контакт",
   "account_settings_title": "Аккаунт",
+  "account_settings_kicker": "Ваш профиль и настройки Rezzy",
   "account_settings_description": "Ваш профиль и настройки Rezzy. Настройки пространств — внутри самих пространств.",
   "account_settings_sections_nav_aria_label": "Разделы настроек аккаунта",
   "account_settings_profile_label": "Профиль",

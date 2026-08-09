@@ -1,20 +1,20 @@
-import { CONTACT_STATUSES, CONTACT_STATUS_META } from '@/entities/contact'
 import type { ContactSort, ContactStatus } from '@/entities/contact'
-import { useDebounce } from '@/hooks/use-debounce'
-import { cn } from '@/lib/cn'
-import { m } from '@/paraglide/messages'
+import { CONTACT_STATUSES, CONTACT_STATUS_META } from '@/entities/contact'
 import {
   useIsWorkspaceAdmin,
   useWorkspaceMemberDirectory,
 } from '@/features/workspaces/hooks/use-workspaces'
-import { useToast } from '@astryxdesign/core/Toast'
+import { useDebounce } from '@/hooks/use-debounce'
+import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
-import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { Pagination } from '@astryxdesign/core/Pagination'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { useNavigate } from '@tanstack/react-router'
 import { UsersRoundIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -23,13 +23,13 @@ import {
   useContactList,
   useRestoreContact,
 } from '../hooks/use-contacts'
-import {
-  CONTACTS_PAGE_SIZE,
-  hasActiveContactFilters,
-} from '../model/contact-list-params'
 import type {
   ContactListParams,
   ContactListPatch,
+} from '../model/contact-list-params'
+import {
+  CONTACTS_PAGE_SIZE,
+  hasActiveContactFilters,
 } from '../model/contact-list-params'
 import { ArchivedContactRow } from './archived-contact-row'
 import { ContactListRow } from './contact-list-row'
@@ -196,7 +196,7 @@ export function ContactsPage({
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
-      <header className="border-border flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4">
+      <header className="border-border flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
         <div className="flex min-w-0 items-baseline gap-2">
           <h1 className="text-base font-semibold">{m.contacts_title()}</h1>
           {contactsQuery.isSuccess ? (

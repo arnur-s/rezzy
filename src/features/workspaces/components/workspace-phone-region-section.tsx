@@ -1,3 +1,4 @@
+import { SettingsSectionHeader } from '@/components/settings-section'
 import { getLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
@@ -75,14 +76,11 @@ export function WorkspacePhoneRegionSection({
 
   return (
     <section className="border-border/60 flex flex-col gap-3 border-t pt-6">
-      <div>
-        <h3 className="text-primary text-base font-semibold">
-          {m.workspace_settings_phone_region_title()}
-        </h3>
-        <p className="text-secondary mt-1 text-sm">
-          {m.workspace_settings_phone_region_description()}
-        </p>
-      </div>
+      <SettingsSectionHeader
+        as="h3"
+        title={m.workspace_settings_phone_region_title()}
+        description={m.workspace_settings_phone_region_description()}
+      />
 
       <Selector
         label={m.workspace_settings_phone_region_label()}

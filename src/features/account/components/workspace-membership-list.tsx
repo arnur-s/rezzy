@@ -1,3 +1,4 @@
+import { SettingsSectionHeader } from '@/components/settings-section'
 import { WorkspaceIcon } from '@/entities/workspace'
 import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
@@ -34,18 +35,15 @@ export function WorkspaceMembershipList() {
   const membershipsQuery = useMyMemberships()
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="account-workspaces">
-      <div>
-        <h2
-          id="account-workspaces"
-          className="text-primary text-base font-semibold"
-        >
-          {m.profile_workspaces_title()}
-        </h2>
-        <p className="text-secondary mt-1 text-sm">
-          {m.profile_workspaces_description()}
-        </p>
-      </div>
+    <section
+      className="flex flex-col gap-4"
+      aria-labelledby="account-workspaces"
+    >
+      <SettingsSectionHeader
+        id="account-workspaces"
+        title={m.profile_workspaces_title()}
+        description={m.profile_workspaces_description()}
+      />
 
       {membershipsQuery.isPending ? (
         <MembershipsSkeleton />
@@ -76,7 +74,7 @@ function MembershipRow({ membership }: { membership: AccountMembership }) {
   const joinedAt = formatJoinedAt(membership.joinedAt)
 
   return (
-    <li className="flex min-h-16 items-center gap-3 py-3">
+    <li className="flex min-h-14 items-center gap-3 py-3">
       <span className="bg-accent-bg/10 text-accent flex size-8 shrink-0 items-center justify-center rounded-md">
         <WorkspaceIcon name={membership.workspaceIcon} className="size-4" />
       </span>
@@ -104,7 +102,7 @@ function MembershipsSkeleton() {
       aria-hidden
     >
       {[0, 1].map((row) => (
-        <div key={row} className="flex min-h-16 items-center gap-3 py-3">
+        <div key={row} className="flex min-h-14 items-center gap-3 py-3">
           <Skeleton width={32} height={32} radius={3} />
           <div className="flex-1 space-y-1.5">
             <Skeleton width="40%" height={12} radius={2} />

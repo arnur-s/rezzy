@@ -1,4 +1,5 @@
-import { WorkspaceIconPicker, resolveWorkspaceIcon  } from '@/entities/workspace'
+import { SettingsSectionHeader } from '@/components/settings-section'
+import { WorkspaceIconPicker, resolveWorkspaceIcon } from '@/entities/workspace'
 import { WorkspacePhoneRegionSection } from '@/features/workspaces/components/workspace-phone-region-section'
 import {
   useUpdateWorkspace,
@@ -123,14 +124,10 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold">
-          {m.workspace_settings_general_title()}
-        </h2>
-        <p className="mt-1 text-sm text-secondary">
-          {m.workspace_settings_general_description()}
-        </p>
-      </div>
+      <SettingsSectionHeader
+        title={m.workspace_settings_general_title()}
+        description={m.workspace_settings_general_description()}
+      />
 
       <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
         <Controller

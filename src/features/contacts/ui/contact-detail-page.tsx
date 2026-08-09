@@ -10,7 +10,6 @@ import {
 } from '@/features/workspaces/hooks/use-workspaces'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { formatDate } from '@/lib/format-date'
-import { CONTACT_DATE_FORMAT } from '../model/date-format'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Button } from '@astryxdesign/core/Button'
@@ -32,6 +31,7 @@ import {
   useContactDetail,
   useContactPhones,
 } from '../hooks/use-contacts'
+import { CONTACT_DATE_FORMAT } from '../model/date-format'
 import { ArchiveContactDialog } from './archive-contact-dialog'
 import { ContactFormDialog } from './contact-form-dialog'
 
@@ -101,7 +101,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   if (contactQuery.isPending) {
     return (
       <div className="flex h-full flex-col">
-        <header className="border-border flex h-16 shrink-0 items-center border-b px-4">
+        <header className="border-border flex h-14 shrink-0 items-center border-b px-4">
           {backLink}
         </header>
         <div className="flex flex-col gap-3 p-4">
@@ -115,7 +115,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   if (contactQuery.isError) {
     return (
       <div className="flex h-full flex-col">
-        <header className="border-border flex h-16 shrink-0 items-center border-b px-4">
+        <header className="border-border flex h-14 shrink-0 items-center border-b px-4">
           {backLink}
         </header>
         <div className="flex h-full items-center justify-center p-6">
@@ -144,7 +144,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   if (!contact) {
     return (
       <div className="flex h-full flex-col">
-        <header className="border-border flex h-16 shrink-0 items-center border-b px-4">
+        <header className="border-border flex h-14 shrink-0 items-center border-b px-4">
           {backLink}
         </header>
         <div className="flex h-full items-center justify-center p-6">
@@ -160,8 +160,9 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
 
   const displayName = contactDisplayName(contact)
   const ownerName = contact.owner_id
-    ? ((membersQuery.data ?? []).find((member) => member.userId === contact.owner_id)
-        ?.fullName ?? null)
+    ? ((membersQuery.data ?? []).find(
+        (member) => member.userId === contact.owner_id,
+      )?.fullName ?? null)
     : null
   const conversations = conversationsQuery.data ?? []
   const loadedPhones = (phonesQuery.data ?? [])
@@ -177,7 +178,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
-      <header className="border-border flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4">
+      <header className="border-border flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
         {backLink}
         <div className="flex shrink-0 items-center gap-2">
           <Button
