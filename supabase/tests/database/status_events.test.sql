@@ -10,17 +10,11 @@ values
   ('00000000-0000-4000-8000-0000000000a4', 'se-outsider@example.com',
    '{"full_name":"Status outsider"}'::jsonb);
 
-set local role authenticated;
-set local request.jwt.claims =
-  '{"sub":"00000000-0000-4000-8000-0000000000a3","role":"authenticated"}';
-insert into public.workspaces (name, is_main) values ('SE WS', false);
-reset role;
+insert into public.workspaces (name, is_main, created_by)
+values ('SE WS', false, '00000000-0000-4000-8000-0000000000a3');
 
-set local role authenticated;
-set local request.jwt.claims =
-  '{"sub":"00000000-0000-4000-8000-0000000000a4","role":"authenticated"}';
-insert into public.workspaces (name, is_main) values ('SE WS OTHER', false);
-reset role;
+insert into public.workspaces (name, is_main, created_by)
+values ('SE WS OTHER', false, '00000000-0000-4000-8000-0000000000a4');
 
 insert into public.channels (id, workspace_id, type, name)
 values ('00000000-0000-4000-8000-0000000000b3',
@@ -38,8 +32,9 @@ values ('00000000-0000-4000-8000-0000000000d3',
         '00000000-0000-4000-8000-0000000000c3',
         '00000000-0000-4000-8000-0000000000b3');
 
--- reset role keeps the transaction-scoped jwt claims; align auth.uid() with the
--- outbound sender so ensure_message_sender_is_valid accepts the seed inserts.
+-- auth.uid() reads request.jwt.claims regardless of role, so this sets the
+-- claim without switching role: align it with the outbound sender so
+-- ensure_message_sender_is_valid accepts the seed inserts below.
 set local request.jwt.claims =
   '{"sub":"00000000-0000-4000-8000-0000000000a3","role":"authenticated"}';
 
