@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(26);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -279,6 +279,133 @@ select results_eq(
   $$ values (1, 'admin') $$,
   're-inviting updates the pending row rather than creating a second'
 );
+
+-- ── list_workspace_invitations is owner/admin only ──────────────────────────
+--
+-- It returns email addresses, which list_workspace_members deliberately
+-- withholds from colleagues (20260731183000). User 001 is a plain member of
+-- workspace 101 (reseated above) -- exactly the caller this gate exists to
+-- stop from harvesting invitee addresses.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000001","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select * from public.list_workspace_invitations(
+      '60000000-0000-4000-8000-000000000101')
+  $$,
+  '42501',
+  'NOT_A_WORKSPACE_ADMIN',
+  'a plain member cannot list workspace invitations'
+);
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+select results_eq(
+  $$
+    select invited_email, invited_name, role, invited_by_name
+    from public.list_workspace_invitations(
+      '60000000-0000-4000-8000-000000000101')
+  $$,
+  $$
+    values (
+      'mm-invitee@example.com'::text, 'MM Invitee'::text, 'admin'::text,
+      'MM Admin'::text
+    )
+  $$,
+  'an admin sees the pending invitation with its address and names'
+);
+
+reset role;
+
+-- ── list_my_workspace_invitations is the invitee's own view ────────────────
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000003","role":"authenticated"}';
+
+select results_eq(
+  $$
+    select workspace_name, role
+    from public.list_my_workspace_invitations()
+  $$,
+  $$ values ('MM Workspace'::text, 'admin'::text) $$,
+  'the invitee sees their own pending invitation'
+);
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000001","role":"authenticated"}';
+
+select is_empty(
+  $$ select * from public.list_my_workspace_invitations() $$,
+  'a user with no invitations sees none'
+);
+
+reset role;
+
+-- ── Revoking ─────────────────────────────────────────────────────────────────
+--
+-- Captured at the ambient role: workspace_invitations RLS scopes SELECT to
+-- invited_user_id = auth.uid(), so the admin who is about to revoke this row
+-- could not read it directly, even though the definer RPC can act on it. A
+-- temporary table is the established handoff for a value one assertion needs
+-- and another produced -- see contact_notes.test.sql.
+create temporary table mm_pending_invitation as
+select id
+from public.workspace_invitations
+where workspace_id = '60000000-0000-4000-8000-000000000101'
+  and invited_user_id = '60000000-0000-4000-8000-000000000003'
+  and status = 'pending';
+grant select on mm_pending_invitation to authenticated;
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    select public.revoke_workspace_invitation(
+      (select id from mm_pending_invitation))
+  $$,
+  'an admin can revoke a pending invitation'
+);
+
+reset role;
+
+-- Both halves of workspace_invitations_resolved_at_check, not just status:
+-- a revoke that forgot resolved_at would violate the constraint and raise
+-- rather than silently pass, but that only proves the constraint exists, not
+-- that this function sets both. Assert the end state directly.
+select results_eq(
+  $$
+    select status, (resolved_at is not null)
+    from public.workspace_invitations
+    where id = (select id from mm_pending_invitation)
+  $$,
+  $$ values ('revoked'::text, true) $$,
+  'revoke flips status and resolved_at together'
+);
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.revoke_workspace_invitation(
+      (select id from mm_pending_invitation))
+  $$,
+  'P0002',
+  'INVITATION_NOT_FOUND',
+  'revoking an already-resolved invitation is refused'
+);
+
+reset role;
 
 select * from finish();
 
