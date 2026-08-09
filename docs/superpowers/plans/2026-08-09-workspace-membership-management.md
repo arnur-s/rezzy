@@ -1618,59 +1618,131 @@ pnpm test:db
 
 Expected: `workspace_membership.test.sql` 27/27.
 
-- [ ] **Step 5: Record the concurrency gap**
+- [ ] **Step 5: Build the two-session race harness**
 
-Nothing in `supabase/tests/database/` runs more than one session — no `dblink`, every file a single transaction ending in `rollback`. The two races above are therefore **not** covered by the tests written here, and a single-session test cannot cover them.
+The races above are the reason the lock exists, and a single-session test cannot
+observe them. `supabase test db` runs each file as one session in one
+transaction that rolls back — it cannot interleave two.
 
-Do not paper over it. Append this to `workspace_membership.test.sql` after the role assertions (and raise the plan to `plan(29)`):
+**Two independent sessions are available with no new dependency and no `dblink`.**
+Supabase's Postgres runs in the `supabase_db_cms` container, and each
+`docker exec supabase_db_cms psql -U postgres -d postgres` is its own backend
+(verified: distinct `pg_backend_pid()`, and a second session blocks correctly on
+a lock the first holds). The races get real tests through that; `dblink` is not
+introduced, and nothing is added to the production schema for testing.
 
-```sql
--- ── The concurrency invariants, as far as one session can pin them ───────────
---
--- The real races -- a promotion landing between an admin's role read and their
--- write, and two demotions both seeing two owners -- need two sessions.
--- Nothing in this suite runs more than one, and introducing dblink for it is a
--- new extension on the project that has not been agreed. So these assert that
--- the mechanism which prevents them is present, and the file records that the
--- interleaving itself is unverified. A test that appeared to cover the race and
--- did not would be worse: the next person deletes the lock and stays green.
+These tests **commit** — that is the point — so they cannot live in the pgTAP
+suite, which rolls back. They get their own directory and their own script.
 
-select ok(
-  (
-    select count(*)::int
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public'
-      and p.proname in
-        ('update_workspace_member_role', 'remove_workspace_member')
-      and p.prosrc like '%order by wm.user_id%for update%'
-  ) = 2,
-  'both mutation RPCs lock the whole roster in user_id order before deciding'
-);
+Create `supabase/tests/concurrency/race.sh`:
 
-select ok(
-  (
-    select count(*)::int
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public'
-      and p.proname = 'invite_workspace_member'
-      and p.prosrc like '%on conflict (workspace_id, invited_user_id) where status = ''pending''%'
-  ) = 1,
-  're-invite is one statement inferring the partial unique index'
-);
+```bash
+#!/usr/bin/env bash
+# Two-session race tests for the membership RPCs.
+#
+# supabase test db runs one session per file inside a transaction it rolls
+# back, so the interleavings these functions are locked against cannot be
+# observed there. Each psql below is an independent backend against the same
+# local database, which is what makes the lock testable at all.
+#
+# These COMMIT. Fixtures use the 70000000- id namespace, owned by this file
+# alone, and are dropped before and after every run so a failed run cannot
+# poison the next one.
+set -uo pipefail
+
+DB="docker exec -i supabase_db_cms psql -U postgres -d postgres -qtAX"
+WS=70000000-0000-4000-8000-000000000001
+OWNER_A=70000000-0000-4000-8000-000000000011
+OWNER_B=70000000-0000-4000-8000-000000000012
+ADMIN=70000000-0000-4000-8000-000000000013
+TARGET=70000000-0000-4000-8000-000000000014
+INVITEE=70000000-0000-4000-8000-000000000015
+
+fail=0
+check() { # check <description> <actual> <expected>
+  if [ "$2" = "$3" ]; then
+    echo "ok - $1"
+  else
+    echo "not ok - $1 (got '$2', want '$3')"
+    fail=1
+  fi
+}
+
+claims() { echo "set local role authenticated; set local request.jwt.claims = '{\"sub\":\"$1\",\"role\":\"authenticated\"}';"; }
 ```
 
-- [ ] **Step 6: Run and commit**
+Add a `seed` function creating the workspace with **two** owners plus an admin
+and a plain member, and a `teardown` deleting every `70000000-` row. Then the
+three races. Each starts session A in the background holding its transaction
+open with `pg_sleep`, waits for A to have taken the lock, and runs session B in
+the foreground:
+
+```bash
+# ── Race 1: two concurrent demotions cannot reach zero owners ────────────────
+#
+# Without the roster lock both sessions read two owners, both pass the
+# last-owner check, and both commit — leaving none.
+seed
+$DB -c "begin; $(claims $OWNER_A) select public.update_workspace_member_role('$WS','$OWNER_A','member'); select pg_sleep(2); commit;" >/dev/null 2>&1 &
+sleep 1
+b_err=$($DB -c "begin; $(claims $OWNER_B) select public.update_workspace_member_role('$WS','$OWNER_B','member'); commit;" 2>&1 | grep -c 'LAST_OWNER')
+wait
+owners=$($DB -c "select count(*) from public.workspace_members where workspace_id='$WS' and role='owner';")
+check "concurrent demotions leave at least one owner" "$owners" "1"
+check "the second demotion is refused with LAST_OWNER" "$b_err" "1"
+teardown
+```
+
+Race 2 is the same shape: session A (an **owner**) promotes `$TARGET` to
+`owner` and holds; session B (the **admin**) tries to demote `$TARGET` to
+`member` and must fail with `OWNER_ROLE_REQUIRES_OWNER`, because inside the lock
+it re-reads the target as an owner. Assert `$TARGET`'s role is still `owner`.
+
+Race 3 runs two `invite_workspace_member` calls for `$INVITEE` **truly
+concurrently** — both backgrounded, then `wait` — and asserts exactly one
+pending row exists and that neither call's output contains `23505`.
+
+Finish with:
+
+```bash
+if [ "$fail" -ne 0 ]; then echo "FAILED"; exit 1; fi
+echo "all race tests passed"
+```
+
+Add to `package.json` scripts, next to `test:db`:
+
+```json
+    "test:db:races": "bash supabase/tests/concurrency/race.sh",
+```
+
+- [ ] **Step 6: Run both suites, and prove the tests can fail**
 
 ```bash
 pnpm test:db
+pnpm test:db:races
 ```
 
-Expected: 29/29.
+Expected: `workspace_membership.test.sql` 27/27, and all race checks pass.
+
+**Then verify the race tests actually detect the bug they exist for.** A race
+test that passes against broken code is worse than none. Temporarily edit the
+migration to comment out the `perform 1 ... for update` block in
+`update_workspace_member_role`, apply it (`supabase db reset`), and re-run
+`pnpm test:db:races`:
+
+- Race 1 must now report `not ok` — zero owners, or `LAST_OWNER` not raised.
+- Race 2 must now report `not ok` — the admin demoted an owner.
+
+Restore the lock, `supabase db reset`, confirm both pass again. Record the
+observed failure output in the task report — that is the evidence the tests are
+real. If a race does **not** fail with the lock removed, the harness is not
+interleaving and must be fixed before this task is done; say so rather than
+proceeding.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add supabase/migrations/20260809180000_membership_mutation_rpcs.sql supabase/tests/database/workspace_membership.test.sql
+git add supabase/migrations/20260809180000_membership_mutation_rpcs.sql supabase/tests/database/ supabase/tests/concurrency/race.sh package.json
 git commit -m "feat(db): add role change and removal RPCs under a deterministic roster lock"
 ```
 
@@ -2888,10 +2960,11 @@ Coordinate the database reset — the local Supabase instance is shared.
 ```bash
 supabase db reset
 pnpm test:db
+pnpm test:db:races
 pnpm verify
 ```
 
-`pnpm verify` chains typecheck, lint, test, and build and stops at the first failure. Expected: all pass.
+`pnpm verify` chains typecheck, lint, test, and build and stops at the first failure. Expected: all pass. `pnpm test:db:races` needs the local Supabase stack running and is not part of `verify` or CI — run it explicitly and report its output.
 
 - [ ] **Step 2: Browser pass, in Russian, at phone width**
 
@@ -2920,7 +2993,7 @@ It refuses on a dirty tree or a branch with no commits beyond `origin/main`, and
 **Spec coverage.** Data model → Task 3. Authorization changes (three) → Tasks 1 and 2. `private.workspace_role` → Task 1. Seven RPCs → Tasks 2, 4, 5, 6. Locking → Task 6. Re-invite atomicity → Task 4. Feature layer → Task 8. Members page and the permanent helper → Tasks 9, 10. Switcher → Task 11. In-app notification, INSERT+UPDATE, dedupe key → Task 12. `viewer` removal → Tasks 1, 9. i18n → Task 9. `soft_delete_workspace` → Task 7. DB tests → Tasks 1–7. Application tests → Tasks 8, 10, 11, 12. Validation → Task 13.
 
 **Known gaps, stated rather than hidden.**
-- The two concurrency races and the concurrent-invite race are **not** covered by an interleaved test: the suite has no second session and adding `dblink` is an unmade decision. Task 6 Step 5 asserts the mechanism is present and records the gap in the test file.
+- The two authorization races and the concurrent-invite race are covered by real two-session tests (Task 6 Step 5), run through `docker exec` against the local Supabase container rather than `dblink`, and verified to fail when the lock is removed. They need the local stack running, so they are **not** part of `pnpm verify` or CI as written — `pnpm test:db:races` is a local gate. Say so in the PR description; do not let a green CI imply the races are checked there.
 - The dead `when 'viewer' then 3` ordering branches in `list_workspace_members` and the contacts directory RPC are left in place. They are unreachable once the CHECK excludes `viewer`, and rewriting two unrelated RPCs to delete a dead `CASE` arm is churn this plan does not need. Noted so it is a decision, not an oversight.
 - OS/push notification for invitations is out of scope per the spec.
 
