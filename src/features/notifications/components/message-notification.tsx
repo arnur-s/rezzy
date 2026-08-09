@@ -1,40 +1,145 @@
+import { listItemStyle } from '@/components/list'
 import { PlatformIcon, isChannelType } from '@/entities/channel'
 import { formatRelativeShort } from '@/features/inbox/utils/relative-time'
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
-import { Button } from '@astryxdesign/core/Button'
+import { Badge } from '@astryxdesign/core/Badge'
 import type { ShowToastFn } from '@astryxdesign/core/Toast'
 import { BellIcon } from 'lucide-react'
+import { useState } from 'react'
 import type {
   MessageNotificationDetails,
   MessagePreviewMode,
 } from '../model/types'
+import type { NotificationGroup } from '../utils/notification-group-store'
+import {
+  appendToNotificationGroup,
+  clearNotificationGroup,
+} from '../utils/notification-group-store'
 import type { NotificationTarget } from '../utils/notification-navigation'
 import { buildNotificationPreview } from '../utils/notification-preview'
-import { NotificationPreview } from './notification-preview'
 
 type Props = {
-  details: MessageNotificationDetails
+  group: NotificationGroup
   previewMode: MessagePreviewMode
   onOpen: () => void
 }
 
-/** Rich in-app notification body rendered inside an Astryx toast. */
-export function MessageNotification({ details, previewMode, onOpen }: Props) {
-  const { conversation, message, workspaceName } = details
+/** One message line: body text, plus its own time when it is not the newest. */
+function NotificationLine({
+  text,
+  time,
+  clamp,
+}: {
+  text: string
+  time: string | null
+  clamp: 'truncate' | 'line-clamp-2'
+}) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <p className={cn('text-secondary min-w-0 flex-1 text-base', clamp)}>
+        {text}
+      </p>
+      {time ? (
+        <span className="text-secondary shrink-0 text-sm tabular-nums">
+          {time}
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * Rich in-app notification body rendered inside an Astryx toast.
+ *
+ * The whole body navigates: an absolutely positioned overlay button covers it,
+ * with the avatar and text column marked `pointer-events-none` so clicks fall
+ * through. Astryx renders its close button as a flex *sibling* of the body
+ * rather than an overlay, so nothing here can cover it — which is also why the
+ * old `pe-6` reserve was unnecessary.
+ *
+ * Older messages of the same conversation sit in a `grid-template-rows` region
+ * *above* the newest one, so expanding grows the toast downward and the newest
+ * message never moves.
+ */
+export function MessageNotification({ group, previewMode, onOpen }: Props) {
+  const [expanded, setExpanded] = useState(false)
+
+  const showContactVisuals = previewMode !== 'hidden'
+  // A visible count would leak how many messages arrived, which is precisely
+  // what the hidden preview mode exists to withhold.
+  const items = showContactVisuals ? group.items : group.items.slice(-1)
+  const total = showContactVisuals ? group.total : 1
+
+  const newest = items[items.length - 1]
+  if (!newest) return null
+
+  const older = items.slice(0, -1)
+  const hiddenCount = total - 1
+  const { conversation } = newest
   const contactName = conversation.contact.name
-  const preview = buildNotificationPreview({ contactName, message, previewMode })
   const channelType = isChannelType(conversation.channel.type)
     ? conversation.channel.type
     : null
-  const showContactVisuals = previewMode !== 'hidden'
-  const fullText =
-    previewMode === 'full' ? (message.content?.trim() || null) : null
+
+  const preview = buildNotificationPreview({
+    contactName,
+    message: newest.message,
+    previewMode,
+  })
+  const newestTime = formatRelativeShort(newest.createdAt)
+
+  // Announce the action, the message and the time in one label; the row's
+  // visual children stay decorative for assistive technology.
+  const openLabel = [
+    m.notifications_item_open_aria({ name: preview.title }),
+    preview.body,
+    newestTime,
+  ]
+    .filter(Boolean)
+    .join(', ')
+
+  const revealClass = cn(
+    'transition-[grid-template-rows] duration-200 ease-out',
+    'motion-reduce:transition-none',
+    'grid grid-rows-[0fr] group-hover/toast:grid-rows-[1fr]',
+    expanded && 'grid-rows-[1fr]',
+  )
+  const revealInnerClass = cn(
+    'overflow-hidden opacity-0 transition-opacity duration-200 ease-out',
+    'motion-reduce:transition-none',
+    'group-hover/toast:opacity-100',
+    expanded && 'opacity-100',
+  )
 
   return (
-    <div className="flex w-full items-start gap-3">
+    <div
+      data-expanded={expanded}
+      className={cn(
+        'group/toast relative flex w-full items-start gap-3',
+        listItemStyle.transition,
+        // `:active` matches ancestors of the pressed button, so pressing the
+        // overlay scales the whole row rather than an invisible rectangle.
+        listItemStyle.press,
+      )}
+    >
+      <button
+        type="button"
+        aria-label={openLabel}
+        onClick={onOpen}
+        className={cn(
+          // -inset-1 bleeds the hit area 4px outward. The gap to Astryx's
+          // close button is 12px, so this cannot reach it.
+          'absolute -inset-1 cursor-pointer rounded-lg outline-none',
+          listItemStyle.transition,
+          listItemStyle.hover,
+          listItemStyle.focus,
+        )}
+      />
+
       {showContactVisuals ? (
-        <div className="relative shrink-0">
+        <div className="pointer-events-none relative shrink-0">
           <Avatar
             size="md"
             name={contactName ?? undefined}
@@ -50,45 +155,68 @@ export function MessageNotification({ details, previewMode, onOpen }: Props) {
           ) : null}
         </div>
       ) : (
-        <span className="bg-muted text-secondary flex size-10 shrink-0 items-center justify-center rounded-3xl">
+        <span className="bg-muted text-secondary pointer-events-none relative flex size-10 shrink-0 items-center justify-center rounded-xl">
           <BellIcon className="size-5" aria-hidden />
         </span>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {/* Reserve trailing space so the timestamp clears the toast's close
-            button pinned to the top-right. */}
-        <div className="flex items-baseline gap-2 pe-6 sm:pe-2">
-          <span className="text-primary min-w-0 flex-1 truncate text-sm font-semibold">
+      <div className="pointer-events-none relative flex min-w-0 flex-1 flex-col">
+        <div className="flex items-baseline gap-2">
+          <span className="text-primary min-w-0 flex-1 truncate text-base font-semibold">
             {preview.title}
           </span>
-          <span className="text-secondary shrink-0 text-xs tabular-nums">
-            {formatRelativeShort(details.createdAt)}
+          {hiddenCount > 0 ? (
+            <button
+              type="button"
+              aria-expanded={expanded}
+              aria-label={
+                expanded
+                  ? m.notifications_group_collapse()
+                  : m.notifications_group_expand({ count: hiddenCount })
+              }
+              onClick={() => setExpanded((value) => !value)}
+              className={cn(
+                'pointer-events-auto relative z-10 shrink-0 cursor-pointer rounded-full outline-none',
+                listItemStyle.focus,
+              )}
+            >
+              <Badge variant="info" label={String(total)} />
+            </button>
+          ) : null}
+          <span className="text-secondary shrink-0 text-sm tabular-nums">
+            {newestTime}
           </span>
         </div>
 
-        {workspaceName ? (
-          <span className="bg-muted text-primary max-w-full self-start truncate rounded-full px-2 py-0.5 text-xs font-medium">
-            {workspaceName}
-          </span>
+        {older.length > 0 ? (
+          <div className={revealClass}>
+            <div className={revealInnerClass}>
+              {older.map((item) => (
+                <NotificationLine
+                  key={item.id}
+                  text={
+                    buildNotificationPreview({
+                      contactName,
+                      message: item.message,
+                      previewMode,
+                    }).body
+                  }
+                  time={formatRelativeShort(item.createdAt)}
+                  clamp="truncate"
+                />
+              ))}
+            </div>
+          </div>
         ) : null}
 
         {preview.body ? (
-          <NotificationPreview
-            body={preview.body}
-            fullText={fullText}
-            truncated={preview.truncated}
+          <NotificationLine
+            text={preview.body}
+            // The newest message's time already sits in the header row.
+            time={null}
+            clamp="line-clamp-2"
           />
         ) : null}
-
-        <div className="mt-1.5">
-          <Button
-            label={m.notifications_open_thread()}
-            size="sm"
-            variant="primary"
-            onClick={onOpen}
-          />
-        </div>
       </div>
     </div>
   )
@@ -103,9 +231,17 @@ export type ShowMessageNotificationOptions = {
 }
 
 /**
- * Show a message notification as an Astryx toast. Repeated messages for the same
- * conversation replace the previous toast via `uniqueID` + `collisionBehavior`,
- * so notifications never stack uncontrollably.
+ * Show a message notification as an Astryx toast.
+ *
+ * Messages for the same conversation join one toast rather than replacing it:
+ * `uniqueID` + `collisionBehavior: 'overwrite'` swaps the entry in place while
+ * the group store accumulates the bodies. Astryx's overwrite path replaces the
+ * entry without calling `removeToast`, so `onHide` fires only on a real
+ * dismiss or auto-hide — which is exactly when the group should be dropped.
+ *
+ * The replacement entry carries a new id, which is the React key, so the toast
+ * replays its enter transition on each new message. That pulse is free
+ * feedback and is deliberate.
  */
 export function showMessageNotificationToast({
   details,
@@ -113,7 +249,9 @@ export function showMessageNotificationToast({
   onOpen,
   showToast,
 }: ShowMessageNotificationOptions): void {
-  // Captured so the "Open" action can dismiss the toast it lives inside.
+  const group = appendToNotificationGroup(details)
+
+  // Captured so clicking the toast can dismiss the toast it lives inside.
   const holder: { dismiss: () => void } = { dismiss: () => {} }
 
   const handleOpen = () => {
@@ -127,7 +265,7 @@ export function showMessageNotificationToast({
   holder.dismiss = showToast({
     body: (
       <MessageNotification
-        details={details}
+        group={group}
         previewMode={previewMode}
         onOpen={handleOpen}
       />
@@ -136,5 +274,6 @@ export function showMessageNotificationToast({
     uniqueID: details.conversationId,
     collisionBehavior: 'overwrite',
     autoHideDuration: 8000,
+    onHide: () => clearNotificationGroup(details.conversationId),
   })
 }

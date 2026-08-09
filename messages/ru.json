@@ -651,8 +651,6 @@
     }
   ],
   "notifications_group_collapse": "Свернуть сообщения",
-  "notifications_open_thread": "Открыть диалог",
-  "notifications_show_full_message": "Показать сообщение полностью",
   "notifications_unread_count_aria": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],

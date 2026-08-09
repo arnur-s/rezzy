@@ -619,8 +619,6 @@
     }
   ],
   "notifications_group_collapse": "Show fewer messages",
-  "notifications_open_thread": "Open thread",
-  "notifications_show_full_message": "Show full message",
   "notifications_unread_count_aria": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],
