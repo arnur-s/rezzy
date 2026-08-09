@@ -1,6 +1,6 @@
 begin;
 
-select plan(30);
+select plan(31);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
@@ -486,6 +486,68 @@ select results_eq(
   $$ values ('accepted', '60000000-0000-4000-8000-000000000003'::uuid) $$,
   'and stamps the invitation'
 );
+
+-- ── Accepting into a soft-deleted workspace is refused ──────────────────────
+--
+-- private.workspace_role cannot carry this boundary: the invitee is not a
+-- member yet, so it returns null for them regardless of the workspace's
+-- deleted_at. The explicit join to public.workspaces inside
+-- respond_to_workspace_invitation is the only thing standing between an
+-- invitee and accepting their way into a workspace the product has already
+-- withdrawn.
+--
+-- A dedicated workspace is seeded and soft-deleted here rather than reusing
+-- 101: soft-deleting 101 would withdraw it out from under every fixture user
+-- this file still relies on, and this is the last block in the section, but
+-- keeping the blast radius to a throwaway workspace makes that true by
+-- construction rather than by file position.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000002","role":"authenticated"}';
+
+create temporary table mm_withdrawn_workspace as
+select id from public.create_workspace('MM Withdrawn', null, 'briefcase', false);
+
+select public.invite_workspace_member(
+  (select id from mm_withdrawn_workspace), 'mm-invitee@example.com', 'member');
+
+-- soft_delete_workspace is REVOKEd from PUBLIC and never granted to
+-- authenticated (see workspace_lifecycle.test.sql), so it is called the only
+-- way it can be called today: at the owning/ambient role, with the caller's
+-- claims still in place so its auth.uid() ownership check is the thing being
+-- exercised. request.jwt.claims is a GUC independent of role, so it survives
+-- the reset below.
+reset role;
+
+select public.soft_delete_workspace((select id from mm_withdrawn_workspace));
+
+-- Captured at the ambient role for the same RLS reason as mm_new_invitation
+-- above.
+create temporary table mm_withdrawn_invitation as
+select id
+from public.workspace_invitations
+where workspace_id = (select id from mm_withdrawn_workspace)
+  and invited_user_id = '60000000-0000-4000-8000-000000000003'
+  and status = 'pending';
+grant select on mm_withdrawn_invitation to authenticated;
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"60000000-0000-4000-8000-000000000003","role":"authenticated"}';
+
+select throws_ok(
+  $$
+    select public.respond_to_workspace_invitation(
+      (select id from mm_withdrawn_invitation),
+      true)
+  $$,
+  'P0002',
+  'INVITATION_NOT_FOUND',
+  'accepting into a soft-deleted workspace is refused'
+);
+
+reset role;
 
 select * from finish();
 
