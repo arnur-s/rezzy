@@ -16,7 +16,7 @@ import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { useToast } from '@astryxdesign/core/Toast'
 import { useNavigate } from '@tanstack/react-router'
-import { UsersRoundIcon } from 'lucide-react'
+import { SearchIcon, UsersRoundIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import {
   useArchivedContacts,
@@ -216,7 +216,8 @@ export function ContactsPage({
           value={searchText}
           onChange={(next) => setSearchText(next)}
           hasClear
-          size="sm"
+          size="lg"
+          startIcon={<SearchIcon className="size-4" />}
         />
 
         <div

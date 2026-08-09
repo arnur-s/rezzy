@@ -1,6 +1,6 @@
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { setLocale } from '@/paraglide/runtime'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { MessageThreadHeader } from './message-thread-header'
 
@@ -49,13 +49,16 @@ function conversation(
   }
 }
 
-function renderHeader(contact: Partial<ConversationWithRelations['contact']>) {
+function renderHeader(
+  contact: Partial<ConversationWithRelations['contact']>,
+  onToggleContactPanel: () => void = () => {},
+) {
   return render(
     <MessageThreadHeader
       conversation={conversation(contact)}
       workspaceId="workspace-1"
       currentUserId="user-1"
-      onToggleContactPanel={() => {}}
+      onToggleContactPanel={onToggleContactPanel}
     />,
   )
 }
@@ -82,5 +85,45 @@ describe('MessageThreadHeader avatar', () => {
 
     expect(document.querySelector('img')).toBeNull()
     expect(screen.getAllByText('JD').length).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * The contact panel used to open from an Info icon at the far end of the
+ * header — a second control pointing at the subject already named beside it.
+ * The subject is the control now, so these pin that the whole identity opens
+ * the panel and that no separate icon survives to do the same job twice.
+ */
+describe('MessageThreadHeader contact affordance', () => {
+  beforeAll(() => {
+    setLocale('en', { reload: false })
+  })
+
+  it('opens the contact panel from the identity block', () => {
+    const onToggleContactPanel = vi.fn()
+    renderHeader({ phone: '+7 700 000 00 01' }, onToggleContactPanel)
+
+    const identity = screen.getByRole('button', { name: /Jane Doe/ })
+    expect(identity.textContent).toContain('Telegram')
+    expect(identity.textContent).toContain('+7 700 000 00 01')
+
+    fireEvent.click(identity)
+
+    expect(onToggleContactPanel).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the contact name as the thread heading', () => {
+    renderHeader({ avatar_url: null })
+
+    expect(screen.getByRole('heading').textContent).toContain('Jane Doe')
+  })
+
+  it('has no separate control that opens the same panel', () => {
+    renderHeader({ avatar_url: null })
+
+    expect(
+      screen.queryByRole('button', { name: 'Show contact profile' }),
+    ).toBeNull()
+    expect(screen.getAllByRole('button')).toHaveLength(1)
   })
 })

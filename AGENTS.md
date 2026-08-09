@@ -203,9 +203,27 @@ Use React Hook Form with Zod validation.
 
 Use Astryx (`@astryxdesign/core`) components when they fit the interaction, and Tailwind CSS utilities backed by the Astryx tokens (`bg-surface`, `text-primary`, …) for layout, spacing, and responsive behavior.
 
+**Search the library before you build a component.** If Astryx already ships
+the thing, use it — do not hand-roll a local equivalent. This applies to the
+small, easy-to-miss pieces as much as the obvious ones: key-value rows
+(`MetadataList` / `MetadataListItem`), chips and tags (`Badge`), empty states,
+labelled controls (`Field`, `FieldLabel`), lists, tooltips, skeletons.
+
+A local reimplementation is never neutral. It drifts from the system's spacing,
+type scale, and theme tokens; it silently drops the semantics the real component
+ships (`MetadataList` renders `dl`/`dt`/`dd`, not a stack of `div`s); it grows
+its own props over time; and nothing in CI will ever flag it. Write a local
+component only when the search genuinely comes up empty, or when the Astryx one
+cannot express the interaction — and record which of the two in a comment.
+
+```bash
+pnpm exec astryx search "<what you are about to build>"
+pnpm exec astryx component --list      # when the search misses
+```
+
 For component work:
 
-1. Discover with the Astryx CLI before writing UI: `pnpm exec astryx build "<idea>"`, then `astryx component <Name>` for the exact props. Do not guess APIs.
+1. Discover with the Astryx CLI before writing UI: `pnpm exec astryx search "<thing>"` and `pnpm exec astryx build "<idea>"`, then `astryx component <Name>` for the exact props. Do not guess APIs.
 2. Inspect current usage in this repository; check the installed package types when in doubt.
 3. Keep the CSS cascade-layer order in `src/styles.css` intact — Astryx component styles live in the `astryx-base` layer and break silently if Tailwind preflight is layered above them.
 4. The theme is `src/themes/neutral/neutralTheme.ts`, applied at runtime by `<Theme theme={neutralTheme}>` in `main.tsx`. It is the single source of truth for every token; there is no compiled `theme.css` and no build step after editing it. Never override `--color-*` tokens in `:root`. (`@astryxdesign/theme-neutral` is still a declared dependency but is imported nowhere.)

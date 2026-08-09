@@ -20,11 +20,12 @@ pnpm exec astryx <command>
 
 Before writing or changing UI:
 
-1. Run `pnpm exec astryx build "<idea>"` to discover the closest page, block, and component patterns.
-2. Run `pnpm exec astryx component <Name>` for the exact API of every Astryx component you intend to use. Do not guess props.
-3. Use `pnpm exec astryx template <name> [--skeleton]` when a returned page/block template is useful as reference or scaffolding.
-4. Inspect existing usage in the repository and the installed package types before introducing a new pattern.
-5. Read the relevant section of `DESIGN.md` before making visual or layout decisions.
+1. Run `pnpm exec astryx search "<thing>"` for every component you are about to write, before you write it. If Astryx ships it, use it rather than hand-rolling a local equivalent — see the rule in `AGENTS.md`. `pnpm exec astryx component --list` when the search misses.
+2. Run `pnpm exec astryx build "<idea>"` to discover the closest page, block, and component patterns.
+3. Run `pnpm exec astryx component <Name>` for the exact API of every Astryx component you intend to use. Do not guess props.
+4. Use `pnpm exec astryx template <name> [--skeleton]` when a returned page/block template is useful as reference or scaffolding.
+5. Inspect existing usage in the repository and the installed package types before introducing a new pattern.
+6. Read the relevant section of `DESIGN.md` before making visual or layout decisions.
 
 The installed CLI and package are authoritative. Do not hardcode the Astryx component count or duplicate version information here.
 
