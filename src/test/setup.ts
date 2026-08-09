@@ -4,7 +4,12 @@ import { afterEach, vi } from 'vitest'
 vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost:54321')
 vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-publishable-key')
 
-vi.stubGlobal('PointerEvent', MouseEvent)
+// jsdom implements `PointerEvent` from v28 on; the old `MouseEvent` stand-in
+// only existed because it did not, and it silently drops `pointerType`, which
+// hover/touch branches read.
+if (typeof PointerEvent === 'undefined') {
+  vi.stubGlobal('PointerEvent', MouseEvent)
+}
 
 if (typeof Element !== 'undefined') {
   Element.prototype.setPointerCapture = () => {}

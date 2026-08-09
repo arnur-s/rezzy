@@ -55,7 +55,6 @@ export type NotificationMessage = Pick<
 export type MessageNotificationDetails = {
   id: string
   workspaceId: string
-  workspaceName: string | null
   conversationId: string
   messageId: string
   createdAt: string

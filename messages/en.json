@@ -608,8 +608,17 @@
   "notifications_preview_audio": "Audio",
   "notifications_preview_document": "Document",
   "notifications_preview_sticker": "Sticker",
-  "notifications_open_thread": "Open thread",
-  "notifications_show_full_message": "Show full message",
+  "notifications_group_expand": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Show {count} more message",
+        "countPlural=*": "Show {count} more messages"
+      }
+    }
+  ],
+  "notifications_group_collapse": "Show fewer messages",
   "notifications_unread_count_aria": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],

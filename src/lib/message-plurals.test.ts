@@ -157,6 +157,21 @@ describe('ru counted messages agree with their number', () => {
       '21 диалог',
     )
   })
+
+  it('declines the notification group expand action', () => {
+    expect(m.notifications_group_expand({ count: 1 }, ru)).toBe(
+      'Показать ещё 1 сообщение',
+    )
+    expect(m.notifications_group_expand({ count: 2 }, ru)).toBe(
+      'Показать ещё 2 сообщения',
+    )
+    expect(m.notifications_group_expand({ count: 5 }, ru)).toBe(
+      'Показать ещё 5 сообщений',
+    )
+    expect(m.notifications_group_expand({ count: 21 }, ru)).toBe(
+      'Показать ещё 21 сообщение',
+    )
+  })
 })
 
 describe('en counted messages agree with their number', () => {

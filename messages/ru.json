@@ -638,8 +638,19 @@
   "notifications_preview_audio": "Аудио",
   "notifications_preview_document": "Документ",
   "notifications_preview_sticker": "Стикер",
-  "notifications_open_thread": "Открыть диалог",
-  "notifications_show_full_message": "Показать сообщение полностью",
+  "notifications_group_expand": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Показать ещё {count} сообщение",
+        "countPlural=few": "Показать ещё {count} сообщения",
+        "countPlural=many": "Показать ещё {count} сообщений",
+        "countPlural=*": "Показать ещё {count} сообщения"
+      }
+    }
+  ],
+  "notifications_group_collapse": "Свернуть сообщения",
   "notifications_unread_count_aria": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],

@@ -23,10 +23,9 @@ export type NotificationSource = Pick<
 export async function getMessageNotificationDetails(
   notification: NotificationSource,
 ): Promise<MessageNotificationDetails | null> {
-  const [conversation, message, workspaceName] = await Promise.all([
+  const [conversation, message] = await Promise.all([
     getConversationById(notification.conversation_id),
     getNotificationMessage(notification.message_id),
-    getWorkspaceName(notification.workspace_id),
   ])
 
   if (!conversation || !message) return null
@@ -34,7 +33,6 @@ export async function getMessageNotificationDetails(
   return {
     id: notification.id,
     workspaceId: notification.workspace_id,
-    workspaceName,
     conversationId: notification.conversation_id,
     messageId: notification.message_id,
     createdAt: notification.created_at,
@@ -54,15 +52,4 @@ async function getNotificationMessage(
 
   if (error || !data) return null
   return data
-}
-
-async function getWorkspaceName(workspaceId: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('id, name')
-    .eq('id', workspaceId)
-    .maybeSingle()
-
-  if (error || !data) return null
-  return data.name
 }
