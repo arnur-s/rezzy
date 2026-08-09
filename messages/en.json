@@ -714,6 +714,8 @@
   "inbox_shared_contact_unnamed": "Shared contact",
   "inbox_shared_contact_create": "Create contact",
   "inbox_shared_contact_open": "Open contact",
+  "inbox_shared_contact_add_phones": "Add to contact",
+  "inbox_shared_contact_phones_missing": "The contact does not have every number on this card.",
   "inbox_shared_contact_review": "Review match",
   "inbox_shared_contact_checking": "Checking contacts…",
   "inbox_shared_contact_lookup_failed": "Unable to check contacts",

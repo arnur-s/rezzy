@@ -59,6 +59,7 @@ const BUDGETS: Array<{ key: string; max: number; where: string }> = [
   { key: 'inbox_shared_contact_create', max: 24, where: 'shared contact card action' },
   { key: 'inbox_shared_contact_open', max: 24, where: 'shared contact card action' },
   { key: 'inbox_shared_contact_review', max: 24, where: 'shared contact card action' },
+  { key: 'inbox_shared_contact_add_phones', max: 24, where: 'shared contact card action' },
   { key: 'inbox_shared_contact_checking', max: 24, where: 'shared contact card action' },
   { key: 'inbox_shared_contact_copy_details', max: 24, where: 'shared contact card action' },
   { key: 'inbox_shared_contact_lookup_failed', max: 32, where: 'shared contact card status' },

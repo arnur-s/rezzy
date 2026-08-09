@@ -110,6 +110,26 @@ describe('shared contact card', () => {
     await page.context().close()
   })
 
+  it('offers to add a number the matched contact is missing', async () => {
+    const page = await openScenario('scenario=incomplete')
+
+    expect(await isVisible(page, 'Add to contact')).toBe(true)
+    expect(await isVisible(page, 'Open contact')).toBe(true)
+    // Two actions and a sentence, in a bubble as narrow as a phone's.
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1)
+    await page.context().close()
+  })
+
+  it('stays quiet when the contact already has every number', async () => {
+    const page = await openScenario('scenario=existing')
+
+    expect(await isVisible(page, 'Open contact')).toBe(true)
+    expect(
+      await page.getByRole('button', { name: 'Add to contact' }).count(),
+    ).toBe(0)
+    await page.context().close()
+  })
+
   it('asks the user to review several credible matches', async () => {
     const page = await openScenario('scenario=duplicate')
 
@@ -148,7 +168,13 @@ describe('shared contact card', () => {
 
   it('fits the Russian copy in a phone-width bubble', async () => {
     // The base locale, at the width where its longer strings break layout.
-    for (const scenario of ['unknown', 'existing', 'duplicate', 'ambiguous']) {
+    for (const scenario of [
+      'unknown',
+      'existing',
+      'incomplete',
+      'duplicate',
+      'ambiguous',
+    ]) {
       const page = await openScenario(`locale=ru&scenario=${scenario}`)
       expect(
         await horizontalOverflow(page),
