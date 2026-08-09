@@ -7,7 +7,7 @@ import { Avatar } from '@astryxdesign/core/Avatar'
 import { Badge } from '@astryxdesign/core/Badge'
 import type { ShowToastFn } from '@astryxdesign/core/Toast'
 import { BellIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type {
   MessageNotificationDetails,
   MessagePreviewMode,
@@ -64,7 +64,16 @@ function NotificationLine({
  * message never moves.
  */
 export function MessageNotification({ group, previewMode, onOpen }: Props) {
-  const [expanded, setExpanded] = useState(false)
+  // Hover opens the reveal region; a click pins it open or closed until the
+  // next pointer leave. This is tracked in state rather than via CSS
+  // `group-hover` because a pointer user is by definition hovering the toast
+  // when they reach the chip — `group-hover:` and a toggled utility class
+  // both target the same property, and twMerge keeps only one, so the hover
+  // variant would permanently win and the chip would have no visible effect.
+  const [hovered, setHovered] = useState(false)
+  const [pinned, setPinned] = useState<boolean | null>(null)
+  const open = pinned ?? hovered
+  const revealId = useId()
 
   const showContactVisuals = previewMode !== 'hidden'
   // A visible count would leak how many messages arrived, which is precisely
@@ -72,7 +81,10 @@ export function MessageNotification({ group, previewMode, onOpen }: Props) {
   const items = showContactVisuals ? group.items : group.items.slice(-1)
   const total = showContactVisuals ? group.total : 1
 
-  const newest = items[items.length - 1]
+  // `.at(-1)` (unlike index access) types as possibly `undefined` without
+  // relying on `noUncheckedIndexedAccess`, so the guard below isn't flagged
+  // as unreachable.
+  const newest = items.at(-1)
   if (!newest) return null
 
   const older = items.slice(0, -1)
@@ -103,21 +115,26 @@ export function MessageNotification({ group, previewMode, onOpen }: Props) {
   const revealClass = cn(
     'transition-[grid-template-rows] duration-200 ease-out',
     'motion-reduce:transition-none',
-    'grid grid-rows-[0fr] group-hover/toast:grid-rows-[1fr]',
-    expanded && 'grid-rows-[1fr]',
+    'grid grid-rows-[0fr]',
+    open && 'grid-rows-[1fr]',
   )
   const revealInnerClass = cn(
     'overflow-hidden opacity-0 transition-opacity duration-200 ease-out',
     'motion-reduce:transition-none',
-    'group-hover/toast:opacity-100',
-    expanded && 'opacity-100',
+    open && 'opacity-100',
   )
 
   return (
     <div
-      data-expanded={expanded}
+      data-expanded={open}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => {
+        setHovered(false)
+        // Clears any click-pinned override so the next hover starts fresh.
+        setPinned(null)
+      }}
       className={cn(
-        'group/toast relative flex w-full items-start gap-3',
+        'relative flex w-full items-start gap-3',
         listItemStyle.transition,
         // `:active` matches ancestors of the pressed button, so pressing the
         // overlay scales the whole row rather than an invisible rectangle.
@@ -168,13 +185,14 @@ export function MessageNotification({ group, previewMode, onOpen }: Props) {
           {hiddenCount > 0 ? (
             <button
               type="button"
-              aria-expanded={expanded}
+              aria-expanded={open}
+              aria-controls={older.length > 0 ? revealId : undefined}
               aria-label={
-                expanded
+                open
                   ? m.notifications_group_collapse()
                   : m.notifications_group_expand({ count: hiddenCount })
               }
-              onClick={() => setExpanded((value) => !value)}
+              onClick={() => setPinned(!open)}
               className={cn(
                 'pointer-events-auto relative z-10 shrink-0 cursor-pointer rounded-full outline-none',
                 listItemStyle.focus,
@@ -189,7 +207,7 @@ export function MessageNotification({ group, previewMode, onOpen }: Props) {
         </div>
 
         {older.length > 0 ? (
-          <div className={revealClass}>
+          <div id={revealId} aria-hidden={!open} className={revealClass}>
             <div className={revealInnerClass}>
               {older.map((item) => (
                 <NotificationLine
