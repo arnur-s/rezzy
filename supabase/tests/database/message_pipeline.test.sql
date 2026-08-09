@@ -7,11 +7,8 @@ insert into auth.users (id, email, raw_user_meta_data)
 values ('00000000-0000-4000-8000-0000000000a2', 'mp-tap@example.com',
         '{"full_name":"Message pipeline tap"}'::jsonb);
 
-set local role authenticated;
-set local request.jwt.claims =
-  '{"sub":"00000000-0000-4000-8000-0000000000a2","role":"authenticated"}';
-insert into public.workspaces (name, is_main) values ('MP WS', false);
-reset role;
+insert into public.workspaces (name, is_main, created_by)
+values ('MP WS', false, '00000000-0000-4000-8000-0000000000a2');
 
 insert into public.channels (id, workspace_id, type, name)
 values ('00000000-0000-4000-8000-0000000000b2',
