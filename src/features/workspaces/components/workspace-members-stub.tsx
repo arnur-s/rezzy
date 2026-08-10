@@ -78,6 +78,7 @@ function InviteByEmailStub() {
         <h3 className="text-sm font-medium">
           {m.workspace_settings_members_invite_title()}
         </h3>
+        <Badge variant="warning" label={m.channels_coming_soon()} />
       </div>
       <p className="text-secondary text-xs">
         {m.workspace_settings_members_invite_description()}

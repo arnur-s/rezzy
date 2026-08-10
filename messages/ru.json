@@ -124,7 +124,7 @@
   "workspace_settings_members_error_generic": "Не удалось выполнить действие. Попробуйте ещё раз",
   "workspace_settings_members_pending_title": "Ожидают ответа",
   "workspace_settings_members_pending_empty": "Нет приглашений, ожидающих ответа",
-  "workspace_settings_members_pending_invited_by": "Пригласил {name}",
+  "workspace_settings_members_pending_invited_by": "Приглашение от {name}",
   "workspace_settings_members_pending_revoke": "Отозвать",
   "workspace_settings_members_role_change_label": "Изменить роль",
   "workspace_settings_members_remove": "Удалить из пространства",
