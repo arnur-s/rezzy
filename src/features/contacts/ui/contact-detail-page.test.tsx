@@ -147,6 +147,35 @@ describe('ContactDetailPage merged redirect', () => {
     expect(showToast).not.toHaveBeenCalled()
   })
 
+  it('does not render not-found while resolve_merged_contact is still pending', async () => {
+    api.getWorkspaceContact.mockResolvedValue(null)
+    // Held open deliberately: `resolveMergedQuery` only enables after
+    // `getWorkspaceContact` comes back null, which every merged-URL visit
+    // does, so this in-flight window is the ordinary path, not an edge case.
+    // The not-found EmptyState must not render until it actually settles.
+    let resolveLookup: (survivorId: string | null) => void = () => {}
+    api.resolveMergedContact.mockImplementation(
+      () =>
+        new Promise<string | null>((resolve) => {
+          resolveLookup = resolve
+        }),
+    )
+
+    renderPage()
+
+    await waitFor(() =>
+      expect(api.resolveMergedContact).toHaveBeenCalledWith({
+        workspaceId: 'ws-1',
+        contactId: 'contact-1',
+      }),
+    )
+    expect(screen.queryByText('Contact not found')).toBeNull()
+
+    resolveLookup(null)
+
+    expect(await screen.findByText('Contact not found')).not.toBeNull()
+  })
+
   it('redirects to the survivor with replace, and toasts, once resolve_merged_contact names one', async () => {
     api.getWorkspaceContact.mockResolvedValue(null)
     api.resolveMergedContact.mockResolvedValue('contact-2')

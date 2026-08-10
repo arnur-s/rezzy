@@ -1,3 +1,4 @@
+import { useWorkspaceMemberDirectory } from '@/features/workspaces/hooks/use-workspaces'
 import { m } from '@/paraglide/messages'
 import type { LocalizedString } from '@/paraglide/runtime'
 import { Avatar } from '@astryxdesign/core/Avatar'
@@ -33,6 +34,34 @@ const FIELD_LABELS: Record<MergeFieldKey, () => string> = {
   source: () => m.contacts_merge_field_source(),
 }
 
+/**
+ * `owner_id` and `avatar_url` conflicts carry a uuid and a URL, neither of
+ * which a human can judge — the whole point of the two-step confirmation is
+ * naming a value someone can actually evaluate. This resolves both fields to
+ * something a person reads: a teammate's name for `owner_id`, looked up in
+ * the workspace roster; an `Avatar` preview for `avatar_url`, rendered by the
+ * caller instead of returned as text. Falls back to
+ * `contacts_merge_value_empty` when a name cannot be resolved yet (the
+ * roster is still loading) or at all (the member has left the workspace).
+ */
+function conflictValueLabel(
+  field: MergeFieldKey,
+  value: string | null,
+  memberNameById: Map<string, string>,
+): string {
+  if (field === 'owner_id') {
+    return (value ? memberNameById.get(value) : undefined) ??
+      m.contacts_merge_value_empty()
+  }
+  if (field === 'avatar_url') {
+    // The picker's own Avatar preview carries the visual; the text slot
+    // still needs a label, and the field name reads better here than
+    // repeating the URL would have.
+    return FIELD_LABELS.avatar_url()
+  }
+  return value ?? m.contacts_merge_value_empty()
+}
+
 type Props = {
   workspaceId: string
   /** Null closes the dialog; a pair opens it for those two contacts. */
@@ -66,6 +95,14 @@ export function MergeContactsDialog({
 }: Props) {
   const showToast = useToast()
   const merge = useMergeContacts(workspaceId)
+  const memberDirectory = useWorkspaceMemberDirectory(workspaceId)
+  const memberNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const member of memberDirectory.data ?? []) {
+      if (member.fullName) map.set(member.userId, member.fullName)
+    }
+    return map
+  }, [memberDirectory.data])
 
   const [survivorId, setSurvivorId] = useState<string | null>(null)
   const [choices, setChoices] = useState<
@@ -206,9 +243,7 @@ export function MergeContactsDialog({
           <Banner
             status="error"
             title={m.contacts_merge_clash_title()}
-            description={m.contacts_merge_clash_body({
-              channel: candidateLabel(merged),
-            })}
+            description={m.contacts_merge_clash_body()}
           />
         ) : isConfirming ? (
           <>
@@ -251,19 +286,55 @@ export function MergeContactsDialog({
                 List/ListItem rather than a hand-rolled <ul>: each row states
                 one already-self-describing sentence (the field name is
                 interpolated into the message itself), so no separate label
-                slot is needed beyond List's own marker and spacing. */}
+                slot is needed beyond List's own marker and spacing.
+
+                `owner_id` and `avatar_url` are the two fields whose raw value
+                is not something a human can judge — a uuid or a URL — so the
+                whole point of naming "the exact old and new value" collapses
+                unless they are resolved first: owner_id to the teammate's
+                name, avatar_url to an actual preview via startContent rather
+                than repeated as text. */}
             {overrides.length > 0 ? (
               <List listStyle="disc" density="compact">
-                {overrides.map((override) => (
-                  <ListItem
-                    key={override.field}
-                    label={m.contacts_merge_confirm_override({
-                      field: FIELD_LABELS[override.field](),
-                      before: override.survivorValue ?? '',
-                      after: override.mergedValue ?? '',
-                    })}
-                  />
-                ))}
+                {overrides.map((override) =>
+                  override.field === 'avatar_url' ? (
+                    <ListItem
+                      key={override.field}
+                      label={FIELD_LABELS.avatar_url()}
+                      startContent={
+                        <span className="flex items-center gap-1.5">
+                          <Avatar
+                            size="xsm"
+                            name={candidateLabel(survivor)}
+                            src={override.survivorValue ?? undefined}
+                          />
+                          <Avatar
+                            size="xsm"
+                            name={candidateLabel(merged)}
+                            src={override.mergedValue ?? undefined}
+                          />
+                        </span>
+                      }
+                    />
+                  ) : (
+                    <ListItem
+                      key={override.field}
+                      label={m.contacts_merge_confirm_override({
+                        field: FIELD_LABELS[override.field](),
+                        before: conflictValueLabel(
+                          override.field,
+                          override.survivorValue,
+                          memberNameById,
+                        ),
+                        after: conflictValueLabel(
+                          override.field,
+                          override.mergedValue,
+                          memberNameById,
+                        ),
+                      })}
+                    />
+                  ),
+                )}
               </List>
             ) : null}
           </>
@@ -316,11 +387,37 @@ export function MergeContactsDialog({
                   >
                     <RadioListItem
                       value="survivor"
-                      label={conflict.survivorValue ?? m.contacts_merge_value_empty()}
+                      label={conflictValueLabel(
+                        conflict.field,
+                        conflict.survivorValue,
+                        memberNameById,
+                      )}
+                      startContent={
+                        conflict.field === 'avatar_url' ? (
+                          <Avatar
+                            size="sm"
+                            name={candidateLabel(survivor)}
+                            src={conflict.survivorValue ?? undefined}
+                          />
+                        ) : undefined
+                      }
                     />
                     <RadioListItem
                       value="merged"
-                      label={conflict.mergedValue ?? m.contacts_merge_value_empty()}
+                      label={conflictValueLabel(
+                        conflict.field,
+                        conflict.mergedValue,
+                        memberNameById,
+                      )}
+                      startContent={
+                        conflict.field === 'avatar_url' ? (
+                          <Avatar
+                            size="sm"
+                            name={candidateLabel(merged)}
+                            src={conflict.mergedValue ?? undefined}
+                          />
+                        ) : undefined
+                      }
                     />
                   </RadioList>
                 ))}

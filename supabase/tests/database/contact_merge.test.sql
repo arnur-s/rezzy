@@ -1,6 +1,6 @@
 begin;
 
-select plan(32);
+select plan(40);
 
 -- Task 1 covers the columns, the merged-is-archived invariant, the restore
 -- refusal, the unarchive-on-inbound-message guard, and what
@@ -461,6 +461,130 @@ select is(
     where id = '80000000-0000-4000-8000-000000000504'),
   '80000000-0000-4000-8000-000000000404'::uuid,
   'the refused merge moved nothing: the whole statement rolled back'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Final review: merge never chains, tags union, last_seen_at
+-- ═══════════════════════════════════════════════════════════════════════════
+--
+-- 20260810090400 taught merge_contacts to repoint any contact that pointed at
+-- a survivor which is itself later merged away. Fixture numbering continues
+-- the …04 range above (…405 through …411), none of which carry conversations,
+-- so none of these merges can hit the channel-clash refusal.
+
+reset role;
+
+insert into public.contacts (id, workspace_id, name, source)
+values
+  ('80000000-0000-4000-8000-000000000405',
+   '80000000-0000-4000-8000-000000000201', 'Chain X', 'manual'),
+  ('80000000-0000-4000-8000-000000000406',
+   '80000000-0000-4000-8000-000000000201', 'Chain Y', 'manual'),
+  ('80000000-0000-4000-8000-000000000407',
+   '80000000-0000-4000-8000-000000000201', 'Chain Z', 'manual');
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000406',
+      '80000000-0000-4000-8000-000000000405')
+  $$,
+  'X merges into Y'
+);
+
+select lives_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000407',
+      '80000000-0000-4000-8000-000000000406')
+  $$,
+  'Y -- itself a survivor a moment ago -- merges into Z'
+);
+
+reset role;
+
+select is(
+  (select merged_into_id from public.contacts
+    where id = '80000000-0000-4000-8000-000000000405'),
+  '80000000-0000-4000-8000-000000000407'::uuid,
+  'merging Y into Z repoints X (merged into Y earlier) straight onto Z -- merge never chains'
+);
+
+-- ── tags: distinct union, with a duplicate tag on both sides ────────────────
+
+insert into public.contacts (id, workspace_id, name, source, tags, last_seen_at)
+values
+  ('80000000-0000-4000-8000-000000000408',
+   '80000000-0000-4000-8000-000000000201', 'Union Survivor', 'manual',
+   array['vip', 'longtime'], null),
+  ('80000000-0000-4000-8000-000000000409',
+   '80000000-0000-4000-8000-000000000201', 'Union Loser', 'manual',
+   array['vip', 'urgent'], '2026-01-01T00:00:00Z');
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000408',
+      '80000000-0000-4000-8000-000000000409')
+  $$,
+  'a merge where both sides share the "vip" tag'
+);
+
+reset role;
+
+select is(
+  (select tags from public.contacts
+    where id = '80000000-0000-4000-8000-000000000408'),
+  array['longtime', 'urgent', 'vip'],
+  'the survivor''s tags are the distinct union of both sides -- the shared "vip" is not duplicated'
+);
+
+select is(
+  (select last_seen_at from public.contacts
+    where id = '80000000-0000-4000-8000-000000000408'),
+  '2026-01-01T00:00:00Z'::timestamptz,
+  'last_seen_at fills in from the loser when the survivor was never seen'
+);
+
+-- ── last_seen_at: the later of the two, not simply the loser's ──────────────
+
+insert into public.contacts (id, workspace_id, name, source, last_seen_at)
+values
+  ('80000000-0000-4000-8000-000000000410',
+   '80000000-0000-4000-8000-000000000201', 'Recency Survivor', 'manual',
+   '2026-06-01T00:00:00Z'),
+  ('80000000-0000-4000-8000-000000000411',
+   '80000000-0000-4000-8000-000000000201', 'Recency Loser', 'manual',
+   '2026-01-01T00:00:00Z');
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000410',
+      '80000000-0000-4000-8000-000000000411')
+  $$,
+  'a merge where the survivor was already seen more recently than the loser'
+);
+
+reset role;
+
+select is(
+  (select last_seen_at from public.contacts
+    where id = '80000000-0000-4000-8000-000000000410'),
+  '2026-06-01T00:00:00Z'::timestamptz,
+  'the survivor''s more recent last_seen_at is not overwritten by the loser''s older one'
 );
 
 select * from finish();

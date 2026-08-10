@@ -93,9 +93,9 @@ export function DuplicateGroupCard({
               >
                 {contactListDisplayName(contact.display_name)}
               </Link>
-              {contact.phone || contact.email ? (
+              {contact.phone?.trim() || contact.email?.trim() ? (
                 <p className="text-secondary truncate text-xs">
-                  {contact.phone ?? contact.email}
+                  {contact.phone?.trim() || contact.email?.trim()}
                 </p>
               ) : null}
             </div>

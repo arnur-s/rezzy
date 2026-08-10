@@ -1021,7 +1021,7 @@
   "contacts_merge_confirm_irreversible": "This cannot be undone.",
   "contacts_merge_confirm_action": "Merge",
   "contacts_merge_clash_title": "These contacts cannot be merged",
-  "contacts_merge_clash_body": "Both have a conversation on \"{channel}\". Merging conversations is not supported yet.",
+  "contacts_merge_clash_body": "Both contacts have a conversation on the same channel. Merging conversations is not supported yet.",
   "contacts_merge_error": "Could not merge the contacts",
   "contacts_merge_error_not_admin": "Only the owner and admins can merge contacts",
   "contacts_merged_toast": "Contacts merged",

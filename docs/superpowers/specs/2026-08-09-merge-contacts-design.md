@@ -93,11 +93,15 @@ row survives soft-deleted with every scalar field untouched, `merged_into_id`
 records where it went, and `merged_at` / `merged_by` record when and by whom.
 Three columns replace a table.
 
-Chains are prevented rather than resolved: `merge_contacts` refuses a loser that
-already carries a `merged_into_id`, so `merged_into_id` always points at a
-contact that has not itself been merged, and the redirect in §7.4 is one hop, not
-a walk. The survivor may later be archived by ordinary means; §7.4 says what the
-redirect does then.
+Chains are prevented, not merely assumed away: `merge_contacts` refuses a loser
+that already carries a `merged_into_id` (so the same contact cannot be merged
+twice), and whenever a survivor is itself later merged away as someone else's
+loser — the ordinary workflow, not a race: merge A into B today, and next week
+the duplicates view offers {B, C} and someone merges B into C — `merge_contacts`
+repoints every contact that pointed at B onto C in the same transaction. So
+`merged_into_id` always points at a contact that has not itself been merged, and
+the redirect in §7.4 is one hop, not a walk. The survivor may later be archived
+by ordinary means; §7.4 says what the redirect does then.
 
 ### 4.2 What collides
 
@@ -141,6 +145,7 @@ Stated precisely, because it is the copy in the confirmation dialog and because
 |---|---|
 | Loser's scalar fields | **kept** — its archived row still holds them |
 | Loser's tags | **kept** on the loser; unioned onto the survivor |
+| Survivor's `last_seen_at` | **updated** to the later of the two — never a choice, and `GREATEST` ignores a null on either side |
 | Notes, conversations, channels, phones | **moved**, not deleted |
 | Loser phone rows dropped as exact digit duplicates | the survivor already holds that number; nothing is lost |
 | **Survivor's overwritten `name`, `email`, `owner_id`, `status`, `avatar_url`, `source`** | **destroyed** |
@@ -352,8 +357,11 @@ are filled silently. A fixed footer states what is always kept: phones, channels
 conversations, notes, and the union of tags. Its action button reads "Продолжить"
 and commits nothing.
 
-When the two contacts share a channel, the dialog says so, names the channel, and
-disables the action — the user never reaches a confirmation that would fail.
+When the two contacts share a channel, the dialog says so and disables the
+action — the user never reaches a confirmation that would fail. It does not name
+the channel: `merge_contacts` does not return that identity, so the client has
+nothing true to put there. The banner states the fact — both contacts have a
+conversation on the same channel — without pretending to know which one.
 
 **Step 2 — the confirmation.** The same dialog, its body replaced by a
 `Banner status="error"` and a `variant="destructive"` action button, describing
@@ -392,7 +400,7 @@ feature's usual invalidation and deliberately so.
 | Raised | Shown |
 |---|---|
 | `NOT_A_WORKSPACE_ADMIN` (42501) | the existing not-an-admin message |
-| `CONTACT_MERGE_CONVERSATION_CONFLICT` | a specific sentence naming the channel |
+| `CONTACT_MERGE_CONVERSATION_CONFLICT` | a specific sentence stating the clash, without naming the channel — `merge_contacts` does not return that identity |
 | `CONTACT_IS_MERGED` | only reachable if a stale archived list still shows Restore; a short "контакт объединён" |
 | anything else | the generic merge-failed message |
 

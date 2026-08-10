@@ -108,8 +108,9 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
 
   // `replace: true`: the merged id is gone for good and must not sit in
   // history for the back button to return to. One hop only — `merge_contacts`
-  // refuses a contact that already carries a `merged_into_id`, so the
-  // survivor cannot itself be merged and there is no chain to walk.
+  // repoints every contact that pointed at a survivor onto its new survivor
+  // whenever that survivor is itself later merged away, so `merged_into_id`
+  // never chains and this always resolves in a single hop.
   useEffect(() => {
     const survivorId = resolveMergedQuery.data
     if (!survivorId) return
@@ -177,6 +178,28 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   // belonging to another workspace resolves to null here rather than rendering
   // inside the wrong workspace's shell.
   if (!contact) {
+    // `resolveMergedQuery` only enables once `contactQuery` has already come
+    // back null, so every visit to a merged contact's URL passes through
+    // here first -- not an edge case, the ordinary path for every merged-URL
+    // visit. While that lookup is still pending, or has already found a
+    // survivor and the redirect effect above is about to navigate away, this
+    // is not "not found" and must not render as one: without this guard the
+    // EmptyState below flashes on 100% of merged-URL visits for the length
+    // of one round trip before the redirect fires.
+    if (resolveMergedQuery.isPending || resolveMergedQuery.data) {
+      return (
+        <div className="flex h-full flex-col">
+          <header className="border-border flex h-14 shrink-0 items-center border-b px-4">
+            {backLink}
+          </header>
+          <div className="flex flex-col gap-3 p-4">
+            <Skeleton width={180} height={20} radius={3} />
+            <Skeleton width="100%" height={96} radius={3} />
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="flex h-full flex-col">
         <header className="border-border flex h-14 shrink-0 items-center border-b px-4">

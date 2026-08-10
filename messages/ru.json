@@ -1064,7 +1064,7 @@
   "contacts_merge_confirm_irreversible": "Это действие нельзя отменить.",
   "contacts_merge_confirm_action": "Объединить",
   "contacts_merge_clash_title": "Эти контакты нельзя объединить",
-  "contacts_merge_clash_body": "У обоих есть диалог в канале «{channel}». Объединение таких диалогов пока не поддерживается.",
+  "contacts_merge_clash_body": "У обоих контактов есть диалог в одном и том же канале. Объединение таких диалогов пока не поддерживается.",
   "contacts_merge_error": "Не удалось объединить контакты",
   "contacts_merge_error_not_admin": "Объединять контакты могут только владелец и администраторы",
   "contacts_merged_toast": "Контакты объединены",

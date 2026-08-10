@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(10);
 
 -- The duplicate finder groups live contacts that share an exact identity key:
 -- normalized phone digits, a channel identity, or a lowercased email. It never
@@ -8,7 +8,7 @@ select plan(8);
 --
 -- Fixture numbering, 90000000 range, unused elsewhere:
 --   users …0101  workspaces …02{01,02}  channels …03{01,02}
---   contacts …04{01..06}  conversations …0501
+--   contacts …04{01..08}  conversations …0501  contact_channels …0701
 
 insert into auth.users (id, email, raw_user_meta_data)
 values ('90000000-0000-4000-8000-000000000101', 'dup-owner@example.com',
@@ -26,8 +26,15 @@ delete from public.workspace_members
 where workspace_id = '90000000-0000-4000-8000-000000000202';
 
 insert into public.channels (id, workspace_id, type, name, is_active)
-values ('90000000-0000-4000-8000-000000000301',
-        '90000000-0000-4000-8000-000000000201', 'telegram', 'Dup TG', true);
+values
+  ('90000000-0000-4000-8000-000000000301',
+   '90000000-0000-4000-8000-000000000201', 'telegram', 'Dup TG', true),
+  -- A second channel of the SAME type, for the channel-reason fixture below:
+  -- (channel_id, external_id) is globally unique, so the only way two live
+  -- contacts can share a channel identity is across two different channel
+  -- rows of one type -- one customer connected through two Telegram numbers.
+  ('90000000-0000-4000-8000-000000000302',
+   '90000000-0000-4000-8000-000000000201', 'telegram', 'Dup TG 2', true);
 
 insert into public.contacts (id, workspace_id, name, phone, email, source)
 values
@@ -52,11 +59,34 @@ values
   -- …406 is alone.
   ('90000000-0000-4000-8000-000000000406',
    '90000000-0000-4000-8000-000000000201', 'Один',
-   '+7 903 000-00-00', null, 'manual');
+   '+7 903 000-00-00', null, 'manual'),
+  -- …407/…408 share a channel identity (same channel_type + external_id)
+  -- across the two different telegram channel rows above -- the only
+  -- reason with a composed key, and the only one with no coverage before
+  -- this fixture. No overlapping phone or email, so they can only group
+  -- under 'channel'.
+  ('90000000-0000-4000-8000-000000000407',
+   '90000000-0000-4000-8000-000000000201', 'Channel A', null, null, 'telegram'),
+  ('90000000-0000-4000-8000-000000000408',
+   '90000000-0000-4000-8000-000000000201', 'Channel B', null, null, 'telegram');
 
 update public.contacts
 set deleted_at = now()
 where id = '90000000-0000-4000-8000-000000000405';
+
+insert into public.contact_channels
+  (id, contact_id, workspace_id, channel_id, channel_type, external_id, external_name)
+values
+  ('90000000-0000-4000-8000-000000000701',
+   '90000000-0000-4000-8000-000000000407',
+   '90000000-0000-4000-8000-000000000201',
+   '90000000-0000-4000-8000-000000000301',
+   'telegram', 'tg-shared-123', 'Channel A'),
+  ('90000000-0000-4000-8000-000000000702',
+   '90000000-0000-4000-8000-000000000408',
+   '90000000-0000-4000-8000-000000000201',
+   '90000000-0000-4000-8000-000000000302',
+   'telegram', 'tg-shared-123', 'Channel B');
 
 -- Two contacts in the other workspace sharing an email.
 insert into public.contacts (id, workspace_id, name, email, source)
@@ -88,8 +118,25 @@ set local request.jwt.claims =
 select is(
   (select count(*)::int from public.list_duplicate_contact_groups(
      '90000000-0000-4000-8000-000000000201')),
+  3,
+  'three groups: the phone/email pair, the email-only pair, and the channel pair'
+);
+
+select is(
+  (select match_reason from public.list_duplicate_contact_groups(
+     '90000000-0000-4000-8000-000000000201')
+    where '90000000-0000-4000-8000-000000000407' =
+          any (select (value ->> 'id')::uuid from jsonb_array_elements(contacts))),
+  'channel',
+  'two live contacts sharing a channel_type:external_id across two channel rows group under channel'
+);
+
+select is(
+  (select contact_count from public.list_duplicate_contact_groups(
+     '90000000-0000-4000-8000-000000000201')
+    where match_reason = 'channel'),
   2,
-  'two groups: the phone/email pair and the email-only pair'
+  'the channel group has exactly the two contacts sharing that identity'
 );
 
 select is(

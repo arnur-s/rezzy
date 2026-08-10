@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MergeCandidate } from './merge-candidate'
 import {
+  MERGE_FIELD_KEYS,
   defaultSurvivorId,
   mergeConflicts,
   mergeFields,
@@ -96,14 +97,7 @@ describe('mergeFields', () => {
     const merged = candidate({ id: 'm', name: 'Other', tags: ['vip'] })
 
     for (const key of Object.keys(mergeFields(survivor, merged, {}))) {
-      expect([
-        'name',
-        'email',
-        'owner_id',
-        'status',
-        'avatar_url',
-        'source',
-      ]).toContain(key)
+      expect(MERGE_FIELD_KEYS).toContain(key)
     }
   })
 })

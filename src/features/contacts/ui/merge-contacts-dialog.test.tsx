@@ -1,3 +1,4 @@
+import type { WorkspaceMember } from '@/entities/workspace'
 import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
@@ -15,15 +16,33 @@ type ChildrenQueryResult = {
 
 const merge = vi.fn()
 const childrenQuery = vi.fn<() => ChildrenQueryResult>()
+let workspaceMembers: Array<WorkspaceMember> = []
 
 vi.mock('../hooks/use-contact-merges', () => ({
   useMergeContacts: () => ({ mutate: merge, isPending: false }),
   useContactMergeChildren: () => childrenQuery(),
 }))
 
+vi.mock('@/features/workspaces/hooks/use-workspaces', () => ({
+  useWorkspaceMemberDirectory: () => ({ data: workspaceMembers }),
+}))
+
 vi.mock('@astryxdesign/core/Toast', () => ({
   useToast: () => vi.fn(),
 }))
+
+function member(patch: Partial<WorkspaceMember>): WorkspaceMember {
+  return {
+    userId: 'member-1',
+    role: 'member',
+    fullName: 'Member One',
+    avatarUrl: null,
+    jobTitle: null,
+    phone: null,
+    joinedAt: '2026-01-01T00:00:00Z',
+    ...patch,
+  }
+}
 
 function candidate(patch: Partial<MergeCandidate>): MergeCandidate {
   return {
@@ -94,6 +113,7 @@ describe('MergeContactsDialog', () => {
   beforeEach(() => {
     setLocale('en', { reload: false })
     vi.clearAllMocks()
+    workspaceMembers = []
   })
 
   it('offers a choice only for fields that actually disagree', () => {
@@ -290,6 +310,91 @@ describe('MergeContactsDialog', () => {
     const mergeButton = screen.getByRole('button', { name: /^Merge$/ })
     fireEvent.click(mergeButton)
     expect(merge).not.toHaveBeenCalled()
+  })
+
+  it('shows the clash banner without misnaming a channel after a contact', () => {
+    // merge_contacts does not return the conflicting channel's identity, so
+    // the banner must not repurpose a contact's own name as if it were one --
+    // the bug this guards was `contacts_merge_clash_body({ channel:
+    // candidateLabel(merged) })`, which read as "в канале «Иван Петров»".
+    merge.mockImplementation(
+      (
+        _input: unknown,
+        options: { onError: (error: { message: string }) => void },
+      ) => {
+        options.onError({ message: 'CONTACT_MERGE_CONVERSATION_CONFLICT' })
+      },
+    )
+
+    renderDialog([
+      candidate({ id: 'a', displayName: 'Иван Петров', conversationCount: 5 }),
+      candidate({ id: 'b', displayName: 'Anna Ivanova', conversationCount: 1 }),
+    ])
+
+    fireEvent.click(continueButton())
+    fireEvent.click(screen.getByRole('button', { name: /^Merge$/ }))
+
+    expect(screen.getByText(/cannot be merged/i)).not.toBeNull()
+    expect(screen.getByText(/same channel/i)).not.toBeNull()
+    expect(screen.queryByText(/Иван Петров/)).toBeNull()
+    expect(screen.queryByText(/Anna Ivanova/)).toBeNull()
+  })
+
+  it('resolves an owner_id conflict to the teammate\'s name, not the raw id', () => {
+    workspaceMembers = [
+      member({ userId: 'user-a', fullName: 'Alice Owner' }),
+      member({ userId: 'user-b', fullName: 'Bob Owner' }),
+    ]
+
+    renderDialog([
+      candidate({ id: 'a', displayName: 'A', ownerId: 'user-a' }),
+      candidate({ id: 'b', displayName: 'B', ownerId: 'user-b' }),
+    ])
+
+    const ownerGroup = screen.getByRole('radiogroup', { name: /Owner/ })
+    expect(
+      within(ownerGroup).getByRole('radio', { name: 'Alice Owner' }),
+    ).not.toBeNull()
+    expect(
+      within(ownerGroup).getByRole('radio', { name: 'Bob Owner' }),
+    ).not.toBeNull()
+    expect(screen.queryByText('user-a')).toBeNull()
+    expect(screen.queryByText('user-b')).toBeNull()
+  })
+
+  it('falls back to "Not set" when an owner_id conflict cannot be resolved to a name', () => {
+    // The roster loaded, but neither owner is in it -- a departed teammate,
+    // not a loading state.
+    workspaceMembers = [member({ userId: 'someone-else' })]
+
+    renderDialog([
+      candidate({ id: 'a', displayName: 'A', ownerId: 'user-a' }),
+      candidate({ id: 'b', displayName: 'B', ownerId: 'user-b' }),
+    ])
+
+    const ownerGroup = screen.getByRole('radiogroup', { name: /Owner/ })
+    expect(
+      within(ownerGroup).getAllByRole('radio', { name: 'Not set' }),
+    ).toHaveLength(2)
+  })
+
+  it('renders an avatar_url conflict as a photo preview, not a raw URL', () => {
+    renderDialog([
+      candidate({
+        id: 'a',
+        displayName: 'A',
+        avatarUrl: 'https://example.com/a.png',
+      }),
+      candidate({
+        id: 'b',
+        displayName: 'B',
+        avatarUrl: 'https://example.com/b.png',
+      }),
+    ])
+
+    const photoGroup = screen.getByRole('radiogroup', { name: /Photo/ })
+    expect(within(photoGroup).getAllByRole('radio')).toHaveLength(2)
+    expect(within(photoGroup).queryByText(/example\.com/)).toBeNull()
   })
 
   it('closes without calling merge when cancelled from the picker', () => {
