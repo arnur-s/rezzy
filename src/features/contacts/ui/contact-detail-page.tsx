@@ -25,7 +25,7 @@ import {
   MoreHorizontalIcon,
   UserRoundXIcon,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useContactConversations,
   useContactDetail,
@@ -84,8 +84,33 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   const membersQuery = useWorkspaceMemberDirectory(workspaceId)
   const { isAdmin } = useIsWorkspaceAdmin(workspaceId)
   const navigate = useNavigate()
+  const showToast = useToast()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isArchiveOpen, setIsArchiveOpen] = useState(false)
+
+  // A merged contact's own detail URL — a stale link, a bookmark, a stray
+  // back-navigation — resolves to its survivor instead of a dead end. Fires
+  // from the query's own data, as early as the data allows, rather than from
+  // an intermediate effect keyed on something derived: this route can stay
+  // mounted after `useMergeContacts` calls `removeQueries` on this same key
+  // (see that hook), and the next render would otherwise rebuild the removed
+  // query and refetch it before the redirect below has a chance to land.
+  //
+  // `replace: true`: the merged id is gone for good and must not sit in
+  // history for the back button to return to. One hop only — `merge_contacts`
+  // refuses a contact that already carries a `merged_into_id`, so the
+  // survivor cannot itself be merged and there is no chain to walk.
+  useEffect(() => {
+    const mergedInto = contactQuery.data?.merged_into_id
+    if (!mergedInto) return
+
+    showToast({ body: m.contact_detail_merged_redirect(), type: 'info' })
+    void navigate({
+      to: '/workspaces/$id/contacts/$contactId',
+      params: { id: workspaceId, contactId: mergedInto },
+      replace: true,
+    })
+  }, [contactQuery.data?.merged_into_id])
 
   const backLink = (
     <Link
@@ -154,6 +179,21 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
             description={m.contact_detail_not_found_description()}
           />
         </div>
+      </div>
+    )
+  }
+
+  // The effect above has already kicked off the redirect on this same commit.
+  // Rendering the full page here for one more frame would show a contact
+  // whose conversations, notes, phones and channels no longer belong to it —
+  // they moved to the survivor — so this renders only the shell until the
+  // navigation lands.
+  if (contact.merged_into_id) {
+    return (
+      <div className="flex h-full flex-col">
+        <header className="border-border flex h-14 shrink-0 items-center border-b px-4">
+          {backLink}
+        </header>
       </div>
     )
   }
