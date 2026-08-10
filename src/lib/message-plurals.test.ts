@@ -174,21 +174,36 @@ describe('ru counted messages agree with their number', () => {
   })
 
   it('declines the pending invitations indicator', () => {
-    expect(m.workspace_invitations_indicator_aria({ count: 1 }, ru)).toBe(
-      '1 приглашение',
-    )
-    expect(m.workspace_invitations_indicator_aria({ count: 2 }, ru)).toBe(
-      '2 приглашения',
-    )
-    expect(m.workspace_invitations_indicator_aria({ count: 5 }, ru)).toBe(
-      '5 приглашений',
-    )
-    expect(m.workspace_invitations_indicator_aria({ count: 11 }, ru)).toBe(
-      '11 приглашений',
-    )
-    expect(m.workspace_invitations_indicator_aria({ count: 21 }, ru)).toBe(
-      '21 приглашение',
-    )
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 1 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 1 приглашение')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 2 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 2 приглашения')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 5 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 5 приглашений')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 11 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 11 приглашений')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 21 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 21 приглашение')
   })
 })
 
@@ -214,11 +229,17 @@ describe('en counted messages agree with their number', () => {
   })
 
   it('declines the pending invitations indicator', () => {
-    expect(m.workspace_invitations_indicator_aria({ count: 1 }, en)).toBe(
-      '1 invitation',
-    )
-    expect(m.workspace_invitations_indicator_aria({ count: 3 }, en)).toBe(
-      '3 invitations',
-    )
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Gamma Ltd', count: 1 },
+        en,
+      ),
+    ).toBe('Gamma Ltd: 1 invitation')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Gamma Ltd', count: 3 },
+        en,
+      ),
+    ).toBe('Gamma Ltd: 3 invitations')
   })
 })

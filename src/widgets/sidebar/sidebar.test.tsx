@@ -7,7 +7,7 @@ import { setLocale } from '@/paraglide/runtime'
 import { createTestQueryClient, renderWithQueryClient } from '@/test/render'
 import type { User } from '@supabase/supabase-js'
 import { screen, waitFor } from '@testing-library/react'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sidebar } from './sidebar'
 
 vi.mock('@tanstack/react-router', async () => {
@@ -402,6 +402,48 @@ describe('Sidebar workspace switcher invitations indicator', () => {
       expect(
         screen.getByRole('button', { name: /Acme Sales.*2 invitations/ }),
       ).toBeTruthy()
+    })
+  })
+
+  // Russian takes three plural forms (one/few/many), and the whole sentence —
+  // separator included — is composed inside the catalogue now rather than
+  // joined with a literal in TypeScript. Pins the rendered accessible name
+  // itself, not just the message function in isolation, so a regression in
+  // how the trigger's `label` is built would fail here even if the catalogue
+  // entry were still correct.
+  describe('in Russian', () => {
+    beforeAll(() => {
+      setLocale('ru', { reload: false })
+    })
+
+    afterAll(() => {
+      setLocale('en', { reload: false })
+    })
+
+    it.each([
+      { count: 1, expected: 'Acme Sales: 1 приглашение' },
+      { count: 2, expected: 'Acme Sales: 2 приглашения' },
+      { count: 5, expected: 'Acme Sales: 5 приглашений' },
+    ])('names $count as "$expected"', async ({ count, expected }) => {
+      myInvitationsMock.mockReturnValue({
+        data: Array.from({ length: count }, (_, index) => ({
+          id: `inv-${index}`,
+          workspaceId: `ws-${index}`,
+          workspaceName: `Invite ${index}`,
+          workspaceIcon: null,
+          role: 'member',
+          invitedByName: 'Alex',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        })),
+        isPending: false,
+        isError: false,
+      })
+
+      renderSidebar()
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: expected })).toBeTruthy()
+      })
     })
   })
 })

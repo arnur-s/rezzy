@@ -145,11 +145,15 @@
   "workspace_invitations_toast_title": "Workspace invitation",
   "workspace_invitations_indicator_aria": [
     {
-      "declarations": ["input count", "local countPlural = count: plural"],
+      "declarations": [
+        "input workspace",
+        "input count",
+        "local countPlural = count: plural"
+      ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{count} invitation",
-        "countPlural=*": "{count} invitations"
+        "countPlural=one": "{workspace}: {count} invitation",
+        "countPlural=*": "{workspace}: {count} invitations"
       }
     }
   ],

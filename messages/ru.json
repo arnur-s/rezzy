@@ -145,13 +145,17 @@
   "workspace_invitations_toast_title": "Приглашение в пространство",
   "workspace_invitations_indicator_aria": [
     {
-      "declarations": ["input count", "local countPlural = count: plural"],
+      "declarations": [
+        "input workspace",
+        "input count",
+        "local countPlural = count: plural"
+      ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{count} приглашение",
-        "countPlural=few": "{count} приглашения",
-        "countPlural=many": "{count} приглашений",
-        "countPlural=*": "{count} приглашения"
+        "countPlural=one": "{workspace}: {count} приглашение",
+        "countPlural=few": "{workspace}: {count} приглашения",
+        "countPlural=many": "{workspace}: {count} приглашений",
+        "countPlural=*": "{workspace}: {count} приглашения"
       }
     }
   ],

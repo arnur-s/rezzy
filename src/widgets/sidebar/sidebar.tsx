@@ -426,19 +426,20 @@ function WorkspaceSwitcher({
       />
     ) : null
 
-  // Same join pattern as the contacts page's sort dropdown
-  // (`${m.contacts_sort_label()}: ${...}`): the trigger's `label` prop is both
-  // the accessible name (collapsed and expanded alike) and the collapsed
-  // tooltip text, so the counted phrase is appended there rather than left
-  // stranded in the badge's markup.
-  // Same join pattern as the contacts page's sort dropdown
-  // (`${m.contacts_sort_label()}: ${...}`): the trigger's `label` prop is both
-  // the accessible name (collapsed and expanded alike) and the collapsed
-  // tooltip text, so the counted phrase is appended there rather than left
-  // stranded in the badge's markup.
+  // The trigger's `label` prop is both the accessible name (collapsed and
+  // expanded alike) and the collapsed tooltip text, so the counted phrase
+  // belongs there rather than stranded in the badge's markup. The whole
+  // sentence — including the separator between the workspace name and the
+  // count — is composed inside the message catalogue via the `workspace`
+  // placeholder, not joined with a literal here: a hardcoded `": "` would be a
+  // typographic choice authored in TypeScript instead of the copy it actually
+  // is, and Russian and English do not have to agree on it.
   const triggerLabel =
     invitationCount > 0
-      ? `${label}: ${m.workspace_invitations_indicator_aria({ count: invitationCount })}`
+      ? m.workspace_invitations_indicator_aria({
+          workspace: label,
+          count: invitationCount,
+        })
       : label
 
   const button: DropdownMenuButtonProps = isCollapsed
