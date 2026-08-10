@@ -12,6 +12,9 @@ export const workspaceQueryKeys = {
     ['workspaces', 'members', workspaceId] as const,
   memberDirectory: (workspaceId: string) =>
     ['workspaces', 'member-directory', workspaceId] as const,
+  myInvitations: ['workspaces', 'my-invitations'] as const,
+  invitations: (workspaceId: string) =>
+    ['workspaces', 'invitations', workspaceId] as const,
 }
 
 export async function getUserWorkspaces() {
