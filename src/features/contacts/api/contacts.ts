@@ -1,5 +1,7 @@
 import type { ContactDetail, ContactListItem } from '@/entities/contact'
+import { callRpc } from '@/utils/supabase-rpc'
 import { supabase } from '@/utils/supabase'
+import { z } from 'zod'
 import { CONTACTS_PAGE_SIZE } from '../model/contact-list-params'
 import type { ContactListParams } from '../model/contact-list-params'
 
@@ -89,6 +91,36 @@ export async function getWorkspaceContact({
 
   if (error) throw error
   return data
+}
+
+/**
+ * The survivor a merged contact was folded into, or `null` for every other
+ * case (no such contact, a different workspace, an ordinary archived contact,
+ * a live one, or a caller with no membership in the workspace) — the RPC
+ * folds all of those into one indistinguishable `null` on purpose.
+ *
+ * Not part of `getWorkspaceContact`: the contacts SELECT policy hides a
+ * merged row from every ordinary query the instant it becomes one
+ * (`deleted_at is null` is in that policy for every caller,
+ * `contacts_merged_is_archived_check` means a merged row always carries a
+ * non-null `deleted_at`), so `getWorkspaceContact` can never see
+ * `merged_into_id` on the row this is meant to resolve. This calls the
+ * `SECURITY DEFINER` RPC that exists for exactly that hole. `callRpc`, not
+ * `supabase.rpc`, because the function is new enough that the generated types
+ * do not know it yet.
+ */
+export async function resolveMergedContact({
+  workspaceId,
+  contactId,
+}: {
+  workspaceId: string
+  contactId: string
+}): Promise<string | null> {
+  return callRpc(
+    'resolve_merged_contact',
+    { p_workspace_id: workspaceId, p_contact_id: contactId },
+    z.string().nullable(),
+  )
 }
 
 /**

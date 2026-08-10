@@ -1,12 +1,25 @@
 import type { ContactDetail } from '@/entities/contact'
 import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
-import { waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as UseContactsModule from '../hooks/use-contacts'
 import { ContactDetailPage } from './contact-detail-page'
 
 const navigate = vi.hoisted(() => vi.fn())
 const showToast = vi.hoisted(() => vi.fn())
+
+// Only the two RPC-backed calls the redirect actually depends on are mocked.
+// `useContactDetail` and `useResolveMergedContact` run for real, on top of
+// these, so the tests exercise the real gating — `resolveMergedContact` is
+// asked only once `getWorkspaceContact` has come back null — rather than a
+// data shape (`merged_into_id` present on a *found* contact) that RLS makes
+// impossible: the contacts SELECT policy hides a merged row from every
+// caller, so `getWorkspaceContact` can never return one.
+const api = vi.hoisted(() => ({
+  getWorkspaceContact: vi.fn(),
+  resolveMergedContact: vi.fn(),
+}))
 
 vi.mock('@tanstack/react-router', async () => {
   const actual = await vi.importActual('@tanstack/react-router')
@@ -36,23 +49,28 @@ vi.mock('@/features/workspaces/hooks/use-workspaces', () => ({
   useWorkspaceMemberDirectory: () => ({ data: [] }),
 }))
 
-const contactDetailQuery = vi.hoisted(() => ({
-  data: undefined as ContactDetail | undefined,
-  isPending: false,
-  isError: false,
-  isRefetching: false,
-  refetch: vi.fn(),
+vi.mock('../api/contacts', () => ({
+  getWorkspaceContact: api.getWorkspaceContact,
+  resolveMergedContact: api.resolveMergedContact,
 }))
 
-vi.mock('../hooks/use-contacts', () => ({
-  useContactDetail: () => contactDetailQuery,
-  useContactConversations: () => ({ data: [] }),
-  useContactPhones: () => ({ data: [] }),
-}))
+// Unrelated to the redirect; stubbed so the page's other queries don't need a
+// real API behind them. useContactDetail and useResolveMergedContact are
+// deliberately left real (see the comment on `api` above).
+vi.mock('../hooks/use-contacts', async () => {
+  const actual = await vi.importActual<typeof UseContactsModule>(
+    '../hooks/use-contacts',
+  )
+  return {
+    ...actual,
+    useContactConversations: () => ({ data: [] }),
+    useContactPhones: () => ({ data: [] }),
+  }
+})
 
-// This suite is only about the redirect effect at the top of the page, not
-// about the full detail view or its dialogs — those pull in auth, member
-// directory and form-schema machinery the redirect does not touch.
+// This suite is only about the redirect at the top of the page, not about the
+// full detail view or its dialogs — those pull in auth, member directory and
+// form-schema machinery the redirect does not touch.
 vi.mock('@/features/contact-notes', () => ({
   ContactNotesSection: () => null,
 }))
@@ -99,24 +117,39 @@ describe('ContactDetailPage merged redirect', () => {
   beforeEach(() => {
     setLocale('en', { reload: false })
     vi.clearAllMocks()
-    contactDetailQuery.data = undefined
-    contactDetailQuery.isPending = false
-    contactDetailQuery.isError = false
   })
 
-  it('does not redirect an ordinary, unmerged contact', async () => {
-    contactDetailQuery.data = contact()
+  it('never asks resolve_merged_contact for a contact the ordinary lookup already found', async () => {
+    api.getWorkspaceContact.mockResolvedValue(contact())
 
     renderPage()
 
-    // Give any stray effect a tick to fire before asserting its absence.
-    await waitFor(() => expect(contactDetailQuery.data).not.toBeUndefined())
+    expect(await screen.findByText('Jamie Rivera')).not.toBeNull()
+    expect(api.resolveMergedContact).not.toHaveBeenCalled()
     expect(navigate).not.toHaveBeenCalled()
     expect(showToast).not.toHaveBeenCalled()
   })
 
-  it('redirects to the survivor with replace, and toasts, when merged_into_id is set', async () => {
-    contactDetailQuery.data = contact({ merged_into_id: 'contact-2' })
+  it('renders not-found and does not redirect when the id resolves to nothing at all', async () => {
+    api.getWorkspaceContact.mockResolvedValue(null)
+    api.resolveMergedContact.mockResolvedValue(null)
+
+    renderPage()
+
+    await waitFor(() =>
+      expect(api.resolveMergedContact).toHaveBeenCalledWith({
+        workspaceId: 'ws-1',
+        contactId: 'contact-1',
+      }),
+    )
+    expect(await screen.findByText('Contact not found')).not.toBeNull()
+    expect(navigate).not.toHaveBeenCalled()
+    expect(showToast).not.toHaveBeenCalled()
+  })
+
+  it('redirects to the survivor with replace, and toasts, once resolve_merged_contact names one', async () => {
+    api.getWorkspaceContact.mockResolvedValue(null)
+    api.resolveMergedContact.mockResolvedValue('contact-2')
 
     renderPage()
 

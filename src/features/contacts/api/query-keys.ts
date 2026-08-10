@@ -84,6 +84,17 @@ export const contactQueryKeys = {
       'merge-children',
     ] as const,
   /**
+   * Whether this id, unreadable through `detail` because it is merged, has a
+   * survivor to redirect to. A sibling of `detail`, not a field on it — the
+   * detail page only asks this once `detail` has come back null, never
+   * alongside it.
+   */
+  mergedRedirect: (workspaceId: string, contactId: string) =>
+    [
+      ...contactQueryKeys.detail(workspaceId, contactId),
+      'merged-redirect',
+    ] as const,
+  /**
    * Identity lookups ("is this shared contact already in the CRM?"). Under the
    * workspace segment like everything else, so creating a contact invalidates
    * every open lookup in that workspace and none in another.
