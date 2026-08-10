@@ -408,19 +408,42 @@ function WorkspaceSwitcher({
   }
 
   const invitationCount = invitations.length
+  // Purely decorative: the count it would otherwise announce lives in
+  // `triggerLabel` below instead. Astryx `Button` computes its own
+  // `aria-label` from the `label` prop whenever the trigger is icon-only
+  // (collapsed) or is given custom `children` (expanded) — see `needsAriaLabel`
+  // in Button.js — and that computed `aria-label` wins over any accessible
+  // name nested content would otherwise contribute, including an `aria-label`
+  // on this span (which is also invalid here: `aria-label` has no effect on an
+  // element with no role). So the badge itself must stay out of the
+  // accessibility tree, and the count has to reach assistive tech through the
+  // one lever Button exposes for it.
   const invitationBadge =
     invitationCount > 0 ? (
       <span
         className="bg-error absolute top-0 right-0 size-2 rounded-full"
-        aria-label={m.workspace_invitations_indicator_aria({
-          count: invitationCount,
-        })}
+        aria-hidden
       />
     ) : null
 
+  // Same join pattern as the contacts page's sort dropdown
+  // (`${m.contacts_sort_label()}: ${...}`): the trigger's `label` prop is both
+  // the accessible name (collapsed and expanded alike) and the collapsed
+  // tooltip text, so the counted phrase is appended there rather than left
+  // stranded in the badge's markup.
+  // Same join pattern as the contacts page's sort dropdown
+  // (`${m.contacts_sort_label()}: ${...}`): the trigger's `label` prop is both
+  // the accessible name (collapsed and expanded alike) and the collapsed
+  // tooltip text, so the counted phrase is appended there rather than left
+  // stranded in the badge's markup.
+  const triggerLabel =
+    invitationCount > 0
+      ? `${label}: ${m.workspace_invitations_indicator_aria({ count: invitationCount })}`
+      : label
+
   const button: DropdownMenuButtonProps = isCollapsed
     ? {
-        label,
+        label: triggerLabel,
         variant: 'ghost',
         icon: (
           <span className="relative inline-flex">
@@ -429,10 +452,10 @@ function WorkspaceSwitcher({
           </span>
         ),
         isIconOnly: true,
-        tooltip: label,
+        tooltip: triggerLabel,
       }
     : {
-        label,
+        label: triggerLabel,
         variant: 'ghost',
         // Same handles as the account row: 8px inset instead of Button's 12px,
         // and the label span grown so the chevron pins to the trailing edge.
@@ -445,6 +468,10 @@ function WorkspaceSwitcher({
               {mark}
               {invitationBadge}
             </span>
+            {/* Plain workspace name, not `triggerLabel`: this is the visible
+                text, and the count is already carried by `button.label` above,
+                which Button uses for the accessible name instead of this
+                span's content. */}
             <span className="truncate font-medium">{label}</span>
           </span>
         ),

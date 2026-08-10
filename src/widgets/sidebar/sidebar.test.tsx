@@ -76,7 +76,10 @@ const workspace: Workspace = {
   updated_by: null,
 }
 
-function renderSidebar(profile?: UserProfile) {
+function renderSidebar(
+  profile?: UserProfile,
+  { isCollapsed = false }: { isCollapsed?: boolean } = {},
+) {
   const queryClient = createTestQueryClient()
 
   // Seeded rather than fetched: the account row reads the profile through the
@@ -86,7 +89,7 @@ function renderSidebar(profile?: UserProfile) {
   }
 
   return renderWithQueryClient(
-    <Sidebar isCollapsed={false} onCollapsedChange={() => {}} />,
+    <Sidebar isCollapsed={isCollapsed} onCollapsedChange={() => {}} />,
     { queryClient },
   )
 }
@@ -311,6 +314,94 @@ describe('Sidebar account row', () => {
         'img[src="https://cdn.example.com/me.png"]',
       )
       expect(image).not.toBeNull()
+    })
+  })
+})
+
+/**
+ * Astryx `Button` computes its own `aria-label` from the trigger's `label`
+ * prop whenever it is icon-only (collapsed) or given custom `children`
+ * (expanded), and that computed `aria-label` overrides whatever the badge
+ * span nested inside contributes — a bare `aria-label` on a role-less `span`
+ * has no effect on the accessible name either way. So these assert the
+ * trigger's own accessible name via `getByRole`, the thing a screen reader
+ * actually exposes, rather than probing the badge's DOM attributes: a version
+ * of this that only checked the badge markup stayed green through the exact
+ * regression the review caught.
+ */
+describe('Sidebar workspace switcher invitations indicator', () => {
+  beforeAll(() => {
+    setLocale('en')
+  })
+
+  beforeEach(() => {
+    authMock.user = {
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: '2026-07-26T00:00:00.000Z',
+      id: 'user-1',
+      user_metadata: { full_name: 'Ada Lovelace' },
+    }
+    workspacesMock.mockReturnValue({
+      data: [workspace],
+      isPending: false,
+      isError: false,
+    })
+    readinessMock.mockReturnValue({
+      hasActiveChannel: true,
+      isError: false,
+      isPending: false,
+      isRetrying: false,
+      refetch: vi.fn(),
+    })
+    myInvitationsMock.mockReturnValue({
+      data: [
+        {
+          id: 'inv-1',
+          workspaceId: 'ws-2',
+          workspaceName: 'Beta Inc',
+          workspaceIcon: null,
+          role: 'member',
+          invitedByName: 'Alex',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'inv-2',
+          workspaceId: 'ws-3',
+          workspaceName: 'Gamma LLC',
+          workspaceIcon: null,
+          role: 'admin',
+          invitedByName: 'Sam',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      isPending: false,
+      isError: false,
+    })
+    respondToInvitationMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      variables: undefined,
+    })
+  })
+
+  it('names the pending invitation count on the expanded trigger', async () => {
+    renderSidebar()
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Acme Sales.*2 invitations/ }),
+      ).toBeTruthy()
+    })
+  })
+
+  it('names the pending invitation count on the collapsed trigger', async () => {
+    renderSidebar(undefined, { isCollapsed: true })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Acme Sales.*2 invitations/ }),
+      ).toBeTruthy()
     })
   })
 })
