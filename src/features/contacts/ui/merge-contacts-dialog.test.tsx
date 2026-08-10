@@ -2,15 +2,23 @@ import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { MergeChildCounts } from '../api/contact-merges'
 import type { MergeCandidate } from '../model/merge-candidate'
 import { MergeContactsDialog } from './merge-contacts-dialog'
 
+/** The slice of `useQuery`'s result the component actually reads. */
+type ChildrenQueryResult = {
+  data: MergeChildCounts | undefined
+  isPending: boolean
+  isError: boolean
+}
+
 const merge = vi.fn()
-const childCounts = vi.fn()
+const childrenQuery = vi.fn<() => ChildrenQueryResult>()
 
 vi.mock('../hooks/use-contact-merges', () => ({
   useMergeContacts: () => ({ mutate: merge, isPending: false }),
-  useContactMergeChildren: () => ({ data: childCounts() }),
+  useContactMergeChildren: () => childrenQuery(),
 }))
 
 vi.mock('@astryxdesign/core/Toast', () => ({
@@ -35,16 +43,29 @@ function candidate(patch: Partial<MergeCandidate>): MergeCandidate {
   }
 }
 
-function renderDialog(
-  pair: [MergeCandidate, MergeCandidate],
-  overrides: { onMerged?: () => void; onOpenChange?: (open: boolean) => void } = {},
-) {
-  childCounts.mockReturnValue({
+const LOADED_CHILDREN: ChildrenQueryResult = {
+  data: {
     conversation_count: 2,
     note_count: 1,
     phone_count: 3,
     channel_count: 1,
-  })
+  },
+  isPending: false,
+  isError: false,
+}
+
+function renderDialog(
+  pair: [MergeCandidate, MergeCandidate],
+  overrides: {
+    onMerged?: () => void
+    onOpenChange?: (open: boolean) => void
+    children?: ChildrenQueryResult
+  } = {},
+) {
+  // Only supplies a default when the test hasn't already configured the
+  // counts query itself -- otherwise this would stomp the pending/error
+  // mocks a test sets up before calling renderDialog.
+  childrenQuery.mockReturnValue(overrides.children ?? LOADED_CHILDREN)
 
   return renderWithQueryClient(
     <MergeContactsDialog
@@ -173,6 +194,16 @@ describe('MergeContactsDialog', () => {
     ])
 
     fireEvent.click(continueButton())
+
+    // 'name' is a real, two-sided conflict here (Иван vs Ivan) -- it is only
+    // *not* switched. The most plausible way to break the override-omission
+    // rule is to drop the `choices[field] === 'merged'` filter entirely, which
+    // would render an override sentence for every conflict regardless of what
+    // was chosen. A pair with no conflicts at all (as in the sibling test)
+    // would not catch that: this one does, because a conflict genuinely
+    // exists and is deliberately left on the survivor's own value.
+    expect(screen.queryByText(/will be replaced with/)).toBeNull()
+
     fireEvent.click(screen.getByRole('button', { name: /^Merge$/ }))
 
     await waitFor(() => expect(merge).toHaveBeenCalledTimes(1))
@@ -219,6 +250,46 @@ describe('MergeContactsDialog', () => {
 
     expect(screen.getByText(/conversation/)).not.toBeNull()
     expect(screen.queryByText(/phone number/)).toBeNull()
+  })
+
+  it('states that the counts are still loading, and keeps Merge disabled', () => {
+    renderDialog(
+      [
+        candidate({ id: 'a', displayName: 'A', conversationCount: 5 }),
+        candidate({ id: 'b', displayName: 'B', conversationCount: 1 }),
+      ],
+      { children: { data: undefined, isPending: true, isError: false } },
+    )
+
+    fireEvent.click(continueButton())
+
+    expect(screen.getByText(/Checking what will move/)).not.toBeNull()
+    // Neither the "still loading" fact nor a stale zero must be confused with
+    // "this contact has nothing to move".
+    expect(screen.queryByText(/conversation/)).toBeNull()
+
+    const mergeButton = screen.getByRole('button', { name: /^Merge$/ })
+    fireEvent.click(mergeButton)
+    expect(merge).not.toHaveBeenCalled()
+  })
+
+  it('states that the counts failed to load, and keeps Merge disabled', () => {
+    renderDialog(
+      [
+        candidate({ id: 'a', displayName: 'A', conversationCount: 5 }),
+        candidate({ id: 'b', displayName: 'B', conversationCount: 1 }),
+      ],
+      { children: { data: undefined, isPending: false, isError: true } },
+    )
+
+    fireEvent.click(continueButton())
+
+    expect(screen.getByText(/Could not check what will move/)).not.toBeNull()
+    expect(screen.queryByText(/conversation/)).toBeNull()
+
+    const mergeButton = screen.getByRole('button', { name: /^Merge$/ })
+    fireEvent.click(mergeButton)
+    expect(merge).not.toHaveBeenCalled()
   })
 
   it('closes without calling merge when cancelled from the picker', () => {

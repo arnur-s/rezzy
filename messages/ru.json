@@ -1042,7 +1042,23 @@
   "contacts_merge_back": "Назад",
   "contacts_merge_confirm_title": "Объединить контакты?",
   "contacts_merge_confirm_body": "«{merged}» будет объединён с «{survivor}» и отправлен в архив.",
-  "contacts_merge_confirm_moves": "Перейдут к «{survivor}»: {summary}.",
+  "contacts_merge_confirm_moves": [
+    {
+      "declarations": [
+        "input count",
+        "input survivor",
+        "input summary",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Перейдёт к «{survivor}»: {summary}.",
+        "countPlural=*": "Перейдут к «{survivor}»: {summary}."
+      }
+    }
+  ],
+  "contacts_merge_moves_pending": "Проверяем, что перейдёт…",
+  "contacts_merge_moves_error": "Не удалось проверить, что перейдёт",
   "contacts_merge_confirm_override": "{field}: «{before}» будет заменено на «{after}».",
   "contacts_merge_confirm_irreversible": "Это действие нельзя отменить.",
   "contacts_merge_confirm_action": "Объединить",

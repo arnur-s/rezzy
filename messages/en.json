@@ -999,7 +999,23 @@
   "contacts_merge_back": "Back",
   "contacts_merge_confirm_title": "Merge these contacts?",
   "contacts_merge_confirm_body": "\"{merged}\" will be merged into \"{survivor}\" and archived.",
-  "contacts_merge_confirm_moves": "Moving to \"{survivor}\": {summary}.",
+  "contacts_merge_confirm_moves": [
+    {
+      "declarations": [
+        "input count",
+        "input survivor",
+        "input summary",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Moving to \"{survivor}\": {summary}.",
+        "countPlural=*": "Moving to \"{survivor}\": {summary}."
+      }
+    }
+  ],
+  "contacts_merge_moves_pending": "Checking what will move…",
+  "contacts_merge_moves_error": "Could not check what will move",
   "contacts_merge_confirm_override": "{field}: \"{before}\" will be replaced with \"{after}\".",
   "contacts_merge_confirm_irreversible": "This cannot be undone.",
   "contacts_merge_confirm_action": "Merge",

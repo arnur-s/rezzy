@@ -123,7 +123,7 @@ export function MergeContactsDialog({
   // count this sentence cannot back up, the phone clause is left out of the
   // "moving to X" summary entirely.
   const counts = children.data
-  const movesSummary = counts
+  const movingItems = counts
     ? [
         counts.conversation_count > 0 &&
           m.contacts_merge_moves_conversations({
@@ -133,13 +133,27 @@ export function MergeContactsDialog({
           m.contacts_merge_moves_channels({ count: counts.channel_count }),
         counts.note_count > 0 &&
           m.contacts_merge_moves_notes({ count: counts.note_count }),
-      ]
-        .filter((part): part is LocalizedString => typeof part === 'string')
-        .join(' · ')
-    : ''
+      ].filter((part): part is LocalizedString => typeof part === 'string')
+    : []
+  const movesSummary = movingItems.join(' · ')
+  // Drives the verb, not a noun: a compound subject ("1 conversation and 1
+  // channel") takes the plural verb in Russian even though each part is
+  // individually singular, so this is the total count of moving items, not
+  // the number of categories in the summary. Only a total of exactly 1 -- one
+  // category, one item -- is grammatically singular ("Перейдёт").
+  const movingTotal =
+    (counts?.conversation_count ?? 0) +
+    (counts?.channel_count ?? 0) +
+    (counts?.note_count ?? 0)
+
+  // A pending or failed counts fetch must not render like "this contact has
+  // nothing to move" -- all three are different facts, and the destructive
+  // action must not stay enabled while the confirmation cannot yet state (or
+  // failed to state) what it commits to.
+  const countsUnresolved = children.isPending || children.isError
 
   function confirmMerge() {
-    if (merge.isPending || !survivor || !merged) return
+    if (merge.isPending || countsUnresolved || !survivor || !merged) return
 
     merge.mutate(
       { survivorId: survivor.id, mergedId: merged.id, fields },
@@ -211,9 +225,21 @@ export function MergeContactsDialog({
               })}
             />
 
-            {movesSummary ? (
+            {/* Three distinct facts, three distinct lines: loading, failed,
+              and "loaded, nothing to move" must not collapse into the same
+              blank space while the destructive button sits live below. */}
+            {children.isPending ? (
+              <p className="text-secondary text-xs">
+                {m.contacts_merge_moves_pending()}
+              </p>
+            ) : children.isError ? (
+              <p className="text-error text-xs">
+                {m.contacts_merge_moves_error()}
+              </p>
+            ) : movesSummary ? (
               <p className="text-secondary text-xs">
                 {m.contacts_merge_confirm_moves({
+                  count: movingTotal,
                   survivor: candidateLabel(survivor),
                   summary: movesSummary,
                 })}
@@ -320,6 +346,7 @@ export function MergeContactsDialog({
             variant="destructive"
             onClick={confirmMerge}
             isLoading={merge.isPending}
+            isDisabled={countsUnresolved}
           />
         ) : (
           <Button
