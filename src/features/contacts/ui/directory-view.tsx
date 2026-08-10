@@ -61,9 +61,24 @@ export function DirectoryView({
   // A page, filter or sort change swaps the row set out from under a pick —
   // without this the toolbar could keep reporting "2 selected" for ids that
   // are no longer on screen and whose checkboxes are nowhere to be seen.
+  //
+  // Depends on the primitive fields rather than on `params` itself: the route
+  // builds that object as a fresh literal on every render of `RouteComponent`
+  // (`contacts/index.tsx`), so an identity-based dependency would clear the
+  // selection on any ancestor re-render with the same logical params — e.g.
+  // opening the "Add contact" dialog, which touches unrelated state one level
+  // up. Arrays are joined to a stable string for the same reason.
   useEffect(() => {
     setSelected([])
-  }, [params])
+  }, [
+    params.page,
+    params.query,
+    params.sort,
+    params.includeUnowned,
+    params.statuses.join(','),
+    params.tags.join(','),
+    params.ownerIds.join(','),
+  ])
 
   function toggleSelected(contactId: string) {
     setSelected((current) => {

@@ -218,6 +218,38 @@ describe('DirectoryView selection', () => {
     expect(screen.queryByText(/selected/)).toBeNull()
   })
 
+  it('keeps the selection across a re-render carrying the same logical params', () => {
+    // The route builds `params` as a fresh object literal on every render of
+    // its own component (see `contacts/index.tsx`), so an ancestor re-render
+    // unrelated to the list — opening the "Add contact" dialog, for one —
+    // produces a new `params` reference with identical field values. A
+    // selection-clearing effect keyed on that object's identity would wipe
+    // the pick here even though nothing about the row set actually changed;
+    // one keyed on the primitive fields must not.
+    const { rerender } = renderDirectory([contact('a'), contact('b')])
+
+    fireEvent.click(checkboxFor('Contact a'))
+    fireEvent.click(checkboxFor('Contact b'))
+    expect(screen.getByText('2 contacts selected')).not.toBeNull()
+
+    rerender(
+      <DirectoryView
+        workspaceId="ws-1"
+        query={queryState([contact('a'), contact('b')])}
+        params={{ ...EMPTY_CONTACT_LIST_PARAMS }}
+        ownerNameById={new Map()}
+        canMerge
+        onParamsChange={vi.fn()}
+        onClearFilters={vi.fn()}
+        onCreate={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('2 contacts selected')).not.toBeNull()
+    expect(checkboxFor('Contact a').checked).toBe(true)
+    expect(checkboxFor('Contact b').checked).toBe(true)
+  })
+
   it('clears the selection once a merge succeeds', async () => {
     renderDirectory([contact('a'), contact('b')])
 
