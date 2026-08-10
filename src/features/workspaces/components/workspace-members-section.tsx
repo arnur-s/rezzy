@@ -359,7 +359,9 @@ function MemberRow({
            * is enough.
            */}
           <Selector
-            label={m.workspace_settings_members_role_change_label()}
+            label={m.workspace_settings_members_role_change_label({
+              name: displayName,
+            })}
             isLabelHidden
             size="sm"
             value={member.role}
@@ -372,14 +374,24 @@ function MemberRow({
             disabledMessage={isLastOwner ? lastOwnerHint : undefined}
           />
           <MoreMenu
-            label={m.workspace_settings_members_remove()}
+            label={m.workspace_settings_members_row_actions_label({
+              name: displayName,
+            })}
             size="sm"
             items={[
-              {
-                label: m.workspace_settings_members_remove(),
-                onClick: handleRemove,
-                isDisabled: isLastOwner || removeMember.isPending,
-              },
+              // `DropdownMenuItemData` has no message slot (no
+              // `disabledMessage`, unlike `Selector`/`TextInput`), so a
+              // greyed-out "Remove from workspace" item would explain
+              // nothing once opened. For the last owner, the item's own
+              // label *becomes* the reason instead of the action — the only
+              // way this control can tell a user why it is inert.
+              isLastOwner
+                ? { label: lastOwnerHint, isDisabled: true }
+                : {
+                    label: m.workspace_settings_members_remove(),
+                    onClick: handleRemove,
+                    isDisabled: removeMember.isPending,
+                  },
             ]}
           />
         </>
