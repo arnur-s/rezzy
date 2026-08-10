@@ -172,6 +172,24 @@ describe('ru counted messages agree with their number', () => {
       'Показать ещё 21 сообщение',
     )
   })
+
+  it('declines the pending invitations indicator', () => {
+    expect(m.workspace_invitations_indicator_aria({ count: 1 }, ru)).toBe(
+      '1 приглашение',
+    )
+    expect(m.workspace_invitations_indicator_aria({ count: 2 }, ru)).toBe(
+      '2 приглашения',
+    )
+    expect(m.workspace_invitations_indicator_aria({ count: 5 }, ru)).toBe(
+      '5 приглашений',
+    )
+    expect(m.workspace_invitations_indicator_aria({ count: 11 }, ru)).toBe(
+      '11 приглашений',
+    )
+    expect(m.workspace_invitations_indicator_aria({ count: 21 }, ru)).toBe(
+      '21 приглашение',
+    )
+  })
 })
 
 describe('en counted messages agree with their number', () => {
@@ -192,6 +210,15 @@ describe('en counted messages agree with their number', () => {
     )
     expect(m.home_attention_showing_top({ count: 10, total: 42 }, en)).toBe(
       'Showing the 10 most urgent of 42',
+    )
+  })
+
+  it('declines the pending invitations indicator', () => {
+    expect(m.workspace_invitations_indicator_aria({ count: 1 }, en)).toBe(
+      '1 invitation',
+    )
+    expect(m.workspace_invitations_indicator_aria({ count: 3 }, en)).toBe(
+      '3 invitations',
     )
   })
 })

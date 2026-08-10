@@ -22,8 +22,6 @@ function getRoleLabel(role: string) {
       return m.workspace_settings_members_role_admin()
     case 'member':
       return m.workspace_settings_members_role_member()
-    case 'viewer':
-      return m.workspace_settings_members_role_viewer()
     default:
       return role
   }
@@ -80,10 +78,6 @@ function InviteByEmailStub() {
         <h3 className="text-sm font-medium">
           {m.workspace_settings_members_invite_title()}
         </h3>
-        <Badge
-          variant="warning"
-          label={m.workspace_settings_members_invite_coming_soon()}
-        />
       </div>
       <p className="text-secondary text-xs">
         {m.workspace_settings_members_invite_description()}

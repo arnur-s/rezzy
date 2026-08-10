@@ -27,7 +27,7 @@ export type ProfileIdentityInput = {
   timezone: string | null
 }
 
-export const WORKSPACE_ROLES = ['owner', 'admin', 'member', 'viewer'] as const
+export const WORKSPACE_ROLES = ['owner', 'admin', 'member'] as const
 export type WorkspaceRole = (typeof WORKSPACE_ROLES)[number]
 
 export function isWorkspaceRole(value: string): value is WorkspaceRole {

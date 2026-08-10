@@ -6,7 +6,6 @@ const ROLE_LABELS: Record<WorkspaceMemberRole, () => string> = {
   owner: () => m.workspace_settings_members_role_owner(),
   admin: () => m.workspace_settings_members_role_admin(),
   member: () => m.workspace_settings_members_role_member(),
-  viewer: () => m.workspace_settings_members_role_viewer(),
 }
 
 /**

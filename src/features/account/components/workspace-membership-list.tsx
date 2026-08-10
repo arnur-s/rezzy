@@ -15,8 +15,6 @@ function roleLabel(role: string) {
       return m.workspace_settings_members_role_admin()
     case 'member':
       return m.workspace_settings_members_role_member()
-    case 'viewer':
-      return m.workspace_settings_members_role_viewer()
     default:
       return role
   }

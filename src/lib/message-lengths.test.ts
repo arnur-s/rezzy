@@ -63,6 +63,9 @@ const BUDGETS: Array<{ key: string; max: number; where: string }> = [
   { key: 'inbox_shared_contact_checking', max: 24, where: 'shared contact card action' },
   { key: 'inbox_shared_contact_copy_details', max: 24, where: 'shared contact card action' },
   { key: 'inbox_shared_contact_lookup_failed', max: 32, where: 'shared contact card status' },
+  // The invite form's role selector puts every option on one row.
+  { key: 'workspace_settings_members_role_admin', max: 16, where: 'invite role selector' },
+  { key: 'workspace_settings_members_role_member', max: 16, where: 'invite role selector' },
 ]
 
 describe('strings inside fixed-width controls stay within budget', () => {
