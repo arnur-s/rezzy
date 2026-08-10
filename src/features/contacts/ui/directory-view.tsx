@@ -115,41 +115,49 @@ export function DirectoryView({
   return (
     <>
       {selected.length > 0 ? (
-        <Toolbar
-          label={m.contacts_merge_selected({ count: selected.length })}
-          size="sm"
-          variant="muted"
-          dividers={['bottom']}
-          startContent={
-            <>
+        <>
+          {/* Count and actions share one row, matching what the exactly-two
+              state already renders cleanly. The hint is NOT a third item in
+              this row — Russian's hint copy ("Выберите ровно два контакта,
+              чтобы объединить их.") is long enough on its own that packing it
+              alongside two buttons at a 375px viewport squeezed the row until
+              "Снять выделение" clipped at the edge. Below two selected it
+              renders as its own full-width line instead, free to wrap without
+              taking space from the buttons. */}
+          <Toolbar
+            label={m.contacts_merge_selected({ count: selected.length })}
+            size="sm"
+            variant="muted"
+            dividers={selected.length < MAX_SELECTED ? [] : ['bottom']}
+            startContent={
               <span className="text-primary text-xs font-medium">
                 {m.contacts_merge_selected({ count: selected.length })}
               </span>
-              {selected.length < MAX_SELECTED ? (
-                <span className="text-secondary text-xs">
-                  {m.contacts_merge_selection_hint()}
-                </span>
-              ) : null}
-            </>
-          }
-          endContent={
-            <>
-              <Button
-                label={m.contacts_duplicates_merge_action()}
-                size="sm"
-                variant="secondary"
-                isDisabled={selected.length !== MAX_SELECTED}
-                onClick={openMergeForSelection}
-              />
-              <Button
-                label={m.contacts_merge_selection_clear()}
-                size="sm"
-                variant="ghost"
-                onClick={clearSelection}
-              />
-            </>
-          }
-        />
+            }
+            endContent={
+              <>
+                <Button
+                  label={m.contacts_duplicates_merge_action()}
+                  size="sm"
+                  variant="secondary"
+                  isDisabled={selected.length !== MAX_SELECTED}
+                  onClick={openMergeForSelection}
+                />
+                <Button
+                  label={m.contacts_merge_selection_clear()}
+                  size="sm"
+                  variant="ghost"
+                  onClick={clearSelection}
+                />
+              </>
+            }
+          />
+          {selected.length < MAX_SELECTED ? (
+            <p className="bg-muted text-secondary border-border border-b px-3 py-1.5 text-xs">
+              {m.contacts_merge_selection_hint()}
+            </p>
+          ) : null}
+        </>
       ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
