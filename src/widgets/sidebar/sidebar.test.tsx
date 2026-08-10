@@ -50,6 +50,18 @@ vi.mock('@/features/channels/hooks/use-channels', () => ({
   useWorkspaceReadiness: () => readinessMock(),
 }))
 
+// The switcher's invitation section and indicator dot read this query;
+// InvitationResponseDialog (a sibling of the menu, always mounted) reads the
+// mutation. Neither is under test here, so both default to an empty/idle
+// state and individual tests override only what they need.
+const myInvitationsMock = vi.hoisted(() => vi.fn())
+const respondToInvitationMock = vi.hoisted(() => vi.fn())
+
+vi.mock('@/features/workspaces/hooks/use-workspace-membership', () => ({
+  useMyInvitations: () => myInvitationsMock(),
+  useRespondToInvitation: () => respondToInvitationMock(),
+}))
+
 const workspace: Workspace = {
   created_at: '2026-07-26T00:00:00.000Z',
   created_by: 'user-1',
@@ -123,6 +135,16 @@ describe('Sidebar inbox item', () => {
       isPending: false,
       isRetrying: false,
       refetch: vi.fn(),
+    })
+    myInvitationsMock.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    })
+    respondToInvitationMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      variables: undefined,
     })
   })
 
@@ -249,6 +271,16 @@ describe('Sidebar account row', () => {
       isPending: false,
       isRetrying: false,
       refetch: vi.fn(),
+    })
+    myInvitationsMock.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    })
+    respondToInvitationMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      variables: undefined,
     })
   })
 
