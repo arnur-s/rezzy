@@ -1,3 +1,4 @@
+import type { WorkspaceInvitation } from '@/features/workspaces/api/workspace-membership'
 import type { WorkspaceInvitationRow } from '@/features/notifications/model/types'
 import { m } from '@/paraglide/messages'
 import { setLocale } from '@/paraglide/runtime'
@@ -7,6 +8,7 @@ import { isValidElement } from 'react'
 import type { ReactElement } from 'react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  findInvitationWorkspaceName,
   invitationPresentationKey,
   shouldPresentInvitation,
   showInvitationNotificationToast,
@@ -29,6 +31,8 @@ const INVITATION_ROW: WorkspaceInvitationRow = {
   resolved_at: null,
   resolved_by: null,
 }
+
+const WORKSPACE_NAME = 'Gamma Ltd'
 
 const useRespondToInvitationMock = vi.hoisted(() => vi.fn())
 vi.mock('@/features/workspaces/hooks/use-workspace-membership', () => ({
@@ -71,6 +75,35 @@ describe('shouldPresentInvitation', () => {
   })
 })
 
+const INVITATIONS: Array<WorkspaceInvitation> = [
+  {
+    id: 'inv-1',
+    workspaceId: 'ws-1',
+    workspaceName: 'Gamma Ltd',
+    workspaceIcon: null,
+    role: 'member',
+    invitedByName: null,
+    createdAt: '2026-08-09T10:00:00Z',
+  },
+]
+
+describe('findInvitationWorkspaceName', () => {
+  it('finds the matching invitation by id', () => {
+    expect(findInvitationWorkspaceName(INVITATIONS, 'inv-1')).toBe('Gamma Ltd')
+  })
+
+  it('is null when the fetch that hydrates the list failed', () => {
+    // presentInvitation passes null here on a rejected fetchQuery — a race
+    // with the invalidate, a dropped connection, etc.
+    expect(findInvitationWorkspaceName(null, 'inv-1')).toBeNull()
+  })
+
+  it('is null when the invitation is no longer in the list', () => {
+    // Already resolved or revoked between the realtime event and the read.
+    expect(findInvitationWorkspaceName(INVITATIONS, 'inv-does-not-exist')).toBeNull()
+  })
+})
+
 /** A `showToast` stub that records every call and returns a spy dismiss fn. */
 function createFakeShowToast() {
   const calls: Array<ToastOptions> = []
@@ -108,6 +141,7 @@ describe('showInvitationNotificationToast', () => {
 
     showInvitationNotificationToast({
       row: INVITATION_ROW,
+      workspaceName: WORKSPACE_NAME,
       showToast,
       onOpen: vi.fn(),
     })
@@ -118,20 +152,24 @@ describe('showInvitationNotificationToast', () => {
     expect(calls[0].autoHideDuration).toBe(8000)
   })
 
-  it('renders the toast title, the role, and Accept/Decline', () => {
+  it('names the workspace, the role, and offers Accept/Decline', () => {
     const { showToast, calls } = createFakeShowToast()
 
     showInvitationNotificationToast({
       row: INVITATION_ROW,
+      workspaceName: WORKSPACE_NAME,
       showToast,
       onOpen: vi.fn(),
     })
     render(bodyElement(calls[0].body))
 
     expect(screen.getByText(m.workspace_invitations_toast_title())).toBeTruthy()
+    // Exact string, not a regex/substring: pins that the sentence actually
+    // carries the workspace name, not just the role.
     expect(
       screen.getByText(
         m.workspace_invitations_toast_body({
+          workspace: WORKSPACE_NAME,
           role: m.workspace_settings_members_role_member(),
         }),
       ),
@@ -144,7 +182,38 @@ describe('showInvitationNotificationToast', () => {
     ).toBeTruthy()
   })
 
-  it('accepts, dismisses the toast, and opens the joined workspace', () => {
+  it('falls back to a workspace-less sentence when the name failed to hydrate', () => {
+    // Null means a race with the invalidate, a failed refetch, or a row the
+    // RPC no longer returns — not "found and empty". Must not render
+    // undefined/"" into the body.
+    const { showToast, calls } = createFakeShowToast()
+
+    showInvitationNotificationToast({
+      row: INVITATION_ROW,
+      workspaceName: null,
+      showToast,
+      onOpen: vi.fn(),
+    })
+    render(bodyElement(calls[0].body))
+
+    expect(
+      screen.getByText(
+        m.workspace_invitations_toast_body_unknown_workspace({
+          role: m.workspace_settings_members_role_member(),
+        }),
+      ),
+    ).toBeTruthy()
+    expect(
+      screen.queryByText(
+        m.workspace_invitations_toast_body({
+          workspace: WORKSPACE_NAME,
+          role: m.workspace_settings_members_role_member(),
+        }),
+      ),
+    ).toBeNull()
+  })
+
+  it('accepts, dismisses the toast, confirms by name, and opens the joined workspace', () => {
     const mutate = vi.fn(
       (
         _variables: { invitationId: string; accept: boolean },
@@ -161,7 +230,12 @@ describe('showInvitationNotificationToast', () => {
     const { showToast, calls, dismiss } = createFakeShowToast()
     const onOpen = vi.fn()
 
-    showInvitationNotificationToast({ row: INVITATION_ROW, showToast, onOpen })
+    showInvitationNotificationToast({
+      row: INVITATION_ROW,
+      workspaceName: WORKSPACE_NAME,
+      showToast,
+      onOpen,
+    })
     render(bodyElement(calls[0].body))
 
     fireEvent.click(
@@ -173,7 +247,42 @@ describe('showInvitationNotificationToast', () => {
       expect.anything(),
     )
     expect(dismiss).toHaveBeenCalledTimes(1)
+    expect(calls).toHaveLength(2)
+    expect(calls[1].body).toBe(
+      m.workspace_invitations_accepted({ workspace: WORKSPACE_NAME }),
+    )
     expect(onOpen).toHaveBeenCalledWith('ws-1')
+  })
+
+  it('confirms acceptance without a name when hydration missed', () => {
+    const mutate = vi.fn(
+      (
+        _variables: { invitationId: string; accept: boolean },
+        options: { onSuccess: (workspaceId: string | null) => void },
+      ) => {
+        options.onSuccess('ws-1')
+      },
+    )
+    useRespondToInvitationMock.mockReturnValue({
+      mutate,
+      isPending: false,
+      variables: undefined,
+    })
+    const { showToast, calls } = createFakeShowToast()
+
+    showInvitationNotificationToast({
+      row: INVITATION_ROW,
+      workspaceName: null,
+      showToast,
+      onOpen: vi.fn(),
+    })
+    render(bodyElement(calls[0].body))
+
+    fireEvent.click(
+      screen.getByRole('button', { name: m.workspace_invitations_accept() }),
+    )
+
+    expect(calls[1].body).toBe(m.workspace_invitations_accepted_unknown_workspace())
   })
 
   it('declines without opening a workspace', () => {
@@ -193,7 +302,12 @@ describe('showInvitationNotificationToast', () => {
     const { showToast, calls, dismiss } = createFakeShowToast()
     const onOpen = vi.fn()
 
-    showInvitationNotificationToast({ row: INVITATION_ROW, showToast, onOpen })
+    showInvitationNotificationToast({
+      row: INVITATION_ROW,
+      workspaceName: WORKSPACE_NAME,
+      showToast,
+      onOpen,
+    })
     render(bodyElement(calls[0].body))
 
     fireEvent.click(
@@ -205,6 +319,7 @@ describe('showInvitationNotificationToast', () => {
       expect.anything(),
     )
     expect(dismiss).toHaveBeenCalledTimes(1)
+    expect(calls[1].body).toBe(m.workspace_invitations_declined())
     expect(onOpen).not.toHaveBeenCalled()
   })
 
@@ -226,6 +341,7 @@ describe('showInvitationNotificationToast', () => {
 
     showInvitationNotificationToast({
       row: INVITATION_ROW,
+      workspaceName: WORKSPACE_NAME,
       showToast,
       onOpen: vi.fn(),
     })

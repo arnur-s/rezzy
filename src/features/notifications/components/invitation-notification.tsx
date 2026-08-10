@@ -1,5 +1,6 @@
 import { workspaceMemberRoleLabel } from '@/entities/workspace'
 import { membershipErrorMessage } from '@/features/workspaces/api/workspace-membership'
+import type { WorkspaceInvitation } from '@/features/workspaces/api/workspace-membership'
 import { useRespondToInvitation } from '@/features/workspaces/hooks/use-workspace-membership'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
@@ -42,8 +43,40 @@ export function shouldPresentInvitation(row: { status: string }): boolean {
   return row.status === 'pending'
 }
 
+/**
+ * Picks the invited workspace's name out of a hydrated
+ * `list_my_workspace_invitations` read.
+ *
+ * Null covers every miss the same way: `invitations` itself is null when the
+ * hydrating fetch rejected (a race, a dropped connection), and `.find` comes
+ * up empty when the fetch succeeded but this particular invitation is no
+ * longer in it (already resolved or revoked between the realtime event and
+ * the read). The caller cannot and need not tell these apart — both mean
+ * "show the toast without a name" rather than "skip it."
+ */
+export function findInvitationWorkspaceName(
+  invitations: Array<WorkspaceInvitation> | null,
+  invitationId: string,
+): string | null {
+  return (
+    invitations?.find((invitation) => invitation.id === invitationId)
+      ?.workspaceName ?? null
+  )
+}
+
 type InvitationNotificationProps = {
   row: WorkspaceInvitationRow
+  /**
+   * The invitee cannot read `public.workspaces` directly (RLS is
+   * member-only), so this is hydrated by the caller from
+   * `list_my_workspace_invitations`, the same RPC `InvitationResponseDialog`
+   * already reads for the identical decision. Null when hydration missed —
+   * a race with the invalidate, a failed refetch, or a row the RPC no longer
+   * returns (already resolved or revoked by the time it ran) — in which case
+   * the copy below falls back to a workspace-less sentence rather than
+   * rendering `undefined`/`""`.
+   */
+  workspaceName: string | null
   showToast: ShowToastFn
   onOpen: (workspaceId: string) => void
   dismiss: () => void
@@ -57,16 +90,10 @@ type InvitationNotificationProps = {
  * ordinary body text. And unlike the switcher's `DropdownMenu` row — which can
  * only carry one action and opens `InvitationResponseDialog` instead — the
  * toast body is arbitrary JSX, so Accept and Decline live inline.
- *
- * The row is the raw realtime payload: it carries `workspace_id` but not the
- * workspace's name, which the invitee cannot read directly (see
- * `list_my_workspace_invitations`). Hydrating it would need a second fetch
- * this task's scope does not call for, so the copy names the role rather than
- * the workspace; the switcher's Invitations section, which already reads the
- * named RPC, remains the place that shows the name.
  */
 function InvitationNotification({
   row,
+  workspaceName,
   showToast,
   onOpen,
   dismiss,
@@ -74,6 +101,9 @@ function InvitationNotification({
   const respond = useRespondToInvitation()
 
   const roleLabel = workspaceMemberRoleLabel(row.role)
+  const bodyText = workspaceName
+    ? m.workspace_invitations_toast_body({ workspace: workspaceName, role: roleLabel })
+    : m.workspace_invitations_toast_body_unknown_workspace({ role: roleLabel })
   const isAccepting = respond.isPending && respond.variables.accept === true
   const isDeclining = respond.isPending && respond.variables.accept === false
 
@@ -88,7 +118,9 @@ function InvitationNotification({
           dismiss()
           showToast({
             body: accept
-              ? m.workspace_invitations_toast_accepted()
+              ? workspaceName
+                ? m.workspace_invitations_accepted({ workspace: workspaceName })
+                : m.workspace_invitations_accepted_unknown_workspace()
               : m.workspace_invitations_declined(),
             type: 'info',
           })
@@ -110,9 +142,7 @@ function InvitationNotification({
           <span className="text-primary text-base font-semibold">
             {m.workspace_invitations_toast_title()}
           </span>
-          <p className="text-secondary text-sm">
-            {m.workspace_invitations_toast_body({ role: roleLabel })}
-          </p>
+          <p className="text-secondary text-sm">{bodyText}</p>
         </div>
       </div>
       <div className="flex items-center justify-end gap-2">
@@ -141,6 +171,8 @@ function InvitationNotification({
 
 export type ShowInvitationNotificationOptions = {
   row: WorkspaceInvitationRow
+  /** See {@link InvitationNotificationProps.workspaceName}. */
+  workspaceName: string | null
   showToast: ShowToastFn
   /** Called with the joined workspace's id once Accept succeeds. */
   onOpen: (workspaceId: string) => void
@@ -156,6 +188,7 @@ export type ShowInvitationNotificationOptions = {
  */
 export function showInvitationNotificationToast({
   row,
+  workspaceName,
   showToast,
   onOpen,
 }: ShowInvitationNotificationOptions): void {
@@ -165,6 +198,7 @@ export function showInvitationNotificationToast({
     body: (
       <InvitationNotification
         row={row}
+        workspaceName={workspaceName}
         showToast={showToast}
         onOpen={onOpen}
         dismiss={() => holder.dismiss()}

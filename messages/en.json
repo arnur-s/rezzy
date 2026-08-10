@@ -143,8 +143,9 @@
   "workspace_invitations_accepted": "You joined \"{workspace}\"",
   "workspace_invitations_declined": "Invitation declined",
   "workspace_invitations_toast_title": "Workspace invitation",
-  "workspace_invitations_toast_body": "You have been invited to join as {role}",
-  "workspace_invitations_toast_accepted": "You joined the workspace",
+  "workspace_invitations_toast_body": "You have been invited to \"{workspace}\" as {role}",
+  "workspace_invitations_toast_body_unknown_workspace": "You have been invited to join a workspace as {role}",
+  "workspace_invitations_accepted_unknown_workspace": "You joined the workspace",
   "workspace_invitations_indicator_aria": [
     {
       "declarations": [

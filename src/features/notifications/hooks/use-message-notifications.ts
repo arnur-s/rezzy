@@ -1,5 +1,6 @@
 import { dashboardQueryKeys } from '@/features/dashboard/api/dashboard-stats'
 import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
+import { listMyInvitations } from '@/features/workspaces/api/workspace-membership'
 import { workspaceQueryKeys } from '@/features/workspaces/api/workspaces'
 import { useAuth } from '@/providers/auth-provider'
 import { supabase } from '@/utils/supabase'
@@ -9,6 +10,7 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 import { getMessageNotificationDetails } from '../api/notifications'
 import {
+  findInvitationWorkspaceName,
   invitationPresentationKey,
   shouldPresentInvitation,
   showInvitationNotificationToast,
@@ -176,11 +178,13 @@ export function useMessageNotifications(): void {
       if (ctx.preferences.soundEnabled) playNotificationSound()
     }
 
-    // Mirrors `present` above, but for invitations: no hydration fetch (the
-    // row carries everything the toast needs) and no `shouldPresentInApp` —
+    // Mirrors `present` above, but for invitations: no `shouldPresentInApp` —
     // that function's exact-thread suppression is meaningless for an
-    // invitation, which is not tied to any open conversation.
-    const presentInvitation = (row: WorkspaceInvitationRow) => {
+    // invitation, which is not tied to any open conversation. It does hydrate,
+    // same as `present` awaits getMessageNotificationDetails: the row carries
+    // workspace_id but not the workspace's name, which the invitee cannot
+    // read directly (RLS on public.workspaces is member-only).
+    const presentInvitation = async (row: WorkspaceInvitationRow) => {
       const key = invitationPresentationKey(row)
       if (!deduper.add(key)) return
       const ctx = contextRef.current
@@ -193,8 +197,24 @@ export function useMessageNotifications(): void {
       // Only one tab presents a given invitation event.
       if (!coordinator.claim(key)) return
 
+      // list_my_workspace_invitations is the same RPC InvitationResponseDialog
+      // already reads for this exact decision. fetchQuery (rather than a bare
+      // call) dedupes against the refetch the invalidate above already kicked
+      // off on this same key for every mounted useMyInvitations observer
+      // (the switcher renders one app-wide), so this costs no extra round
+      // trip in the common case. A rejected fetch is treated as a hydration
+      // miss, not a reason to skip the toast — see workspaceName below.
+      const invitations = await queryClient
+        .fetchQuery({
+          queryKey: workspaceQueryKeys.myInvitations,
+          queryFn: listMyInvitations,
+        })
+        .catch(() => null)
+      const workspaceName = findInvitationWorkspaceName(invitations, row.id)
+
       showInvitationNotificationToast({
         row,
+        workspaceName,
         showToast: showToastRef.current,
         onOpen: (workspaceId) => goToWorkspace.current(workspaceId),
       })
