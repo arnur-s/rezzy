@@ -8,6 +8,8 @@ export type PushSubscriptionRow =
   Database['public']['Tables']['push_subscriptions']['Row']
 export type MessageNotificationRow =
   Database['public']['Tables']['message_notifications']['Row']
+export type WorkspaceInvitationRow =
+  Database['public']['Tables']['workspace_invitations']['Row']
 
 export const MESSAGE_PREVIEW_MODES = ['full', 'sender_only', 'hidden'] as const
 export type MessagePreviewMode = (typeof MESSAGE_PREVIEW_MODES)[number]

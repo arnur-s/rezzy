@@ -143,6 +143,8 @@
   "workspace_invitations_accepted": "Вы присоединились к «{workspace}»",
   "workspace_invitations_declined": "Приглашение отклонено",
   "workspace_invitations_toast_title": "Приглашение в пространство",
+  "workspace_invitations_toast_body": "Вас приглашают в пространство — роль: {role}",
+  "workspace_invitations_toast_accepted": "Вы присоединились к пространству",
   "workspace_invitations_indicator_aria": [
     {
       "declarations": [

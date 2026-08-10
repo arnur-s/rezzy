@@ -1,5 +1,6 @@
 import { dashboardQueryKeys } from '@/features/dashboard/api/dashboard-stats'
 import { inboxQueryKeys } from '@/features/inbox/api/query-keys'
+import { workspaceQueryKeys } from '@/features/workspaces/api/workspaces'
 import { useAuth } from '@/providers/auth-provider'
 import { supabase } from '@/utils/supabase'
 import { useToast } from '@astryxdesign/core/Toast'
@@ -7,10 +8,16 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 import { getMessageNotificationDetails } from '../api/notifications'
+import {
+  invitationPresentationKey,
+  shouldPresentInvitation,
+  showInvitationNotificationToast,
+} from '../components/invitation-notification'
 import { showMessageNotificationToast } from '../components/message-notification'
 import type {
   MessageNotificationRow,
   NotificationPreferences,
+  WorkspaceInvitationRow,
 } from '../model/types'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../model/types'
 import { NotificationDeduper } from '../utils/dedupe'
@@ -84,6 +91,24 @@ export function useMessageNotifications(): void {
     }
   }, [navigate])
 
+  // Where an accepted invitation's toast sends the invitee: into the
+  // workspace they just joined. No exact-thread analog applies here, so
+  // unlike goToThread there is nothing to suppress against.
+  const goToWorkspace = useRef((workspaceId: string) => {
+    void navigate({
+      to: '/workspaces/$id',
+      params: { id: workspaceId },
+    })
+  })
+  useEffect(() => {
+    goToWorkspace.current = (workspaceId) => {
+      void navigate({
+        to: '/workspaces/$id',
+        params: { id: workspaceId },
+      })
+    }
+  }, [navigate])
+
   // Resume the audio context on the first user gesture (autoplay policy).
   useEffect(() => {
     primeNotificationSound()
@@ -151,6 +176,32 @@ export function useMessageNotifications(): void {
       if (ctx.preferences.soundEnabled) playNotificationSound()
     }
 
+    // Mirrors `present` above, but for invitations: no hydration fetch (the
+    // row carries everything the toast needs) and no `shouldPresentInApp` —
+    // that function's exact-thread suppression is meaningless for an
+    // invitation, which is not tied to any open conversation.
+    const presentInvitation = (row: WorkspaceInvitationRow) => {
+      const key = invitationPresentationKey(row)
+      if (!deduper.add(key)) return
+      const ctx = contextRef.current
+      const isFocused =
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'visible' &&
+        document.hasFocus()
+
+      if (!ctx.preferences.inAppEnabled || !isFocused) return
+      // Only one tab presents a given invitation event.
+      if (!coordinator.claim(key)) return
+
+      showInvitationNotificationToast({
+        row,
+        showToast: showToastRef.current,
+        onOpen: (workspaceId) => goToWorkspace.current(workspaceId),
+      })
+
+      if (ctx.preferences.soundEnabled) playNotificationSound()
+    }
+
     // Keeps the header bell live for workspaces the agent is not viewing. The
     // active workspace already has useConversationsRealtime merging its rows,
     // so re-fetching its list here would only duplicate that work.
@@ -185,6 +236,33 @@ export function useMessageNotifications(): void {
           // coordination, thread suppression) that can skip presentation.
           syncUnreadCaches(row)
           void present(row)
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          // INSERT *and* UPDATE. A re-invite is the ON CONFLICT DO UPDATE
+          // branch of invite_workspace_member, so binding INSERT alone would
+          // leave the one case where an admin tries again — because the first
+          // attempt went unnoticed — notifying nobody.
+          event: '*',
+          schema: 'public',
+          table: 'workspace_invitations',
+          filter: `invited_user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'DELETE') return
+          // The realtime payload is typed `{ [key: string]: any }` by
+          // supabase-js; this is the trusted boundary where that gets narrowed
+          // to the table's generated row type, same as the message branch above.
+          const row = payload.new as WorkspaceInvitationRow
+
+          if (!shouldPresentInvitation(row)) return
+
+          void queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.myInvitations,
+          })
+          void presentInvitation(row)
         },
       )
       .subscribe((status) => {
