@@ -1025,6 +1025,7 @@
   ],
   "contacts_merge_selection_hint": "Выберите ровно два контакта, чтобы объединить их.",
   "contacts_merge_selection_clear": "Снять выделение",
+  "contacts_merge_select_contact": "Выбрать {name} для объединения",
   "contacts_merge_title": "Объединение контактов",
   "contacts_merge_subtitle": "Выберите, какой контакт останется и какие данные сохранить.",
   "contacts_merge_keep_label": "Какой контакт останется",

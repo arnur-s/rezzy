@@ -982,6 +982,7 @@
   ],
   "contacts_merge_selection_hint": "Select exactly two contacts to merge them.",
   "contacts_merge_selection_clear": "Clear selection",
+  "contacts_merge_select_contact": "Select {name} to merge",
   "contacts_merge_title": "Merge contacts",
   "contacts_merge_subtitle": "Choose which contact stays and which details to keep.",
   "contacts_merge_keep_label": "Contact to keep",

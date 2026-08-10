@@ -10,29 +10,17 @@ import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
-import { EmptyState } from '@astryxdesign/core/EmptyState'
-import { Pagination } from '@astryxdesign/core/Pagination'
-import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { TextInput } from '@astryxdesign/core/TextInput'
-import { useToast } from '@astryxdesign/core/Toast'
-import { useNavigate } from '@tanstack/react-router'
-import { UsersRoundIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import {
-  useArchivedContacts,
-  useContactList,
-  useRestoreContact,
-} from '../hooks/use-contacts'
+import { useArchivedContacts, useContactList } from '../hooks/use-contacts'
 import type {
   ContactListParams,
   ContactListPatch,
 } from '../model/contact-list-params'
-import {
-  CONTACTS_PAGE_SIZE,
-  hasActiveContactFilters,
-} from '../model/contact-list-params'
-import { ArchivedContactRow } from './archived-contact-row'
-import { ContactListRow } from './contact-list-row'
+import { hasActiveContactFilters } from '../model/contact-list-params'
+import { ArchivedView } from './archived-view'
+import { DirectoryView } from './directory-view'
+import { DuplicatesView } from './duplicates-view'
 
 const SORT_LABELS: Record<ContactSort, () => string> = {
   recent_interaction: () => m.contacts_sort_recent_interaction(),
@@ -47,51 +35,43 @@ type Props = {
   params: ContactListParams
   /** Whether the Archived filter is the active view. Lives in the URL. */
   isArchived: boolean
+  /** Whether the Duplicates view is active. Lives in the URL. */
+  isDuplicates: boolean
   /** Partial patch; the route merges it into the URL. */
   onParamsChange: (patch: ContactListPatch) => void
   onCreate: () => void
-}
-
-function ContactListSkeleton() {
-  return (
-    <div className="flex flex-col gap-0.5 px-2 py-2" aria-hidden>
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="flex items-center gap-3 px-3 py-2.5">
-          <Skeleton width={32} height={32} radius={3} />
-          <div className="flex-1">
-            <Skeleton width="40%" height={14} radius={3} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 export function ContactsPage({
   workspaceId,
   params,
   isArchived,
+  isDuplicates,
   onParamsChange,
   onCreate,
 }: Props) {
-  const navigate = useNavigate()
-  const showToast = useToast()
   const [searchText, setSearchText] = useState(params.query)
   const debouncedSearch = useDebounce(searchText, 300)
   const { isAdmin, isLoaded: isRoleLoaded } = useIsWorkspaceAdmin(workspaceId)
-  // Only ever one of the two runs. `list_archived_contacts` raises 42501 for a
-  // member, so the admin check is a precondition of the request, not decoration
-  // on top of it — and the live directory is not worth fetching underneath a
-  // view that is showing something else.
-  const isArchivedView = isArchived && isAdmin
-  const contactsQuery = useContactList(workspaceId, params, !isArchivedView)
+  // Duplicates is visible to every member — only the Merge action inside it is
+  // owner/admin only, matching the RPC. Archived stays owner/admin only for the
+  // whole view: `list_archived_contacts` raises 42501 for a member, so the
+  // admin check is a precondition of the request, not decoration on top of it.
+  // The two are mutually exclusive by construction, not by an extra redirect:
+  // duplicates wins over a stale/hand-edited URL carrying both.
+  const isDuplicatesView = isDuplicates
+  const isArchivedView = isArchived && !isDuplicatesView && isAdmin
+  const isDirectoryView = !isArchivedView && !isDuplicatesView
+
+  // The live directory is not worth fetching underneath a view that is
+  // showing something else, and vice versa for the archive.
+  const contactsQuery = useContactList(workspaceId, params, isDirectoryView)
   const archivedQuery = useArchivedContacts({
     workspaceId,
     query: params.query,
     page: params.page,
     enabled: isArchivedView,
   })
-  const restore = useRestoreContact(workspaceId)
   const membersQuery = useWorkspaceMemberDirectory(workspaceId)
 
   // A member who lands on ?archived=true — a shared link, or a demotion since
@@ -103,15 +83,6 @@ export function ContactsPage({
       onParamsChange({ archived: false, page: 1 })
     }
   }, [isArchived, isRoleLoaded, isAdmin])
-
-  function restoreContact(contactId: string) {
-    restore.mutate(contactId, {
-      onError: () =>
-        showToast({ body: m.contact_restore_error(), type: 'error' }),
-      onSuccess: () =>
-        showToast({ body: m.contact_restored_toast(), type: 'info' }),
-    })
-  }
 
   // The URL is the source of truth; this only pushes the settled search term
   // into it. Changing the term resets to page 1 — page 4 of the old result set
@@ -138,9 +109,10 @@ export function ContactsPage({
   }, [membersQuery.data])
 
   const isFiltered = hasActiveContactFilters(params)
-  const items = contactsQuery.data?.items ?? []
-  const archivedItems = archivedQuery.data?.items ?? []
-  const activeQuery = isArchivedView ? archivedQuery : contactsQuery
+  // Preserved exactly as before the split: the header always reflects the
+  // live directory's own query, not whichever view happens to be showing —
+  // switching to Archived does not repaint the count until the directory is
+  // revisited or refetched.
   const totalCount = isArchivedView
     ? (archivedQuery.data?.totalCount ?? 0)
     : (contactsQuery.data?.totalCount ?? 0)
@@ -209,25 +181,31 @@ export function ContactsPage({
       </header>
 
       <div className="border-border flex shrink-0 flex-col gap-2 border-b px-4 py-3">
-        <TextInput
-          label={m.contacts_search_label()}
-          isLabelHidden
-          placeholder={m.contacts_search_placeholder()}
-          value={searchText}
-          onChange={(next) => setSearchText(next)}
-          hasClear
-          size="sm"
-        />
+        {/* Neither the archive nor the duplicates scan take a search term, so
+            the field is hidden for duplicates. It stays for archived, which
+            does take one. */}
+        {isDuplicatesView ? null : (
+          <TextInput
+            label={m.contacts_search_label()}
+            isLabelHidden
+            placeholder={m.contacts_search_placeholder()}
+            value={searchText}
+            onChange={(next) => setSearchText(next)}
+            hasClear
+            size="sm"
+          />
+        )}
 
         <div
           className="flex flex-wrap items-center gap-1.5"
           role="group"
           aria-label={m.contacts_filters_label()}
         >
-          {/* The archive is served by a different RPC that takes only a search
-              term, so status, owner and sort have nothing to act on there and
-              are hidden rather than left inert. */}
-          {isArchivedView ? null : (
+          {/* The archive and the duplicates scan are served by different RPCs
+              that take no status/owner/sort/tag arguments, so those controls
+              have nothing to act on there and are hidden rather than left
+              inert. */}
+          {isArchivedView || isDuplicatesView ? null : (
             <>
               {CONTACT_STATUSES.map((status) => {
                 const isActive = params.statuses.includes(status)
@@ -280,6 +258,28 @@ export function ContactsPage({
             </>
           )}
 
+          {/* Visible to every member — reporting a duplicate does not require
+              the RPC's own owner/admin gate, only merging one does. */}
+          <button
+            type="button"
+            aria-pressed={isDuplicatesView}
+            onClick={() =>
+              onParamsChange({
+                duplicates: !isDuplicatesView,
+                archived: false,
+                page: 1,
+              })
+            }
+            className={cn(
+              'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
+              isDuplicatesView
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
+            )}
+          >
+            {m.contacts_filter_duplicates()}
+          </button>
+
           {/* Owner/admin only, because the RPC behind it is. Rendering it for a
               member would offer a view that answers 42501. */}
           {isAdmin ? (
@@ -287,7 +287,11 @@ export function ContactsPage({
               type="button"
               aria-pressed={isArchivedView}
               onClick={() =>
-                onParamsChange({ archived: !isArchivedView, page: 1 })
+                onParamsChange({
+                  archived: !isArchivedView,
+                  duplicates: false,
+                  page: 1,
+                })
               }
               className={cn(
                 'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
@@ -305,128 +309,40 @@ export function ContactsPage({
           <p className="text-secondary text-xs">
             {m.contacts_archived_notice()}
           </p>
+        ) : isDuplicatesView ? (
+          <p className="text-secondary text-xs">
+            {m.contacts_duplicates_notice()}
+          </p>
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {activeQuery.isPending ? (
-          <ContactListSkeleton />
-        ) : activeQuery.isError ? (
-          <div className="px-4 py-4">
-            <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
-              <span className="text-error text-xs">
-                {m.contacts_load_error()}
-              </span>
-              <Button
-                label={m.common_retry()}
-                size="sm"
-                variant="ghost"
-                onClick={() => void activeQuery.refetch()}
-                isLoading={activeQuery.isRefetching}
-              />
-            </div>
-          </div>
-        ) : isArchivedView ? (
-          archivedItems.length === 0 ? (
-            <div className="flex h-full items-center justify-center p-6">
-              <EmptyState
-                icon={<UsersRoundIcon className="text-secondary size-8" />}
-                title={m.contacts_archived_empty_title()}
-                description={m.contacts_archived_empty_description()}
-              />
-            </div>
-          ) : (
-            <ul
-              aria-label={m.contacts_filter_archived()}
-              className="flex flex-col gap-0.5 px-2 py-2"
-            >
-              {archivedItems.map((contact) => (
-                <ArchivedContactRow
-                  key={contact.id}
-                  contact={contact}
-                  onRestore={() => restoreContact(contact.id)}
-                  isRestoring={
-                    restore.isPending && restore.variables === contact.id
-                  }
-                />
-              ))}
-            </ul>
-          )
-        ) : items.length === 0 ? (
-          <div className="flex h-full items-center justify-center p-6">
-            {isFiltered ? (
-              <EmptyState
-                icon={<UsersRoundIcon className="text-secondary size-8" />}
-                title={m.contacts_no_results_title()}
-                description={m.contacts_no_results_description()}
-                actions={
-                  <Button
-                    label={m.contacts_clear_filters()}
-                    variant="secondary"
-                    onClick={clearFilters}
-                  />
-                }
-              />
-            ) : (
-              <EmptyState
-                icon={<UsersRoundIcon className="text-secondary size-8" />}
-                title={m.contacts_empty_title()}
-                description={m.contacts_empty_description()}
-                actions={
-                  <Button
-                    label={m.contacts_add()}
-                    variant="secondary"
-                    onClick={onCreate}
-                  />
-                }
-              />
-            )}
-          </div>
-        ) : (
-          <ul
-            aria-label={m.contacts_list_label()}
-            className="flex flex-col gap-0.5 px-2 py-2"
-          >
-            {items.map((contact) => (
-              <ContactListRow
-                key={contact.id}
-                contact={contact}
-                workspaceId={workspaceId}
-                ownerName={
-                  contact.owner_id
-                    ? (ownerNameById.get(contact.owner_id) ?? null)
-                    : null
-                }
-                menuItems={[
-                  {
-                    label: m.contacts_open(),
-                    onClick: () =>
-                      void navigate({
-                        to: '/workspaces/$id/contacts/$contactId',
-                        params: { id: workspaceId, contactId: contact.id },
-                      }),
-                  },
-                ]}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {totalCount > CONTACTS_PAGE_SIZE ? (
-        <div className="border-border flex shrink-0 justify-end border-t px-4 py-2">
-          <Pagination
-            page={params.page}
-            onChange={(page) => onParamsChange({ page })}
-            totalItems={totalCount}
-            pageSize={CONTACTS_PAGE_SIZE}
-            variant="count"
-            size="sm"
-            // Astryx defaults this to the English literal "Pagination".
-            label={m.contacts_pagination_label()}
-          />
-        </div>
-      ) : null}
+      {isArchivedView ? (
+        <ArchivedView
+          workspaceId={workspaceId}
+          query={archivedQuery}
+          page={params.page}
+          onPageChange={(page) => onParamsChange({ page })}
+        />
+      ) : isDuplicatesView ? (
+        <DuplicatesView
+          workspaceId={workspaceId}
+          page={params.page}
+          onPageChange={(page) => onParamsChange({ page })}
+          enabled={isDuplicatesView}
+          canMerge={isAdmin}
+        />
+      ) : (
+        <DirectoryView
+          workspaceId={workspaceId}
+          query={contactsQuery}
+          params={params}
+          ownerNameById={ownerNameById}
+          canMerge={isAdmin}
+          onParamsChange={onParamsChange}
+          onClearFilters={clearFilters}
+          onCreate={onCreate}
+        />
+      )}
     </div>
   )
 }
