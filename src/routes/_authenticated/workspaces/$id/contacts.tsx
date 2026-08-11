@@ -30,6 +30,10 @@ const defaults = {
   // reload and a trip into a contact. `ContactsPage` ignores it for a member —
   // the RPC behind it is owner/admin only — so a shared link cannot leak a view.
   archived: false,
+  // The Duplicates view. Unlike `archived`, visible to every workspace
+  // member — only the Merge action inside it is owner/admin only, matching
+  // the RPC it calls.
+  duplicates: false,
 }
 
 // `.catch()` keeps a bad value from throwing, but leaves the key REQUIRED in the
@@ -50,6 +54,7 @@ const contactsSearchSchema = z.object({
   sort: withDefault(z.enum(CONTACT_SORTS), defaults.sort),
   page: withDefault(z.number().int().min(1).max(10_000), defaults.page),
   archived: withDefault(z.boolean(), defaults.archived),
+  duplicates: withDefault(z.boolean(), defaults.duplicates),
 })
 
 export type ContactsSearch = z.infer<typeof contactsSearchSchema>
@@ -68,6 +73,7 @@ export const Route = createFileRoute('/_authenticated/workspaces/$id/contacts')(
           'sort',
           'page',
           'archived',
+          'duplicates',
         ]),
         // …and defaults stay out of the URL, so a plain /contacts link is clean.
         stripSearchParams(defaults),

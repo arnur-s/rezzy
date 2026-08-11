@@ -31,6 +31,12 @@ export type ContactListParams = {
  */
 export type ContactListPatch = Partial<ContactListParams> & {
   archived?: boolean
+  /**
+   * The duplicates view. A sibling of `archived` for the same reason: it
+   * selects a different RPC rather than parameterising the directory's, so it
+   * has no field in `ContactListParams`.
+   */
+  duplicates?: boolean
 }
 
 export const EMPTY_CONTACT_LIST_PARAMS: ContactListParams = {
