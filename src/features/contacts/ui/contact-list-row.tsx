@@ -1,20 +1,19 @@
 import { listItemStyle } from '@/components/list'
+import type { ContactListItem } from '@/entities/contact'
 import {
   ContactStatusChip,
   contactListDisplayName,
   isContactStatus,
 } from '@/entities/contact'
-import type { ContactListItem } from '@/entities/contact'
 import { cn } from '@/lib/cn'
 import { formatDate } from '@/lib/format-date'
-import { CONTACT_DATE_FORMAT } from '../model/date-format'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput'
-import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
+import { MoreMenu } from '@astryxdesign/core/MoreMenu'
 import { Link } from '@tanstack/react-router'
-import { MoreHorizontalIcon } from 'lucide-react'
+import { CONTACT_DATE_FORMAT } from '../model/date-format'
 
 type Props = {
   contact: ContactListItem
@@ -130,16 +129,9 @@ export function ContactListRow({
 
       {/* Sibling of the link, lifted above the stretched pseudo-element. */}
       <div className="relative z-10 shrink-0">
-        <DropdownMenu
-          hasChevron={false}
-          menuWidth={200}
-          button={{
-            label: m.contacts_row_actions(),
-            icon: <MoreHorizontalIcon className="size-4" />,
-            isIconOnly: true,
-            variant: 'ghost',
-            size: 'sm',
-          }}
+        <MoreMenu
+          label={m.contacts_row_actions()}
+          size="sm"
           items={menuItems}
         />
       </div>

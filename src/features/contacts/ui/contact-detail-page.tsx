@@ -13,18 +13,13 @@ import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Button } from '@astryxdesign/core/Button'
-import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { IconButton } from '@astryxdesign/core/IconButton'
+import { MoreMenu } from '@astryxdesign/core/MoreMenu'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { useToast } from '@astryxdesign/core/Toast'
 import { Link, useNavigate } from '@tanstack/react-router'
-import {
-  ArrowLeftIcon,
-  CopyIcon,
-  MoreHorizontalIcon,
-  UserRoundXIcon,
-} from 'lucide-react'
+import { ArrowLeftIcon, CopyIcon, UserRoundXIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   useContactConversations,
@@ -232,7 +227,6 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
       : contact.phone?.trim()
         ? [contact.phone.trim()]
         : []
-  const isIncomplete = phoneRows.length === 0 && !contact.email?.trim()
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
@@ -250,16 +244,9 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
               360px header in Russian, and Edit is the action people came for.
               Owner/admin only, matching public.archive_contact's own guard. */}
           {isAdmin ? (
-            <DropdownMenu
-              hasChevron={false}
-              menuWidth={220}
-              button={{
-                label: m.contacts_row_actions(),
-                icon: <MoreHorizontalIcon className="size-4" />,
-                isIconOnly: true,
-                variant: 'ghost',
-                size: 'sm',
-              }}
+            <MoreMenu
+              label={m.contacts_row_actions()}
+              size="sm"
               items={[
                 {
                   label: m.contact_archive_action(),
@@ -343,7 +330,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
                         key={channel.id}
                         className="border-border rounded-lg border px-2 py-1 text-xs"
                       >
-                        {channel.external_name?.trim() || channel.channel_type}
+                        {channel.channel_type}
                       </span>
                     ))}
                   </div>
@@ -367,12 +354,6 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
                 </div>
               ) : null}
             </div>
-            {/* One restrained prompt instead of a row per missing field. */}
-            {isIncomplete ? (
-              <p className="text-secondary mt-1 text-xs">
-                {m.contact_detail_incomplete()}
-              </p>
-            ) : null}
           </section>
 
           {/* Notes. ContactNotesSection carries aria-labelledby="contact-notes-title"

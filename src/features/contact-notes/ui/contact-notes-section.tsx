@@ -79,15 +79,6 @@ export function ContactNotesSection({ workspaceId, contactId }: Props) {
         </ul>
       ) : null}
 
-      {/* A contact with no notes said so, rather than showing a composer above
-          nothing at all — which reads as a section that failed to load, and is
-          indistinguishable from one that did. */}
-      {notesQuery.isSuccess && notesQuery.data.length === 0 ? (
-        <p className="text-primary/60 px-1 text-xs">
-          {m.contact_notes_empty_title()}
-        </p>
-      ) : null}
-
       <DeleteContactNoteDialog
         workspaceId={workspaceId}
         contactId={contactId}

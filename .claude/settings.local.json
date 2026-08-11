@@ -129,7 +129,11 @@
       "Read(//Applications/**)",
       "Bash(pnpm dlx *)",
       "Bash(sed -i '' '18,34{/^[[:space:]]*$/!{/^#/!s/^/# /;};}' /Users/arnurkupanov/cms/.env.local)",
-      "Bash(awk 'NR>=16 && !/^#/ && !/^[[:space:]]*$/' /Users/arnurkupanov/cms/.env.local)"
+      "Bash(awk 'NR>=16 && !/^#/ && !/^[[:space:]]*$/' /Users/arnurkupanov/cms/.env.local)",
+      "Bash(gh pr *)",
+      "Read(//c/Users/ncase/AppData/Local/Temp/claude/C--Users-ncase-cms/c9df3135-facd-41a1-98c8-12ef4f046dc3/scratchpad/**)",
+      "Bash(ls -la /c/Users/ncase/AppData/Local/Temp/claude/C--Users-ncase-cms/c9df3135-facd-41a1-98c8-12ef4f046dc3/scratchpad/ 2>&1)",
+      "Read(//c/Users/ncase/AppData/Local/Temp/claude/**)"
     ]
   },
   "hooks": {
