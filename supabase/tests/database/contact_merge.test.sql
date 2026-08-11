@@ -1,6 +1,6 @@
 begin;
 
-select plan(40);
+select plan(49);
 
 -- Task 1 covers the columns, the merged-is-archived invariant, the restore
 -- refusal, the unarchive-on-inbound-message guard, and what
@@ -585,6 +585,132 @@ select is(
     where id = '80000000-0000-4000-8000-000000000410'),
   '2026-06-01T00:00:00Z'::timestamptz,
   'the survivor''s more recent last_seen_at is not overwritten by the loser''s older one'
+);
+
+-- ── a number held only in contacts.phone, with no contact_phones row ────────
+--
+-- The shape 20260809110000 writes: contacts.phone set, contact_phones empty.
+-- list_duplicate_contact_groups surfaces exactly these contacts as merge
+-- candidates (see contact_duplicates.test.sql), so the merge has to carry the
+-- number rather than drop it -- p_fields has no phone key to ask with, and
+-- there is no unmerge.
+
+insert into public.contacts (id, workspace_id, name, source, phone)
+values
+  ('80000000-0000-4000-8000-000000000412',
+   '80000000-0000-4000-8000-000000000201', 'Column Survivor', 'manual',
+   '+7 999 111-11-11'),
+  -- No contact_phones row: the whole point of the fixture.
+  ('80000000-0000-4000-8000-000000000413',
+   '80000000-0000-4000-8000-000000000201', 'Column Loser', 'whatsapp',
+   '+7 900 222-33-44');
+
+-- The survivor, unlike the loser, also holds its number as a row -- the
+-- ordinary post-20260803120000 shape, so the two sides differ in exactly the
+-- way that matters.
+insert into public.contact_phones (workspace_id, contact_id, phone, position)
+values
+  ('80000000-0000-4000-8000-000000000201',
+   '80000000-0000-4000-8000-000000000412', '+7 999 111-11-11', 0);
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select is(
+  (select phone_count from public.count_contact_merge_children(
+    '80000000-0000-4000-8000-000000000201',
+    '80000000-0000-4000-8000-000000000413')),
+  1,
+  'the confirmation count sees a number that lives only in contacts.phone'
+);
+
+select is(
+  (select phone_count from public.count_contact_merge_children(
+    '80000000-0000-4000-8000-000000000201',
+    '80000000-0000-4000-8000-000000000412')),
+  1,
+  'a column already mirrored by a row counts once, not twice'
+);
+
+select lives_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000412',
+      '80000000-0000-4000-8000-000000000413')
+  $$,
+  'a loser whose only number lives in contacts.phone merges'
+);
+
+reset role;
+
+select is(
+  (select count(*)::int from public.contact_phones
+    where contact_id = '80000000-0000-4000-8000-000000000412'),
+  2,
+  'the loser''s column-only number arrives as a phone row instead of being dropped'
+);
+
+select is(
+  (select phone from public.contact_phones
+    where contact_id = '80000000-0000-4000-8000-000000000412'
+      and digits = public.phone_digits('+7 900 222-33-44')),
+  '+7 900 222-33-44',
+  'the loser''s number is carried across exactly as it was spelled'
+);
+
+select is(
+  (select phone from public.contacts
+    where id = '80000000-0000-4000-8000-000000000412'),
+  '+7 999 111-11-11',
+  'the survivor keeps its own primary number, not the loser''s'
+);
+
+-- ── both sides column-only: the survivor's primary still wins ───────────────
+--
+-- The regression this guards: materializing only the LOSER's column would make
+-- its new row the survivor's sole contact_phones row, and the re-sync at the
+-- end of merge_contacts would promote it into contacts.phone -- silently
+-- replacing the survivor's number, which is what p_fields' missing phone key
+-- and the renumbering ranking both exist to prevent.
+
+insert into public.contacts (id, workspace_id, name, source, phone)
+values
+  ('80000000-0000-4000-8000-000000000414',
+   '80000000-0000-4000-8000-000000000201', 'Both Column Survivor', 'whatsapp',
+   '+7 999 555-55-55'),
+  ('80000000-0000-4000-8000-000000000415',
+   '80000000-0000-4000-8000-000000000201', 'Both Column Loser', 'whatsapp',
+   '+7 900 666-66-66');
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"80000000-0000-4000-8000-000000000101","role":"authenticated"}';
+
+select lives_ok(
+  $$
+    select public.merge_contacts(
+      '80000000-0000-4000-8000-000000000414',
+      '80000000-0000-4000-8000-000000000415')
+  $$,
+  'both sides hold their only number in contacts.phone'
+);
+
+reset role;
+
+select is(
+  (select phone from public.contacts
+    where id = '80000000-0000-4000-8000-000000000414'),
+  '+7 999 555-55-55',
+  'the survivor''s column number is not replaced by the loser''s'
+);
+
+select is(
+  (select array_agg(phone order by position)
+     from public.contact_phones
+    where contact_id = '80000000-0000-4000-8000-000000000414'),
+  array['+7 999 555-55-55', '+7 900 666-66-66'],
+  'both numbers survive, the survivor''s at position 0'
 );
 
 select * from finish();
