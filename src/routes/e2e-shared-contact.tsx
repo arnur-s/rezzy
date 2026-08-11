@@ -1,14 +1,14 @@
 import { parseSharedContacts } from '@/entities/message'
+import type { ContactMatch, ContactPhone } from '@/features/contacts'
 import {
   contactIdentityFromSharedContact,
   contactIdentityKey,
   contactQueryKeys,
 } from '@/features/contacts'
-import type { ContactMatch, ContactPhone } from '@/features/contacts'
 import { MessageContactCard } from '@/features/inbox/components/message-thread/message-contact-card'
 import { workspacePhoneRegionQueryKeys } from '@/features/workspaces/api/workspace-phone-region'
-import { setLocale } from '@/paraglide/runtime'
 import type { Locale } from '@/paraglide/runtime'
+import { setLocale } from '@/paraglide/runtime'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'

@@ -66,6 +66,22 @@ const BUDGETS: Array<{ key: string; max: number; where: string }> = [
   // The invite form's role selector puts every option on one row.
   { key: 'workspace_settings_members_role_admin', max: 16, where: 'invite role selector' },
   { key: 'workspace_settings_members_role_member', max: 16, where: 'invite role selector' },
+  // The merge picker is a two-column comparison inside a 560px dialog: each
+  // field label sits in a fixed left column, and each column header sits above
+  // a value that is already truncating.
+  { key: 'contacts_merge_field_name', max: 18, where: 'merge picker field label' },
+  { key: 'contacts_merge_field_email', max: 18, where: 'merge picker field label' },
+  { key: 'contacts_merge_field_owner', max: 18, where: 'merge picker field label' },
+  { key: 'contacts_merge_field_status', max: 18, where: 'merge picker field label' },
+  { key: 'contacts_merge_field_avatar', max: 18, where: 'merge picker field label' },
+  { key: 'contacts_merge_field_source', max: 18, where: 'merge picker field label' },
+  { key: 'contacts_merge_keep_label', max: 28, where: 'merge picker survivor radio' },
+  // Reason chips sit inline on a duplicate group header beside a count.
+  { key: 'contacts_duplicates_reason_phone', max: 26, where: 'duplicate reason chip' },
+  { key: 'contacts_duplicates_reason_channel', max: 26, where: 'duplicate reason chip' },
+  { key: 'contacts_duplicates_reason_email', max: 26, where: 'duplicate reason chip' },
+  // The third filter chip, on one row with the status chips and Архив.
+  { key: 'contacts_filter_duplicates', max: 18, where: 'contacts filter row' },
 ]
 
 describe('strings inside fixed-width controls stay within budget', () => {

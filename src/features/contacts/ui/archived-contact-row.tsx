@@ -30,6 +30,10 @@ export function ArchivedContactRow({ contact, onRestore, isRestoring }: Props) {
     contact.email?.trim() ||
     contact.channel_types[0] ||
     null
+  // Non-null only when this row was merged rather than archived on its own —
+  // `restore_contact` refuses that case with CONTACT_IS_MERGED, so the row
+  // names the survivor instead of offering a button that can only error.
+  const isMerged = contact.merged_into_id !== null
 
   return (
     <li
@@ -57,26 +61,39 @@ export function ArchivedContactRow({ contact, onRestore, isRestoring }: Props) {
       </div>
 
       {/* What restoring brings back, and when it went away. Hidden on phones,
-          where the name and the Restore button are what matter. */}
+          where the name and the Restore button are what matter. A merged row
+          has nothing to restore, so it names its survivor here instead. */}
       <div className="text-secondary hidden shrink-0 items-center gap-3 text-xs sm:flex">
-        {contact.conversation_count > 0 ? (
+        {isMerged ? (
           <span>
-            {m.contacts_archived_conversations({
-              count: contact.conversation_count,
+            {m.contacts_archived_merged_into({
+              name: contact.merged_into_name ?? '',
             })}
           </span>
-        ) : null}
-        <span>{formatDate(contact.deleted_at, CONTACT_DATE_FORMAT)}</span>
+        ) : (
+          <>
+            {contact.conversation_count > 0 ? (
+              <span>
+                {m.contacts_archived_conversations({
+                  count: contact.conversation_count,
+                })}
+              </span>
+            ) : null}
+            <span>{formatDate(contact.deleted_at, CONTACT_DATE_FORMAT)}</span>
+          </>
+        )}
       </div>
 
       <div className="shrink-0">
-        <Button
-          label={m.contact_restore_action()}
-          size="sm"
-          variant="ghost"
-          onClick={onRestore}
-          isLoading={isRestoring}
-        />
+        {isMerged ? null : (
+          <Button
+            label={m.contact_restore_action()}
+            size="sm"
+            variant="ghost"
+            onClick={onRestore}
+            isLoading={isRestoring}
+          />
+        )}
       </div>
     </li>
   )

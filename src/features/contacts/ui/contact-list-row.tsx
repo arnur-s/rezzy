@@ -1,25 +1,34 @@
 import { listItemStyle } from '@/components/list'
+import type { ContactListItem } from '@/entities/contact'
 import {
   ContactStatusChip,
   contactListDisplayName,
   isContactStatus,
 } from '@/entities/contact'
-import type { ContactListItem } from '@/entities/contact'
 import { cn } from '@/lib/cn'
 import { formatDate } from '@/lib/format-date'
-import { CONTACT_DATE_FORMAT } from '../model/date-format'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
-import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
+import { CheckboxInput } from '@astryxdesign/core/CheckboxInput'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
+import { MoreMenu } from '@astryxdesign/core/MoreMenu'
 import { Link } from '@tanstack/react-router'
-import { MoreHorizontalIcon } from 'lucide-react'
+import { CONTACT_DATE_FORMAT } from '../model/date-format'
 
 type Props = {
   contact: ContactListItem
   workspaceId: string
   ownerName: string | null
   menuItems: Array<DropdownMenuOption>
+  /**
+   * Row selection for a two-at-a-time merge pick. Undefined hides the
+   * checkbox entirely, so the row renders exactly as it did before selection
+   * existed — which is what it still does for a member who cannot merge.
+   */
+  selection?: {
+    isSelected: boolean
+    onToggle: () => void
+  }
 }
 
 /**
@@ -43,6 +52,7 @@ export function ContactListRow({
   workspaceId,
   ownerName,
   menuItems,
+  selection,
 }: Props) {
   const displayName = contactListDisplayName(contact.display_name)
   const primaryContact =
@@ -61,6 +71,20 @@ export function ContactListRow({
         'hover:bg-primary/4 focus-within:bg-primary/4',
       )}
     >
+      {/* Sibling of the link, lifted above the stretched pseudo-element —
+          same reason the action menu below is. */}
+      {selection ? (
+        <div className="relative z-10 shrink-0">
+          <CheckboxInput
+            label={m.contacts_merge_select_contact({ name: displayName })}
+            isLabelHidden
+            size="sm"
+            value={selection.isSelected}
+            onChange={selection.onToggle}
+          />
+        </div>
+      ) : null}
+
       <Avatar
         size="sm"
         name={displayName}
@@ -105,16 +129,9 @@ export function ContactListRow({
 
       {/* Sibling of the link, lifted above the stretched pseudo-element. */}
       <div className="relative z-10 shrink-0">
-        <DropdownMenu
-          hasChevron={false}
-          menuWidth={200}
-          button={{
-            label: m.contacts_row_actions(),
-            icon: <MoreHorizontalIcon className="size-4" />,
-            isIconOnly: true,
-            variant: 'ghost',
-            size: 'sm',
-          }}
+        <MoreMenu
+          label={m.contacts_row_actions()}
+          size="sm"
           items={menuItems}
         />
       </div>

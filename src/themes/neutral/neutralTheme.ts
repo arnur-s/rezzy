@@ -1,8 +1,18 @@
 /**
  * Neutral Theme
  *
- * A pure grayscale spine with a from-scratch OKLCH-derived categorical
- * palette. Hues are placed at evenly-spaced positions on the OKLCH wheel,
+ * A grayscale structure with a from-scratch OKLCH-derived categorical
+ * palette, carrying the Open Design foundations for type, radius, shadow,
+ * motion, the neutral text/surface ramp, and the brand accent green
+ * (#63fe13). Every structural surface, rule, and running-text tone is still
+ * chroma 0 — the accent is the single hue allowed into the structure, and it
+ * is split across a fill stop and a text stop because one value cannot carry
+ * both. Where those foundations are
+ * silent (the categorical hues, the status languages, the light canvas tone)
+ * the existing values stand; where they are self-contradictory the reading is
+ * noted at the token. `DESIGN.md` records every deviation in one list.
+ *
+ * Hues are placed at evenly-spaced positions on the OKLCH wheel,
  * chosen to keep each color recognizable at every tone (no red drift for
  * orange, no blue drift for purple) and well-separated from its neighbors.
  *
@@ -57,36 +67,36 @@ const neutralSyntax = defineSyntaxTheme({
 export const neutralTheme = defineTheme({
   name: 'neutral',
 
-  // Typography: Golos Text across body, heading, and display sizes (display
-  // size tokens inherit from heading.family). Monospace stays as the
-  // platform default for code.
+  // Typography: Albert Sans over Golos Text, per the Open Design foundations
+  // (`font.family.primary=Albert Sans`, `font.size.base=16px`).
   //
-  // Golos Text rather than the theme's upstream Figtree, for two reasons that
-  // are both about this app rather than about the faces:
+  // Golos Text is NOT a generic fallback here, it is the Cyrillic half of the
+  // stack. Albert Sans ships Latin and Latin-ext only, and `baseLocale` is
+  // `ru` (`project.inlang/settings.json`), so naming it alone would leave the
+  // primary locale in the system UI stack — the exact failure Figtree and
+  // Fustat already caused. Listing Golos Text immediately behind it means the
+  // browser resolves Latin to Albert Sans and Cyrillic to Golos Text via
+  // per-glyph fallback, and the interface degrades to all-Golos rather than to
+  // two typefaces on one screen if Albert Sans fails to load.
   //
-  //  1. `baseLocale` is `ru` (`project.inlang/settings.json`), so Russian is
-  //     the default experience. Figtree's release ships Latin and Latin-ext
-  //     and no Cyrillic, which would leave the primary locale in the system
-  //     fallback and style only the Latin strings beside it — two typefaces
-  //     on one screen. Golos Text is Cyrillic-first.
-  //  2. Naming a family here does not load it; the `@font-face` in
-  //     `src/fonts/fonts.css` does. Golos Text is already self-hosted there
-  //     as `unicode-range`-split woff2 subsets. Figtree was named but never
-  //     declared anywhere in the repo, so the whole interface rendered in the
-  //     system UI stack.
+  // Naming a family here does not load it: the `@font-face` in
+  // `src/fonts/fonts.css` does. Golos Text is self-hosted there as
+  // `unicode-range`-split woff2 subsets. Albert Sans is NOT yet self-hosted,
+  // so today every glyph still resolves to Golos Text.
   //
-  // Scale: base=14, ratio=1.2. Bold weights on h3/h4 for subsection hierarchy.
+  // Scale: base=16, ratio=1.2 (was base=14). Bold weights on h3/h4 for
+  // subsection hierarchy.
   typography: {
-    scale: { base: 14, ratio: 1.2 },
+    scale: { base: 16, ratio: 1.2 },
     body: {
-      family: 'Golos Text',
+      family: 'Albert Sans',
       fallbacks:
-        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        '\'Golos Text\', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     },
     heading: {
-      family: 'Golos Text',
+      family: 'Albert Sans',
       fallbacks:
-        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        '\'Golos Text\', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       weights: { 3: 'bold', 4: 'bold' },
     },
     code: {
@@ -96,10 +106,13 @@ export const neutralTheme = defineTheme({
     },
   },
 
-  // Motion: snappier than default to match shadcn/Tailwind conventions.
-  // Produces: fast-min=95ms, fast=125ms, fast-max=165ms,
-  //           medium-min=225ms, medium=300ms, medium-max=400ms.
-  motion: { fast: 125, medium: 300, slow: 700, ratio: 0.75 },
+  // Motion: the Open Design duration ladder. ratio=0.875 is chosen so the
+  // generated min/max companions land on their named steps rather than on
+  // arbitrary values:
+  //   fast-min=140ms (`instant`), fast=160ms (`fast`), fast-max=183ms (`normal`, 180)
+  //   medium-min=262ms (`slower`, 260), medium=300ms (`step6`), medium-max=343ms
+  //   slow=900ms (`step8`)
+  motion: { fast: 160, medium: 300, slow: 900, ratio: 0.875 },
 
   syntax: neutralSyntax,
 
@@ -113,8 +126,8 @@ export const neutralTheme = defineTheme({
     // =========================================================================
     // The 12px floor
     //
-    // `typography.scale` is base 14 / ratio 1.2, which generates 11.67px at
-    // `sm` and then 9.72 / 8.10 / 6.75 / 5.63px at `xs`, `2xs`, `3xs`, and
+    // `typography.scale` is base 16 / ratio 1.2, which generates 13.33px at
+    // `sm` and then 11.11 / 9.26 / 7.72 / 6.43px at `xs`, `2xs`, `3xs`, and
     // `4xs`. The product runs its whole secondary and metadata tiers —
     // labels, timestamps, previews, chip labels, filter labels, the
     // failed-send caption — on `sm` and `xs`, so those are not edge cases in
@@ -125,18 +138,19 @@ export const neutralTheme = defineTheme({
     // here is Russian, whose diacritics and soft signs are the first things to
     // disappear as size drops.
     //
-    // So the ramp is clamped rather than rescaled. Rescaling (raising `base`,
+    // So the ramp is clamped rather than rescaled. Rescaling (lowering `base`,
     // or flattening the ratio) would move every size in the system, including
     // the heading and display sizes. Clamping moves only the steps that were
     // below the floor and leaves `base` and everything above untouched.
     //
-    // The five sub-`base` steps all resolve to 12px, so they are one step now.
-    // That is the point: this is a floor, not a scale. `2xs`, `3xs`, and `4xs`
-    // are Astryx capacity that no product surface reaches for by name, and any
-    // component that does reach for one lands on the floor instead of below
-    // it. `pnpm check:font-size` measures the rendered result on every route.
+    // `sm` is NO LONGER clamped. At base 16 it rounds to 13px on Astryx's
+    // 1/16rem grid, which clears the floor on its own — so the interface has
+    // two genuinely different sizes again (16px body, 13px metadata) rather
+    // than the single 12px tier base 14 collapsed them into. The four steps
+    // below it are still Astryx capacity no product surface names, and any
+    // component that reaches for one lands on the floor instead of below it.
+    // Nothing measures this; there is no font-size check script.
     // =========================================================================
-    '--font-size-sm': '0.75rem',
     '--font-size-xs': '0.75rem',
     '--font-size-2xs': '0.75rem',
     '--font-size-3xs': '0.75rem',
@@ -145,41 +159,87 @@ export const neutralTheme = defineTheme({
     // =========================================================================
     // Backgrounds — Figma-style flat with a single lifted surface.
     //
-    // Dark mode collapses card / popover / muted to body T10. Cards and
-    // popovers lift purely via shadow + inset highlight (see --shadow-*
-    // below) — they don't need a distinct tone.
+    // Dark mode collapses card / popover / muted onto ONE tone (T10), but no
+    // longer onto the body: the canvas dropped to true black. So card and
+    // popover lift off the canvas tonally and off EACH OTHER only via the
+    // shadow's inset highlight (see --shadow-* below).
     //
-    // Surface is the exception: it's tonally LIGHTER than body (T15) so
-    // interactive components that sit on top of body have a clear,
-    // differentiated foreground. Real consumers of --color-background-surface
-    // are: switches, radios, checkboxes, multi-selectors, dialogs, app
-    // shells, sections — all things that need to lift above the canvas.
+    // Surface sits above all of it (T15) so interactive components that sit on
+    // top of body have a clear, differentiated foreground. Real consumers of
+    // --color-background-surface are: switches, radios, checkboxes,
+    // multi-selectors, dialogs, app shells, sections — all things that need to
+    // lift above the canvas.
     //
     //   surface  T15 #262626  — interactive surfaces lifted above body
-    //   body     T10 #1b1b1b  — main canvas
-    //   card     T10 #1b1b1b  — same as body, lifts via --shadow-low
-    //   popover  T10 #1b1b1b  — same as body, lifts via --shadow-med
-    //   muted    T10 #1b1b1b  — same as body
+    //   body     T0  #000000  — main canvas (Open Design `surface.base`)
+    //   card     T10 #1b1b1b  — above body; lifts off popover via --shadow-low
+    //   popover  T10 #1b1b1b  — above body; lifts off card via --shadow-med
+    //   muted    T10 #1b1b1b  — above body, level with card
     //
     // Light mode keeps the standard ladder (white surfaces float on tinted
     // body; shadows do most of the lifting):
     //   surface  T100 #ffffff
     //   body     T95  #f1f1f1
-    //   card     T100 #ffffff
-    //   popover  T100 #ffffff
+    //   card     T98  #fafafa  (Open Design `surface.raised`)
+    //   popover  T98  #fafafa  (Open Design `surface.raised`)
     //   muted    T95  #f1f1f1
+    //
+    // Dark `body` takes Open Design's `surface.base=#000000`. That is the one
+    // token in the imported foundations that changes the dark ladder: body
+    // #000000 / card #1b1b1b / surface #262626 is now three separated tones,
+    // where before all three collapsed onto #1b1b1b and only the inset rim
+    // distinguished them. The rim is kept anyway — it still does the work for
+    // card-on-card and popover-on-card, where the tones do coincide.
+    //
+    // Light `surface` stays #ffffff. Open Design supplies no light canvas/pane
+    // pair (`surface.base` is black), and surface must stay a visible step
+    // above body or every pane in the shell goes flat at once.
     //
     // All values use the OKLCH Neutral tonal palette (chroma=0).
     // =========================================================================
     '--color-background-surface': ['#ffffff', '#262626'],
-    '--color-background-body': ['#f1f1f1', '#1b1b1b'],
-    '--color-background-card': ['#ffffff', '#1b1b1b'],
-    '--color-background-popover': ['#ffffff', '#1b1b1b'],
+    '--color-background-body': ['#f1f1f1', '#000000'],
+    '--color-background-card': ['#fafafa', '#1b1b1b'],
+    '--color-background-popover': ['#fafafa', '#1b1b1b'],
     '--color-background-muted': ['#f1f1f1', '#1b1b1b'],
 
-    // Accent + neutral surface tints (sit alongside backgrounds)
-    '--color-accent': ['#262626', '#ebebeb'],
-    '--color-accent-muted': ['#f1f1f1', '#262626'],
+    // =========================================================================
+    // Accent — Open Design's brand green.
+    //
+    // The brand value is the bright lime #63fe13, but it CANNOT be this token
+    // in light mode. Luminance 0.736 puts it at 1.34:1 against white, so as
+    // link text or as a focus ring it is invisible. It lives on the primary
+    // Button instead (see components.button below), which is a fill carrying
+    // dark text at 13.4:1 — the loudest and most-seen brand surface, and the
+    // one place the raw brand color is legible.
+    //
+    // This token is the chartreuse the rest of the accent vocabulary reads:
+    //   light #2e7a00 — 5.38:1 on the white pane, 5.16:1 on the #fafafa card.
+    //                   Same hue family as the lime (H~97 vs H~100).
+    //   dark  #63fe13 — 11.3:1 on the #262626 pane, so dark mode gets the
+    //                   real brand color everywhere.
+    //
+    // DO NOT split this across --color-accent and --color-text-accent. The
+    // Tailwind bridge aliases `--color-accent: var(--color-text-accent)` and
+    // `--color-accent-bg: var(--color-accent)`, but a theme that defines
+    // --color-accent lands later in the cascade and clobbers the alias, so
+    // `text-accent` and `bg-accent-bg` BOTH resolve to this token. Astryx's
+    // own default sets the two to the same value, which is why the collision
+    // is invisible upstream. Keeping them equal here is what keeps it
+    // invisible. Verified in a browser, not inferred.
+    //
+    // 8 of the 9 `bg-accent-bg` usages in src/ are `/10` alpha tints carrying
+    // `text-accent`, which is why this token wants to be the readable stop
+    // rather than the fill: at /10 the lime and the chartreuse produce nearly
+    // the same pale plate, but only the chartreuse can be the text on it.
+    //
+    // Interactive state is deliberately NOT green: bg-primary/4 (hover) and
+    // bg-primary/10 (selected) bridge to --color-text-primary, so the ~35
+    // hover/selected surfaces in the app stay achromatic. The brand appears
+    // on deliberate accent objects, not on every row the pointer crosses.
+    // =========================================================================
+    '--color-accent': ['#2e7a00', '#63fe13'],
+    '--color-accent-muted': ['#edffe0', '#1b2b10'],
     '--color-neutral': ['#0000000F', '#FFFFFF1A'],
 
     // Overlays (modal scrims, hover/pressed tints)
@@ -187,23 +247,32 @@ export const neutralTheme = defineTheme({
     '--color-overlay-hover': ['#0000000D', '#FFFFFF0D'],
     '--color-overlay-pressed': ['#0000001A', '#FFFFFF1A'],
 
-    // Text
-    '--color-text-primary': ['#171717', '#fafafa'],
-    '--color-text-secondary': ['#737373', '#a3a3a3'],
+    // Text — light slots are Open Design `color.text.primary` / `.secondary`.
+    // #595959 computes 7.0:1 on #ffffff, a full step of margin over the
+    // #737373 it replaces (4.74:1, which cleared AA with almost nothing spare).
+    // NOTE: #262626 used to be both this token and the accent, back when the
+    // accent was the far end of the neutral ramp. The accent is now a hue
+    // (#63fe13) and the two have separated.
+    '--color-text-primary': ['#262626', '#fafafa'],
+    '--color-text-secondary': ['#595959', '#a3a3a3'],
     '--color-text-disabled': ['#a3a3a3', '#525252'],
-    '--color-text-accent': ['#262626', '#ebebeb'],
+    // Must stay byte-identical to --color-accent — see the alias note there.
+    '--color-text-accent': ['#2e7a00', '#63fe13'],
     '--color-on-dark': '#ffffff',
     '--color-on-light': '#171717',
-    // Contrast: neutral accent is near-black (L) / near-white (D)
+    // Inverts, because --color-accent does: white on the light-mode
+    // chartreuse (#2e7a00) is 5.38:1, and #171717 on the dark-mode lime is
+    // 13.4:1. The primary Button does NOT use this — it carries its own
+    // locked dark label on the lime fill in both modes.
     '--color-on-accent': ['#ffffff', '#171717'],
     '--color-on-success': ['#ffffff', '#171717'],
     '--color-on-error': ['#ffffff', '#171717'],
     '--color-on-warning': '#171717',
 
-    // Icon
-    '--color-icon-accent': ['#262626', '#ebebeb'],
-    '--color-icon-primary': ['#171717', '#fafafa'],
-    '--color-icon-secondary': ['#737373', '#a3a3a3'],
+    // Icon — tracks the text ramp above, including the accent's text stop.
+    '--color-icon-accent': ['#2e7a00', '#63fe13'],
+    '--color-icon-primary': ['#262626', '#fafafa'],
+    '--color-icon-secondary': ['#595959', '#a3a3a3'],
     '--color-icon-disabled': ['#a3a3a3', '#525252'],
 
     // Status / Sentiment — dark mode follows the issue #2150 rubric:
@@ -240,9 +309,12 @@ export const neutralTheme = defineTheme({
     '--color-error-muted': ['#facecb', '#ff9e973D'],
     '--color-warning-muted': ['#f8da9d', '#deb4333D'],
 
-    // Border
+    // Border — the emphasized light slot is the one usable value in Open
+    // Design's `color.border.strong`, which scraped a `border-color` shorthand
+    // and holds three colors: #262626 (top/inline, = the accent) and #d9d9d9
+    // (block-end, the actual hairline). The hairline half is taken.
     '--color-border': ['#ebebeb', '#FFFFFF1A'],
-    '--color-border-emphasized': ['#d4d4d4', '#525252'],
+    '--color-border-emphasized': ['#d9d9d9', '#525252'],
 
     // Effects
     '--color-skeleton': ['#ebebeb', '#525252'],
@@ -364,44 +436,50 @@ export const neutralTheme = defineTheme({
     '--color-text-gray': ['#262626', '#e5e5e5'],
 
     // =========================================================================
-    // Radius — slightly larger than default (kept as-is)
+    // Radius — Open Design's scale (6 / 10 / 13 / 18 / 50 / 999px) mapped onto
+    // Rezzy's six slots. `radius.xs`→inner, `sm`→element, `md`→container,
+    // `lg`→page, `2xl`→full. `radius.xl` (50px) has no slot and is unused.
+    // `--radius-none` keeps 4px; it sits below Open Design's floor.
+    //
+    // `--radius-page` 28px → 18px is the fix for the squircle-went-round
+    // problem: 18px no longer exceeds half the width of the 36px and 48px
+    // plates that carry it, so those stop clamping to circles.
     // =========================================================================
     '--radius-none': '0.25rem',
     '--radius-inner': '0.375rem',
     '--radius-element': '0.625rem',
-    '--radius-container': '0.75rem',
-    '--radius-page': '1.75rem',
+    '--radius-container': '0.8125rem',
+    '--radius-page': '1.125rem',
     '--radius-full': '9999px',
 
     // =========================================================================
-    // Shadows
+    // Shadows — Open Design's four shadows onto Rezzy's three slots, ordered
+    // by how far the shape lifts rather than by their scraped numbering:
+    //   low  ← shadow.3  rgba(0,0,0,.40)   0 4px  12px -4px
+    //   med  ← shadow.1  rgba(38,38,38,.42) 0 14px 26px -16px
+    //   high ← shadow.2  rgba(0,0,0,.72)   0 28px 60px -42px
+    // `shadow.4` (rgba(38,38,38,.45) 0 14px 24px -10px) is a near-duplicate of
+    // shadow.1 and has no slot.
     //
-    // Light mode: matches origin/main exactly (5%/10% low+med, 10%/15% high).
-    // Subtle drops; light surfaces don't need rim highlights.
+    // These are single-layer with a large negative spread — a tight contact
+    // shadow rather than the two-layer ambient/direct pair they replace. The
+    // alpha looks high because the spread pulls most of it back under the
+    // shape.
     //
-    // Dark mode: deepened drops + an all-around 1px white inset that wraps
-    // every edge ("Figma-style bezel"). The inset mimics ambient light
-    // catching the surface's rim on every side, giving cards/popovers/modals
-    // a substantial "lit from above" feel that drop shadows alone can't
-    // achieve against a dark canvas.
-    //   low  :  drops 25%/40% + 8%  white all-around inset
-    //   med  :  drops 35%/50% + 12% white all-around inset
-    //   high :  drops 50%/70% + 15% white all-around inset
-    //
-    // The inset layer uses light-dark(transparent, ...) so light mode is
-    // unaffected — main's exact light values are preserved.
+    // Dark mode keeps the all-around 1px white inset that wraps every edge
+    // ("Figma-style bezel"): 8% / 12% / 15% at low / med / high. Body is now
+    // #000000 while card and popover share #1b1b1b, so the rim is what still
+    // separates a popover from the card under it. The inset layer uses
+    // light-dark(transparent, ...) so light mode never sees it.
     // =========================================================================
     '--shadow-low':
-      '0 2px 4px light-dark(oklch(0 0 0 / 5%), oklch(0 0 0 / 25%)), ' +
-      '0 4px 8px light-dark(oklch(0 0 0 / 10%), oklch(0 0 0 / 40%)), ' +
+      '0 4px 12px -4px light-dark(oklch(0 0 0 / 40%), oklch(0 0 0 / 60%)), ' +
       'inset 0 0 0 1px light-dark(transparent, oklch(1 0 0 / 8%))',
     '--shadow-med':
-      '0 2px 4px light-dark(oklch(0 0 0 / 5%), oklch(0 0 0 / 35%)), ' +
-      '0 4px 12px light-dark(oklch(0 0 0 / 10%), oklch(0 0 0 / 50%)), ' +
+      '0 14px 26px -16px light-dark(oklch(0.24 0 0 / 42%), oklch(0 0 0 / 62%)), ' +
       'inset 0 0 0 1px light-dark(transparent, oklch(1 0 0 / 12%))',
     '--shadow-high':
-      '0 4px 6px light-dark(oklch(0 0 0 / 10%), oklch(0 0 0 / 50%)), ' +
-      '0 12px 24px light-dark(oklch(0 0 0 / 15%), oklch(0 0 0 / 70%)), ' +
+      '0 28px 60px -42px light-dark(oklch(0 0 0 / 72%), oklch(0 0 0 / 85%)), ' +
       'inset 0 0 0 1px light-dark(transparent, oklch(1 0 0 / 15%))',
     '--shadow-inset-hover': 'inset 0px 0px 0px 2px #0074e24D',
     '--shadow-inset-selected': 'inset 0px 0px 0px 2px #0074e280',
@@ -416,6 +494,15 @@ export const neutralTheme = defineTheme({
     // uses the OKLCH red filled treatment.
     // =========================================================================
     button: {
+      // The brand lime, mode-locked, carrying a locked dark label at 13.4:1.
+      // This is the one surface in the product that shows Open Design's raw
+      // #63fe13 — it works here and only here, because a fill with dark text
+      // is the single context where luminance 0.736 is an asset rather than
+      // an accessibility failure. White on it would be 1.34:1.
+      'variant:primary': {
+        backgroundColor: '#63fe13',
+        color: '#171717',
+      },
       'variant:destructive': {
         backgroundColor: 'var(--color-error-muted)', // locked pastel red bg
         color: 'var(--color-error)', // locked T30 red — matches banner/input error text

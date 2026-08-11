@@ -263,6 +263,9 @@ export type Database = {
           email: string | null
           id: string
           last_seen_at: string | null
+          merged_at: string | null
+          merged_by: string | null
+          merged_into_id: string | null
           name: string | null
           owner_id: string | null
           phone: string | null
@@ -279,6 +282,9 @@ export type Database = {
           email?: string | null
           id?: string
           last_seen_at?: string | null
+          merged_at?: string | null
+          merged_by?: string | null
+          merged_into_id?: string | null
           name?: string | null
           owner_id?: string | null
           phone?: string | null
@@ -295,6 +301,9 @@ export type Database = {
           email?: string | null
           id?: string
           last_seen_at?: string | null
+          merged_at?: string | null
+          merged_by?: string | null
+          merged_into_id?: string | null
           name?: string | null
           owner_id?: string | null
           phone?: string | null
@@ -305,6 +314,20 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contacts_merged_by_fkey"
+            columns: ["merged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_merged_into_fkey"
+            columns: ["workspace_id", "merged_into_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["workspace_id", "id"]
+          },
           {
             foreignKeyName: "contacts_owner_id_fkey"
             columns: ["owner_id"]
@@ -1270,6 +1293,8 @@ export type Database = {
           email: string
           id: string
           last_seen_at: string
+          merged_into_id: string
+          merged_into_name: string
           name: string
           owner_id: string
           phone: string

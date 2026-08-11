@@ -71,3 +71,29 @@ describe('contactQueryKeys', () => {
     expect(detail.slice(0, prefix.length)).not.toEqual([...prefix])
   })
 })
+
+describe('duplicate and merge keys', () => {
+  it('nests duplicates under the workspace so one workspace never invalidates another', () => {
+    expect(contactQueryKeys.duplicatesPage('ws-a', 2)).toEqual([
+      'contacts',
+      'ws-a',
+      'duplicates',
+      { page: 2 },
+    ])
+    // lists() must NOT be a prefix of the duplicates key: the two are served by
+    // different RPCs, and a directory invalidation should not refetch a scan.
+    expect(contactQueryKeys.duplicates('ws-a')).not.toEqual(
+      expect.arrayContaining(['list']),
+    )
+  })
+
+  it('scopes merge child counts to the contact they describe', () => {
+    expect(contactQueryKeys.mergeChildren('ws-a', 'c-1')).toEqual([
+      'contacts',
+      'ws-a',
+      'detail',
+      'c-1',
+      'merge-children',
+    ])
+  })
+})

@@ -205,6 +205,67 @@ describe('ru counted messages agree with their number', () => {
       ),
     ).toBe('Гамма ООО: 21 приглашение')
   })
+
+  it('declines what a merge moves', () => {
+    expect(m.contacts_merge_moves_conversations({ count: 1 }, ru)).toBe('1 диалог')
+    expect(m.contacts_merge_moves_conversations({ count: 3 }, ru)).toBe('3 диалога')
+    expect(m.contacts_merge_moves_conversations({ count: 8 }, ru)).toBe('8 диалогов')
+    expect(m.contacts_merge_moves_conversations({ count: 21 }, ru)).toBe('21 диалог')
+
+    expect(m.contacts_merge_moves_notes({ count: 1 }, ru)).toBe('1 заметка')
+    expect(m.contacts_merge_moves_notes({ count: 2 }, ru)).toBe('2 заметки')
+    expect(m.contacts_merge_moves_notes({ count: 6 }, ru)).toBe('6 заметок')
+
+    expect(m.contacts_merge_moves_phones({ count: 1 }, ru)).toBe('1 номер')
+    expect(m.contacts_merge_moves_phones({ count: 2 }, ru)).toBe('2 номера')
+    expect(m.contacts_merge_moves_phones({ count: 5 }, ru)).toBe('5 номеров')
+
+    expect(m.contacts_merge_moves_channels({ count: 1 }, ru)).toBe('1 канал')
+    expect(m.contacts_merge_moves_channels({ count: 2 }, ru)).toBe('2 канала')
+    expect(m.contacts_merge_moves_channels({ count: 5 }, ru)).toBe('5 каналов')
+  })
+
+  it('declines the duplicate counts', () => {
+    expect(m.contacts_duplicates_count({ count: 1 }, ru)).toBe('1 совпадение')
+    expect(m.contacts_duplicates_count({ count: 2 }, ru)).toBe('2 совпадения')
+    expect(m.contacts_duplicates_count({ count: 7 }, ru)).toBe('7 совпадений')
+    expect(m.contacts_duplicates_count({ count: 21 }, ru)).toBe('21 совпадение')
+
+    expect(m.contacts_duplicates_group_size({ count: 2 }, ru)).toBe('2 контакта')
+    expect(m.contacts_duplicates_group_size({ count: 5 }, ru)).toBe('5 контактов')
+  })
+
+  it('conjugates the merge-moves verb by the total item count, not the category count', () => {
+    // The subject is a compound noun phrase built from the summary, but the
+    // verb agrees with the total number of things moving. A count of 1 is
+    // the one-item case ("Перейдёт" -- singular future); everything else,
+    // including a plural-looking but still-small count like 2, takes the
+    // plural ("Перейдут").
+    expect(
+      m.contacts_merge_confirm_moves(
+        { count: 1, survivor: 'Ivan', summary: '1 диалог' },
+        ru,
+      ),
+    ).toBe('Перейдёт к «Ivan»: 1 диалог.')
+    expect(
+      m.contacts_merge_confirm_moves(
+        { count: 2, survivor: 'Ivan', summary: '2 диалога' },
+        ru,
+      ),
+    ).toBe('Перейдут к «Ivan»: 2 диалога.')
+    expect(
+      m.contacts_merge_confirm_moves(
+        { count: 5, survivor: 'Ivan', summary: '5 диалогов' },
+        ru,
+      ),
+    ).toBe('Перейдут к «Ivan»: 5 диалогов.')
+  })
+
+  it('says the merge cannot be undone, in the base locale', () => {
+    // The whole design turns on this sentence being true and being read. An
+    // archived contact comes back by itself; a merged one does not.
+    expect(m.contacts_merge_confirm_irreversible(ru)).toContain('нельзя отменить')
+  })
 })
 
 describe('en counted messages agree with their number', () => {

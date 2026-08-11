@@ -1,6 +1,6 @@
 begin;
 
-select plan(44);
+select plan(45);
 
 -- Contract for collaborative notes on contacts. The production migration does not
 -- exist yet; until it does, this file should fail RED with relation
@@ -390,6 +390,21 @@ select throws_ok(
   '23514',
   'CONTACT_NOTE_IDENTITY_IMMUTABLE',
   'note identity fields and the author snapshot are immutable after insert'
+);
+
+-- 20260810090100 (merge_contacts) taught this trigger to let contact_id move
+-- when the row it is leaving is already recorded as merged into the row it is
+-- joining. The exemption is data-driven, not privilege-driven, so it does not
+-- fire here: contact …0301 was never merged into …0302, table owner or not.
+select throws_ok(
+  $$
+    update public.contact_notes
+    set contact_id = '20000000-0000-4000-8000-000000000302'
+    where id = '20000000-0000-4000-8000-000000000401'
+  $$,
+  '23514',
+  'CONTACT_NOTE_IDENTITY_IMMUTABLE',
+  'contact_id cannot be reassigned outside a recorded merge'
 );
 
 -- Nulling author_id is allowed only when the author profile is genuinely gone,

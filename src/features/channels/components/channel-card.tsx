@@ -6,11 +6,10 @@ import {
 } from '@/entities/channel'
 import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
-import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import type { DropdownMenuOption } from '@astryxdesign/core/DropdownMenu'
+import { MoreMenu } from '@astryxdesign/core/MoreMenu'
 import {
   CircleCheckIcon,
-  MoreHorizontalIcon,
   PencilIcon,
   RefreshCwIcon,
   Trash2Icon,
@@ -99,17 +98,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
           </p>
         </div>
 
-        <DropdownMenu
-          hasChevron={false}
-          menuWidth={176}
-          button={{
-            label: m.channels_card_actions_label(),
-            icon: <MoreHorizontalIcon className="size-4" />,
-            isIconOnly: true,
-            variant: 'ghost',
-          }}
-          items={menuItems}
-        />
+        <MoreMenu label={m.channels_card_actions_label()} items={menuItems} />
       </div>
 
       <EditChannelNameModal

@@ -1,6 +1,6 @@
 import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import { m } from '@/paraglide/messages'
-import { cn } from '@/lib/cn'
+import { Tab, TabList } from '@astryxdesign/core/TabList'
 
 export type InboxPrimaryFilter = 'all' | 'mine' | 'unassigned'
 
@@ -15,55 +15,71 @@ const FILTERS: Array<FilterDef> = [
   { key: 'unassigned', label: () => m.inbox_filter_unassigned() },
 ]
 
+function isPrimaryFilter(value: string): value is InboxPrimaryFilter {
+  return FILTERS.some((filter) => filter.key === value)
+}
+
 type Props = {
   primaryFilter: InboxPrimaryFilter
   onPrimaryFilterChange: (filter: InboxPrimaryFilter) => void
   unreadCounts: Record<InboxPrimaryFilter, number>
 }
 
+/**
+ * The three ways to narrow the conversation list.
+ *
+ * These were hand-built buttons with hand-written selected/hover classes,
+ * carrying `role="tab"` inside a `role="tablist"`. That was the worse of the
+ * two available inaccuracies: the ARIA tabs pattern promises arrow-key
+ * movement and a `tabpanel`, and this had neither — three plain buttons, all
+ * in the tab order, controlling a list that is not a panel.
+ *
+ * Astryx's `TabList` is a *navigation* strip: it renders `nav` + buttons and
+ * marks the active one `aria-current="page"`. Not literally true either, since
+ * this filter is component state and changes no URL — but it conveys the same
+ * "this one is current" and it brings the roving tabindex and arrow keys the
+ * hand-rolled version only claimed to have.
+ *
+ * A `SegmentedControl` would be the closer idiom for a filter, but its item
+ * takes a leading icon and nothing after the label, so the unread counts would
+ * have to be dropped. `Tab` has `endContent`, so they survive.
+ */
 export function PrimaryInboxFilters({
   primaryFilter,
   onPrimaryFilterChange,
   unreadCounts,
 }: Props) {
-  const navLabel = m.inbox_primary_filter_aria_label()
-
   return (
     <div className="px-2 py-2">
-      <div
-        role="tablist"
-        aria-label={navLabel}
-        className="flex flex-row flex-wrap gap-0.5"
+      <TabList
+        value={primaryFilter}
+        // TabList's onChange is a plain string; the guard keeps a value that
+        // is not one of the three from reaching the caller's union.
+        onChange={(value) => {
+          if (isPrimaryFilter(value)) onPrimaryFilterChange(value)
+        }}
+        aria-label={m.inbox_primary_filter_aria_label()}
+        size="sm"
       >
         {FILTERS.map(({ key, label }) => {
-          const isActive = primaryFilter === key
           const count = unreadCounts[key]
           return (
-            <button
+            <Tab
               key={key}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => onPrimaryFilterChange(key)}
-              className={cn(
-                'flex w-fit cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium outline-none transition-colors',
-                'focus-visible:ring-accent focus-visible:ring-2',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
-              )}
-            >
-              <span className="truncate text-left">{label()}</span>
-              {count > 0 ? (
-                <NumericUnreadChip
-                  count={count}
-                  aria-label={m.inbox_unread_aria_label({ count })}
-                />
-              ) : null}
-            </button>
+              value={key}
+              label={label()}
+              endContent={
+                count > 0 ? (
+                  <NumericUnreadChip
+                    count={count}
+                    aria-label={m.inbox_unread_aria_label({ count })}
+                  />
+                ) : undefined
+              }
+            />
           )
         })}
-      </div>
+      </TabList>
     </div>
   )
 }

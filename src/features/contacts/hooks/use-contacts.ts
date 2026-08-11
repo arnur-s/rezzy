@@ -13,6 +13,7 @@ import {
   createContact,
   getWorkspaceContact,
   listArchivedContacts,
+  resolveMergedContact,
   restoreContact,
   searchWorkspaceContacts,
   updateContact,
@@ -67,6 +68,32 @@ export function useContactDetail(workspaceId: string, contactId: string) {
     queryKey: contactQueryKeys.detail(workspaceId, contactId),
     queryFn: () => getWorkspaceContact({ workspaceId, contactId }),
     enabled: Boolean(workspaceId && contactId),
+  })
+}
+
+/**
+ * Whether the id `useContactDetail` just came back `null` for belongs to a
+ * merged contact, and if so, its survivor.
+ *
+ * `enabled` is the caller's job, and it has to stay narrow: this is a second
+ * round trip on top of the ordinary lookup, so it must fire only once that
+ * lookup has definitively resolved to nothing — never while it is pending,
+ * never after it errors, and never for a contact that loaded normally. The
+ * detail page enables it exactly on `contactQuery.isSuccess && data === null`.
+ */
+export function useResolveMergedContact({
+  workspaceId,
+  contactId,
+  enabled,
+}: {
+  workspaceId: string
+  contactId: string
+  enabled: boolean
+}) {
+  return useQuery({
+    queryKey: contactQueryKeys.mergedRedirect(workspaceId, contactId),
+    queryFn: () => resolveMergedContact({ workspaceId, contactId }),
+    enabled: enabled && Boolean(workspaceId && contactId),
   })
 }
 

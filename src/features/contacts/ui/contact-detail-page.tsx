@@ -13,23 +13,19 @@ import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Button } from '@astryxdesign/core/Button'
-import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { IconButton } from '@astryxdesign/core/IconButton'
+import { MoreMenu } from '@astryxdesign/core/MoreMenu'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { useToast } from '@astryxdesign/core/Toast'
 import { Link, useNavigate } from '@tanstack/react-router'
-import {
-  ArrowLeftIcon,
-  CopyIcon,
-  MoreHorizontalIcon,
-  UserRoundXIcon,
-} from 'lucide-react'
-import { useState } from 'react'
+import { ArrowLeftIcon, CopyIcon, UserRoundXIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import {
   useContactConversations,
   useContactDetail,
   useContactPhones,
+  useResolveMergedContact,
 } from '../hooks/use-contacts'
 import { CONTACT_DATE_FORMAT } from '../model/date-format'
 import { ArchiveContactDialog } from './archive-contact-dialog'
@@ -84,8 +80,43 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   const membersQuery = useWorkspaceMemberDirectory(workspaceId)
   const { isAdmin } = useIsWorkspaceAdmin(workspaceId)
   const navigate = useNavigate()
+  const showToast = useToast()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isArchiveOpen, setIsArchiveOpen] = useState(false)
+
+  // `getWorkspaceContact` can never see `merged_into_id`: the contacts SELECT
+  // policy hides a row from every caller, admins included, the instant
+  // `deleted_at` is set, and a merged row always carries it —
+  // `contacts_merged_is_archived_check` ties the two together in the same
+  // statement `merge_contacts` writes. So a merged contact's own id always
+  // resolves `contactQuery.data` to null, indistinguishable at that point from
+  // an id that never existed. `resolve_merged_contact` is the guarded RPC that
+  // can still answer the one question that matters here — asked only once the
+  // ordinary lookup has definitively come back empty, never merely pending, so
+  // this stays a query that fires for a not-found id and not for every contact
+  // anyone opens.
+  const resolveMergedQuery = useResolveMergedContact({
+    workspaceId,
+    contactId,
+    enabled: contactQuery.isSuccess && contactQuery.data === null,
+  })
+
+  // `replace: true`: the merged id is gone for good and must not sit in
+  // history for the back button to return to. One hop only — `merge_contacts`
+  // repoints every contact that pointed at a survivor onto its new survivor
+  // whenever that survivor is itself later merged away, so `merged_into_id`
+  // never chains and this always resolves in a single hop.
+  useEffect(() => {
+    const survivorId = resolveMergedQuery.data
+    if (!survivorId) return
+
+    showToast({ body: m.contact_detail_merged_redirect(), type: 'info' })
+    void navigate({
+      to: '/workspaces/$id/contacts/$contactId',
+      params: { id: workspaceId, contactId: survivorId },
+      replace: true,
+    })
+  }, [resolveMergedQuery.data])
 
   const backLink = (
     <Link
@@ -142,6 +173,28 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
   // belonging to another workspace resolves to null here rather than rendering
   // inside the wrong workspace's shell.
   if (!contact) {
+    // `resolveMergedQuery` only enables once `contactQuery` has already come
+    // back null, so every visit to a merged contact's URL passes through
+    // here first -- not an edge case, the ordinary path for every merged-URL
+    // visit. While that lookup is still pending, or has already found a
+    // survivor and the redirect effect above is about to navigate away, this
+    // is not "not found" and must not render as one: without this guard the
+    // EmptyState below flashes on 100% of merged-URL visits for the length
+    // of one round trip before the redirect fires.
+    if (resolveMergedQuery.isPending || resolveMergedQuery.data) {
+      return (
+        <div className="flex h-full flex-col">
+          <header className="border-border flex h-14 shrink-0 items-center border-b px-4">
+            {backLink}
+          </header>
+          <div className="flex flex-col gap-3 p-4">
+            <Skeleton width={180} height={20} radius={3} />
+            <Skeleton width="100%" height={96} radius={3} />
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="flex h-full flex-col">
         <header className="border-border flex h-14 shrink-0 items-center border-b px-4">
@@ -174,7 +227,6 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
       : contact.phone?.trim()
         ? [contact.phone.trim()]
         : []
-  const isIncomplete = phoneRows.length === 0 && !contact.email?.trim()
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
@@ -192,16 +244,9 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
               360px header in Russian, and Edit is the action people came for.
               Owner/admin only, matching public.archive_contact's own guard. */}
           {isAdmin ? (
-            <DropdownMenu
-              hasChevron={false}
-              menuWidth={220}
-              button={{
-                label: m.contacts_row_actions(),
-                icon: <MoreHorizontalIcon className="size-4" />,
-                isIconOnly: true,
-                variant: 'ghost',
-                size: 'sm',
-              }}
+            <MoreMenu
+              label={m.contacts_row_actions()}
+              size="sm"
               items={[
                 {
                   label: m.contact_archive_action(),
@@ -285,7 +330,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
                         key={channel.id}
                         className="border-border rounded-lg border px-2 py-1 text-xs"
                       >
-                        {channel.external_name?.trim() || channel.channel_type}
+                        {channel.channel_type}
                       </span>
                     ))}
                   </div>
@@ -309,12 +354,6 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
                 </div>
               ) : null}
             </div>
-            {/* One restrained prompt instead of a row per missing field. */}
-            {isIncomplete ? (
-              <p className="text-secondary mt-1 text-xs">
-                {m.contact_detail_incomplete()}
-              </p>
-            ) : null}
           </section>
 
           {/* Notes. ContactNotesSection carries aria-labelledby="contact-notes-title"
