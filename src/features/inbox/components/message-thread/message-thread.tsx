@@ -4,6 +4,7 @@ import {
   getReactionCapabilities,
   isChannelType,
 } from '@/entities/channel'
+import { SideRays } from '@/components/side-rays'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
@@ -283,8 +284,32 @@ export function MessageThread({
       ) : null}
       {/* ChatLayout owns the scroll container, follow-on-append, and the
           scroll-to-bottom button; it is keyed by conversation so switching
-          threads resets scroll state. */}
-      <div className="flex min-h-0 flex-1 flex-col">
+          threads resets scroll state.
+
+          `isolate` gives the rays a stacking context to sit behind: at `-z-10`
+          they fall behind the transcript but still paint over the pane's
+          `bg-surface`, which is set on an ancestor. */}
+      <div className="relative isolate flex min-h-0 flex-1 flex-col">
+        <SideRays
+          className="-z-10"
+          origin="top-right"
+          // Achromatic shell, single accent hue — see the note in
+          // `neutralTheme.ts`. Both layers ride the brand green rather than
+          // introducing the upstream demo's yellow/blue pair.
+          rayColor1="#63fe13"
+          rayColor2="#2e7a00"
+          speed={2.5}
+          intensity={1.2}
+          spread={2}
+          saturation={1.2}
+          blend={0.75}
+          falloff={1.6}
+          // Ambient, not a feature. The transcript is the thing being read.
+          // At this pane width the fan reads as a corner wash rather than
+          // discrete rays; 0.55 is where it is visible in light mode without
+          // competing with message text. Checked in both themes.
+          opacity={0.55}
+        />
         <MessageThreadProvider value={threadContext}>
           <ChatLayout
             key={conversation.id}
