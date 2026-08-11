@@ -7,8 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { WorkspaceMembersSection } from './workspace-members-section'
 
 // This harness mocks the two roster hooks directly (`useWorkspaceMemberDirectory`,
-// `useIsWorkspaceAdmin`), the same level the retired stub's test mocked
-// `useWorkspaceMembers` at, rather than going through the real hooks with a
+// `useIsWorkspaceAdmin`), the same level the retired stub's test mocked its own
+// roster hook at, rather than going through the real hooks with a
 // mocked `supabase.rpc` + `useAuth`: the roster query in the real hooks resolves
 // asynchronously, and the assertions the brief specifies read synchronously
 // right after render (no `await`/`findBy`), so the mock has to already reflect

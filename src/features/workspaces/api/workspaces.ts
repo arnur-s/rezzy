@@ -1,4 +1,4 @@
-import type { Tables, TablesUpdate } from '@/api/types'
+import type { TablesUpdate } from '@/api/types'
 import type { WorkspaceMember } from '@/entities/workspace'
 import { supabase } from '@/utils/supabase'
 import type { CreateWorkspaceFormValues } from '../schemas/workspace-form-schema'
@@ -8,8 +8,6 @@ export const workspaceQueryKeys = {
   detail: (workspaceId: string) =>
     ['workspaces', 'detail', workspaceId] as const,
   list: (userId: string) => ['workspaces', 'list', userId] as const,
-  members: (workspaceId: string) =>
-    ['workspaces', 'members', workspaceId] as const,
   memberDirectory: (workspaceId: string) =>
     ['workspaces', 'member-directory', workspaceId] as const,
   myInvitations: ['workspaces', 'my-invitations'] as const,
@@ -43,43 +41,6 @@ export async function getWorkspace(workspaceId: string) {
   }
 
   return data
-}
-
-type WorkspaceMemberProfile = {
-  avatar_url: string | null
-  email: string | null
-  full_name: string | null
-  id: string
-}
-
-export type WorkspaceMemberWithProfile = Tables<'workspace_members'> & {
-  profile: WorkspaceMemberProfile | null
-}
-
-/**
- * Direct table read, and therefore only ever the caller's own membership:
- * `public.workspace_members` is `user_id = auth.uid()` and `public.profiles` is
- * `id = auth.uid()`, so the embedded profile resolves for nobody else.
- *
- * Kept as-is because its one consumer (the members stub in workspace settings)
- * has not been rebuilt. Anything that needs the actual roster must use
- * {@link listWorkspaceMembers}, which goes through the RPC that can see past
- * those policies.
- */
-export async function getWorkspaceMembers(
-  workspaceId: string,
-): Promise<Array<WorkspaceMemberWithProfile>> {
-  const { data, error } = await supabase
-    .from('workspace_members')
-    .select('*, profile:profiles(id, full_name, email, avatar_url)')
-    .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: true })
-
-  if (error) {
-    throw error
-  }
-
-  return data as unknown as Array<WorkspaceMemberWithProfile>
 }
 
 /**

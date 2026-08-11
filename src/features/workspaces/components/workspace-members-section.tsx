@@ -4,6 +4,7 @@ import {
   workspaceMemberRoleLabel,
 } from '@/entities/workspace'
 import type { WorkspaceMember } from '@/entities/workspace'
+import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
@@ -14,9 +15,10 @@ import { Selector } from '@astryxdesign/core/Selector'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { useToast } from '@astryxdesign/core/Toast'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { MailPlusIcon } from 'lucide-react'
-import type { FormEvent } from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { membershipErrorMessage } from '../api/workspace-membership'
 import type { WorkspaceInvitationForAdmin } from '../api/workspace-membership'
 import {
@@ -30,6 +32,12 @@ import {
   useIsWorkspaceAdmin,
   useWorkspaceMemberDirectory,
 } from '../hooks/use-workspaces'
+import type { InviteMemberFormValues } from '../schemas/invite-member-schema'
+import {
+  INVITE_MEMBER_ROLES,
+  createInviteMemberSchema,
+  inviteMemberDefaultValues,
+} from '../schemas/invite-member-schema'
 
 type Props = {
   workspaceId: string
@@ -107,31 +115,34 @@ export function WorkspaceMembersSection({ workspaceId }: Props) {
  * attempt; this prevents one.
  */
 function InviteMemberForm({ workspaceId }: { workspaceId: string }) {
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState('member')
   const invite = useInviteMember(workspaceId)
   const showToast = useToast()
+  const schema = useLocalizedSchema(createInviteMemberSchema)
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault()
-    if (!email.trim()) return
-    invite.mutate(
-      { email, role },
-      {
-        onSuccess: () => {
-          setEmail('')
-          showToast({
-            body: m.workspace_settings_members_invite_sent(),
-            type: 'info',
-          })
-        },
+  const { control, handleSubmit, reset } = useForm<InviteMemberFormValues>({
+    defaultValues: inviteMemberDefaultValues,
+    disabled: invite.isPending,
+    resolver: standardSchemaResolver(schema),
+  })
+
+  function onSubmit(values: InviteMemberFormValues) {
+    invite.mutate(values, {
+      onSuccess: () => {
+        // Reset to the defaults rather than clearing the email alone: the role
+        // selector is part of the same form state, and leaving it on the last
+        // pick makes the next invite silently inherit it.
+        reset(inviteMemberDefaultValues)
+        showToast({
+          body: m.workspace_settings_members_invite_sent(),
+          type: 'info',
+        })
       },
-    )
+    })
   }
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(onSubmit)}
       className="border-border/60 flex flex-col gap-3 border-y py-5"
     >
       <div className="flex items-center gap-2">
@@ -146,34 +157,47 @@ function InviteMemberForm({ workspaceId }: { workspaceId: string }) {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <TextInput
-            label={m.workspace_settings_members_invite_email_label()}
-            description={m.workspace_settings_members_invite_help()}
-            type="email"
-            placeholder={m.workspace_settings_members_invite_email_placeholder()}
-            value={email}
-            onChange={setEmail}
-            isDisabled={invite.isPending}
+          <Controller
+            control={control}
+            name="email"
+            render={({ field, fieldState }) => (
+              <TextInput
+                label={m.workspace_settings_members_invite_email_label()}
+                description={m.workspace_settings_members_invite_help()}
+                type="email"
+                placeholder={m.workspace_settings_members_invite_email_placeholder()}
+                value={field.value}
+                onChange={(next) => field.onChange(next)}
+                isDisabled={invite.isPending}
+                status={
+                  fieldState.error?.message
+                    ? { type: 'error', message: fieldState.error.message }
+                    : undefined
+                }
+              />
+            )}
           />
         </div>
-        <Selector
-          label={m.workspace_settings_members_invite_role_label()}
-          value={role}
-          onChange={setRole}
-          options={[
-            { value: 'admin', label: m.workspace_settings_members_role_admin() },
-            {
-              value: 'member',
-              label: m.workspace_settings_members_role_member(),
-            },
-          ]}
-          isDisabled={invite.isPending}
+        <Controller
+          control={control}
+          name="role"
+          render={({ field }) => (
+            <Selector
+              label={m.workspace_settings_members_invite_role_label()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              options={INVITE_MEMBER_ROLES.map((role) => ({
+                value: role,
+                label: workspaceMemberRoleLabel(role),
+              }))}
+              isDisabled={invite.isPending}
+            />
+          )}
         />
         <Button
           label={m.workspace_settings_members_invite_action()}
           type="submit"
           isLoading={invite.isPending}
-          isDisabled={!email.trim()}
         />
       </div>
 

@@ -2,7 +2,6 @@ import {
   createWorkspace,
   getUserWorkspaces,
   getWorkspace,
-  getWorkspaceMembers,
   listWorkspaceMembers,
   updateWorkspace,
   workspaceQueryKeys,
@@ -25,15 +24,6 @@ export function useWorkspace(workspaceId: string) {
   return useQuery({
     queryFn: () => getWorkspace(workspaceId),
     queryKey: workspaceQueryKeys.detail(workspaceId),
-    enabled: !!workspaceId,
-    refetchOnWindowFocus: false,
-  })
-}
-
-export function useWorkspaceMembers(workspaceId: string) {
-  return useQuery({
-    queryFn: () => getWorkspaceMembers(workspaceId),
-    queryKey: workspaceQueryKeys.members(workspaceId),
     enabled: !!workspaceId,
     refetchOnWindowFocus: false,
   })
@@ -136,7 +126,7 @@ export function useCreateWorkspace({
           queryKey: workspaceQueryKeys.detail(workspace.id),
         }),
         queryClient.invalidateQueries({
-          queryKey: workspaceQueryKeys.members(workspace.id),
+          queryKey: workspaceQueryKeys.memberDirectory(workspace.id),
         }),
       ])
     },

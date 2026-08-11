@@ -116,32 +116,44 @@ export function useUpdateMemberRole(workspaceId: string) {
 
 export function useRemoveMember(workspaceId: string) {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: (input: { userId: string }) =>
       removeMember({ workspaceId, ...input }),
-    onSuccess: async () => {
+    onSuccess: async (_data, { userId }) => {
       await invalidateRoster(queryClient, workspaceId)
+      // remove_workspace_member doubles as "leave": the RPC lets anyone remove
+      // themselves. Doing so drops the workspace out of the caller's own list,
+      // and `useWorkspaces` has no staleTime and no refetchOnWindowFocus — so
+      // without this the workspace sits in the switcher until a hard reload,
+      // pointing at content RLS has already withdrawn. Removing somebody else
+      // changes nothing about the caller's list, hence the condition.
+      if (user?.id && userId === user.id) {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.list(user.id),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.detail(workspaceId),
+          }),
+        ])
+      }
     },
   })
 }
 
 /**
- * Both roster queries, because they are two different reads of the same fact:
- * `members` is the settings page's own-row table read, `memberDirectory` is the
- * RPC every assignee picker shares. A role change that refreshed only one would
- * leave the inbox showing a stale role until the five-minute staleTime expired.
+ * `memberDirectory` is the one roster read left — the RPC that the settings
+ * page and every assignee picker share. It carries a five-minute `staleTime`,
+ * so a role change that skipped this would leave the inbox showing the old
+ * role for that long.
  */
 async function invalidateRoster(
   queryClient: ReturnType<typeof useQueryClient>,
   workspaceId: string,
 ) {
-  await Promise.all([
-    queryClient.invalidateQueries({
-      queryKey: workspaceQueryKeys.members(workspaceId),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: workspaceQueryKeys.memberDirectory(workspaceId),
-    }),
-  ])
+  await queryClient.invalidateQueries({
+    queryKey: workspaceQueryKeys.memberDirectory(workspaceId),
+  })
 }
