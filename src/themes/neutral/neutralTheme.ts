@@ -1,9 +1,13 @@
 /**
  * Neutral Theme
  *
- * A pure grayscale spine with a from-scratch OKLCH-derived categorical
+ * A grayscale structure with a from-scratch OKLCH-derived categorical
  * palette, carrying the Open Design foundations for type, radius, shadow,
- * motion, and the neutral text/surface ramp. Where those foundations are
+ * motion, the neutral text/surface ramp, and the brand accent green
+ * (#63fe13). Every structural surface, rule, and running-text tone is still
+ * chroma 0 — the accent is the single hue allowed into the structure, and it
+ * is split across a fill stop and a text stop because one value cannot carry
+ * both. Where those foundations are
  * silent (the categorical hues, the status languages, the light canvas tone)
  * the existing values stand; where they are self-contradictory the reading is
  * noted at the token. `DESIGN.md` records every deviation in one list.
@@ -199,9 +203,43 @@ export const neutralTheme = defineTheme({
     '--color-background-popover': ['#fafafa', '#1b1b1b'],
     '--color-background-muted': ['#f1f1f1', '#1b1b1b'],
 
-    // Accent + neutral surface tints (sit alongside backgrounds)
-    '--color-accent': ['#262626', '#ebebeb'],
-    '--color-accent-muted': ['#f1f1f1', '#262626'],
+    // =========================================================================
+    // Accent — Open Design's brand green.
+    //
+    // The brand value is the bright lime #63fe13, but it CANNOT be this token
+    // in light mode. Luminance 0.736 puts it at 1.34:1 against white, so as
+    // link text or as a focus ring it is invisible. It lives on the primary
+    // Button instead (see components.button below), which is a fill carrying
+    // dark text at 13.4:1 — the loudest and most-seen brand surface, and the
+    // one place the raw brand color is legible.
+    //
+    // This token is the chartreuse the rest of the accent vocabulary reads:
+    //   light #2e7a00 — 5.38:1 on the white pane, 5.16:1 on the #fafafa card.
+    //                   Same hue family as the lime (H~97 vs H~100).
+    //   dark  #63fe13 — 11.3:1 on the #262626 pane, so dark mode gets the
+    //                   real brand color everywhere.
+    //
+    // DO NOT split this across --color-accent and --color-text-accent. The
+    // Tailwind bridge aliases `--color-accent: var(--color-text-accent)` and
+    // `--color-accent-bg: var(--color-accent)`, but a theme that defines
+    // --color-accent lands later in the cascade and clobbers the alias, so
+    // `text-accent` and `bg-accent-bg` BOTH resolve to this token. Astryx's
+    // own default sets the two to the same value, which is why the collision
+    // is invisible upstream. Keeping them equal here is what keeps it
+    // invisible. Verified in a browser, not inferred.
+    //
+    // 8 of the 9 `bg-accent-bg` usages in src/ are `/10` alpha tints carrying
+    // `text-accent`, which is why this token wants to be the readable stop
+    // rather than the fill: at /10 the lime and the chartreuse produce nearly
+    // the same pale plate, but only the chartreuse can be the text on it.
+    //
+    // Interactive state is deliberately NOT green: bg-primary/4 (hover) and
+    // bg-primary/10 (selected) bridge to --color-text-primary, so the ~35
+    // hover/selected surfaces in the app stay achromatic. The brand appears
+    // on deliberate accent objects, not on every row the pointer crosses.
+    // =========================================================================
+    '--color-accent': ['#2e7a00', '#63fe13'],
+    '--color-accent-muted': ['#edffe0', '#1b2b10'],
     '--color-neutral': ['#0000000F', '#FFFFFF1A'],
 
     // Overlays (modal scrims, hover/pressed tints)
@@ -210,24 +248,29 @@ export const neutralTheme = defineTheme({
     '--color-overlay-pressed': ['#0000001A', '#FFFFFF1A'],
 
     // Text — light slots are Open Design `color.text.primary` / `.secondary`.
-    // #262626 is the same value as --color-accent, which is deliberate there:
-    // the accent is the far end of the neutral ramp, not a hue.
     // #595959 computes 7.0:1 on #ffffff, a full step of margin over the
     // #737373 it replaces (4.74:1, which cleared AA with almost nothing spare).
+    // NOTE: #262626 used to be both this token and the accent, back when the
+    // accent was the far end of the neutral ramp. The accent is now a hue
+    // (#63fe13) and the two have separated.
     '--color-text-primary': ['#262626', '#fafafa'],
     '--color-text-secondary': ['#595959', '#a3a3a3'],
     '--color-text-disabled': ['#a3a3a3', '#525252'],
-    '--color-text-accent': ['#262626', '#ebebeb'],
+    // Must stay byte-identical to --color-accent — see the alias note there.
+    '--color-text-accent': ['#2e7a00', '#63fe13'],
     '--color-on-dark': '#ffffff',
     '--color-on-light': '#171717',
-    // Contrast: neutral accent is near-black (L) / near-white (D)
+    // Inverts, because --color-accent does: white on the light-mode
+    // chartreuse (#2e7a00) is 5.38:1, and #171717 on the dark-mode lime is
+    // 13.4:1. The primary Button does NOT use this — it carries its own
+    // locked dark label on the lime fill in both modes.
     '--color-on-accent': ['#ffffff', '#171717'],
     '--color-on-success': ['#ffffff', '#171717'],
     '--color-on-error': ['#ffffff', '#171717'],
     '--color-on-warning': '#171717',
 
-    // Icon — tracks the text ramp above.
-    '--color-icon-accent': ['#262626', '#ebebeb'],
+    // Icon — tracks the text ramp above, including the accent's text stop.
+    '--color-icon-accent': ['#2e7a00', '#63fe13'],
     '--color-icon-primary': ['#262626', '#fafafa'],
     '--color-icon-secondary': ['#595959', '#a3a3a3'],
     '--color-icon-disabled': ['#a3a3a3', '#525252'],
@@ -451,6 +494,15 @@ export const neutralTheme = defineTheme({
     // uses the OKLCH red filled treatment.
     // =========================================================================
     button: {
+      // The brand lime, mode-locked, carrying a locked dark label at 13.4:1.
+      // This is the one surface in the product that shows Open Design's raw
+      // #63fe13 — it works here and only here, because a fill with dark text
+      // is the single context where luminance 0.736 is an asset rather than
+      // an accessibility failure. White on it would be 1.34:1.
+      'variant:primary': {
+        backgroundColor: '#63fe13',
+        color: '#171717',
+      },
       'variant:destructive': {
         backgroundColor: 'var(--color-error-muted)', // locked pastel red bg
         color: 'var(--color-error)', // locked T30 red — matches banner/input error text

@@ -10,6 +10,11 @@ colors:
   # here are genuine light/dark pairs rather than one tone playing two roles;
   # the dark partner is named in the Colors prose where it matters.
   #
+  # Accent: Open Design's brand green. The one hue allowed into the structure,
+  # split across a fill stop and a text stop — see The Two Greens Rule.
+  brand-lime: '#63fe13' # primary Button fill only in light; whole accent in dark
+  deep-chartreuse: '#2e7a00' # the light-mode accent — text, ring, border, icon, bg
+  pale-wash: '#edffe0' # --color-accent-muted, light
   # Neutral spine: Tailwind's `neutral` ramp, chroma 0. No hue at all.
   panel-white: '#ffffff' # light pane; on-accent label
   raised-white: '#fafafa' # light card and popover — Open Design `surface.raised`
@@ -98,8 +103,8 @@ spacing:
   '12': '48px'
 components:
   button-primary:
-    backgroundColor: '{colors.panel-graphite}'
-    textColor: '{colors.panel-white}'
+    backgroundColor: '{colors.brand-lime}'
+    textColor: '{colors.text-black}'
     rounded: '{rounded.inner}'
     padding: '8px 12px'
   button-secondary:
@@ -208,7 +213,8 @@ truth; if it and this list disagree, the theme wins and this list is stale.
 
 - **Font family:** `font.family.primary=Albert Sans`, `font.family.stack=Albert Sans, Golos Text, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif`, `font.size.base=16px`, `font.weight.base=400`, `font.lineHeight.base=1.55`
 - **Typography scale** (base 16, ratio 1.2, rounded to a 1/16rem grid, clamped at a 12px floor): `font.size.xs=12px`, `font.size.sm=13px`, `font.size.base=16px`, `font.size.lg=19px`, `font.size.xl=23px`, `font.size.2xl=28px`, `font.size.3xl=33px`, `font.size.4xl=40px`, `font.size.5xl=48px`
-- **Color — text:** `color.text.primary=#262626`, `color.text.secondary=#595959`, `color.text.disabled=#a3a3a3`, `color.text.on-accent=#ffffff`
+- **Color — accent:** `color.accent=#2e7a00` (light) / `#63fe13` (dark), `color.accent.brand=#63fe13` (primary Button fill, both modes), `color.accent.muted=#edffe0` (light) / `#1b2b10` (dark)
+- **Color — text:** `color.text.primary=#262626`, `color.text.secondary=#595959`, `color.text.disabled=#a3a3a3`, `color.text.on-accent=#ffffff` (light) / `#171717` (dark)
 - **Color — surface:** `color.surface.pane=#ffffff`, `color.surface.raised=#fafafa`, `color.surface.canvas=#f1f1f1`, `color.surface.base=#000000` (dark canvas)
 - **Color — border:** `color.border.hairline=#ebebeb`, `color.border.strong=#d9d9d9`
 - **Spacing scale** (4px grid): `space.0-5=2px`, `space.1=4px`, `space.2=8px`, `space.3=12px`, `space.4=16px`, `space.6=24px`, `space.8=32px`, `space.12=48px`
@@ -268,7 +274,8 @@ North Star: in dark mode the interface is not merely layered, it is _lit_.
 
 - Canvas and panes: the shell is a canvas, each region is an inset pane with a fill, a radius, a gap, and a lift
 - Gutter separation: the canvas showing between panes divides regions; hairlines rule only _within_ a pane
-- Grayscale spine: the entire structure is chroma 0, so any hue on screen is a signal
+- Grayscale spine: the structure is chroma 0, so any hue on screen is either the brand accent or a signal
+- One brand hue: `#63fe13` on primary buttons, focus rings, links, and the workspace mark — and nowhere else
 - Two color languages: pastel plates with same-hue text for categories, saturated opaque fills for status signals
 - Lift by tone in both modes, reinforced by rim-light in dark
 - Two type tiers: 16px body, 13px metadata; hierarchy escalates through weight and opacity, never size
@@ -338,11 +345,28 @@ appears only where something needs to be _told_ to the user.
 
 ### Primary
 
-The accent is not a hue. It is the far end of the neutral ramp, and it inverts
-between modes.
+**The accent is a hue, and it is the only one in the structure.** It is Open
+Design's brand green — and the brand value itself can only appear in one place,
+for a reason worth understanding before touching any of it.
 
-- **Panel Graphite** (`#262626`): The accent in light mode (`bg-accent-bg`, `text-accent`) — primary buttons, active nav, links, the workspace mark, focus rings. It is also `text-primary` in light mode, and in dark mode the same value is the _pane surface_, which is the clearest illustration of how far the ramp is reused.
-- **Bone** (`#ebebeb`): The dark-mode accent. On any accent fill the label is `text-on-accent` (`#ffffff` light / `#171717` dark), which inverts with it — never a literal tone.
+- **Brand Lime** (`#63fe13`) — Open Design's actual brand color, and the **primary Button fill only**, mode-locked, with a locked `#171717` label at 13.4:1. Its luminance is 0.736, which makes it **1.34:1 against white**: as link text or as a focus ring in light mode it is not low-contrast, it is invisible. A fill carrying dark text is the one context where that luminance is an asset. In dark mode it widens to the whole accent vocabulary, where the pane behind it is `#262626`.
+- **Deep Chartreuse** (`#2e7a00`) — the light-mode accent everywhere else: `text-accent`, `ring-accent`, `border-accent`, `icon-accent`, and `bg-accent-bg`. Same hue family as the lime (H≈97 vs H≈100), pulled down to **5.38:1** on the white pane and 5.16:1 on the `#fafafa` card. Measured, both modes.
+- **Pale Wash** (`#edffe0` light / `#1b2b10` dark) — `--color-accent-muted`, the quiet accent surface. `text-primary` on it computes 14.4:1.
+
+Measured accent behavior, in a browser, both modes:
+
+|                                           | light                | dark                 |
+| ----------------------------------------- | -------------------- | -------------------- |
+| `text-accent` / `ring-accent` on the pane | 5.38:1               | 11.33:1              |
+| solid `bg-accent-bg` + `text-on-accent`   | 5.38:1 (white label) | 13.42:1 (dark label) |
+| primary Button                            | 13.42:1              | 13.42:1              |
+
+**Interactive state stayed achromatic on purpose.** `bg-primary/4` (hover) and
+`bg-primary/10` (selected) bridge to `--color-text-primary`, not to the accent,
+so the ~35 hover and selection surfaces in the app are still neutral gray. The
+brand lands on deliberate accent objects — a primary button, a focus ring, the
+workspace mark — and not on every row the pointer crosses. That is what keeps a
+green accent from becoming a green interface.
 
 Interactive state is this accent's _text_ sibling at low alpha: `bg-primary/4`
 (hover), `bg-primary/10` (selected), `bg-primary/5` (quiet plate), where
@@ -427,8 +451,67 @@ on them fails AA-large.
 **The Grayscale Spine Rule.** Every structural surface, rule, and running-text
 tone in this system is chroma 0. Nothing that is merely _structure_ may take a
 tint. The corollary is the valuable half: because the field is achromatic, a
-single chip is loud without being large, and adding a second decorative hue costs
-more here than it would in a tinted system.
+single chip is loud without being large, and adding a decorative hue costs more
+here than it would in a tinted system.
+
+**The accent is the one sanctioned exception**, and it earns it by being the
+brand rather than by being decoration. It appears on primary buttons, focus
+rings, links, accent icons, and the workspace mark — a countable set of
+deliberate objects. It does **not** appear on hover, on selection, on a
+container, on a divider, or on a background that is merely trying to look
+branded. The moment green shows up on a surface that is only structure, the
+spine is gone and every status color in the system loses its volume.
+
+**The Accent Cannot Be Split By Token Rule.** This is the trap, and it is
+invisible to every check in the repo.
+
+The Tailwind bridge in `@astryxdesign/core/src/tailwind-theme.css` looks like it
+separates the accent's two jobs:
+
+```css
+--color-accent: var(--color-text-accent); /* text-accent, ring-accent */
+--color-accent-bg: var(--color-accent); /* bg-accent-bg */
+```
+
+It does not. A theme that assigns `--color-accent` lands **later in the cascade
+than the alias**, so the alias is overwritten and `text-accent`, `ring-accent`,
+and `bg-accent-bg` all resolve to that one value. Astryx's own default theme
+sets `--color-accent` and `--color-text-accent` to the same color (`#0064E0`),
+which is why the collision never surfaces upstream, and why this theme kept them
+identical for as long as the accent was `#262626`.
+
+The consequence: **you cannot give the accent a bright fill and a dark text tone
+through tokens.** An attempt to do so silently ships `text-accent` and
+`ring-accent` at the fill value — which for `#63fe13` is 1.34:1 on white, a
+failed focus ring on all 19 `ring-accent` usages and unreadable text on all 15
+`text-accent` ones. Nothing typechecks, lints, or tests differently.
+
+So `--color-accent` and `--color-text-accent` **must** stay byte-identical, and
+a brand color too bright to be text belongs on a **component override** instead
+— which is where `#63fe13` lives, on `components.button['variant:primary']`.
+
+**The Accent Tint Is The Common Case Rule.** 8 of the 9 `bg-accent-bg` usages in
+`src/` are `bg-accent-bg/10` carrying `text-accent` — a pale plate behind accent
+text, not a saturated fill. Only the sidebar's active workspace mark is solid.
+At `/10` the lime and the chartreuse produce nearly the same pale plate, but only
+the chartreuse can be the text on it. That is the deciding reason the shared
+token is the readable green rather than the brand one.
+
+**The Accent Label Inverts, The Button Label Does Not.** `text-on-accent` is
+white in light and `#171717` in dark, tracking the accent. The primary Button is
+the exception: its fill is mode-locked lime, so it carries a locked `#171717`
+label in both modes. Writing `text-white` on the primary button produces 1.34:1 —
+technically rendered, entirely unreadable.
+
+**The Accent Is Not The Success Color Rule.** The accent green and the success
+green now sit within ~10° of each other in hue, and only lightness separates
+them: the accent fill is a bright lime (luminance 0.736), the success signal is
+a mid green (`#198100`, luminance ~0.19). That gap is real but it is narrower
+than any other pair in this palette, and it is the weakest point in the color
+system as it now stands. A primary button beside a success badge is fine; a
+green fill used to _mean_ "done" is not, because the same family now also means
+"this is the main action". Status meaning must come from a `Badge`, `Banner`, or
+`StatusDot` variant, never from an accent-colored surface.
 
 **The Two Reds Rule.** `#a50c25` and `#e33f4a` are both red and they are not
 interchangeable. The deep one is a text tone, calibrated to sit on a pastel well
@@ -885,7 +968,7 @@ Resolved and unfussy. State is a tonal shift, never a scale or bounce.
 
 - **Shape:** **10px, measured** — the same value as `--radius-element`. This document previously said 6px via `calc(--radius-element - --spacing-1)`; a rendered `Button` computes `border-radius: 10px`, so either Astryx does not apply that calc or it never did. Trust the measurement.
 - **Height:** **a fixed 32px, set by Astryx**, not derived from its padding. The 8px block padding is decorative — the label is flex-centered inside a declared `height: 32px`. This is why the body type moving 14px → 16px did not change the control height: the 24px line box still fits inside 32px with 4px to spare, and nothing clips. It also means the button is **below the 44px touch-target criterion** in the Accessibility section, in both modes and at every breakpoint.
-- **Primary:** Accent fill (`#262626` / `#ebebeb`) with a `text-on-accent` label (`#ffffff` / `#171717`). Inverts with the mode; never a literal tone.
+- **Primary:** The brand lime `#63fe13` with a locked `#171717` label, the same in both modes, set as a component override rather than through the accent token — see The Accent Cannot Be Split By Token Rule for why it cannot come from `--color-accent`. Measured 13.42:1. Never `text-white` on it: that is 1.34:1.
 - **Secondary:** `--color-background-gray` (`#e5e5e5` / a 10% white wash) with `--color-text-gray`, no border. Astryx's default — the theme does not override it.
 - **Ghost:** Transparent, hover `--color-overlay-hover` (black at 5% / white at 5%). The default for icon buttons and inline actions.
 - **Destructive:** **A pastel well, not a fill.** `--color-error-muted` background (`#facecb` / a red alpha overlay) with `--color-error` text (`#a50c25` / `#ffc6c1`), computed 5.51:1 in light. This is a change of kind from the previous theme, where destructive was a solid crimson with an inverted label — a destructive action is now the quietest colored object on screen rather than the loudest. If a delete confirmation needs more weight than that, the weight belongs in the copy and the dialog, not in a re-fill.
@@ -1139,7 +1222,11 @@ rather than working around it.
 - **Don't** put a hairline between two panes. The gutter is the separation there; a rule as well says the same thing twice.
 - **Don't** let a theme collapse `background-surface` into `background-body`. Every pane in the app goes invisible at once, and there is no longer an automated check that would tell you.
 - **Don't** add ad hoc `shadow-*` in component code beyond the bridge names. Shadows are theme tokens applied by Astryx `Card`, `Popover`, and `Dialog`, and by `AppPane` for the one pane elevation.
-- **Don't** tint a structural surface. The spine is chroma 0 and the whole color system depends on hue meaning something.
+- **Don't** tint a structural surface. The spine is chroma 0 and the whole color system depends on hue meaning something. The accent is the one sanctioned hue and it belongs on deliberate accent objects, not on containers, dividers, or backgrounds that want to look branded.
+- **Don't** give `--color-accent` and `--color-text-accent` different values. The bridge's alias is overwritten by the theme, so they collapse to one token and `ring-accent` silently ships at the fill value. Keep them byte-identical; put a too-bright brand color on a component override.
+- **Don't** put `#63fe13` on text, a border, or a focus ring in light mode. It is 1.34:1 against white — not low-contrast, invisible.
+- **Don't** put `text-white` on the primary button. Its label is locked `#171717` in both modes.
+- **Don't** use an accent-green surface to mean "success". The accent and the success green are now the closest pair in the palette; status meaning comes from a `Badge`, `Banner`, or `StatusDot` variant.
 - **Don't** put `text-primary` on a categorical plate. Use the hue's `*-vivid` token, or the component variant that binds it.
 - **Don't** swap the two reds. `#a50c25` is a text tone and `#e33f4a` is a fill; each fails at the other's job.
 - **Don't** flatten a dark-mode categorical background to a solid hex. It is an alpha overlay so it can composite onto the canvas, a pane, or a popover.

@@ -44,7 +44,7 @@
   "auth_sign_in_failed_to_sign_in": "Не удалось войти. Проверьте почту и пароль",
   "auth_sign_in_dont_have_an_account_label": "Нет аккаунта?",
   "auth_sign_up_welcome": "Создайте аккаунт",
-  "auth_sign_up_description": "Заполните три поля — и всё",
+  "auth_sign_up_description": "Введите Полное имя, Email и Пароль",
   "auth_sign_up_full_name_label": "Полное имя",
   "auth_sign_up_password_label": "Пароль",
   "auth_sign_up_create_account_label": "Создать аккаунт",
