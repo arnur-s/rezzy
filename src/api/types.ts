@@ -1030,6 +1030,60 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_invitations: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          invited_email: string
+          invited_user_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          role: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_email: string
+          invited_user_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          role: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_email?: string
+          invited_user_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          role?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitations_invited_user_id_fkey"
+            columns: ["invited_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_invitations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           created_at: string
@@ -1147,6 +1201,33 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      create_workspace: {
+        Args: {
+          p_description?: string
+          p_icon?: string
+          p_is_main?: boolean
+          p_name: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          default_phone_region: string | null
+          deleted_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_main: boolean
+          name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workspaces"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       finalize_instagram_channel_connection: {
         Args: {
           p_channel_id: string
@@ -1186,6 +1267,10 @@ export type Database = {
           conversation_id: string
           unread_count: number
         }[]
+      }
+      invite_workspace_member: {
+        Args: { p_email: string; p_role: string; p_workspace_id: string }
+        Returns: string
       }
       is_workspace_member: {
         Args: { p_workspace_id: string }
@@ -1228,6 +1313,29 @@ export type Database = {
           id: string
           phone: string
           position: number
+        }[]
+      }
+      list_my_workspace_invitations: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          invited_by_name: string
+          role: string
+          workspace_icon: string
+          workspace_id: string
+          workspace_name: string
+        }[]
+      }
+      list_workspace_invitations: {
+        Args: { p_workspace_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          invited_by_name: string
+          invited_email: string
+          invited_name: string
+          role: string
         }[]
       }
       list_workspace_members: {
@@ -1275,6 +1383,10 @@ export type Database = {
       normalize_reaction_emoji: { Args: { emoji: string }; Returns: string }
       phone_digits: { Args: { p_value: string }; Returns: string }
       phone_from_wa_id: { Args: { p_external_id: string }; Returns: string }
+      remove_workspace_member: {
+        Args: { p_user_id: string; p_workspace_id: string }
+        Returns: undefined
+      }
       resolve_instagram_conversation: {
         Args: {
           p_avatar_url?: string
@@ -1289,7 +1401,15 @@ export type Database = {
           conversation_id: string
         }[]
       }
+      respond_to_workspace_invitation: {
+        Args: { p_accept: boolean; p_invitation_id: string }
+        Returns: string
+      }
       restore_contact: { Args: { p_contact_id: string }; Returns: undefined }
+      revoke_workspace_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
       search_workspace_contacts: {
         Args: {
           p_include_unowned?: boolean
@@ -1339,8 +1459,8 @@ export type Database = {
         Args: { p_region: string; p_workspace_id: string }
         Returns: string
       }
-      soft_delete_workspace: {
-        Args: { p_workspace_id: string }
+      update_workspace_member_role: {
+        Args: { p_role: string; p_user_id: string; p_workspace_id: string }
         Returns: undefined
       }
       upsert_channel_credentials: {
@@ -1495,3 +1615,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

@@ -173,6 +173,39 @@ describe('ru counted messages agree with their number', () => {
     )
   })
 
+  it('declines the pending invitations indicator', () => {
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 1 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 1 приглашение')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 2 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 2 приглашения')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 5 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 5 приглашений')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 11 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 11 приглашений')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Гамма ООО', count: 21 },
+        ru,
+      ),
+    ).toBe('Гамма ООО: 21 приглашение')
+  })
+
   it('declines what a merge moves', () => {
     expect(m.contacts_merge_moves_conversations({ count: 1 }, ru)).toBe('1 диалог')
     expect(m.contacts_merge_moves_conversations({ count: 3 }, ru)).toBe('3 диалога')
@@ -254,5 +287,20 @@ describe('en counted messages agree with their number', () => {
     expect(m.home_attention_showing_top({ count: 10, total: 42 }, en)).toBe(
       'Showing the 10 most urgent of 42',
     )
+  })
+
+  it('declines the pending invitations indicator', () => {
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Gamma Ltd', count: 1 },
+        en,
+      ),
+    ).toBe('Gamma Ltd: 1 invitation')
+    expect(
+      m.workspace_invitations_indicator_aria(
+        { workspace: 'Gamma Ltd', count: 3 },
+        en,
+      ),
+    ).toBe('Gamma Ltd: 3 invitations')
   })
 })

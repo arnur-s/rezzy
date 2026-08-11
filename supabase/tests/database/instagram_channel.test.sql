@@ -53,12 +53,11 @@ values (
   '{"full_name":"Instagram tap"}'::jsonb
 );
 
-set local role authenticated;
-set local request.jwt.claims =
-  '{"sub":"00000000-0000-4000-8000-0000000000a1","role":"authenticated"}';
-insert into public.workspaces (name, is_main) values ('IG WS A', false);
-insert into public.workspaces (name, is_main) values ('IG WS B', false);
-reset role;
+insert into public.workspaces (name, is_main, created_by)
+values ('IG WS A', false, '00000000-0000-4000-8000-0000000000a1');
+
+insert into public.workspaces (name, is_main, created_by)
+values ('IG WS B', false, '00000000-0000-4000-8000-0000000000a1');
 
 -- Channels (superuser bypasses RLS; specifying ids is allowed here).
 insert into public.channels (id, workspace_id, type, provider_account_id, name)

@@ -21,12 +21,7 @@ export type WorkspaceMember = {
   joinedAt: string
 }
 
-export const WORKSPACE_MEMBER_ROLES = [
-  'owner',
-  'admin',
-  'member',
-  'viewer',
-] as const
+export const WORKSPACE_MEMBER_ROLES = ['owner', 'admin', 'member'] as const
 
 export type WorkspaceMemberRole = (typeof WORKSPACE_MEMBER_ROLES)[number]
 

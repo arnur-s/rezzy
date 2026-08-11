@@ -25,6 +25,7 @@
     "preview": "vite preview",
     "test:watch": "vitest",
     "test:db": "supabase test db",
+    "test:db:races": "bash supabase/tests/concurrency/race.sh",
     "format": "eslint --fix . && prettier --write .",
     "check": "prettier --check .",
     "project-structure": "npx tree-node-cli -I \"node_modules|dist|build|.git|.next|coverage\" > project-structure.txt",

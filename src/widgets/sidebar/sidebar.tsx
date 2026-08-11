@@ -3,7 +3,10 @@ import { WorkspaceIcon } from '@/entities/workspace'
 import { useMyIdentity } from '@/features/account'
 import { useWorkspaceReadiness } from '@/features/channels/hooks/use-channels'
 import { UnreadNotificationsNavItem } from '@/features/notifications'
+import type { WorkspaceInvitation } from '@/features/workspaces/api/workspace-membership'
 import { CreateWorkspaceModal } from '@/features/workspaces/components/create-workspace-modal'
+import { InvitationResponseDialog } from '@/features/workspaces/components/invitation-response-dialog'
+import { useMyInvitations } from '@/features/workspaces/hooks/use-workspace-membership'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
@@ -29,6 +32,7 @@ import {
   HomeIcon,
   LayoutDashboard,
   LayoutGridIcon,
+  MailPlusIcon,
   MessageCircleIcon,
   SettingsIcon,
   UserRoundIcon,
@@ -336,10 +340,15 @@ function WorkspaceSwitcher({
   // onCreateWorkspace: () => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [respondingTo, setRespondingTo] =
+    useState<WorkspaceInvitation | null>(null)
   // The rail's own collapse state, not the prop: SideNav drops this context in
   // drawer and topbar modes, so the mobile drawer keeps the expanded row even
   // while the desktop rail is collapsed.
   const { isCollapsed } = useSideNavCollapse()
+
+  const invitationsQuery = useMyInvitations()
+  const invitations = invitationsQuery.data ?? []
 
   if (isLoading) {
     return <Skeleton width="100%" height={32} radius={3} />
@@ -379,16 +388,75 @@ function WorkspaceSwitcher({
   //   onClick: onCreateWorkspace,
   // })
 
+  // Astryx DropdownMenu items are single-action rows, so Accept/Decline cannot
+  // live in the menu; a row opens the dialog, which is the better home for the
+  // decision anyway — at menuWidth 220 two buttons do not fit.
+  if (invitations.length > 0) {
+    items.push({ type: 'divider' })
+    items.push({
+      type: 'section',
+      title: m.workspace_invitations_section_title(),
+      items: invitations.map((invitation) => ({
+        label: invitation.workspaceName,
+        icon: <MailPlusIcon className="size-4" aria-hidden />,
+        onClick: () => {
+          setIsOpen(false)
+          setRespondingTo(invitation)
+        },
+      })),
+    })
+  }
+
+  const invitationCount = invitations.length
+  // Purely decorative: the count it would otherwise announce lives in
+  // `triggerLabel` below instead. Astryx `Button` computes its own
+  // `aria-label` from the `label` prop whenever the trigger is icon-only
+  // (collapsed) or is given custom `children` (expanded) — see `needsAriaLabel`
+  // in Button.js — and that computed `aria-label` wins over any accessible
+  // name nested content would otherwise contribute, including an `aria-label`
+  // on this span (which is also invalid here: `aria-label` has no effect on an
+  // element with no role). So the badge itself must stay out of the
+  // accessibility tree, and the count has to reach assistive tech through the
+  // one lever Button exposes for it.
+  const invitationBadge =
+    invitationCount > 0 ? (
+      <span
+        className="bg-error absolute top-0 right-0 size-2 rounded-full"
+        aria-hidden
+      />
+    ) : null
+
+  // The trigger's `label` prop is both the accessible name (collapsed and
+  // expanded alike) and the collapsed tooltip text, so the counted phrase
+  // belongs there rather than stranded in the badge's markup. The whole
+  // sentence — including the separator between the workspace name and the
+  // count — is composed inside the message catalogue via the `workspace`
+  // placeholder, not joined with a literal here: a hardcoded `": "` would be a
+  // typographic choice authored in TypeScript instead of the copy it actually
+  // is, and Russian and English do not have to agree on it.
+  const triggerLabel =
+    invitationCount > 0
+      ? m.workspace_invitations_indicator_aria({
+          workspace: label,
+          count: invitationCount,
+        })
+      : label
+
   const button: DropdownMenuButtonProps = isCollapsed
     ? {
-        label,
+        label: triggerLabel,
         variant: 'ghost',
-        icon: mark,
+        icon: (
+          <span className="relative inline-flex">
+            {mark}
+            {invitationBadge}
+          </span>
+        ),
         isIconOnly: true,
-        tooltip: label,
+        tooltip: triggerLabel,
       }
     : {
-        label,
+        label: triggerLabel,
         variant: 'ghost',
         // Same handles as the account row: 8px inset instead of Button's 12px,
         // and the label span grown so the chevron pins to the trailing edge.
@@ -397,7 +465,14 @@ function WorkspaceSwitcher({
         className: 'px-2 [&>span>span:first-child]:grow',
         children: (
           <span className="flex min-w-0 items-center gap-2">
-            {mark}
+            <span className="relative inline-flex shrink-0">
+              {mark}
+              {invitationBadge}
+            </span>
+            {/* Plain workspace name, not `triggerLabel`: this is the visible
+                text, and the count is already carried by `button.label` above,
+                which Button uses for the accessible name instead of this
+                span's content. */}
             <span className="truncate font-medium">{label}</span>
           </span>
         ),
@@ -407,17 +482,28 @@ function WorkspaceSwitcher({
       }
 
   return (
-    <DropdownMenu
-      button={button}
-      items={items}
-      isMenuOpen={isOpen}
-      onOpenChange={setIsOpen}
-      placement="below"
-      // Expanded, the menu inherits the trigger's width so it reads as the row
-      // unfolding. Collapsed, the trigger is a 32px square and needs a floor.
-      menuWidth={isCollapsed ? 220 : undefined}
-      hasChevron={false}
-    />
+    <>
+      <DropdownMenu
+        button={button}
+        items={items}
+        isMenuOpen={isOpen}
+        onOpenChange={setIsOpen}
+        placement="below"
+        // Expanded, the menu inherits the trigger's width so it reads as the row
+        // unfolding. Collapsed, the trigger is a 32px square and needs a floor.
+        menuWidth={isCollapsed ? 220 : undefined}
+        hasChevron={false}
+      />
+      {/* Sibling of the menu, not nested inside it: DropdownMenu unmounts its
+          content on close, which would take the dialog with it before the
+          person could accept or decline. */}
+      <InvitationResponseDialog
+        invitation={respondingTo}
+        onOpenChange={(open) => {
+          if (!open) setRespondingTo(null)
+        }}
+      />
+    </>
   )
 }
 

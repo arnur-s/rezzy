@@ -34,7 +34,7 @@ select ok(
   (
     select p.prosecdef
     from pg_proc p
-    where p.oid = to_regprocedure('public.soft_delete_workspace(uuid)')
+    where p.oid = to_regprocedure('private.soft_delete_workspace(uuid)')
   ),
   'soft_delete_workspace retains definer rights for its owner-only update'
 );
@@ -43,6 +43,7 @@ select ok(
 -- internal writes, but they must not inherit a caller-controlled search path.
 with required_definers(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
     ('public.enforce_contact_note_integrity()'),
     ('public.ensure_contact_owner_is_workspace_member()'),
     ('public.ensure_conversation_assignee_is_workspace_member()'),
@@ -52,14 +53,22 @@ with required_definers(signature) as (
     ('public.handle_inbound_message_insert()'),
     ('public.handle_new_workspace()'),
     ('public.handle_outbound_message_insert()'),
+    ('public.invite_workspace_member(uuid,text,text)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
     ('public.rls_auto_enable()'),
     -- default_phone_region is deliberately absent from authenticated's update
     -- grant, so this RPC is the only writer and needs rights the caller lacks.
     ('public.set_workspace_phone_region(uuid,text)'),
-    ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
-    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
+    ('public.update_workspace_member_role(uuid,uuid,text)'),
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)'),
+    ('private.soft_delete_workspace(uuid)'),
+    ('private.workspace_role(uuid)')
 )
 select ok(
   not exists (
@@ -75,6 +84,7 @@ select ok(
 
 with empty_search_path_functions(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
     ('public.get_channel_credentials(uuid,uuid)'),
     ('public.get_whatsapp_channel_by_phone(text)'),
     ('public.enforce_contact_note_integrity()'),
@@ -85,14 +95,22 @@ with empty_search_path_functions(signature) as (
     ('public.handle_new_workspace()'),
     ('public.handle_outbound_message_insert()'),
     ('public.handle_updated_at()'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
     ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
     ('public.set_workspace_phone_region(uuid,text)'),
-    ('public.soft_delete_workspace(uuid)'),
     ('public.sync_contact_last_seen()'),
-    ('public.upsert_channel_credentials(uuid,jsonb,uuid)')
+    ('public.update_workspace_member_role(uuid,uuid,text)'),
+    ('public.upsert_channel_credentials(uuid,jsonb,uuid)'),
+    ('private.soft_delete_workspace(uuid)'),
+    ('private.workspace_role(uuid)')
 )
 select ok(
   not exists (
@@ -122,10 +140,18 @@ select is(
 -- Only the documented RPCs are callable through each Data API role.
 with user_rpcs(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
-    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
+    ('public.update_workspace_member_role(uuid,uuid,text)')
 )
 select ok(
   not exists (
@@ -146,10 +172,18 @@ select ok(
 
 with user_rpcs(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
-    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
+    ('public.update_workspace_member_role(uuid,uuid,text)')
 )
 select ok(
   not exists (
@@ -170,10 +204,18 @@ select ok(
 
 with user_rpcs(signature) as (
   values
+    ('public.create_workspace(text,text,text,boolean)'),
+    ('public.invite_workspace_member(uuid,text,text)'),
     ('public.is_workspace_member(uuid)'),
+    ('public.list_my_workspace_invitations()'),
+    ('public.list_workspace_invitations(uuid)'),
     ('public.list_workspace_members(uuid)'),
     ('public.mark_conversation_read(uuid,uuid)'),
-    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)')
+    ('public.remove_workspace_member(uuid,uuid)'),
+    ('public.respond_to_workspace_invitation(uuid,boolean)'),
+    ('public.revoke_workspace_invitation(uuid)'),
+    ('public.search_workspace_contacts(uuid,text,text[],text[],text[],uuid[],boolean,text,integer,integer)'),
+    ('public.update_workspace_member_role(uuid,uuid,text)')
 )
 select ok(
   not exists (
@@ -277,8 +319,8 @@ with internal_functions(signature) as (
     ('public.handle_updated_at()'),
     ('public.prevent_messages_for_inactive_channels()'),
     ('public.rls_auto_enable()'),
-    ('public.soft_delete_workspace(uuid)'),
-    ('public.sync_contact_last_seen()')
+    ('public.sync_contact_last_seen()'),
+    ('private.soft_delete_workspace(uuid)')
 ), api_roles(role_name) as (
   values ('anon'), ('authenticated'), ('service_role')
 )
@@ -416,6 +458,7 @@ with exposed_tables(relation_name) as (
     ('public.conversations'),
     ('public.messages'),
     ('public.profiles'),
+    ('public.workspace_invitations'),
     ('public.workspace_members'),
     ('public.workspaces')
 ), table_privileges(privilege_name) as (
@@ -633,9 +676,12 @@ select ok(
   'authenticated has the exact profiles privileges'
 );
 
+-- 20260809130000 revoked INSERT/UPDATE/DELETE on workspace_members from
+-- authenticated: the creator-owner policy it dropped was the only legitimate
+-- reason a client held the grant. Only the SECURITY DEFINER trigger writes now.
 select ok(
   has_table_privilege('authenticated', 'public.workspace_members', 'select')
-  and has_table_privilege('authenticated', 'public.workspace_members', 'insert')
+  and not has_table_privilege('authenticated', 'public.workspace_members', 'insert')
   and not has_table_privilege('authenticated', 'public.workspace_members', 'update')
   and not has_table_privilege('authenticated', 'public.workspace_members', 'delete')
   and not has_table_privilege('authenticated', 'public.workspace_members', 'truncate')
@@ -644,6 +690,10 @@ select ok(
   'authenticated has the exact workspace_members privileges'
 );
 
+-- 20260809140000 revoked table-wide INSERT on workspaces from authenticated
+-- and moved creation behind public.create_workspace, so every column-scoped
+-- insert grant that used to ride along with the table grant is gone too, not
+-- only the ones the RPC's own validation would have refused anyway.
 select ok(
   has_table_privilege('authenticated', 'public.workspaces', 'select')
   and not has_table_privilege('authenticated', 'public.workspaces', 'insert')
@@ -652,11 +702,11 @@ select ok(
   and not has_table_privilege('authenticated', 'public.workspaces', 'truncate')
   and not has_table_privilege('authenticated', 'public.workspaces', 'references')
   and not has_table_privilege('authenticated', 'public.workspaces', 'trigger')
-  and has_column_privilege('authenticated', 'public.workspaces', 'name', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'description', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'icon', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'is_main', 'insert')
-  and has_column_privilege('authenticated', 'public.workspaces', 'created_by', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'name', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'description', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'icon', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'is_main', 'insert')
+  and not has_column_privilege('authenticated', 'public.workspaces', 'created_by', 'insert')
   and not has_column_privilege('authenticated', 'public.workspaces', 'id', 'insert')
   and not has_column_privilege('authenticated', 'public.workspaces', 'created_at', 'insert')
   and not has_column_privilege('authenticated', 'public.workspaces', 'deleted_at', 'insert')
@@ -727,7 +777,10 @@ set local role authenticated;
 set local request.jwt.claims =
   '{"sub":"00000000-0000-4000-8000-000000000101","role":"authenticated"}';
 
-select lives_ok(
+-- 20260809140000 moved workspace creation behind public.create_workspace and
+-- revoked the table-wide INSERT that used to let the client do this directly.
+-- The contract is now the RPC, not the table, so the assertion states that.
+select throws_ok(
   $$
     insert into public.workspaces (name, description, is_main)
     values (
@@ -736,7 +789,18 @@ select lives_ok(
       false
     )
   $$,
-  'authenticated users can create a workspace'
+  '42501',
+  null,
+  'authenticated cannot insert a workspace directly; creation goes through public.create_workspace'
+);
+
+-- Seed the workspace the rest of this file exercises through the RPC that
+-- replaced the direct insert, so the fixture below still has a live row.
+select public.create_workspace(
+  'Security contract workspace',
+  'Created by the pgTAP security contract',
+  null,
+  false
 );
 
 select results_eq(

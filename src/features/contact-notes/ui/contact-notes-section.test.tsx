@@ -250,6 +250,10 @@ describe('ContactNotesSection', () => {
     expect(await screen.findByText('Could not load notes')).not.toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
-    expect(await screen.findByText('No notes yet')).not.toBeNull()
+    // The section has no empty state any more, so a successful retry is only
+    // visible as the failure going away.
+    await waitFor(() =>
+      expect(screen.queryByText('Could not load notes')).toBeNull(),
+    )
   })
 })

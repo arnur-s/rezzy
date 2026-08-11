@@ -7,7 +7,7 @@ import { setLocale } from '@/paraglide/runtime'
 import { createTestQueryClient, renderWithQueryClient } from '@/test/render'
 import type { User } from '@supabase/supabase-js'
 import { screen, waitFor } from '@testing-library/react'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sidebar } from './sidebar'
 
 vi.mock('@tanstack/react-router', async () => {
@@ -50,6 +50,18 @@ vi.mock('@/features/channels/hooks/use-channels', () => ({
   useWorkspaceReadiness: () => readinessMock(),
 }))
 
+// The switcher's invitation section and indicator dot read this query;
+// InvitationResponseDialog (a sibling of the menu, always mounted) reads the
+// mutation. Neither is under test here, so both default to an empty/idle
+// state and individual tests override only what they need.
+const myInvitationsMock = vi.hoisted(() => vi.fn())
+const respondToInvitationMock = vi.hoisted(() => vi.fn())
+
+vi.mock('@/features/workspaces/hooks/use-workspace-membership', () => ({
+  useMyInvitations: () => myInvitationsMock(),
+  useRespondToInvitation: () => respondToInvitationMock(),
+}))
+
 const workspace: Workspace = {
   created_at: '2026-07-26T00:00:00.000Z',
   created_by: 'user-1',
@@ -64,7 +76,10 @@ const workspace: Workspace = {
   updated_by: null,
 }
 
-function renderSidebar(profile?: UserProfile) {
+function renderSidebar(
+  profile?: UserProfile,
+  { isCollapsed = false }: { isCollapsed?: boolean } = {},
+) {
   const queryClient = createTestQueryClient()
 
   // Seeded rather than fetched: the account row reads the profile through the
@@ -74,7 +89,7 @@ function renderSidebar(profile?: UserProfile) {
   }
 
   return renderWithQueryClient(
-    <Sidebar isCollapsed={false} onCollapsedChange={() => {}} />,
+    <Sidebar isCollapsed={isCollapsed} onCollapsedChange={() => {}} />,
     { queryClient },
   )
 }
@@ -123,6 +138,16 @@ describe('Sidebar inbox item', () => {
       isPending: false,
       isRetrying: false,
       refetch: vi.fn(),
+    })
+    myInvitationsMock.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    })
+    respondToInvitationMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      variables: undefined,
     })
   })
 
@@ -250,6 +275,16 @@ describe('Sidebar account row', () => {
       isRetrying: false,
       refetch: vi.fn(),
     })
+    myInvitationsMock.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    })
+    respondToInvitationMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      variables: undefined,
+    })
   })
 
   it('shows the saved profile name rather than the sign-up name', async () => {
@@ -279,6 +314,136 @@ describe('Sidebar account row', () => {
         'img[src="https://cdn.example.com/me.png"]',
       )
       expect(image).not.toBeNull()
+    })
+  })
+})
+
+/**
+ * Astryx `Button` computes its own `aria-label` from the trigger's `label`
+ * prop whenever it is icon-only (collapsed) or given custom `children`
+ * (expanded), and that computed `aria-label` overrides whatever the badge
+ * span nested inside contributes — a bare `aria-label` on a role-less `span`
+ * has no effect on the accessible name either way. So these assert the
+ * trigger's own accessible name via `getByRole`, the thing a screen reader
+ * actually exposes, rather than probing the badge's DOM attributes: a version
+ * of this that only checked the badge markup stayed green through the exact
+ * regression the review caught.
+ */
+describe('Sidebar workspace switcher invitations indicator', () => {
+  beforeAll(() => {
+    setLocale('en')
+  })
+
+  beforeEach(() => {
+    authMock.user = {
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: '2026-07-26T00:00:00.000Z',
+      id: 'user-1',
+      user_metadata: { full_name: 'Ada Lovelace' },
+    }
+    workspacesMock.mockReturnValue({
+      data: [workspace],
+      isPending: false,
+      isError: false,
+    })
+    readinessMock.mockReturnValue({
+      hasActiveChannel: true,
+      isError: false,
+      isPending: false,
+      isRetrying: false,
+      refetch: vi.fn(),
+    })
+    myInvitationsMock.mockReturnValue({
+      data: [
+        {
+          id: 'inv-1',
+          workspaceId: 'ws-2',
+          workspaceName: 'Beta Inc',
+          workspaceIcon: null,
+          role: 'member',
+          invitedByName: 'Alex',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'inv-2',
+          workspaceId: 'ws-3',
+          workspaceName: 'Gamma LLC',
+          workspaceIcon: null,
+          role: 'admin',
+          invitedByName: 'Sam',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      isPending: false,
+      isError: false,
+    })
+    respondToInvitationMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      variables: undefined,
+    })
+  })
+
+  it('names the pending invitation count on the expanded trigger', async () => {
+    renderSidebar()
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Acme Sales.*2 invitations/ }),
+      ).toBeTruthy()
+    })
+  })
+
+  it('names the pending invitation count on the collapsed trigger', async () => {
+    renderSidebar(undefined, { isCollapsed: true })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Acme Sales.*2 invitations/ }),
+      ).toBeTruthy()
+    })
+  })
+
+  // Russian takes three plural forms (one/few/many), and the whole sentence —
+  // separator included — is composed inside the catalogue now rather than
+  // joined with a literal in TypeScript. Pins the rendered accessible name
+  // itself, not just the message function in isolation, so a regression in
+  // how the trigger's `label` is built would fail here even if the catalogue
+  // entry were still correct.
+  describe('in Russian', () => {
+    beforeAll(() => {
+      setLocale('ru', { reload: false })
+    })
+
+    afterAll(() => {
+      setLocale('en', { reload: false })
+    })
+
+    it.each([
+      { count: 1, expected: 'Acme Sales: 1 приглашение' },
+      { count: 2, expected: 'Acme Sales: 2 приглашения' },
+      { count: 5, expected: 'Acme Sales: 5 приглашений' },
+    ])('names $count as "$expected"', async ({ count, expected }) => {
+      myInvitationsMock.mockReturnValue({
+        data: Array.from({ length: count }, (_, index) => ({
+          id: `inv-${index}`,
+          workspaceId: `ws-${index}`,
+          workspaceName: `Invite ${index}`,
+          workspaceIcon: null,
+          role: 'member',
+          invitedByName: 'Alex',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        })),
+        isPending: false,
+        isError: false,
+      })
+
+      renderSidebar()
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: expected })).toBeTruthy()
+      })
     })
   })
 })

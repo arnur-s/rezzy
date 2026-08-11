@@ -161,13 +161,16 @@ select lives_ok(
 -- soft_delete_workspace is REVOKEd from PUBLIC and never granted to
 -- authenticated, so it is called here the only way it can be called today:
 -- at the owning role, with the caller's claims in place so its auth.uid()
--- ownership check is the thing being exercised.
+-- ownership check is the thing being exercised. It lives in private
+-- (20260809190000), which is what keeps it out of the Data API and out of
+-- src/api/types.ts; that move changes neither the grant nor this call site's
+-- reasoning.
 
 set local request.jwt.claims =
   '{"sub":"50000000-0000-4000-8000-000000000152","role":"authenticated"}';
 
 select throws_ok(
-  $$ select public.soft_delete_workspace('50000000-0000-4000-8000-000000000251') $$,
+  $$ select private.soft_delete_workspace('50000000-0000-4000-8000-000000000251') $$,
   '42501',
   'Not authorized',
   'a plain member cannot delete the workspace'
@@ -177,7 +180,7 @@ set local request.jwt.claims =
   '{"sub":"50000000-0000-4000-8000-000000000151","role":"authenticated"}';
 
 select lives_ok(
-  $$ select public.soft_delete_workspace('50000000-0000-4000-8000-000000000251') $$,
+  $$ select private.soft_delete_workspace('50000000-0000-4000-8000-000000000251') $$,
   'the owner can soft delete the workspace'
 );
 
@@ -372,11 +375,12 @@ reset role;
 
 -- ── Removing somebody from the roster ────────────────────────────────────────
 --
--- Not reachable from the browser: authenticated holds no DELETE grant on
--- workspace_members. The cleanup ships ahead of the removal path so that path
--- cannot land without it. contacts.owner_id and conversations.assigned_to are
--- guarded on write against the roster, and nothing re-checked them when the
--- roster changed underneath.
+-- Reachable from the browser since 20260809180000, through
+-- public.remove_workspace_member. This file still exercises the raw DELETE,
+-- because what it is testing is the trigger beneath that RPC:
+-- contacts.owner_id and conversations.assigned_to are guarded on write against
+-- the roster, and nothing re-checked them when the roster changed underneath.
+-- The RPC's own authorization is covered in workspace_membership.test.sql.
 
 select is(
   (
