@@ -1,5 +1,5 @@
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { CirclePlayIcon, Share2Icon } from 'lucide-react'
 import type {
   ShareMetadata,
@@ -13,7 +13,10 @@ type Props = {
   isOutbound: boolean
 }
 
-function shareLabel(messageType: Props['messageType'], share: ShareMetadata | null) {
+function shareLabel(
+  messageType: Props['messageType'],
+  share: ShareMetadata | null,
+) {
   if (messageType === 'story_reply') return m.inbox_share_story_reply()
   if (messageType === 'story_mention') return m.inbox_share_story_mention()
   if (share?.kind === 'ig_reel' || share?.kind === 'reel') {
@@ -39,7 +42,7 @@ export function MessageShare({ share, story, messageType, isOutbound }: Props) {
         {share?.title ? (
           <span
             className={cn(
-              'truncate text-xs',
+              'truncate text-sm',
               isOutbound ? 'text-current/75' : 'text-primary/60',
             )}
           >
@@ -49,7 +52,7 @@ export function MessageShare({ share, story, messageType, isOutbound }: Props) {
         {url ? (
           <span
             className={cn(
-              'text-xs underline underline-offset-2',
+              'text-sm underline underline-offset-2',
               isOutbound ? 'text-current/75' : 'text-primary/60',
             )}
           >

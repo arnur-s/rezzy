@@ -56,14 +56,14 @@ export function ArchivedContactRow({ contact, onRestore, isRestoring }: Props) {
           {displayName}
         </p>
         {primaryContact ? (
-          <p className="text-secondary truncate text-xs">{primaryContact}</p>
+          <p className="text-secondary truncate text-sm">{primaryContact}</p>
         ) : null}
       </div>
 
       {/* What restoring brings back, and when it went away. Hidden on phones,
           where the name and the Restore button are what matter. A merged row
           has nothing to restore, so it names its survivor here instead. */}
-      <div className="text-secondary hidden shrink-0 items-center gap-3 text-xs sm:flex">
+      <div className="text-secondary hidden shrink-0 items-center gap-3 text-sm sm:flex">
         {isMerged ? (
           <span>
             {m.contacts_archived_merged_into({

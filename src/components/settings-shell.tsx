@@ -167,7 +167,7 @@ export function SettingsShell({
           reserves nothing anyway. */}
       <div className="min-h-0 flex-1 overflow-y-auto md:[scrollbar-gutter:stable_both-edges]">
         <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 md:py-8">
-          <p className="text-secondary text-xs font-medium">{kicker}</p>
+          <p className="text-secondary text-sm font-medium">{kicker}</p>
 
           {/*
             One nav for both breakpoints. TabList lays its tabs out in a row but

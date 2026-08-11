@@ -1201,6 +1201,15 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      count_contact_merge_children: {
+        Args: { p_contact_id: string; p_workspace_id: string }
+        Returns: {
+          channel_count: number
+          conversation_count: number
+          note_count: number
+          phone_count: number
+        }[]
+      }
       create_workspace: {
         Args: {
           p_description?: string
@@ -1315,6 +1324,16 @@ export type Database = {
           position: number
         }[]
       }
+      list_duplicate_contact_groups: {
+        Args: { p_limit?: number; p_offset?: number; p_workspace_id: string }
+        Returns: {
+          contact_count: number
+          contacts: Json
+          group_key: string
+          match_reason: string
+          total_count: number
+        }[]
+      }
       list_my_workspace_invitations: {
         Args: never
         Returns: {
@@ -1380,6 +1399,10 @@ export type Database = {
           status: string
         }[]
       }
+      merge_contacts: {
+        Args: { p_fields?: Json; p_merged_id: string; p_survivor_id: string }
+        Returns: undefined
+      }
       normalize_reaction_emoji: { Args: { emoji: string }; Returns: string }
       phone_digits: { Args: { p_value: string }; Returns: string }
       phone_from_wa_id: { Args: { p_external_id: string }; Returns: string }
@@ -1400,6 +1423,10 @@ export type Database = {
           contact_id: string
           conversation_id: string
         }[]
+      }
+      resolve_merged_contact: {
+        Args: { p_contact_id: string; p_workspace_id: string }
+        Returns: string
       }
       respond_to_workspace_invitation: {
         Args: { p_accept: boolean; p_invitation_id: string }
@@ -1615,4 +1642,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

@@ -29,7 +29,7 @@ export function MessageReactionsRow({ reactions, isOutbound }: Props) {
         <span
           key={group.emoji}
           className={cn(
-            'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs shadow-xs',
+            'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-sm shadow-xs',
             // Our own reaction is marked, not merely counted: without it the
             // agent cannot tell a chip they can withdraw from one they cannot.
             group.reactedByCurrentUser
@@ -39,7 +39,7 @@ export function MessageReactionsRow({ reactions, isOutbound }: Props) {
         >
           <span>{displayReactionEmoji(group.emoji)}</span>
           {group.count > 1 ? (
-            <span className="text-xs text-primary/60">{group.count}</span>
+            <span className="text-sm text-primary/60">{group.count}</span>
           ) : null}
         </span>
       ))}

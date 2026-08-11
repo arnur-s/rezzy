@@ -1,6 +1,6 @@
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Spinner } from '@astryxdesign/core/Spinner'
-import { cn } from '@/lib/cn'
 import {
   ChevronLeft,
   ChevronRight,
@@ -371,7 +371,7 @@ export function ImagePreview({
           onPress={() => zoom(-ZOOM_STEP)}
           isDisabled={scale <= ZOOM_MIN}
         />
-        <span className="text-white/60 text-xs tabular-nums w-10 text-center select-none pointer-events-none">
+        <span className="text-white/60 text-sm tabular-nums w-10 text-center select-none pointer-events-none">
           {Math.round(scale * 100)}%
         </span>
         <ToolbarButton

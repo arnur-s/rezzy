@@ -18,9 +18,9 @@ import './styles.css'
 // `themes/gothic/theme.css`, imported from styles.css). Importing the built
 // module instead of the `defineTheme` source avoids runtime style injection.
 // import { gothicTheme } from './themes/gothic/gothic'
+// import { theme } from './themes/neutral/theme'
+import { stoneTheme } from './themes/stone/stoneTheme'
 import { getRouter } from './utils/router'
-
-import { neutralTheme } from './themes/neutral/neutralTheme'
 
 // Explicit choice (cookie) wins, then the browser's language, then English.
 initLocale()
@@ -36,10 +36,10 @@ function App() {
   const auth = useAuth()
   // Bridge the app's stored light/dark preference into the Astryx theme so a
   // single control drives both the design system and any remaining app styles.
-  const { theme } = useTheme()
+  const { theme: themeMode } = useTheme()
 
   return (
-    <Theme theme={neutralTheme} mode={theme}>
+    <Theme theme={stoneTheme} mode={themeMode}>
       <AppLayerProvider>
         <RouterProvider
           router={router}

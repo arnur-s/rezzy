@@ -172,7 +172,7 @@ export function ContactsPage({
         <div className="flex min-w-0 items-baseline gap-2">
           <h1 className="text-base font-semibold">{m.contacts_title()}</h1>
           {contactsQuery.isSuccess ? (
-            <span className="text-secondary shrink-0 text-xs tabular-nums">
+            <span className="text-secondary shrink-0 text-sm tabular-nums">
               {m.contacts_count({ count: totalCount })}
             </span>
           ) : null}
@@ -216,7 +216,7 @@ export function ContactsPage({
                     aria-pressed={isActive}
                     onClick={() => toggleStatus(status)}
                     className={cn(
-                      'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
+                      'focus-visible:ring-accent rounded-md px-2 py-1 text-sm transition focus-visible:ring-2 focus-visible:outline-none',
                       isActive
                         ? 'bg-primary/10 text-primary font-medium'
                         : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
@@ -271,7 +271,7 @@ export function ContactsPage({
               })
             }
             className={cn(
-              'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
+              'focus-visible:ring-accent rounded-md px-2 py-1 text-sm transition focus-visible:ring-2 focus-visible:outline-none',
               isDuplicatesView
                 ? 'bg-primary/10 text-primary font-medium'
                 : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
@@ -294,7 +294,7 @@ export function ContactsPage({
                 })
               }
               className={cn(
-                'focus-visible:ring-accent rounded-md px-2 py-1 text-xs transition focus-visible:ring-2 focus-visible:outline-none',
+                'focus-visible:ring-accent rounded-md px-2 py-1 text-sm transition focus-visible:ring-2 focus-visible:outline-none',
                 isArchivedView
                   ? 'bg-primary/10 text-primary font-medium'
                   : 'text-primary/60 hover:bg-primary/5 hover:text-primary',
@@ -306,11 +306,11 @@ export function ContactsPage({
         </div>
 
         {isArchivedView ? (
-          <p className="text-secondary text-xs">
+          <p className="text-secondary text-sm">
             {m.contacts_archived_notice()}
           </p>
         ) : isDuplicatesView ? (
-          <p className="text-secondary text-xs">
+          <p className="text-secondary text-sm">
             {m.contacts_duplicates_notice()}
           </p>
         ) : null}

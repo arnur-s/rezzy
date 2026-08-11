@@ -55,7 +55,7 @@ function ChannelTypeCard({
             <Badge variant="warning" label={m.channels_coming_soon()} />
           )}
         </div>
-        <p className="mt-1 text-xs text-secondary">
+        <p className="mt-1 text-sm text-secondary">
           {m[`channels_type_${type}_description`]()}
         </p>
       </div>

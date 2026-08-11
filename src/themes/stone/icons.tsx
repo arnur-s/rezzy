@@ -1,50 +1,50 @@
 /**
  * @file icons.tsx
  * @input Uses lucide-react icon components, IconRegistry type
- * @output Exports neutralIconRegistry for the neutral theme
- * @position Icon configuration for the neutral theme; consumed by index.ts
+ * @output Exports stoneIconRegistry for the stone theme
+ * @position Icon configuration for the stone theme; consumed by stoneTheme.ts
  *
  * Maps semantic icon names to Lucide icon components.
  * These icons are bundled with the theme, not with @astryxdesign/core.
  */
 
-import type { IconRegistry } from '@astryxdesign/core/Icon'
+import type {IconRegistry} from '@astryxdesign/core/Icon';
 
 import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Calendar,
-  Check,
-  CheckCheck,
-  CheckCircle,
+  X,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Columns,
-  Copy,
-  ExternalLink,
-  EyeOff,
-  Filter,
+  Check,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
   Info,
+  Calendar,
+  Clock,
+  ExternalLink,
   Menu,
-  Mic,
   MoreHorizontal,
   Search,
-  Square,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  Filter,
+  EyeOff,
+  Columns,
+  Copy,
+  CheckCheck,
   Wrench,
-  X,
-  XCircle,
-} from 'lucide-react'
+  Square,
+  Mic,
+} from 'lucide-react';
 
 const iconProps = {
   size: '1em',
   'aria-hidden': true as const,
-}
+};
 
-export const neutralIconRegistry: IconRegistry = {
+export const stoneIconRegistry: IconRegistry = {
   close: <X {...iconProps} />,
   chevronDown: <ChevronDown {...iconProps} />,
   chevronLeft: <ChevronLeft {...iconProps} />,
@@ -71,4 +71,4 @@ export const neutralIconRegistry: IconRegistry = {
   wrench: <Wrench {...iconProps} />,
   stop: <Square {...iconProps} />,
   microphone: <Mic {...iconProps} />,
-}
+};

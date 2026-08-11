@@ -328,7 +328,7 @@ export const MessageBubble = memo(function MessageBubbleComponent({
                         // real padding, since 10px of text is not a hit target.
                         // The pseudo-element grows that target on touch without
                         // widening the caption row.
-                        className="text-error hover:bg-error/10 relative h-auto min-h-0 rounded-sm px-1.5 py-1 text-xs font-medium underline underline-offset-2 [@media(hover:none)]:after:absolute [@media(hover:none)]:after:-inset-2 [@media(hover:none)]:after:content-['']"
+                        className="text-error hover:bg-error/10 relative h-auto min-h-0 rounded-sm px-1.5 py-1 text-sm font-medium underline underline-offset-2 [@media(hover:none)]:after:absolute [@media(hover:none)]:after:-inset-2 [@media(hover:none)]:after:content-['']"
                       />
                     </>
                   ) : null}
@@ -346,7 +346,7 @@ export const MessageBubble = memo(function MessageBubbleComponent({
         ) : null}
 
         {isDeleted ? (
-          <p className="text-xs italic opacity-70">
+          <p className="text-sm italic opacity-70">
             {m.inbox_message_deleted()}
           </p>
         ) : null}
@@ -413,13 +413,13 @@ export const MessageBubble = memo(function MessageBubbleComponent({
                 workspaceId={message.workspace_id}
               />
             ) : (
-              <p key={attachment.id} className="mt-1 text-xs opacity-70">
+              <p key={attachment.id} className="mt-1 text-sm opacity-70">
                 {m.inbox_attachment_failed()}
               </p>
             ),
           )}
         {showStickerPlaceholder ? (
-          <p className={cn('text-xs opacity-80', hasContent && 'mb-1')}>
+          <p className={cn('text-sm opacity-80', hasContent && 'mb-1')}>
             {getMediaPlaceholder(type)}
           </p>
         ) : null}
@@ -554,7 +554,7 @@ function InteractiveOrFallback({
 }
 
 function TypeFallback({ type }: { type: MessageType }) {
-  return <p className="text-xs opacity-80">{getMediaPlaceholder(type)}</p>
+  return <p className="text-sm opacity-80">{getMediaPlaceholder(type)}</p>
 }
 
 function deliveryStatusKey(status: string | null): MessageStatus | null {

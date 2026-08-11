@@ -1,5 +1,5 @@
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 
 type Props = {
   className?: string
@@ -17,7 +17,7 @@ export function UnreadDivider({ className }: Props) {
     >
       <div className="h-px min-w-0 flex-1 bg-border/40" aria-hidden />
       <span
-        className="shrink-0 text-center text-xs font-medium text-secondary"
+        className="shrink-0 text-center text-sm font-medium text-secondary"
         aria-hidden
       >
         {label}

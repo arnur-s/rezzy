@@ -61,7 +61,7 @@ export function WorkspaceMembershipList() {
         </ul>
       )}
 
-      <p className="text-secondary text-xs">
+      <p className="text-secondary text-sm">
         {m.profile_workspaces_managed_note()}
       </p>
     </section>
@@ -82,7 +82,7 @@ function MembershipRow({ membership }: { membership: AccountMembership }) {
           {membership.workspaceName}
         </p>
         {joinedAt ? (
-          <p className="text-secondary truncate text-xs">
+          <p className="text-secondary truncate text-sm">
             {m.profile_workspaces_joined({ date: joinedAt })}
           </p>
         ) : null}

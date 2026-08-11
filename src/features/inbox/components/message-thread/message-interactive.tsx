@@ -1,5 +1,5 @@
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { MousePointerClickIcon } from 'lucide-react'
 import type { InteractiveMetadata } from '../../schemas/message-metadata'
 
@@ -16,7 +16,7 @@ export function MessageInteractive({ interactive, isOutbound }: Props) {
       <span className="flex min-w-0 flex-col">
         <span
           className={cn(
-            'text-xs',
+            'text-sm',
             isOutbound ? 'text-current/75' : 'text-primary/60',
           )}
         >
@@ -24,11 +24,13 @@ export function MessageInteractive({ interactive, isOutbound }: Props) {
             ? m.inbox_interactive_list_reply()
             : m.inbox_interactive_button_reply()}
         </span>
-        <span className="font-medium">{interactive.title ?? interactive.id}</span>
+        <span className="font-medium">
+          {interactive.title ?? interactive.id}
+        </span>
         {interactive.description ? (
           <span
             className={cn(
-              'text-xs',
+              'text-sm',
               isOutbound ? 'text-current/75' : 'text-primary/60',
             )}
           >

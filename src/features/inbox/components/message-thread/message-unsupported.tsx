@@ -1,5 +1,5 @@
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { CircleOffIcon } from 'lucide-react'
 import type { UnsupportedMetadata } from '../../schemas/message-metadata'
 
@@ -14,7 +14,11 @@ type Props = {
  * unknown types) and provider service events. The raw event is preserved
  * server-side; ordinary users only see this safe summary.
  */
-export function MessageUnsupported({ unsupported, messageType, isOutbound }: Props) {
+export function MessageUnsupported({
+  unsupported,
+  messageType,
+  isOutbound,
+}: Props) {
   const label =
     messageType === 'system'
       ? m.inbox_message_type_system()
@@ -22,7 +26,10 @@ export function MessageUnsupported({ unsupported, messageType, isOutbound }: Pro
 
   return (
     <div className="flex items-start gap-2 p-0.5 text-sm">
-      <CircleOffIcon className="mt-0.5 size-4 shrink-0 opacity-60" aria-hidden />
+      <CircleOffIcon
+        className="mt-0.5 size-4 shrink-0 opacity-60"
+        aria-hidden
+      />
       <span className="flex min-w-0 flex-col">
         <span
           className={cn(
@@ -35,7 +42,7 @@ export function MessageUnsupported({ unsupported, messageType, isOutbound }: Pro
         {unsupported?.preview ? (
           <span
             className={cn(
-              'truncate text-xs',
+              'truncate text-sm',
               isOutbound ? 'text-current/70' : 'text-secondary',
             )}
           >

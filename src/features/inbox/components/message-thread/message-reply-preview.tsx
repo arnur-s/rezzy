@@ -1,5 +1,5 @@
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import type { QuoteMetadata } from '../../schemas/message-metadata'
 import { listPreviewFromMessage } from '../../schemas/message-metadata'
 import { useMessageThreadContext } from './message-thread-context'
@@ -50,7 +50,7 @@ export function MessageReplyPreview({ quote, replyToMessageId }: Props) {
       onClick={handleClick}
       disabled={!parent}
       className={cn(
-        'mb-1.5 flex w-full min-w-0 flex-col gap-px border-l-2 border-current/30 py-px pl-2 text-left text-xs',
+        'mb-1.5 flex w-full min-w-0 flex-col gap-px border-l-2 border-current/30 py-px pl-2 text-left text-sm',
         parent &&
           'cursor-pointer transition-colors duration-150 hover:border-current/70 motion-reduce:transition-none',
       )}
@@ -63,9 +63,7 @@ export function MessageReplyPreview({ quote, replyToMessageId }: Props) {
       ) : null}
       {/* opacity-70 floor: below it the quoted text composites onto the bubble
           fill at under 4.5:1 in light mode (0.6 -> 4.33, 0.55 -> 3.74). */}
-      {preview ? (
-        <span className="truncate opacity-70">{preview}</span>
-      ) : null}
+      {preview ? <span className="truncate opacity-70">{preview}</span> : null}
       {!author && !preview ? (
         <span className="truncate italic opacity-70">
           {m.inbox_reply_quoted_message()}

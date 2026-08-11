@@ -227,7 +227,7 @@ function EmptyState({
       <p className="text-sm font-medium text-balance">
         {m.inbox_list_empty_title()}
       </p>
-      <p className="text-secondary mt-1.5 text-xs text-balance">
+      <p className="text-secondary mt-1.5 text-sm text-balance">
         {m.inbox_list_empty_description()}
       </p>
     </div>

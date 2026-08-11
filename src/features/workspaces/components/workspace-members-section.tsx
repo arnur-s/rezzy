@@ -1,9 +1,9 @@
 import { SettingsSectionHeader } from '@/components/settings-section'
+import type { WorkspaceMember } from '@/entities/workspace'
 import {
   WORKSPACE_MEMBER_ROLES,
   workspaceMemberRoleLabel,
 } from '@/entities/workspace'
-import type { WorkspaceMember } from '@/entities/workspace'
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
@@ -19,8 +19,8 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { MailPlusIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { membershipErrorMessage } from '../api/workspace-membership'
 import type { WorkspaceInvitationForAdmin } from '../api/workspace-membership'
+import { membershipErrorMessage } from '../api/workspace-membership'
 import {
   useInviteMember,
   useRemoveMember,
@@ -151,7 +151,7 @@ function InviteMemberForm({ workspaceId }: { workspaceId: string }) {
           {m.workspace_settings_members_invite_title()}
         </h3>
       </div>
-      <p className="text-secondary text-xs">
+      <p className="text-secondary text-sm">
         {m.workspace_settings_members_invite_description()}
       </p>
 
@@ -202,7 +202,7 @@ function InviteMemberForm({ workspaceId }: { workspaceId: string }) {
       </div>
 
       {invite.isError ? (
-        <p className="text-error text-xs" role="alert">
+        <p className="text-error text-sm" role="alert">
           {membershipErrorMessage(invite.error)}
         </p>
       ) : null}
@@ -233,11 +233,11 @@ function PendingInvitationsList({ workspaceId }: { workspaceId: string }) {
       {invitationsQuery.isPending ? (
         <PendingInvitationsSkeleton />
       ) : invitationsQuery.isError ? (
-        <div className="text-error border-border/60 border-y py-4 text-xs">
+        <div className="text-error border-border/60 border-y py-4 text-sm">
           {m.workspace_settings_members_load_error()}
         </div>
       ) : invitationsQuery.data.length === 0 ? (
-        <p className="text-secondary text-xs">
+        <p className="text-secondary text-sm">
           {m.workspace_settings_members_pending_empty()}
         </p>
       ) : (
@@ -246,7 +246,9 @@ function PendingInvitationsList({ workspaceId }: { workspaceId: string }) {
             <PendingInvitationRow
               key={invitation.id}
               invitation={invitation}
-              isRevoking={revoke.isPending && revoke.variables === invitation.id}
+              isRevoking={
+                revoke.isPending && revoke.variables === invitation.id
+              }
               onRevoke={() => handleRevoke(invitation.id)}
             />
           ))}
@@ -272,7 +274,7 @@ function PendingInvitationRow({
           {invitation.invitedName || invitation.invitedEmail}
         </p>
         {invitation.invitedByName ? (
-          <p className="text-secondary truncate text-xs">
+          <p className="text-secondary truncate text-sm">
             {m.workspace_settings_members_pending_invited_by({
               name: invitation.invitedByName,
             })}

@@ -107,7 +107,7 @@ export function ContactListRow({
           {displayName}
         </Link>
         {primaryContact ? (
-          <p className="text-secondary truncate text-xs">{primaryContact}</p>
+          <p className="text-secondary truncate text-sm">{primaryContact}</p>
         ) : null}
       </div>
 
@@ -116,11 +116,11 @@ export function ContactListRow({
           <ContactStatusChip status={contact.status} />
         ) : null}
         {ownerName ? (
-          <span className="text-secondary max-w-32 truncate text-xs">
+          <span className="text-secondary max-w-32 truncate text-sm">
             {ownerName}
           </span>
         ) : null}
-        <span className="text-secondary w-24 shrink-0 text-right text-xs">
+        <span className="text-secondary w-24 shrink-0 text-right text-sm">
           {contact.last_seen_at
             ? formatDate(contact.last_seen_at, CONTACT_DATE_FORMAT)
             : m.contacts_never_contacted()}

@@ -1,3 +1,4 @@
+import { List } from '@/components/list'
 import type { Workspace } from '@/entities/workspace'
 import type { UnassignedItem } from '@/features/dashboard/api/attention-queue'
 import { DashboardConversationRow } from '@/features/dashboard/components/dashboard-conversation-row'
@@ -6,7 +7,6 @@ import { SectionError } from '@/features/dashboard/components/section-error'
 import { SectionHeading } from '@/features/dashboard/components/section-heading'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
 import { m } from '@/paraglide/messages'
-import { List } from '@/components/list'
 import { useMemo } from 'react'
 
 type Props = {
@@ -71,28 +71,28 @@ export function UnassignedList({
       ) : (
         <>
           <List size="md">
-          {items.map((item) => (
-            <DashboardConversationRow
-              key={item.conversationId}
-              conversationId={item.conversationId}
-              workspaceId={item.workspaceId}
-              contactName={item.contactName}
-              channelType={item.channelType}
-              preview={item.preview}
-              timestampLabel={formatRelativeTime(item.timestamp)}
-              workspaceName={
-                showWorkspaceName
-                  ? workspaceNameById.get(item.workspaceId)
-                  : undefined
-              }
-            />
-          ))}
+            {items.map((item) => (
+              <DashboardConversationRow
+                key={item.conversationId}
+                conversationId={item.conversationId}
+                workspaceId={item.workspaceId}
+                contactName={item.contactName}
+                channelType={item.channelType}
+                preview={item.preview}
+                timestampLabel={formatRelativeTime(item.timestamp)}
+                workspaceName={
+                  showWorkspaceName
+                    ? workspaceNameById.get(item.workspaceId)
+                    : undefined
+                }
+              />
+            ))}
           </List>
           {total > items.length ? (
             // The attention list discloses its cap; this one used to
             // truncate at five in silence, so the same page was honest
             // about one queue and quiet about the other.
-            <p className="text-secondary text-xs">
+            <p className="text-secondary text-sm">
               {m.home_unassigned_showing_top({
                 count: items.length,
                 total,

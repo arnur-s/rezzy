@@ -94,7 +94,7 @@ export function UnreadNotificationsNavItem({ workspaceId, onNavigate }: Props) {
       ) : items.length === 0 ? (
         <div className="px-4 pt-1 pb-5">
           <p className="text-sm font-medium">{m.notifications_empty_title()}</p>
-          <p className="text-secondary mt-1 text-xs">
+          <p className="text-secondary mt-1 text-sm">
             {m.notifications_empty_description()}
           </p>
         </div>

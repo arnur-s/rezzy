@@ -2,8 +2,8 @@ import { List } from '@/components/list'
 import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import type { Channel, ChannelType } from '@/entities/channel'
 import { CHANNEL_TYPES, PlatformIcon, isChannelType } from '@/entities/channel'
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -80,7 +80,7 @@ export function ChannelFilters({
         className={cn(
           // Sentence case, not small-caps: this was the only uppercase
           // tracking-wide label left in the app.
-          'flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold outline-none transition-colors',
+          'flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold outline-none transition-colors',
           'text-secondary hover:text-primary',
           'focus-visible:ring-accent focus-visible:ring-2',
         )}
@@ -135,7 +135,7 @@ export function ChannelFilters({
                               type="button"
                               onClick={() => handleChannelClick(ch)}
                               className={cn(
-                                'flex w-full items-center gap-1.5 rounded-md py-1 pl-7 pr-3 text-xs font-medium outline-none transition-colors',
+                                'flex w-full items-center gap-1.5 rounded-md py-1 pl-7 pr-3 text-sm font-medium outline-none transition-colors',
                                 'focus-visible:ring-2 focus-visible:ring-accent',
                                 isChActive
                                   ? 'bg-primary/10 text-primary'

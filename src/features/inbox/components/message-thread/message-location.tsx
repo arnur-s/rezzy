@@ -1,5 +1,5 @@
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { MapPinIcon } from 'lucide-react'
 import type { LocationMetadata } from '../../schemas/message-metadata'
 
@@ -33,7 +33,7 @@ export function MessageLocation({ location, isOutbound }: Props) {
         {location.address ? (
           <span
             className={cn(
-              'text-xs',
+              'text-sm',
               isOutbound ? 'text-current/75' : 'text-primary/60',
             )}
           >
@@ -42,7 +42,7 @@ export function MessageLocation({ location, isOutbound }: Props) {
         ) : null}
         <span
           className={cn(
-            'text-xs underline underline-offset-2',
+            'text-sm underline underline-offset-2',
             isOutbound ? 'text-current/75' : 'text-primary/60',
           )}
         >

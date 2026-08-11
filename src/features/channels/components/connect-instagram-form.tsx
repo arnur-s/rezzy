@@ -211,25 +211,27 @@ export function ConnectInstagramForm({
           />
         )}
 
-        <p className="border-border/30 bg-muted/30 text-secondary rounded-xl border border-dashed p-4 text-xs">
+        <p className="border-border/30 bg-muted/30 text-secondary rounded-xl border border-dashed p-4 text-sm">
           {m.channels_instagram_requirement()}
         </p>
 
         {!isConfigured && (
-          <p className="border-border/30 bg-muted/30 text-secondary rounded-xl border border-dashed p-4 text-xs">
+          <p className="border-border/30 bg-muted/30 text-secondary rounded-xl border border-dashed p-4 text-sm">
             {m.channels_instagram_not_configured()}
           </p>
         )}
 
         {isConfigured && !isSecure && (
-          <p className="border-warning/40 bg-warning/10 text-secondary rounded-xl border border-dashed p-4 text-xs">
+          <p className="border-warning/40 bg-warning/10 text-secondary rounded-xl border border-dashed p-4 text-sm">
             {m.channels_instagram_requires_https()}
           </p>
         )}
 
         <div className="mt-4 flex items-center justify-between gap-2">
           <Button
-            label={target.kind === 'reconnect' ? m.common_cancel() : m.common_back()}
+            label={
+              target.kind === 'reconnect' ? m.common_cancel() : m.common_back()
+            }
             type="button"
             variant="secondary"
             onClick={onCancel}

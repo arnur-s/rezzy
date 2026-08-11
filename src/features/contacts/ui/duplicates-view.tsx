@@ -7,8 +7,8 @@ import { useState } from 'react'
 import type { DuplicateGroup } from '../api/contact-merges'
 import { DUPLICATE_GROUPS_PAGE_SIZE } from '../api/contact-merges'
 import { useDuplicateContactGroups } from '../hooks/use-contact-merges'
-import { mergeCandidateFromDuplicate } from '../model/merge-candidate'
 import type { MergeCandidate } from '../model/merge-candidate'
+import { mergeCandidateFromDuplicate } from '../model/merge-candidate'
 import { ContactListSkeleton } from './contact-list-skeleton'
 import { DuplicateGroupCard } from './duplicate-group-card'
 import { MergeContactsDialog } from './merge-contacts-dialog'
@@ -64,7 +64,7 @@ export function DuplicatesView({
         ) : query.isError ? (
           <div className="px-4 py-4">
             <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
-              <span className="text-error text-xs">
+              <span className="text-error text-sm">
                 {m.contacts_duplicates_load_error()}
               </span>
               <Button

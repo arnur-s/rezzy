@@ -79,7 +79,7 @@ export function MessageThreadHeader({
                 one mutable thing in a line of customer facts, and it now
                 lives in the action cluster with the other control that routes
                 this thread away. */}
-            <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-primary/70">
+            <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-sm text-primary/70">
               {channelType ? (
                 <PlatformIcon type={channelType} size="sm" />
               ) : null}

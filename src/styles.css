@@ -15,8 +15,8 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import '@astryxdesign/core/reset.css';
 @import '@astryxdesign/core/astryx.css';
-/* No theme stylesheet is imported here. `src/themes/neutral/neutralTheme.ts` is
-   applied at runtime by `<Theme theme={neutralTheme}>` in `main.tsx`, which
+/* No theme stylesheet is imported here. `src/themes/stone/stoneTheme.ts` is
+   applied at runtime by `<Theme theme={stoneTheme}>` in `main.tsx`, which
    injects its tokens itself — there is no compiled `theme.css` and no build
    step to run after editing the theme. */
 
@@ -28,12 +28,17 @@
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 /* The 12px readable floor, for the sizes a theme token cannot reach.
-   `neutralTheme.ts` clamps the `--font-size-*` scale, which covers every size
-   that comes from a token. It cannot cover a size a component computes for
-   itself: Astryx's `Avatar` derives its initials from the avatar's pixel size
-   (`size * 0.4`) and writes the result to an inline `--x-fontSize`, and
-   `Table`'s sort indicator has a literal `font-size: 10px` in the shipped
-   stylesheet.
+
+   NOTE: this file only ever covered the sizes a component computes for itself.
+   The `--font-size-*` scale used to be clamped by the theme; `stoneTheme.ts`
+   clamps nothing, so `text-sm` currently resolves to 11px and `text-xs` to 9px
+   and the floor below is no longer the whole story. See DESIGN.md, Known drift
+   2 — the fix belongs in the theme, not here.
+
+   The sizes this file does cover: Astryx's `Avatar` derives its initials from
+   the avatar's pixel size (`size * 0.4`) and writes the result to an inline
+   `--x-fontSize`, and `Table`'s sort indicator has a literal `font-size: 10px`
+   in the shipped stylesheet.
 
    Overriding those means naming Astryx's StyleX atomic classes, whose hashed
    names are a build output of the dependency rather than a supported selector,

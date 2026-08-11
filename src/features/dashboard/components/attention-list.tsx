@@ -1,3 +1,4 @@
+import { List } from '@/components/list'
 import type { Workspace } from '@/entities/workspace'
 import type { AttentionItem } from '@/features/dashboard/api/attention-queue'
 import { DashboardConversationRow } from '@/features/dashboard/components/dashboard-conversation-row'
@@ -5,9 +6,8 @@ import { DashboardSkeletonRows } from '@/features/dashboard/components/dashboard
 import { SectionError } from '@/features/dashboard/components/section-error'
 import { SectionHeading } from '@/features/dashboard/components/section-heading'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
-import { m } from '@/paraglide/messages'
-import { List } from '@/components/list'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { Link } from '@tanstack/react-router'
 import { CheckIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -108,7 +108,7 @@ export function AttentionList({
             ))}
           </List>
           {total > items.length ? (
-            <p className="text-secondary text-xs">
+            <p className="text-secondary text-sm">
               {m.home_attention_showing_top({ count: items.length, total })}
               {inboxWorkspaceId ? (
                 <>
@@ -152,7 +152,7 @@ function ReasonChip({
     // instead — "Без ответа 2+ дн." says what it means to everyone at once.
     <span
       className={cn(
-        'shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold leading-4',
+        'shrink-0 rounded-full border px-2 py-0.5 text-sm font-semibold leading-4',
         classes[reason],
       )}
     >
@@ -174,7 +174,7 @@ function EmptyState() {
         <p className="text-primary text-sm font-semibold">
           {m.home_attention_empty_title()}
         </p>
-        <p className="text-secondary text-xs">
+        <p className="text-secondary text-sm">
           {m.home_attention_empty_description()}
         </p>
       </div>
@@ -192,7 +192,6 @@ function getReasonLabel(reason: AttentionItem['reason']): string {
       return m.home_attention_reason_stale()
   }
 }
-
 
 function getSnoozeLabel(iso: string): string {
   const wakingAgo = Date.now() - Date.parse(iso)

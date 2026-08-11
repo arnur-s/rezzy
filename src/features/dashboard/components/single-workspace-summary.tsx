@@ -1,15 +1,15 @@
-import { CHANNEL_META } from '@/entities/channel'
 import type { ChannelType } from '@/entities/channel'
-import { WorkspaceIcon } from '@/entities/workspace'
+import { CHANNEL_META } from '@/entities/channel'
 import type { Workspace } from '@/entities/workspace'
+import { WorkspaceIcon } from '@/entities/workspace'
 import type { WorkspaceDashboardStats } from '@/features/dashboard/api/dashboard-stats'
-import { DashboardSkeleton } from '@/features/dashboard/components/dashboard-skeleton'
 import { CreateWorkspaceTile } from '@/features/dashboard/components/create-workspace-tile'
+import { DashboardSkeleton } from '@/features/dashboard/components/dashboard-skeleton'
 import { SectionError } from '@/features/dashboard/components/section-error'
 import { SectionHeading } from '@/features/dashboard/components/section-heading'
 import { formatRelativeTime } from '@/features/dashboard/utils/format-relative-time'
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { Link } from '@tanstack/react-router'
 import { ChevronRightIcon } from 'lucide-react'
 
@@ -52,7 +52,7 @@ export function SingleWorkspaceSummary({
           <Link
             to="/workspaces/$id/settings"
             params={{ id: workspace.id }}
-            className="text-secondary hover:bg-primary/4 hover:text-primary rounded-md px-2 py-1.5 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+            className="text-secondary hover:bg-primary/4 hover:text-primary rounded-md px-2 py-1.5 text-sm font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
           >
             {m.home_workspace_manage()}
           </Link>
@@ -93,13 +93,13 @@ export function SingleWorkspaceSummary({
               {workspace.name}
             </span>
             {workspace.description ? (
-              <span className="text-secondary hidden min-w-0 truncate text-xs sm:inline">
+              <span className="text-secondary hidden min-w-0 truncate text-sm sm:inline">
                 {workspace.description}
               </span>
             ) : null}
           </p>
           {workspace.description ? (
-            <p className="text-secondary mt-0.5 line-clamp-1 text-xs sm:hidden">
+            <p className="text-secondary mt-0.5 line-clamp-1 text-sm sm:hidden">
               {workspace.description}
             </p>
           ) : null}
@@ -107,13 +107,19 @@ export function SingleWorkspaceSummary({
             <DashboardSkeleton className="mt-1 h-4 w-56 max-w-full" />
           ) : stats ? (
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <p className="text-secondary flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs tabular-nums">
-                <span>{m.dashboard_workspace_card_open({ count: stats.open })}</span>
+              <p className="text-secondary flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-sm tabular-nums">
                 <span>
-                  {m.dashboard_workspace_card_channels({ count: stats.channels })}
+                  {m.dashboard_workspace_card_open({ count: stats.open })}
                 </span>
                 <span>
-                  {m.dashboard_workspace_card_contacts({ count: stats.contacts })}
+                  {m.dashboard_workspace_card_channels({
+                    count: stats.channels,
+                  })}
+                </span>
+                <span>
+                  {m.dashboard_workspace_card_contacts({
+                    count: stats.contacts,
+                  })}
                 </span>
                 <span className="truncate">
                   {stats.lastMessageAt

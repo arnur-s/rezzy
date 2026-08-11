@@ -52,7 +52,7 @@ export function SectionHeading({
           {title}
         </h2>
         {description ? (
-          <p className="text-secondary mt-0.5 text-xs">{description}</p>
+          <p className="text-secondary mt-0.5 text-sm">{description}</p>
         ) : null}
       </div>
       {actions ? (

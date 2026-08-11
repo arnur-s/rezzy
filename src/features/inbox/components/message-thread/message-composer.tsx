@@ -9,12 +9,12 @@ import { WifiOffIcon, XIcon } from 'lucide-react'
 
 import { TRANSCRIPT_MEASURE } from './transcript-measure'
 
+import { cn } from '@/lib/cn'
 import { useSendMessage } from '../../hooks/use-messages'
 import { listPreviewFromMessage } from '../../schemas/message-metadata'
 import { CHANNEL_CAPABILITIES } from '../../utils/channel-capabilities'
 import { isPresentableError } from '../../utils/presentable-error'
 import { ChatInput } from './chat-input'
-import { cn } from '@/lib/cn'
 
 type Props = {
   workspaceId: string
@@ -101,7 +101,7 @@ export function MessageComposer({
               {!isOnline ? (
                 <span
                   role="status"
-                  className="text-secondary flex items-center gap-2 text-xs"
+                  className="text-secondary flex items-center gap-2 text-sm"
                 >
                   <WifiOffIcon className="size-3.5 shrink-0" aria-hidden />
                   <span>{m.inbox_composer_offline_notice()}</span>
@@ -112,7 +112,7 @@ export function MessageComposer({
                 // The drawer already sits inside the composer surface, so a
                 // bordered box here is a box inside a box.
                 <span className="border-primary/30 flex items-center gap-2 border-l-2 py-px pl-2">
-                  <span className="flex min-w-0 flex-1 flex-col gap-px text-xs">
+                  <span className="flex min-w-0 flex-1 flex-col gap-px text-sm">
                     <span className="text-primary/90 font-semibold">
                       {m.inbox_reply_to({ name: replyAuthor ?? '' })}
                     </span>

@@ -50,8 +50,10 @@ function conflictValueLabel(
   memberNameById: Map<string, string>,
 ): string {
   if (field === 'owner_id') {
-    return (value ? memberNameById.get(value) : undefined) ??
+    return (
+      (value ? memberNameById.get(value) : undefined) ??
       m.contacts_merge_value_empty()
+    )
   }
   if (field === 'avatar_url') {
     // The picker's own Avatar preview carries the visual; the text slot
@@ -222,7 +224,9 @@ export function MergeContactsDialog({
     <Dialog isOpen onOpenChange={onOpenChange} purpose="form" width={560}>
       <DialogHeader
         title={
-          isConfirming ? m.contacts_merge_confirm_title() : m.contacts_merge_title()
+          isConfirming
+            ? m.contacts_merge_confirm_title()
+            : m.contacts_merge_title()
         }
         subtitle={isConfirming ? undefined : m.contacts_merge_subtitle()}
         onOpenChange={onOpenChange}
@@ -264,15 +268,15 @@ export function MergeContactsDialog({
               and "loaded, nothing to move" must not collapse into the same
               blank space while the destructive button sits live below. */}
             {children.isPending ? (
-              <p className="text-secondary text-xs">
+              <p className="text-secondary text-sm">
                 {m.contacts_merge_moves_pending()}
               </p>
             ) : children.isError ? (
-              <p className="text-error text-xs">
+              <p className="text-error text-sm">
                 {m.contacts_merge_moves_error()}
               </p>
             ) : movesSummary ? (
-              <p className="text-secondary text-xs">
+              <p className="text-secondary text-sm">
                 {m.contacts_merge_confirm_moves({
                   count: movingTotal,
                   survivor: candidateLabel(survivor),
@@ -366,7 +370,7 @@ export function MergeContactsDialog({
             </RadioList>
 
             {conflicts.length === 0 ? (
-              <p className="text-secondary text-xs">
+              <p className="text-secondary text-sm">
                 {m.contacts_merge_no_conflicts()}
               </p>
             ) : (
@@ -381,7 +385,8 @@ export function MergeContactsDialog({
                     onChange={(value) =>
                       setChoices((current) => ({
                         ...current,
-                        [conflict.field]: value === 'merged' ? 'merged' : 'survivor',
+                        [conflict.field]:
+                          value === 'merged' ? 'merged' : 'survivor',
                       }))
                     }
                   >
@@ -424,7 +429,7 @@ export function MergeContactsDialog({
               </div>
             )}
 
-            <p className="text-secondary text-xs">
+            <p className="text-secondary text-sm">
               {m.contacts_merge_always_kept()}
             </p>
           </>

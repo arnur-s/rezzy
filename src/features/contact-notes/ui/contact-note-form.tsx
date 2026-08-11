@@ -3,14 +3,14 @@ import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { TextArea } from '@astryxdesign/core/TextArea'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
-import { useState } from 'react'
 import type { Ref } from 'react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import type { ContactNoteFormValues } from '../model/contact-note-schema'
 import {
   CONTACT_NOTE_MAX_LENGTH,
   createContactNoteSchema,
 } from '../model/contact-note-schema'
-import type { ContactNoteFormValues } from '../model/contact-note-schema'
 
 type Props = {
   initialBody?: string
@@ -80,7 +80,7 @@ export function ContactNoteForm({
       />
 
       {requestError ? (
-        <p className="text-error text-xs" role="alert">
+        <p className="text-error text-sm" role="alert">
           {m.contact_notes_save_error()}
         </p>
       ) : null}

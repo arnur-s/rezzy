@@ -47,7 +47,7 @@ export function ConnectWhatsapp({
 
       <div className="border-t border-border/15 pt-4">
         <button
-          className="text-xs text-secondary underline underline-offset-4 transition hover:text-primary"
+          className="text-sm text-secondary underline underline-offset-4 transition hover:text-primary"
           type="button"
           onClick={() => setIsManual(true)}
         >

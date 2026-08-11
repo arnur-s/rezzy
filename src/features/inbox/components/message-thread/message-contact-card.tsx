@@ -15,6 +15,7 @@ import {
 import { useWorkspacePhoneRegion } from '@/features/workspaces/hooks/use-workspace-phone-region'
 import { cn } from '@/lib/cn'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
+import type { PhoneRegionContext } from '@/lib/phone-identity'
 import {
   formatPhoneForDisplay,
   formatPhoneForStorage,
@@ -23,7 +24,6 @@ import {
   phoneNumbersMatch,
   regionFromExplicitNumber,
 } from '@/lib/phone-identity'
-import type { PhoneRegionContext } from '@/lib/phone-identity'
 import { m } from '@/paraglide/messages'
 import { Button } from '@astryxdesign/core/Button'
 import { IconButton } from '@astryxdesign/core/IconButton'
@@ -42,7 +42,11 @@ type Props = {
 }
 
 /** Shared contact-card rendering (one message may carry several cards). */
-export function MessageContactCard({ contacts, isOutbound, workspaceId }: Props) {
+export function MessageContactCard({
+  contacts,
+  isOutbound,
+  workspaceId,
+}: Props) {
   return (
     <div className="flex flex-col gap-2 p-0.5">
       {contacts.map((contact, index) => (
@@ -118,7 +122,9 @@ function SharedContactCard({
   const workspaceRegion = regionQuery.data ?? null
   const regionContext: PhoneRegionContext = useMemo(
     () => ({
-      hints: contact.phoneNumbers.map((phone) => regionFromExplicitNumber(phone)),
+      hints: contact.phoneNumbers.map((phone) =>
+        regionFromExplicitNumber(phone),
+      ),
       workspaceRegion,
     }),
     [contact.phoneNumbers, workspaceRegion],
@@ -149,7 +155,10 @@ function SharedContactCard({
     matches.find((entry) => entry.id === matchedContactId) ?? null
   // The matched contact's whole set, not just the primary the match reports:
   // "the contact already has this number" has to be true of every number it has.
-  const matchedPhonesQuery = useContactPhones(workspaceId, matchedContactId ?? '')
+  const matchedPhonesQuery = useContactPhones(
+    workspaceId,
+    matchedContactId ?? '',
+  )
 
   /**
    * Numbers on this card that the matched contact does not carry.
@@ -309,7 +318,7 @@ function SharedContactCard({
     if (isUnplaceable) {
       return (
         <span className="flex flex-wrap items-center gap-2">
-          <span role="status" className={cn('text-xs', muted)}>
+          <span role="status" className={cn('text-sm', muted)}>
             {m.inbox_shared_contact_region_unknown()}
           </span>
           {copyDetailsAction}
@@ -335,7 +344,7 @@ function SharedContactCard({
     if (matchesQuery.isError) {
       return (
         <span className="flex flex-wrap items-center gap-2">
-          <span role="status" className={cn('text-xs', muted)}>
+          <span role="status" className={cn('text-sm', muted)}>
             {m.inbox_shared_contact_lookup_failed()}
           </span>
           <Button
@@ -369,7 +378,7 @@ function SharedContactCard({
       // reader can already see two lines above.
       return (
         <>
-          <span role="status" className={cn('text-xs', muted)}>
+          <span role="status" className={cn('text-sm', muted)}>
             {m.inbox_shared_contact_phones_missing()}
           </span>
           {openAction}
@@ -444,12 +453,12 @@ function SharedContactCard({
             />
           ))}
           {contact.emails.map((email) => (
-            <span key={email} className={cn('truncate text-xs', muted)}>
+            <span key={email} className={cn('truncate text-sm', muted)}>
               {email}
             </span>
           ))}
           {contact.company ? (
-            <span className={cn('truncate text-xs', muted)}>
+            <span className={cn('truncate text-sm', muted)}>
               {contact.company}
             </span>
           ) : null}
@@ -538,7 +547,7 @@ function PhoneLine({
     <span className="flex items-center gap-1">
       {/* Grouped only when the country is known; otherwise shown exactly as it
         arrived, rather than formatted as if we had placed it. */}
-      <span className={cn('truncate text-xs', className)}>
+      <span className={cn('truncate text-sm', className)}>
         {formatPhoneForDisplay(phone, regionContext)}
       </span>
       <IconButton

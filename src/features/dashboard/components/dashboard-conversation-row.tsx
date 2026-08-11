@@ -1,6 +1,6 @@
-import { PlatformIcon } from '@/entities/channel'
-import type { ChannelType } from '@/entities/channel'
 import { List } from '@/components/list'
+import type { ChannelType } from '@/entities/channel'
+import { PlatformIcon } from '@/entities/channel'
 import { cn } from '@/lib/cn'
 import { Link } from '@tanstack/react-router'
 import { ChevronRightIcon } from 'lucide-react'
@@ -44,7 +44,10 @@ export function DashboardConversationRow({
         {channelType ? (
           <PlatformIcon type={channelType} size="md" withPlate />
         ) : (
-          <span aria-hidden="true" className="bg-muted size-9 shrink-0 rounded-xl" />
+          <span
+            aria-hidden="true"
+            className="bg-muted size-9 shrink-0 rounded-xl"
+          />
         )}
 
         <div className="min-w-0 flex-1">
@@ -53,11 +56,11 @@ export function DashboardConversationRow({
               {contactName}
             </span>
             {chip}
-            <span className="text-secondary shrink-0 text-xs tabular-nums">
+            <span className="text-secondary shrink-0 text-sm tabular-nums">
               {timestampLabel}
             </span>
           </p>
-          <p className="mt-0.5 flex items-baseline gap-2 text-xs">
+          <p className="mt-0.5 flex items-baseline gap-2 text-sm">
             {/* The preview keeps its slot even when the channel sent none, so
                 rows stay the same height and nothing invented fills the gap. */}
             <span

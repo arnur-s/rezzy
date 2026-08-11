@@ -50,7 +50,7 @@ function CopyableField({
   return (
     <div className="flex items-center justify-between gap-3 py-2">
       <div className="min-w-0">
-        <p className="text-secondary text-xs">{label}</p>
+        <p className="text-secondary text-sm">{label}</p>
         <p className="text-primary truncate text-base">{value}</p>
       </div>
       <IconButton
@@ -122,7 +122,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
     <Link
       to="/workspaces/$id/contacts"
       params={{ id: workspaceId }}
-      className="text-secondary hover:text-primary focus-visible:ring-accent inline-flex items-center gap-1.5 rounded-md text-xs focus-visible:ring-2 focus-visible:outline-none"
+      className="text-secondary hover:text-primary focus-visible:ring-accent inline-flex items-center gap-1.5 rounded-md text-sm focus-visible:ring-2 focus-visible:outline-none"
     >
       <ArrowLeftIcon className="size-3.5" aria-hidden />
       {m.contact_detail_back()}
@@ -275,11 +275,11 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
                 {isContactStatus(contact.status) ? (
                   <ContactStatusChip status={contact.status} />
                 ) : null}
-                <span className="text-secondary text-xs">
+                <span className="text-secondary text-sm">
                   {m.contact_detail_owner()}:{' '}
                   {ownerName ?? m.contact_detail_unassigned()}
                 </span>
-                <span className="text-secondary text-xs">
+                <span className="text-secondary text-sm">
                   {m.contact_detail_last_seen()}:{' '}
                   {contact.last_seen_at
                     ? formatDate(contact.last_seen_at, CONTACT_DATE_FORMAT)
@@ -291,7 +291,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
 
           {/* Contact information — only fields that exist, never empty rows. */}
           <section className="flex flex-col gap-1">
-            <h2 className="text-primary text-xs font-semibold">
+            <h2 className="text-primary text-sm font-semibold">
               {m.contact_detail_information()}
             </h2>
             <div className="divide-border divide-y">
@@ -321,14 +321,14 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
               ) : null}
               {contact.contact_channels.length > 0 ? (
                 <div className="py-2">
-                  <p className="text-secondary text-xs">
+                  <p className="text-secondary text-sm">
                     {m.contact_detail_channels()}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {contact.contact_channels.map((channel) => (
                       <span
                         key={channel.id}
-                        className="border-border rounded-lg border px-2 py-1 text-xs"
+                        className="border-border rounded-lg border px-2 py-1 text-sm"
                       >
                         {channel.channel_type}
                       </span>
@@ -338,14 +338,14 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
               ) : null}
               {contact.tags.length > 0 ? (
                 <div className="py-2">
-                  <p className="text-secondary text-xs">
+                  <p className="text-secondary text-sm">
                     {m.contact_detail_tags()}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {contact.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="border-border rounded-lg border px-2 py-1 text-xs"
+                        className="border-border rounded-lg border px-2 py-1 text-sm"
                       >
                         {tag}
                       </span>
@@ -361,7 +361,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
           <section className="flex flex-col gap-2">
             <h2
               id="contact-notes-title"
-              className="text-primary text-xs font-semibold"
+              className="text-primary text-sm font-semibold"
             >
               {m.contact_detail_notes()}
             </h2>
@@ -373,13 +373,13 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
 
           {/* Recent conversations */}
           <section className="flex flex-col gap-2">
-            <h2 className="text-primary text-xs font-semibold">
+            <h2 className="text-primary text-sm font-semibold">
               {m.contact_detail_conversations()}
             </h2>
             {conversationsQuery.isPending ? (
               <Skeleton width="100%" height={64} radius={3} />
             ) : conversations.length === 0 ? (
-              <p className="text-secondary text-xs">
+              <p className="text-secondary text-sm">
                 {m.contact_detail_no_conversations()}
               </p>
             ) : (
@@ -395,16 +395,16 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
                       className="hover:bg-primary/4 focus-visible:ring-accent flex flex-col gap-0.5 rounded-md px-2 py-3 focus-visible:ring-2 focus-visible:outline-none"
                     >
                       <span className="flex items-center gap-2">
-                        <span className="text-primary text-xs font-medium">
+                        <span className="text-primary text-sm font-medium">
                           {conversation.channel.name?.trim() ||
                             conversation.channel.type}
                         </span>
                         {!conversation.channel.is_active ? (
-                          <span className="text-secondary text-xs">
+                          <span className="text-secondary text-sm">
                             {m.contact_detail_channel_disconnected()}
                           </span>
                         ) : null}
-                        <span className="text-secondary ml-auto text-xs">
+                        <span className="text-secondary ml-auto text-sm">
                           {conversation.last_message_at
                             ? formatDate(
                                 conversation.last_message_at,
@@ -414,7 +414,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
                         </span>
                       </span>
                       {conversation.last_message_preview ? (
-                        <span className="text-secondary truncate text-xs">
+                        <span className="text-secondary truncate text-sm">
                           {conversation.last_message_preview}
                         </span>
                       ) : null}
@@ -425,7 +425,7 @@ export function ContactDetailPage({ workspaceId, contactId }: Props) {
             )}
           </section>
 
-          <section className="text-secondary flex flex-wrap gap-4 text-xs">
+          <section className="text-secondary flex flex-wrap gap-4 text-sm">
             <span>
               {m.contact_detail_created()}:{' '}
               {formatDate(contact.created_at, CONTACT_DATE_FORMAT)}

@@ -100,7 +100,7 @@ export function MessageMediaAttachment({
     return (
       <div
         className={cn(
-          'bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-xs',
+          'bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-sm',
           isOutbound ? 'bg-current/10 text-current/90' : 'text-primary/80',
         )}
       >
@@ -128,7 +128,7 @@ export function MessageMediaAttachment({
 
   if (signed.isError || !signed.data) {
     return (
-      <div className="bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-xs">
+      <div className="bg-muted mt-1 max-w-full rounded-xl px-3 py-2 text-sm">
         <p className="text-error">{m.inbox_media_signed_url_error()}</p>
         <div className="mt-2">
           <Button
@@ -295,7 +295,7 @@ function DocumentFallbackCard({
   return (
     <div
       className={cn(
-        'bg-muted mt-1 flex max-w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs',
+        'bg-muted mt-1 flex max-w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm',
         isOutbound ? 'bg-current/10' : '',
       )}
     >
@@ -310,7 +310,7 @@ function DocumentFallbackCard({
         href={downloadUrl}
         download
         rel="noopener noreferrer"
-        className="text-accent shrink-0 text-xs font-medium underline-offset-2 hover:underline"
+        className="text-accent shrink-0 text-sm font-medium underline-offset-2 hover:underline"
       >
         {m.inbox_media_download()}
       </a>

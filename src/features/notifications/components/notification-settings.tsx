@@ -246,7 +246,7 @@ export function NotificationSettings() {
           </div>
 
           {permissionHelp && (
-            <p id={permissionHelpId} className="text-secondary text-xs">
+            <p id={permissionHelpId} className="text-secondary text-sm">
               {permissionHelp}
             </p>
           )}

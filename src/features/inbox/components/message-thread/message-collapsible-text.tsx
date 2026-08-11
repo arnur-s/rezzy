@@ -32,7 +32,11 @@ export function MessageCollapsibleText({ content, className }: Props) {
   const long = isLongMessage(content)
 
   const text = (
-    <FormattedMessageText content={content} variant="bubble" className={className} />
+    <FormattedMessageText
+      content={content}
+      variant="bubble"
+      className={className}
+    />
   )
 
   if (!long) return text
@@ -53,7 +57,7 @@ export function MessageCollapsibleText({ content, className }: Props) {
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}
-        className="text-secondary hover:text-primary mt-1 text-xs font-medium underline-offset-2 hover:underline"
+        className="text-secondary hover:text-primary mt-1 text-sm font-medium underline-offset-2 hover:underline"
       >
         {expanded ? m.inbox_message_show_less() : m.inbox_message_show_more()}
       </button>

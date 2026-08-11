@@ -7,17 +7,17 @@ import { useNavigate } from '@tanstack/react-router'
 import { UsersRoundIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { ContactListPage } from '../api/contacts'
-import {
-  CONTACTS_PAGE_SIZE,
-  hasActiveContactFilters,
-} from '../model/contact-list-params'
 import type {
   ContactListParams,
   ContactListPatch,
 } from '../model/contact-list-params'
+import {
+  CONTACTS_PAGE_SIZE,
+  hasActiveContactFilters,
+} from '../model/contact-list-params'
 import type { ListQueryState } from '../model/list-query-state'
-import { mergeCandidateFromListItem } from '../model/merge-candidate'
 import type { MergeCandidate } from '../model/merge-candidate'
+import { mergeCandidateFromListItem } from '../model/merge-candidate'
 import { ContactListRow } from './contact-list-row'
 import { ContactListSkeleton } from './contact-list-skeleton'
 import { MergeContactsDialog } from './merge-contacts-dialog'
@@ -130,7 +130,7 @@ export function DirectoryView({
             variant="muted"
             dividers={selected.length < MAX_SELECTED ? [] : ['bottom']}
             startContent={
-              <span className="text-primary text-xs font-medium">
+              <span className="text-primary text-sm font-medium">
                 {m.contacts_merge_selected({ count: selected.length })}
               </span>
             }
@@ -153,7 +153,7 @@ export function DirectoryView({
             }
           />
           {selected.length < MAX_SELECTED ? (
-            <p className="bg-muted text-secondary border-border border-b px-3 py-1.5 text-xs">
+            <p className="bg-muted text-secondary border-border border-b px-3 py-1.5 text-sm">
               {m.contacts_merge_selection_hint()}
             </p>
           ) : null}
@@ -166,7 +166,7 @@ export function DirectoryView({
         ) : query.isError ? (
           <div className="px-4 py-4">
             <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
-              <span className="text-error text-xs">
+              <span className="text-error text-sm">
                 {m.contacts_load_error()}
               </span>
               <Button

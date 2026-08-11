@@ -19,7 +19,12 @@ type Props = {
 }
 
 /** Owner/admin only — `ContactsPage` never mounts this for anyone else. */
-export function ArchivedView({ workspaceId, query, page, onPageChange }: Props) {
+export function ArchivedView({
+  workspaceId,
+  query,
+  page,
+  onPageChange,
+}: Props) {
   const showToast = useToast()
   const restore = useRestoreContact(workspaceId)
 
@@ -43,7 +48,7 @@ export function ArchivedView({ workspaceId, query, page, onPageChange }: Props) 
         ) : query.isError ? (
           <div className="px-4 py-4">
             <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
-              <span className="text-error text-xs">
+              <span className="text-error text-sm">
                 {m.contacts_load_error()}
               </span>
               <Button

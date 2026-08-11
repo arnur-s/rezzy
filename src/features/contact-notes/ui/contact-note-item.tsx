@@ -46,7 +46,7 @@ function NoteTimestamp({ note }: { note: ContactNote }) {
 
   return (
     <time
-      className="text-secondary text-xs"
+      className="text-secondary text-sm"
       dateTime={value}
       aria-label={accessible}
     >

@@ -83,7 +83,7 @@ export function SettingRow({
         )}
         {/* No alpha step: `text-secondary/80` composites to 4.38:1 on the
             light page. Size already separates this from the description. */}
-        {scope && <p className="text-secondary mt-1 text-xs">{scope}</p>}
+        {scope && <p className="text-secondary mt-1 text-sm">{scope}</p>}
       </div>
       <div className="shrink-0">{control}</div>
     </div>

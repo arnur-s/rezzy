@@ -36,7 +36,7 @@ The installed CLI and package are authoritative. Do not hardcode the Astryx comp
 - Do not Card-wrap dense lists or conversation rows. Cards have specific uses defined in `DESIGN.md`; a shell pane is already the containing surface.
 - Prefer component props and variants first, then token-backed utilities such as `bg-surface`, `text-primary`, and the repository's mapped radius/spacing classes.
 - Do not assume Tailwind default token values. Rezzy remaps typography, radii, colors, shadows, and other tokens through Astryx; consult `DESIGN.md` for the actual values and known drift.
-- Treat `src/themes/neutral/neutralTheme.ts` as the theme source of truth. Never override `--color-*` tokens in `:root`.
+- Treat `src/themes/stone/stoneTheme.ts` as the theme source of truth. Never override `--color-*` tokens in `:root`.
 - Do not copy Astryx StyleX atomic class hashes into application CSS.
 - Avoid new raw colors and arbitrary visual values. Preserve the documented platform-brand-color exception and existing deliberate measurements when the implementation requires them.
 - Preserve the cascade-layer ordering in `src/styles.css`; Astryx styling can break silently if that order changes.

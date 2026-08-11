@@ -45,10 +45,10 @@ export function DuplicateGroupCard({
     <li className="border-border flex flex-col gap-1 border-b px-2 py-3 last:border-b-0">
       <div className="flex items-center justify-between gap-2 px-3">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="text-primary text-xs font-medium">
+          <span className="text-primary text-sm font-medium">
             {REASON_LABELS[group.match_reason]()}
           </span>
-          <span className="text-secondary shrink-0 text-xs tabular-nums">
+          <span className="text-secondary shrink-0 text-sm tabular-nums">
             {m.contacts_duplicates_group_size({ count: group.contact_count })}
           </span>
         </div>
@@ -94,7 +94,7 @@ export function DuplicateGroupCard({
                 {contactListDisplayName(contact.display_name)}
               </Link>
               {contact.phone?.trim() || contact.email?.trim() ? (
-                <p className="text-secondary truncate text-xs">
+                <p className="text-secondary truncate text-sm">
                   {contact.phone?.trim() || contact.email?.trim()}
                 </p>
               ) : null}

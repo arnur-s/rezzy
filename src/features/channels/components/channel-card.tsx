@@ -88,7 +88,7 @@ export function ChannelCard({ channel, workspaceId }: Props) {
             </h3>
             <ChannelStatusBadge isActive={channel.is_active} />
           </div>
-          <p className="text-secondary mt-1 text-xs">
+          <p className="text-secondary mt-1 text-sm">
             {channelType
               ? m.channels_card_meta({
                   type: m[`channels_type_${channelType}_label`](),

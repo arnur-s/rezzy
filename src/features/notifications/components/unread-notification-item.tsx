@@ -4,9 +4,9 @@ import { PlatformIcon, isChannelType } from '@/entities/channel'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { FormattedMessageText } from '@/features/inbox/components/formatted-message-text'
 import { formatRelativeShort } from '@/features/inbox/utils/relative-time'
+import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { Avatar } from '@astryxdesign/core/Avatar'
-import { cn } from '@/lib/cn'
 
 type Props = {
   conversation: ConversationWithRelations
@@ -74,7 +74,7 @@ export function UnreadNotificationItem({
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-primary">
               {contactName}
             </span>
-            <span className="text-secondary shrink-0 text-xs tabular-nums">
+            <span className="text-secondary shrink-0 text-sm tabular-nums">
               {timestamp}
             </span>
           </div>
@@ -92,7 +92,7 @@ export function UnreadNotificationItem({
             />
           </div>
           {workspaceName ? (
-            <span className="text-secondary mt-0.5 block truncate text-xs">
+            <span className="text-secondary mt-0.5 block truncate text-sm">
               {workspaceName}
             </span>
           ) : null}

@@ -67,20 +67,9 @@ export function SessionActions() {
         <h2 className="text-primary text-base font-semibold">
           {m.security_sessions_title()}
         </h2>
-        <p className="text-secondary mt-1 text-sm">
-          {m.security_sessions_description()}
-        </p>
       </div>
 
       <div className="border-border/60 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-primary text-sm font-medium">
-            {m.security_sign_out_others_label()}
-          </p>
-          <p className="text-secondary mt-0.5 text-sm">
-            {m.security_sign_out_others_description()}
-          </p>
-        </div>
         {/* A row action rather than a form submit, so it keeps hugging its
             label — only the thumb target grows. Ending sessions is not
             something to make easier to hit by accident than it needs to be. */}
@@ -97,14 +86,6 @@ export function SessionActions() {
       </div>
 
       <div className="border-border/60 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-primary text-sm font-medium">
-            {m.security_sign_out_label()}
-          </p>
-          <p className="text-secondary mt-0.5 text-sm">
-            {m.security_sign_out_description()}
-          </p>
-        </div>
         <div className="pointer-coarse:[&_button]:min-h-11">
           <Button
             ref={thisDeviceRef}

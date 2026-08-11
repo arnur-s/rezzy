@@ -14,8 +14,10 @@ type Props = {
   as?: 'p' | 'span'
 }
 
-function getVariantBaseClass(variant: FormattedMessageTextVariant): string | undefined {
-  if (variant === 'preview') return 'text-xs leading-5'
+function getVariantBaseClass(
+  variant: FormattedMessageTextVariant,
+): string | undefined {
+  if (variant === 'preview') return 'text-sm leading-5'
   return undefined
 }
 

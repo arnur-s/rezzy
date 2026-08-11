@@ -340,8 +340,9 @@ function WorkspaceSwitcher({
   // onCreateWorkspace: () => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [respondingTo, setRespondingTo] =
-    useState<WorkspaceInvitation | null>(null)
+  const [respondingTo, setRespondingTo] = useState<WorkspaceInvitation | null>(
+    null,
+  )
   // The rail's own collapse state, not the prop: SideNav drops this context in
   // drawer and topbar modes, so the mobile drawer keeps the expanded row even
   // while the desktop rail is collapsed.
@@ -356,7 +357,7 @@ function WorkspaceSwitcher({
 
   if (isError) {
     return (
-      <p className="text-error bg-error/5 rounded-lg px-3 py-2 text-xs">
+      <p className="text-error bg-error/5 rounded-lg px-3 py-2 text-sm">
         {m.workspaces_load_error_title()}
       </p>
     )

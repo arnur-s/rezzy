@@ -52,7 +52,7 @@ export function ContactNotesSection({ workspaceId, contactId }: Props) {
 
       {notesQuery.isError ? (
         <div className="bg-error/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
-          <p className="text-error text-xs">{m.contact_notes_load_error()}</p>
+          <p className="text-error text-sm">{m.contact_notes_load_error()}</p>
           <Button
             label={m.contact_notes_retry()}
             size="sm"

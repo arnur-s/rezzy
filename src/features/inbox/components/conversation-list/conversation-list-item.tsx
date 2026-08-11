@@ -1,17 +1,17 @@
 import { NumericUnreadChip } from '@/components/numeric-unread-chip'
 import { PlatformIcon, isChannelType } from '@/entities/channel'
+import type { ConversationWithRelations } from '@/entities/conversation'
 import {
   ConversationStatusChip,
   isConversationStatus,
 } from '@/entities/conversation'
-import type { ConversationWithRelations } from '@/entities/conversation'
 import type { WorkspaceMember } from '@/entities/workspace'
-import { m } from '@/paraglide/messages'
 import { cn } from '@/lib/cn'
+import { m } from '@/paraglide/messages'
 import { memo } from 'react'
-import { ConversationAssigneeMark } from './conversation-assignee-mark'
-import { FormattedMessageText } from '../formatted-message-text'
 import { formatRelativeShort } from '../../utils/relative-time'
+import { FormattedMessageText } from '../formatted-message-text'
+import { ConversationAssigneeMark } from './conversation-assignee-mark'
 
 type Props = {
   conversation: ConversationWithRelations
@@ -64,7 +64,7 @@ function ConversationListItemImpl({
               alpha ramp composites ink onto parchment in light mode and lands
               at 3.4:1, while the same alpha on the ink page passes. Only the
               semantic token is tuned per mode. */}
-          <span className="text-secondary shrink-0 text-xs">
+          <span className="text-secondary shrink-0 text-sm">
             {formatRelativeShort(conversation.last_message_at)}
           </span>
         </div>
