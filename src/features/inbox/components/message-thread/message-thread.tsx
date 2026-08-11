@@ -4,7 +4,6 @@ import {
   getReactionCapabilities,
   isChannelType,
 } from '@/entities/channel'
-import { SideRays } from '@/components/side-rays'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import type { MessageRow } from '@/entities/message'
 import { m } from '@/paraglide/messages'
@@ -33,6 +32,38 @@ import { ThreadScrollButton } from './thread-scroll-button'
 
 const MARK_READ_DEBOUNCE_MS = 280
 const MAX_UNREAD_PREFETCH_PAGES = 5
+
+/**
+ * A static tonal wash behind the transcript, replacing the WebGL ray canvas
+ * this pane used to carry.
+ *
+ * `--color-accent` is the far end of the neutral ramp and inverts by mode
+ * (`#25252a` light / `#f3f3f5` dark), so one declaration reads as the pane
+ * deepening toward the corner in light and as light entering the corner in
+ * dark. No hue, no `dark:` variant, no `light-dark()`.
+ *
+ * The peak is 5.5%, chosen so the hottest point lands on a tone the system
+ * already owns: measured `#f3f3f3` on the white pane, which is the body canvas
+ * (T96 `#f3f3f5`) the shell floats its panes on. The pane's corner meets the
+ * app's own canvas tone and goes no further. In dark it measures `#272729`,
+ * one step up the ramp from the `#1b1b1f` pane.
+ *
+ * It does not need to stay under `--color-neutral` (the 6% / 10% bubble fill),
+ * which was the obvious worry and is not real: that token is an *alpha* fill,
+ * so a bubble composites over the wash rather than over the bare pane and the
+ * wash darkens figure and ground together. Measured in the browser, the bubble
+ * edge is 1.12:1 over the wash's peak and 1.12:1 over a bare pane — unchanged.
+ * The ceiling here is legibility of the transcript, not the bubble edge.
+ *
+ * A wide, shallow ellipse anchored off-canvas at the corner (120% × 85%) rather
+ * than a circle: it rakes across the pane the way the fan did at this width,
+ * instead of reading as a centered blob. Written as an inline style rather than
+ * an arbitrary Tailwind value because the `color-mix()` and the stop geometry
+ * are unreadable once escaped, and deliberately not in `src/styles.css` — see
+ * the standing rule against adding a background there.
+ */
+const THREAD_WASH =
+  'radial-gradient(120% 85% at 100% 0%, color-mix(in oklab, var(--color-accent) 5.5%, transparent) 0%, transparent 62%)'
 
 type Props = {
   workspaceId: string
@@ -286,30 +317,14 @@ export function MessageThread({
           scroll-to-bottom button; it is keyed by conversation so switching
           threads resets scroll state.
 
-          `isolate` gives the rays a stacking context to sit behind: at `-z-10`
-          they fall behind the transcript but still paint over the pane's
-          `bg-surface`, which is set on an ancestor. */}
-      <div className="relative isolate flex min-h-0 flex-1 flex-col">
-        <SideRays
-          className="-z-10"
-          origin="top-right"
-          // Achromatic shell, single accent hue — see the note in
-          // `neutralTheme.ts`. Both layers ride the brand green rather than
-          // introducing the upstream demo's yellow/blue pair.
-          rayColor1="#63fe13"
-          rayColor2="#2e7a00"
-          speed={2.5}
-          intensity={1.2}
-          spread={2}
-          saturation={1.2}
-          blend={0.75}
-          falloff={1.6}
-          // Ambient, not a feature. The transcript is the thing being read.
-          // At this pane width the fan reads as a corner wash rather than
-          // discrete rays; 0.55 is where it is visible in light mode without
-          // competing with message text. Checked in both themes.
-          opacity={0.55}
-        />
+          The wash is painted on this wrapper rather than on a sibling element,
+          so it needs no stacking context: the transcript is its child and
+          paints over it by document order. It also stays put while the
+          transcript scroll, which is what the WebGL canvas it replaces did. */}
+      <div
+        className="relative flex min-h-0 flex-1 flex-col"
+        style={{ backgroundImage: THREAD_WASH }}
+      >
         <MessageThreadProvider value={threadContext}>
           <ChatLayout
             key={conversation.id}

@@ -346,8 +346,12 @@ describing the target. Each is stated again in the section that owns it.
    This is a regression of the single largest accessibility gain the previous
    theme made (7.0:1), and it hits the most-used receding tone in the product:
    timestamps, previews, descriptions, every supporting caption. T50 (`#77777c`)
-   would reach ~4.5:1; T45 (`#6a6a6f`) clears it with margin. Dark mode is fine
-   on the pane (6.36:1) but also fails on the muted well (4.13:1).
+   was listed here as reaching ~4.5:1; measured in a browser it is **4.45:1** on
+   the pane and does not clear, and on the transcript's pane wash it drops to
+   4.01:1. **T45 (`#6a6a6f`) is the only candidate that clears both**, at 5.38:1
+   and 4.85:1. Dark mode is fine on the pane (6.36:1) but also fails on the muted
+   well (4.13:1). The transcript wash deepens the light-mode failure slightly —
+   3.48:1 at the worst real text position; see Pane wash under Message Bubbles.
 5. **Light mode has no raised tone.** `bg-card` and `bg-popover` are both
    `#ffffff`, identical to `bg-surface`. A card on a pane, and a popover over a
    card, are separated by `--shadow-low` / `--shadow-high` alone. The shadows
@@ -1060,6 +1064,10 @@ draws each bubble.
 - **Failed:** the bubble states it — `bg-error/12 ring-1 ring-error/70` — and the caption explains it. Under stone that ring is a muted clay rather than a red, so the failure reads quieter than it used to; the copy is now carrying most of the signal. The failure never gets a line of its own: `time · ⚠ Not sent · Retry` stays on the single footer row, because a second line sits closer to the next message than to the bubble it describes. The retry is caption-scale and underlined, with padding for a real hit target.
 - **Quoted reply:** a 2px `border-current/30` rule with the author at `font-semibold` over the quoted text at 60%, both truncated to one line. Never a plate — the bubble is already the plate, and a fill inside it is a box in a box. The loaded parent outranks the channel's quote payload for author and text, so "Quoted message" only appears when neither is resolvable; without a loaded parent the strip is inert rather than a control that silently does nothing. The composer's reply drawer uses the same rule.
 - **Action rail:** a reply control parked in the transcript gutter, absolutely positioned outside the bubble, revealed on `group-hover/msg` and `group-focus-within/msg`. Anchored to the first text line (`top-2`) for text and to the middle for media or structured blocks. Zero hit target until engaged; on touch it sits permanently at 60% opacity with an expanded 44px target.
+- **Pane wash:** the transcript pane carries one static `radial-gradient` — a wide, shallow ellipse (`120% 85% at 100% 0%`) of `--color-accent` at **5.5%**, out to a `transparent` stop at 62%. It is the sole exception to the no-decorative-background rule below. It takes the accent rather than a hue, so it inverts by mode for free with no `dark:` variant. Its ceiling is a tone the system already owns: measured in a browser, the peak is **`#f3f3f3`** on the white pane — the body canvas (T96 `#f3f3f5`) the shell floats its panes on — and `#27272a` in dark, one ramp step above the `#1b1b1f` pane. The corner meets the app's own canvas tone and goes no further. Corner-to-far-edge is 1.11:1 light and 1.15:1 dark, which is a soft vignette across an 844px pane rather than a visible edge. It lives as an inline style on the pane wrapper in `message-thread.tsx`, painted on the wrapper itself rather than a sibling, so it needs no `isolate` and no negative z-index, and it does not scroll with the transcript.
+  - **It does not disturb the bubble edge**, which is the obvious worry and is measurably not real. `--color-neutral` is an *alpha* fill, so a bubble composites over the wash rather than over the bare pane, and the wash darkens figure and ground together. Measured: the bubble edge is **1.114:1** over the wash's peak versus **1.119:1** over a bare pane (dark: 1.334:1 vs 1.324:1). A future opaque bubble fill would break this property and would have to re-measure.
+  - **What it does cost is `text-secondary`**, and only in light mode: `#83838a` falls from 3.76:1 on the bare pane to **3.48:1** at the worst real text position (an outbound footer at the top of the view) and 3.39:1 at the peak pixel. Every other sampled footer position is unchanged at 3.76:1. This does not create a failure — Known drift 4 already records that token as failing AA at 3.76:1 — but it deepens one, and it removes an option from that drift's fix: **T50 `#77777c` no longer suffices.** Measured, T50 is 4.45:1 on the bare pane and 4.01:1 on the wash peak, so it clears neither. **T45 `#6a6a6f` clears both** at 5.38:1 and 4.85:1, and is now the only listed candidate that does.
+  - It replaces a WebGL ray canvas (`ogl`, ported from React Bits' `SideRays`) that shipped here after the stone swap. That canvas was drift on two counts this document already legislates: it painted `#63fe13` / `#2e7a00` into a theme whose whole premise is that **the accent is not a hue**, and it cited `neutralTheme.ts` — deleted — for the choice. A static gradient also drops a runtime dependency, a GL context per open thread, an `IntersectionObserver`, a resize listener, an `rAF` loop, and a `prefers-reduced-motion` branch. Nothing that does not move needs a reduced-motion guard.
 
 ### Cards
 
@@ -1265,7 +1273,7 @@ rather than working around it.
 - **Don't** nest a Card in a Card, or put a Card inside a shell pane.
 - **Don't** card-wrap dense list rows. Conversations are transparent rows in a scrollable list; records are ruled rows in a `divide-y border-y` group.
 - **Don't** change the box metrics of anything inside the transcript for cosmetic reasons — the list measures row heights for scroll anchoring, so a border or type-size change on a bubble or date separator perturbs the pin. Restyle with color.
-- **Don't** add a decorative background. `src/styles.css` has no pattern, gradient, or texture, and the auth screens do not want one.
+- **Don't** add a decorative background. `src/styles.css` has no pattern, gradient, or texture, and the auth screens do not want one. The transcript pane's wash is the one exception and is specified under Message Bubbles; it earns it by taking the accent tone rather than a hue, by staying under the bubble fill in both modes, and by being static. A second exception needs the same three arguments.
 - **Don't** add a top bar. Identity, navigation, notifications, and the account live in the rail; color mode and language live in Settings under Appearance; every page owns its own title.
 - **Don't** redirect on a failed query. Render the error with a retry — a failed check is not a known-empty result.
 - **Don't** cite a verification command for anything in this document. None exists; `package.json` is the complete list of what can be run.
