@@ -46,15 +46,15 @@ export function WorkspaceMembershipList() {
       {membershipsQuery.isPending ? (
         <MembershipsSkeleton />
       ) : membershipsQuery.isError ? (
-        <p className="text-error border-border/60 border-y py-6 text-sm">
+        <p className="text-error border-border border-y py-6 text-sm">
           {m.profile_workspaces_load_error()}
         </p>
       ) : membershipsQuery.data.length === 0 ? (
-        <p className="text-secondary border-border/60 border-y py-8 text-center text-sm">
+        <p className="text-secondary border-border border-y py-8 text-center text-sm">
           {m.profile_workspaces_empty()}
         </p>
       ) : (
-        <ul className="divide-border/60 border-border/60 divide-y border-y">
+        <ul className="divide-border border-border divide-y border-y">
           {membershipsQuery.data.map((membership) => (
             <MembershipRow key={membership.id} membership={membership} />
           ))}
@@ -96,7 +96,7 @@ function MembershipRow({ membership }: { membership: AccountMembership }) {
 function MembershipsSkeleton() {
   return (
     <div
-      className="divide-border/60 border-border/60 divide-y border-y"
+      className="divide-border border-border divide-y border-y"
       aria-hidden
     >
       {[0, 1].map((row) => (

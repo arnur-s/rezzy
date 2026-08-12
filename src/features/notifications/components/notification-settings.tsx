@@ -226,7 +226,7 @@ export function NotificationSettings() {
           }
         />
 
-        <div className="border-border/60 flex flex-col gap-1 border-t py-4">
+        <div className="border-border flex flex-col gap-1 border-t py-4">
           <div className="flex items-center justify-between gap-4 text-sm">
             <span className="text-secondary">
               {m.settings_notifications_permission_label()}

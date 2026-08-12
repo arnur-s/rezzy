@@ -69,7 +69,7 @@ export function SessionActions() {
         </h2>
       </div>
 
-      <div className="border-border/60 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-border flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         {/* A row action rather than a form submit, so it keeps hugging its
             label — only the thumb target grows. Ending sessions is not
             something to make easier to hit by accident than it needs to be. */}

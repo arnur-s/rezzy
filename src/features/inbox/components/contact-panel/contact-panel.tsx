@@ -118,7 +118,7 @@ export function ContactPanel({ workspaceId, conversation, onClose }: Props) {
       // overlay drawer; docked it matches the content sheet seamlessly.
       className="bg-surface flex h-full w-full min-w-0 flex-col overflow-hidden"
     >
-      <header className="border-border/60 flex h-14 shrink-0 items-center justify-between border-b px-4">
+      <header className="border-border flex h-14 shrink-0 items-center justify-between border-b px-4">
         <h3 className="text-primary font-semibold">
           {m.inbox_contact_panel_title()}
         </h3>
