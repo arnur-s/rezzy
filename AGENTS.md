@@ -227,7 +227,7 @@ For component work:
 2. Inspect current usage in this repository; check the installed package types when in doubt.
 3. Keep the CSS cascade-layer order in `src/styles.css` intact — Astryx component styles live in the `astryx-base` layer and break silently if Tailwind preflight is layered above them.
 4. The theme is `src/themes/stone/stoneTheme.ts`, applied at runtime by `<Theme theme={stoneTheme}>` in `main.tsx`. It is the single source of truth for every token; there is no compiled `theme.css` and no build step after editing it. It also exports `stonePalettes`, the tonal ramps every token is a named stop on — pick new values from a stop rather than inventing one. Never override `--color-*` tokens in `:root`. (`@astryxdesign/theme-neutral` is still a declared dependency but is imported nowhere.)
-5. Read `DESIGN.md` before writing UI. Its scales are not Tailwind's: `text-sm` is 11px, `text-base` is 14px, `rounded-md` is 8px, `rounded-xl` is 24px. Its "Known drift" list records where the current code and the intended system disagree — under the stone theme that list includes three failing accessibility criteria, so read it before assuming a token is safe.
+5. Read `DESIGN.md` before writing UI. Its scales are not Tailwind's: `text-sm` is 12px, `text-base` is 14px, `rounded-md` is 8px, `rounded-xl` is 24px. Its "Known drift" list records where the current code and the intended system disagree — under the stone theme that list includes three failing accessibility criteria, so read it before assuming a token is safe.
 
 Do not add compatibility shims that mimic the old HeroUI prop surface. Do not run a documentation generator that overwrites this file, and do not paste a generated component index into `AGENTS.md`.
 
