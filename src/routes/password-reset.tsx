@@ -1,11 +1,10 @@
+import { AuthCard } from '@/components/auth-card'
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { isPasswordRecoveryLink } from '@/lib/password-recovery'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
-import { Card } from '@astryxdesign/core/Card'
-import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
@@ -62,16 +61,6 @@ function RouteComponent() {
   return isRecovering ? <SetNewPassword /> : <RequestResetLink />
 }
 
-function AuthCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-surface md:bg-body flex min-h-dvh items-center justify-center px-4">
-      <Card variant="default" maxWidth={448} width="100%">
-        {children}
-      </Card>
-    </div>
-  )
-}
-
 function RequestResetLink() {
   const schema = useLocalizedSchema(createRequestSchema)
   const [sentTo, setSentTo] = useState<string | null>(null)
@@ -95,20 +84,15 @@ function RequestResetLink() {
 
   if (sentTo) {
     return (
-      <AuthCard>
-        <div className="flex flex-col gap-1">
-          <Text as="p" size="lg" weight="semibold">
-            {m.password_reset_sent_title()}
-          </Text>
-          <Text as="p" type="supporting">
-            {m.password_reset_sent_description({ email: sentTo })}
-          </Text>
-        </div>
-
+      <AuthCard
+        title={m.password_reset_sent_title()}
+        description={m.password_reset_sent_description({ email: sentTo })}
+      >
         <div className="mt-6 flex flex-col gap-3">
           <Button
             label={m.password_reset_sent_resend()}
             variant="secondary"
+            size="lg"
             width="100%"
             isLoading={requestReset.isPending}
             onClick={() => requestReset.mutate(sentTo)}
@@ -125,16 +109,10 @@ function RequestResetLink() {
   }
 
   return (
-    <AuthCard>
-      <div className="flex flex-col gap-1">
-        <Text as="p" size="lg" weight="semibold">
-          {m.password_reset_request_title()}
-        </Text>
-        <Text as="p" type="supporting">
-          {m.password_reset_request_description()}
-        </Text>
-      </div>
-
+    <AuthCard
+      title={m.password_reset_request_title()}
+      description={m.password_reset_request_description()}
+    >
       <form
         className="mt-6 flex flex-col gap-4"
         onSubmit={handleSubmit((values) => requestReset.mutate(values.email))}
@@ -150,6 +128,7 @@ function RequestResetLink() {
             <TextInput
               label={m.common_email()}
               type="email"
+              size="lg"
               placeholder={m.common_email_placeholder()}
               hasAutoFocus
               value={field.value}
@@ -172,6 +151,7 @@ function RequestResetLink() {
           }
           type="submit"
           variant="primary"
+          size="lg"
           width="100%"
           isLoading={requestReset.isPending}
         />
@@ -210,16 +190,10 @@ function SetNewPassword() {
   })
 
   return (
-    <AuthCard>
-      <div className="flex flex-col gap-1">
-        <Text as="p" size="lg" weight="semibold">
-          {m.password_reset_update_title()}
-        </Text>
-        <Text as="p" type="supporting">
-          {m.password_reset_update_description()}
-        </Text>
-      </div>
-
+    <AuthCard
+      title={m.password_reset_update_title()}
+      description={m.password_reset_update_description()}
+    >
       <form
         className="mt-6 flex flex-col gap-4"
         onSubmit={handleSubmit((values) =>
@@ -242,6 +216,7 @@ function SetNewPassword() {
               label={m.security_password_new_label()}
               description={m.security_password_new_description()}
               type="password"
+              size="lg"
               hasAutoFocus
               value={field.value}
               onChange={(next) => field.onChange(next)}
@@ -262,6 +237,7 @@ function SetNewPassword() {
             <TextInput
               label={m.security_password_confirm_label()}
               type="password"
+              size="lg"
               value={field.value}
               onChange={(next) => field.onChange(next)}
               isDisabled={updatePassword.isPending}
@@ -282,6 +258,7 @@ function SetNewPassword() {
           }
           type="submit"
           variant="primary"
+          size="lg"
           width="100%"
           isLoading={updatePassword.isPending}
         />

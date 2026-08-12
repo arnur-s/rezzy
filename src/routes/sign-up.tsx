@@ -1,9 +1,8 @@
+import { AuthCard } from '@/components/auth-card'
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { Button } from '@astryxdesign/core/Button'
-import { Card } from '@astryxdesign/core/Card'
-import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
@@ -125,98 +124,94 @@ function RouteComponent() {
   }
 
   return (
-    <div className="bg-surface md:bg-body flex min-h-dvh items-center justify-center px-4">
-      <Card variant="default" maxWidth={448} width="100%">
-        <div className="flex flex-col gap-1">
-          <Text as="p" size="lg" weight="semibold">
-            {m.auth_sign_up_welcome()}
-          </Text>
-          <Text as="p" type="supporting">
-            {m.auth_sign_up_description()}
-          </Text>
+    <AuthCard
+      title={m.auth_sign_up_welcome()}
+      description={m.auth_sign_up_description()}
+    >
+      <form
+        className="mt-6 flex flex-col gap-4"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <Controller
+          control={control}
+          name="fullName"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.auth_sign_up_full_name_label()}
+              size="lg"
+              placeholder={m.auth_sign_up_full_name_placeholder()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={isFormDisabled}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.common_email()}
+              type="email"
+              size="lg"
+              placeholder={m.common_email_placeholder()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={isFormDisabled}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.auth_sign_up_password_label()}
+              type="password"
+              size="lg"
+              placeholder={m.auth_sign_up_password_placeholder()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={isFormDisabled}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
+
+        <Button
+          label={m.auth_sign_up_create_account_label()}
+          type="submit"
+          variant="primary"
+          size="lg"
+          width="100%"
+          isLoading={isFormDisabled}
+        />
+
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-secondary text-sm">
+            {m.auth_sign_up_already_have_an_account_label()}
+          </span>
+          <RouterLink to="/sign-in" className="text-accent text-sm underline">
+            {m.common_sign_in()}
+          </RouterLink>
         </div>
-
-        <form
-          className="mt-6 flex flex-col gap-4"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <Controller
-            control={control}
-            name="fullName"
-            render={({ field, fieldState }) => (
-              <TextInput
-                label={m.auth_sign_up_full_name_label()}
-                placeholder={m.auth_sign_up_full_name_placeholder()}
-                value={field.value}
-                onChange={(next) => field.onChange(next)}
-                isDisabled={isFormDisabled}
-                status={
-                  fieldState.error?.message
-                    ? { type: 'error', message: fieldState.error.message }
-                    : undefined
-                }
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="email"
-            render={({ field, fieldState }) => (
-              <TextInput
-                label={m.common_email()}
-                type="email"
-                placeholder={m.common_email_placeholder()}
-                value={field.value}
-                onChange={(next) => field.onChange(next)}
-                isDisabled={isFormDisabled}
-                status={
-                  fieldState.error?.message
-                    ? { type: 'error', message: fieldState.error.message }
-                    : undefined
-                }
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            render={({ field, fieldState }) => (
-              <TextInput
-                label={m.auth_sign_up_password_label()}
-                type="password"
-                placeholder={m.auth_sign_up_password_placeholder()}
-                value={field.value}
-                onChange={(next) => field.onChange(next)}
-                isDisabled={isFormDisabled}
-                status={
-                  fieldState.error?.message
-                    ? { type: 'error', message: fieldState.error.message }
-                    : undefined
-                }
-              />
-            )}
-          />
-
-          <Button
-            label={m.auth_sign_up_create_account_label()}
-            type="submit"
-            variant="primary"
-            width="100%"
-            isLoading={isFormDisabled}
-          />
-
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-secondary text-sm">
-              {m.auth_sign_up_already_have_an_account_label()}
-            </span>
-            <RouterLink to="/sign-in" className="text-accent text-sm underline">
-              {m.common_sign_in()}
-            </RouterLink>
-          </div>
-        </form>
-      </Card>
-    </div>
+      </form>
+    </AuthCard>
   )
 }
