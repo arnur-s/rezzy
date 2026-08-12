@@ -2,7 +2,7 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react'
-import { defineConfig } from 'vitest/config'
+import { defaultExclude, defineConfig } from 'vitest/config'
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
@@ -51,6 +51,9 @@ const config = defineConfig({
     },
   },
   test: {
+    // Sibling agent worktrees hold a full copy of src/, so their tests would
+    // be collected twice over. See "Parallel agent work" in AGENTS.md.
+    exclude: [...defaultExclude, '.claude/worktrees/**'],
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
