@@ -9,7 +9,7 @@
    outside every layer on purpose: @font-face registers a family globally rather
    than participating in the cascade, and the faces must exist before the theme
    references them by name. */
-@import './fonts/fonts.css';
+@import './assets/fonts/fonts.css';
 
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/preflight.css' layer(base);
