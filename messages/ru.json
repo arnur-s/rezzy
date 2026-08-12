@@ -1177,7 +1177,7 @@
   "password_reset_sent_title": "Проверьте почту",
   "password_reset_sent_description": "Если у {email} есть аккаунт, ссылка уже в пути. Она действует час.",
   "password_reset_sent_resend": "Отправить ещё раз",
-  "password_reset_back_to_sign_in": "Вернуться ко входу",
+  "password_reset_back_to_sign_in": "Вернуться назад",
   "password_reset_request_error": "Не удалось отправить ссылку. Попробуйте через минуту.",
   "password_reset_update_title": "Новый пароль",
   "password_reset_update_description": "По этой ссылке вы вошли один раз — задайте новый пароль.",

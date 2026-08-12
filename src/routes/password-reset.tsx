@@ -1,4 +1,6 @@
 import { AuthCard } from '@/components/auth-card'
+import type { PasswordFormValues } from '@/features/account/schemas/password-form-schema'
+import { createPasswordFormSchema } from '@/features/account/schemas/password-form-schema'
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { isPasswordRecoveryLink } from '@/lib/password-recovery'
 import { m } from '@/paraglide/messages'
@@ -17,8 +19,6 @@ import {
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { createPasswordFormSchema } from '@/features/account/schemas/password-form-schema'
-import type { PasswordFormValues } from '@/features/account/schemas/password-form-schema'
 
 export const Route = createFileRoute('/password-reset')({
   component: RouteComponent,
@@ -99,7 +99,7 @@ function RequestResetLink() {
           />
           <RouterLink
             to="/sign-in"
-            className="text-accent text-center text-sm underline"
+            className="text-accent text-center underline"
           >
             {m.password_reset_back_to_sign_in()}
           </RouterLink>
@@ -156,10 +156,7 @@ function RequestResetLink() {
           isLoading={requestReset.isPending}
         />
 
-        <RouterLink
-          to="/sign-in"
-          className="text-accent text-center text-sm underline"
-        >
+        <RouterLink to="/sign-in" className="text-accent text-center underline">
           {m.password_reset_back_to_sign_in()}
         </RouterLink>
       </form>
