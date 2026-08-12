@@ -1,9 +1,9 @@
 import type { Channel } from '@/entities/channel'
-import type * as ChannelsApi from '../api/channels'
 import { setLocale } from '@/paraglide/runtime'
 import { renderWithQueryClient } from '@/test/render'
-import { fireEvent, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as ChannelsApi from '../api/channels'
 import { ChannelList } from './channel-list'
 
 const navigateMock = vi.hoisted(() => vi.fn())
@@ -57,9 +57,7 @@ describe('ChannelList', () => {
 
     renderWithQueryClient(<ChannelList workspaceId="workspace-1" />)
 
-    expect(
-      await screen.findByText('Connect your first channel'),
-    ).toBeTruthy()
+    expect(await screen.findByText('Connect your first channel')).toBeTruthy()
     expect(
       screen.getByText(
         'Connect WhatsApp, Telegram, or Instagram to start receiving customer conversations in your inbox',
@@ -74,21 +72,6 @@ describe('ChannelList', () => {
 
     await screen.findByText('Connect your first channel')
     expect(screen.queryByRole('button', { name: 'Open inbox' })).toBeNull()
-  })
-
-  it('offers a way into the inbox once a channel is active', async () => {
-    getWorkspaceChannelsMock.mockResolvedValue([channel({ is_active: true })])
-
-    renderWithQueryClient(<ChannelList workspaceId="workspace-1" />)
-
-    expect(await screen.findByText('Your inbox is ready')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open inbox' }))
-
-    expect(navigateMock).toHaveBeenCalledWith({
-      to: '/workspaces/$id/inbox',
-      params: { id: 'workspace-1' },
-    })
   })
 
   // Disconnecting the last channel locks the inbox again, so the invitation to

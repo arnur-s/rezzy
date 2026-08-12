@@ -146,7 +146,7 @@ function RouteComponent() {
           <span className="text-secondary text-sm">
             {m.auth_sign_in_dont_have_an_account_label()}
           </span>
-          <RouterLink to="/sign-up" className="text-accent text-sm underline">
+          <RouterLink to="/sign-up" className="text-accent underline">
             {m.common_sign_up()}
           </RouterLink>
         </div>

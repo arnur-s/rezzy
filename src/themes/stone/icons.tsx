@@ -8,41 +8,41 @@
  * These icons are bundled with the theme, not with @astryxdesign/core.
  */
 
-import type {IconRegistry} from '@astryxdesign/core/Icon';
+import type { IconRegistry } from '@astryxdesign/core/Icon'
 
 import {
-  X,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Calendar,
+  Check,
+  CheckCheck,
+  CheckCircle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Check,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Info,
-  Calendar,
   Clock,
-  ExternalLink,
-  Menu,
-  MoreHorizontal,
-  Search,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
-  Filter,
-  EyeOff,
   Columns,
   Copy,
-  CheckCheck,
-  Wrench,
-  Square,
+  ExternalLink,
+  EyeOff,
+  Filter,
+  Info,
+  Menu,
   Mic,
-} from 'lucide-react';
+  MoreHorizontal,
+  Search,
+  Square,
+  Wrench,
+  X,
+  XCircle,
+} from 'lucide-react'
 
 const iconProps = {
   size: '1em',
   'aria-hidden': true as const,
-};
+}
 
 export const stoneIconRegistry: IconRegistry = {
   close: <X {...iconProps} />,
@@ -71,4 +71,4 @@ export const stoneIconRegistry: IconRegistry = {
   wrench: <Wrench {...iconProps} />,
   stop: <Square {...iconProps} />,
   microphone: <Mic {...iconProps} />,
-};
+}
