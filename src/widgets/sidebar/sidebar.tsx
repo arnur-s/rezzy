@@ -561,8 +561,12 @@ function WorkspaceMark({
     <span
       className={cn(
         'flex size-6 shrink-0 items-center justify-center rounded-md font-semibold',
+        // The active plate is a solid accent surface, so it takes the brand
+        // ramp rather than the flat tone. `text-on-dark` rather than
+        // `text-on-accent`: the ramp is dark in both modes, so the label must
+        // not invert with the accent.
         isActive
-          ? 'bg-accent-bg text-on-accent'
+          ? 'bg-accent-gradient text-on-dark'
           : 'bg-accent-bg/10 text-accent',
       )}
     >
