@@ -14,6 +14,9 @@ export default [
   },
   {
     ignores: [
+      // Sibling agent worktrees (see "Parallel agent work" in AGENTS.md).
+      // Gitignored, but ESLint flat config does not read .gitignore.
+      '.claude/worktrees/**',
       'eslint.config.js',
       'prettier.config.js',
       'src/api/types.ts',

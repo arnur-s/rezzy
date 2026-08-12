@@ -1,3 +1,6 @@
+# Sibling agent worktrees — `pnpm format` would rewrite another agent's files.
+.claude/worktrees/
+
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
