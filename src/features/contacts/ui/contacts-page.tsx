@@ -1,5 +1,6 @@
 import type { ContactSort, ContactStatus } from '@/entities/contact'
 import { CONTACT_STATUSES, CONTACT_STATUS_META } from '@/entities/contact'
+import { workspaceMemberLabels } from '@/entities/workspace'
 import {
   useIsWorkspaceAdmin,
   useWorkspaceMemberDirectory,
@@ -143,6 +144,10 @@ export function ContactsPage({
     onClick: () => onParamsChange({ sort, page: 1 }),
   }))
 
+  // Not `member.fullName`: two colleagues can share one, and DropdownMenu keys
+  // its items by label.
+  const ownerLabels = workspaceMemberLabels(membersQuery.data ?? [])
+
   const ownerItems: Array<DropdownMenuOption> = [
     {
       label: m.contacts_filter_unassigned(),
@@ -154,7 +159,7 @@ export function ContactsPage({
         }),
     },
     ...(membersQuery.data ?? []).map((member) => ({
-      label: member.fullName,
+      label: ownerLabels.get(member.userId) ?? member.fullName,
       onClick: () =>
         onParamsChange({
           ownerIds: params.ownerIds.includes(member.userId)
