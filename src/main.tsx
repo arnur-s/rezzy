@@ -12,6 +12,7 @@ import { LinkProvider } from '@astryxdesign/core/Link'
 import { Theme } from '@astryxdesign/core/theme'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
 // Pre-built theme (tokens + component overrides already compiled into
@@ -32,6 +33,16 @@ registerNotificationServiceWorker()
 const router = getRouter()
 const rootElement = document.getElementById('app')!
 
+// Hoisted, not inlined into the `InnerWrap` prop below: an arrow defined during
+// render is a new component *type* on every render, so React unmounts the whole
+// route tree and mounts a fresh one. `App` re-renders on every Supabase
+// `onAuthStateChange` (the tab regaining visibility, another tab broadcasting a
+// session), and each of those was blowing away the app — losing the inbox
+// transcript's scroll position, which re-pins to the newest message on mount.
+function InnerWrap({ children }: { children: ReactNode }) {
+  return <LinkProvider component={RouterLink}>{children}</LinkProvider>
+}
+
 function App() {
   const auth = useAuth()
   // Bridge the app's stored light/dark preference into the Astryx theme so a
@@ -44,9 +55,7 @@ function App() {
         <RouterProvider
           router={router}
           context={{ auth }}
-          InnerWrap={({ children }) => (
-            <LinkProvider component={RouterLink}>{children}</LinkProvider>
-          )}
+          InnerWrap={InnerWrap}
         />
       </AppLayerProvider>
     </Theme>
