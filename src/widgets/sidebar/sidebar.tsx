@@ -10,7 +10,6 @@ import { CreateWorkspaceModal } from '@/features/workspaces/components/create-wo
 import { InvitationResponseDialog } from '@/features/workspaces/components/invitation-response-dialog'
 import { useMyInvitations } from '@/features/workspaces/hooks/use-workspace-membership'
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces'
-import { cn } from '@/lib/cn'
 import { m } from '@/paraglide/messages'
 import { useAuth } from '@/providers/auth-provider'
 import { Avatar } from '@astryxdesign/core/Avatar'
@@ -378,7 +377,10 @@ function WorkspaceSwitcher({
   }, [triggerLabel, isCollapsed])
 
   if (isLoading) {
-    return <Skeleton width="100%" height={32} radius={3} />
+    // `radius` is a token index, not px: 2 is `--radius-element` (8px), the
+    // row's own radius. The placeholder has to be the shape of the thing it
+    // stands in for.
+    return <Skeleton width="100%" height={32} radius={2} />
   }
 
   if (isError) {
@@ -389,12 +391,32 @@ function WorkspaceSwitcher({
     )
   }
 
+  // The same object every other row in the rail puts here: a 16px Lucide glyph
+  // at the secondary icon tone, no plate behind it. The size is not cosmetic.
+  // An expanded row left-aligns its icon at a fixed 8px inset while a collapsed
+  // row centres it in a fixed 32px box, so an icon of width w sits at 8 + w/2
+  // expanded and at 16 collapsed — it holds still across the collapse only at
+  // w = 16. The old 24px plate was the one icon in the rail that moved (4px),
+  // and it pushed the label 8px off the rail's text axis besides.
+  //
+  // `text-secondary` rather than a colour of its own: `--color-icon-secondary`
+  // and `--color-text-secondary` are the same value in both modes, so this is
+  // the tone `renderIconSlot` gives every unselected sibling. Hardcoding it is
+  // the trade for keeping the wrapper the invitation dot anchors to — a plain
+  // `IconType` would inherit the tone automatically but has nowhere to hang.
   const mark = currentWorkspace ? (
-    <WorkspaceMark icon={currentWorkspace.icon} isActive />
+    <WorkspaceIcon
+      name={currentWorkspace.icon}
+      className="text-secondary size-4"
+    />
   ) : (
-    <WorkspacesMark />
+    <LayoutGridIcon className="text-secondary size-4" aria-hidden />
   )
 
+  // `text-base` on the rows: `List` hardcodes `text-sm`, which under stone is
+  // 11px, and these rows carry the same workspace name the trigger above them
+  // shows at 14px. A menu that unfolds from a row should not render that row's
+  // own text at three quarters of its size.
   const content = (
     <div className="flex w-full flex-col overflow-hidden">
       <List className="p-1.5">
@@ -404,14 +426,18 @@ function WorkspaceSwitcher({
             <List.Item key={workspace.id} isActive={isCurrent}>
               <button
                 type="button"
-                className="cursor-pointer px-2"
+                className="cursor-pointer px-2 text-base"
                 aria-current={isCurrent ? true : undefined}
                 onClick={() => {
                   setIsOpen(false)
                   onSelect(workspace)
                 }}
               >
-                <WorkspaceMark icon={workspace.icon} isActive={isCurrent} />
+                {/* No plate here either: `List.Item isActive` already paints
+                    the current row, so a second selected-state marker inside
+                    it would say the same thing twice. The glyph inherits the
+                    row's own tone, the way every other list row's icon does. */}
+                <WorkspaceIcon name={workspace.icon} className="size-4 shrink-0" />
                 <span className="flex-1 truncate text-left">
                   {workspace.name}
                 </span>
@@ -434,7 +460,7 @@ function WorkspaceSwitcher({
               <List.Item key={invitation.id}>
                 <button
                   type="button"
-                  className="cursor-pointer px-2"
+                  className="cursor-pointer px-2 text-base"
                   onClick={() => {
                     setIsOpen(false)
                     setRespondingTo(invitation)
@@ -454,11 +480,16 @@ function WorkspaceSwitcher({
   )
 
   // Purely decorative: the count it stands for reaches assistive technology
-  // through the trigger's `aria-label` instead.
+  // through the trigger's `aria-label` instead. Sized and placed against a 16px
+  // glyph rather than the 24px plate this used to sit on — 8px was a quarter of
+  // the icon, and pinned to `top-0 right-0` it landed on the artwork instead of
+  // beside it. It stays on the icon rather than moving to `endContent`, which
+  // is the more natural slot, because a collapsed row drops `endContent`
+  // entirely and this signal has to survive the collapse.
   const invitationBadge =
     invitationCount > 0 ? (
       <span
-        className="bg-error absolute top-0 right-0 size-2 rounded-full"
+        className="bg-error absolute -top-0.5 -right-1 size-1.5 rounded-full"
         aria-hidden
       />
     ) : null
@@ -520,7 +551,7 @@ function WorkspaceSwitcher({
 
 /**
  * The selected workspace's destinations, bracketed to the switcher above them
- * by a hairline dropped from the workspace mark's axis. The indent is what
+ * by a hairline dropped from the workspace icon's axis. The indent is what
  * says "these belong to that workspace", so the group never has to repeat the
  * name two rows below the row that already shows it — the name goes to the
  * accessible group label instead. Collapsed, there is no text to indent
@@ -539,48 +570,18 @@ function WorkspaceItemGroup({
     <SideNavSection
       title={label}
       isHeaderHidden
-      // `ml-5` drops the rule on the workspace mark's own centre axis, so the
-      // bracket reads as descending from that plate. It runs at full
-      // `border-border` rather than the `/60` the horizontal rules use: the
-      // same alpha that divides two regions across 244px vanishes over an 80px
-      // vertical, so matching the number would not match the weight.
-      className={isCollapsed ? undefined : 'border-border ml-5 border-l pl-1.5'}
+      // `ml-4` drops the rule on the icon axis every row in the rail shares:
+      // 8px of row inset plus half a 16px glyph. It was `ml-5` while the
+      // switcher carried a 24px plate whose centre sat at 20px — that plate is
+      // gone, and the rule now descends from the same axis the rows below it
+      // draw their own icons on. It runs at full `border-border` rather than
+      // the `/60` the horizontal rules use: the same alpha that divides two
+      // regions across 244px vanishes over an 80px vertical, so matching the
+      // number would not match the weight.
+      className={isCollapsed ? undefined : 'border-border ml-4 border-l pl-1.5'}
     >
       {children}
     </SideNavSection>
   )
 }
 
-/** Neutral mark for the switcher before a workspace is chosen. */
-function WorkspacesMark() {
-  return (
-    <span className="bg-accent-bg/10 text-accent flex size-6 shrink-0 items-center justify-center rounded-md">
-      <LayoutGridIcon className="size-3.5" aria-hidden />
-    </span>
-  )
-}
-
-function WorkspaceMark({
-  icon,
-  isActive,
-}: {
-  icon: Workspace['icon']
-  isActive: boolean
-}) {
-  return (
-    <span
-      className={cn(
-        'flex size-6 shrink-0 items-center justify-center rounded-md font-semibold',
-        // The active plate is a solid accent surface, so it takes the brand
-        // ramp rather than the flat tone. `text-on-dark` rather than
-        // `text-on-accent`: the ramp is dark in both modes, so the label must
-        // not invert with the accent.
-        isActive
-          ? 'bg-accent-gradient text-on-dark'
-          : 'bg-accent-bg/10 text-accent',
-      )}
-    >
-      <WorkspaceIcon name={icon} className="size-3.5" />
-    </span>
-  )
-}
