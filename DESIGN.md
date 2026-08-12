@@ -13,7 +13,7 @@ colors:
   # violet cast that is invisible in isolation and visible when a true gray
   # sits beside it. Tone stops are named T0–T100 in 5s by `stonePalettes`.
   stone-100: '#ffffff' # T100 — light pane, card, popover; on-dark label
-  stone-96: '#f3f3f5' # T96 — light canvas; the whole dark accent
+  stone-96: '#f3f3f5' # T96 — light canvas
   stone-90: '#e2e2e8' # T90 — light muted well, light hairline, gray plate
   stone-85: '#d4d4da' # T85 — light skeleton, gray plate border
   stone-86: '#d7d7da' # light disabled text and icon
@@ -23,11 +23,15 @@ colors:
   stone-35: '#525257' # T35 — dark gray plate
   stone-30: '#46464b' # T30 — gray plate text
   stone-25: '#3b3b3f' # T25 — dark muted well, dark gray plate border
-  stone-15: '#25252a' # T15 — accent, primary text, dark popover
+  stone-15: '#25252a' # T15 — primary text, interaction tint, dark popover
   stone-14: '#242325' # dark card
   stone-10: '#1b1b1f' # T10 — dark pane
   stone-5: '#111015' # T5 — dark canvas
   stone-shadow: '#28282a' # the shadow and overlay color
+  # Brand accent — the one hue that means the product rather than a state.
+  accent-gradient: 'linear-gradient(135deg, #8365a6 0%, #715b96 40%, #534c7e 100%)'
+  accent: '#534c7e' # the ramp's dark stop; the flat form of the accent
+  accent-dark: '#b4a3ca' # the dark-mode flat tone — same hue, lighter stop
   # Categorical plates — light T90 surface carrying T30 same-hue text.
   # Dark inverts to a solid T35 surface carrying T90 text.
   blue-plate: '#d7e4f5' # H=265 C=10
@@ -218,7 +222,7 @@ if it and this list disagree, the theme wins and this list is stale.
 
 - **Font family:** `font.family.body=Figtree`, `font.family.heading=Montserrat`, `font.family.code=JetBrains Mono`, `font.size.base=14px`, `font.weight.base=400`, `font.lineHeight.base=1.4286`
 - **Typography scale** (base 14, ratio 1.25, `Math.round`ed to whole px by `expandTypeScale`, **not clamped**): `font.size.2xs=7px`, `font.size.xs=9px`, `font.size.sm=11px`, `font.size.base=14px`, `font.size.lg=18px`, `font.size.xl=22px`, `font.size.2xl=27px`, `font.size.3xl=34px`, `font.size.4xl=43px`, `font.size.5xl=53px`. One size is pinned by hand: `--text-supporting-size=12px`.
-- **Color — accent:** `color.accent=#25252a` (light) / `#f3f3f5` (dark) — the far end of the neutral ramp, not a hue. `color.accent.muted=#25252a14` (light) / `#f3f3f520` (dark), `color.neutral=#25252a0f` / `#f3f3f51a`
+- **Color — accent:** `color.accent=#534c7e` (light) / `#b4a3ca` (dark) — the brand violet's dark stop, and a lighter stop of the same hue in dark. `color.accent.muted=#534c7e14` (light) / `#b4a3ca20` (dark). `color.neutral=#25252a0f` / `#f3f3f51a` stays achromatic — it is the interaction tint, not the accent. The gradient form, `--gradient-accent`, is declared in `src/styles.css` rather than the theme: `defineTheme`'s token map is typed to Astryx's own token names and has no gradient slot.
 - **Color — text:** `color.text.primary=#25252a` / `#f3f3f5`, `color.text.secondary=#83838a` / `#9d9da3`, `color.text.disabled=#d7d7da` / `#5e5e61`, `color.text.on-accent=#ffffff` (light) / `#25252a` (dark)
 - **Color — surface:** `color.surface.pane=#ffffff` / `#1b1b1f`, `color.surface.card=#ffffff` / `#242325`, `color.surface.popover=#ffffff` / `#25252a`, `color.surface.canvas=#f3f3f5` / `#111015`, `color.surface.muted=#e2e2e8` / `#3b3b3f`
 - **Color — border:** `color.border=#e2e2e8` / `#f3f3f51a`, `color.border.emphasized=#83838a` / `#5e5e61`
@@ -274,12 +278,14 @@ almost every rule below still follows from it. Treat it as the durable identity.
 What changed underneath is the material, and it changed in the direction of
 quiet. The previous theme was a chroma-0 spine with a bright lime accent and
 saturated signal fills — an achromatic field with a few loud objects in it.
-Stone removes both loud halves. The accent is now the **far end of the neutral
-ramp** (`#25252a` light, `#f3f3f5` dark): a primary button is a near-black pill,
-not a green one, and there is no brand hue anywhere in the interface. The
-saturated status fills are gone with it. Every colored object in the product is
-now a **muted pastel plate carrying same-hue text**, at chroma low enough that a
-badge reads as a tinted gray until you look at it.
+Stone removed both loud halves, and the accent has since come back as a **brand
+violet** — `--gradient-accent` on solid fills, `#534c7e` / `#b4a3ca` as the flat
+tone everywhere else. A primary button is a violet pill, not a green one and no
+longer a near-black one. The saturated status fills stayed gone: every _status_
+object in the product is still a **muted pastel plate carrying same-hue text**,
+at chroma low enough that a badge reads as a tinted gray until you look at it.
+So the interface now has exactly one loud hue, and it means the product rather
+than a state.
 
 That is a real trade and it should be made knowingly: the system gained
 uniformity — every plate is one construction, every contrast figure is the same
@@ -300,7 +306,7 @@ mechanism the other one lacks.
 - Canvas and panes: the shell is a canvas, each region is an inset pane with a fill, a radius, a gap, and a lift
 - Gutter separation: the canvas showing between panes divides regions; hairlines rule only _within_ a pane
 - Near-neutral spine: one H=291 C=3 ramp carries every surface, rule, and running-text tone
-- No brand hue: the accent is the ramp's dark end in light and its light end in dark
+- One brand hue: a violet accent — a `135deg` ramp on solid fills, its dark stop `#534c7e` (light) / `#b4a3ca` (dark) everywhere else
 - One color language: muted pastel plate plus same-hue text, for categories and for status alike
 - Light lifts by shadow, dark lifts by tone — and neither mode has both
 - Two type tiers: 14px body, 11px metadata — the second of which is below this document's own floor (see Known drift)
@@ -411,23 +417,41 @@ hue appears only where something needs to be _told_ to the user.
 
 ### Primary
 
-**The accent is not a hue.** It is the extreme stop of the neutral ramp,
-inverted by mode: `#25252a` (T15) in light, `#f3f3f5` (T96) in dark. `--color-accent`,
-`--color-text-accent`, and `--color-icon-accent` are all that one value.
+**The accent is a violet brand hue with two forms — a ramp and a flat tone.**
 
-- A primary Button is a near-black pill with a white label — **15.25:1**, computed.
-- `ring-accent` is a near-black ring in light and a near-white ring in dark: maximum contrast against every fill in the system, in both modes.
-- `bg-accent-bg/10`, the pale plate behind accent text, composites to `#e9e9ea` on a white pane — a soft gray, not a tint.
-- `--color-accent-muted` is the accent at 8% (light) / 12.5% (dark), the quiet accent surface.
+The ramp is the fill:
 
-**There is no brand color in the interface.** The product's identity is carried
-by the shell's structure, the pill geometry, and the type — not by a hue. The
-consequence worth stating: **an accent surface can no longer mean anything.** A
-near-black plate reads as emphasis, not as a category or a state. Anything that
-must mean something reaches for a `Badge`, `Banner`, or `Card` variant.
+```css
+--gradient-accent: linear-gradient(135deg, #8365a6 0%, #715b96 40%, #534c7e 100%);
+```
 
-**Interactive state is the accent's text sibling at low alpha**, and stays
-achromatic: `bg-primary/4` (hover), `bg-primary/10` (selected), `bg-primary/5`
+The flat tone is its dark stop, `#534c7e` in light and a lighter stop of the
+same hue, `#b4a3ca`, in dark. `--color-accent`, `--color-text-accent`, and
+`--color-icon-accent` are all that one value — a gradient cannot be a color
+token, so every accent _line_ (text, icon, ring) and every low-alpha plate
+takes the flat tone, and only fills large enough to show a ramp take the
+gradient.
+
+- A primary Button is a violet ramp with a white label — **7.8:1** against the label at the ramp's lightest stop, computed. The gradient is applied in the theme's `button` / `variant:primary` override, which also has to restack Astryx's hover and pressed tints (they are painted into `background-image`, so a plain override would drop the ramp on hover).
+- `ring-accent` is `#534c7e` in light (7.8:1 on the pane) and `#b4a3ca` in dark (7.4:1). Both clear every fill in the system.
+- `bg-accent-bg/10`, the pale plate behind accent text, composites to a faint violet tint on a white pane rather than the soft gray it used to be.
+- `--color-accent-muted` is the flat tone at 8% (light) / 12.5% (dark), the quiet accent surface.
+- `bg-accent-gradient` (`src/styles.css`) is the utility for app-side solid accent plates. The sidebar's active `WorkspaceMark` is the one current user.
+
+**The label does not follow `--color-on-accent` on a gradient fill.** The ramp
+is dark in both modes while `--color-on-accent` inverts, so anything painted
+with `--gradient-accent` fixes its label to `--color-on-dark` (`text-on-dark`).
+Flat accent fills — the small controls: checkbox, switch, radio, tab indicator
+— keep `text-on-accent` and the inversion, which is what lets the dark-mode
+accent be a light stop.
+
+**The accent is now identity, not just emphasis.** A violet plate reads as the
+product's own color. It still does not encode a category or a state: anything
+that must _mean_ something reaches for a `Badge`, `Banner`, or `Card` variant.
+
+**Interactive state is the primary text tone at low alpha**, and stays
+achromatic — it did not follow the accent to violet: `bg-primary/4` (hover),
+`bg-primary/10` (selected), `bg-primary/5`
 (quiet plate), where `bg-primary` bridges to `--color-text-primary`. On the
 light pane those compute to `#f6f6f6` and `#e9e9ea`. Those three percentages are
 the whole state vocabulary.
@@ -442,7 +466,7 @@ read each role as a pair.
 - **T100 `#ffffff`** / **`#242325`**: `bg-card`. In light this is **identical to the pane** — cards no longer have a tonal edge; see Elevation.
 - **T100 `#ffffff`** / **T15 `#25252a`**: `bg-popover`. Same story, and in dark it is 1.03:1 against the card beneath it.
 - **T90 `#e2e2e8`** / **T25 `#3b3b3f`**: `bg-muted`. In light it is a genuine step _down_ from both the pane (1.29:1) and the canvas (1.16:1) — an improvement, since it used to be byte-identical to the canvas. In dark it is a step _up_ from the pane (1.54:1). One token, opposite directions by mode; see The Recess Is Pane-Relative Rule.
-- **T15 `#25252a`** / **T96 `#f3f3f5`**: `text-primary`. Computed **15.25:1** light and **15.49:1** dark against the pane. The light slot is the same value as the accent — primary text and a primary button fill are one tone doing two jobs, which is what makes the accent structural rather than decorative.
+- **T15 `#25252a`** / **T96 `#f3f3f5`**: `text-primary`. Computed **15.25:1** light and **15.49:1** dark against the pane. This used to be the same value as the accent; since the accent became a brand hue, running text and the primary fill are two separate tones and `text-primary` is purely the neutral ramp's endpoint.
 - **T55 `#83838a`** / **T65 `#9d9da3`**: `text-secondary`. Computed **3.76:1** light and 6.36:1 dark against the pane. **The light slot fails AA** — see Known drift 4. Until it moves, treat `text-secondary` in light mode as a known defect rather than as the safe default it used to be.
 - **`#d7d7da`** / **T40 `#5e5e61`**: `text-disabled`. 1.44:1 light — disabled text is exempt from the contrast requirement, and this is the value that makes that exemption load-bearing.
 - **T90 `#e2e2e8`** / **T96 at 10%**: `border-border`. Light is an opaque tone, dark is an alpha wash. The light hairline is byte-identical to the light muted well, so a rule and a recessed surface are the same tone.
@@ -980,7 +1004,7 @@ not invent a fifth:
 Three rules bind that table:
 
 - **Hover must never override selection.** Scope hover to `data-[selected=false]`.
-- **Focus-visible is never removed, never `outline: none` without a replacement, and never expressed by color alone.** It must be visible against the component's default, hover, _and_ selected fills, which is why it is inset. Under stone the ring is the accent tone — near-black in light, near-white in dark — so it clears every fill in the system by a wide margin.
+- **Focus-visible is never removed, never `outline: none` without a replacement, and never expressed by color alone.** It must be visible against the component's default, hover, _and_ selected fills, which is why it is inset. The ring is the accent's flat tone — `#534c7e` in light, `#b4a3ca` in dark — 7.8:1 and 7.4:1 against the pane, which clears every fill in the system.
 - **Disabled is a state of the form, not of the control.** A submitting form locks uniformly; a control that greys itself out while its siblings stay live is a bug.
 
 **Every interactive component must also define keyboard, pointer, and touch
@@ -994,7 +1018,7 @@ Resolved and unfussy. State is a tonal shift, never a scale or bounce.
 
 - **Shape:** **a pill** — `--radius-full`, set on `components.button.base`. Every button, every variant, both modes.
 - **Height:** **a fixed 32px, set by Astryx**, not derived from its padding. The label is flex-centered inside a declared `height: 32px`, which is why the body type moving 16px → 14px did not change the control height. It also means the button is **below the 44px touch-target criterion** in the Accessibility section, at every breakpoint.
-- **Primary:** the accent — `#25252a` with a `#ffffff` label in light, `#f3f3f5` with `#25252a` in dark. Computed 15.25:1 and 13.76:1. This comes from `--color-accent` directly; stone adds no primary override, because the accent is a tone that can carry a label.
+- **Primary:** the brand ramp — `--gradient-accent` at `135deg`, with a `#ffffff` label in both modes. Worst case is the ramp's lightest stop, `#8365a6`, at 4.8:1 against white; the label sits over the `#534c7e` end at 7.8:1. Stone overrides `button` / `variant:primary` for this, and the override has to restack Astryx's hover and pressed tints — they are painted into `background-image`, which the ramp otherwise replaces. The label is `--color-on-dark`, not `--color-on-accent`: the ramp does not invert.
 - **Secondary:** **an outline, not a fill.** `transparent` with a 1.5px `--color-border-emphasized` border, hovering to `--color-neutral`. This is a change of kind from the previous theme's gray fill. In dark mode that border computes 2.66:1 against the pane — see Known drift 7 — which makes the secondary button the weakest-defined control in the product.
 - **Ghost:** transparent, hover `--color-overlay-hover` (black at 5% / white at 5%). The default for icon buttons and inline actions. Ghost and secondary are now closer to each other than they used to be: one is an invisible box, the other an outlined one.
 - **Destructive:** **a pastel well, not a fill.** `--color-background-red` (`#f9dcd7` / `#644d49`) with `--color-text-red`, computed 7.25:1 light and 6.02:1 dark. A destructive action is the quietest colored object on screen. If a delete confirmation needs more weight, the weight belongs in the copy and the dialog, not in a re-fill.
@@ -1006,7 +1030,7 @@ The rail is the product's spine and the only persistent chrome.
 
 - **Structure:** `SideNav` with `header`, `collapsible`, and `footer` slots. Collapse state persists to `app:sidebar-collapsed`.
 - **Heading:** the wordmark alone, linking to `/`. It is the rail's only identity chrome — the workspace does not share the row, because a name you switch and a name you cannot are not the same kind of thing. A quiet `bg-primary/5` monogram plate rides beside it, which is also what keeps the header alive collapsed: `SideNavHeading` renders nothing there without an icon.
-- **Workspace switcher:** the first row of the nav body rather than part of the heading. Built like the account row in the footer — a ghost `Button` inside a `DropdownMenu`, `px-2` with the label span grown so a trailing `chevrons-up-down` pins to the edge — carrying a `WorkspaceMark` (24px plate, `rounded-md`, accent fill when active and `bg-accent-bg/10` when not) and the workspace name at `font-medium`. Under stone the active mark is a near-black plate rather than a colored one; it reads as emphasis, not as identity. Collapsed it becomes an icon-only trigger with a tooltip.
+- **Workspace switcher:** the first row of the nav body rather than part of the heading. Built like the account row in the footer — a ghost `Button` inside a `DropdownMenu`, `px-2` with the label span grown so a trailing `chevrons-up-down` pins to the edge — carrying a `WorkspaceMark` (24px plate, `rounded-md`, `bg-accent-gradient text-on-dark` when active and `bg-accent-bg/10 text-accent` when not) and the workspace name at `font-medium`. The active mark is the brand ramp — the one app-side surface big enough to carry it — so it reads as identity as well as emphasis. Collapsed it becomes an icon-only trigger with a tooltip.
 - **Items:** `SideNavItem` with a 16px Lucide icon. Selection is a quiet accent-tone fill; the same grammar as a conversation row.
 - **Workspace group:** the selected workspace's destinations sit in a nested `SideNavSection` indented `ml-5` behind a `border-l border-border`, which lands the rule on the workspace mark's own centre axis. The indent is what says the rows belong to that workspace, so the group never repeats the name two rows below the row already showing it — the name goes to the section's hidden group label instead, where a screen reader still gets it. Dropped when collapsed. The bracket runs at full `border-border`.
 - **Sections:** three regions, two rules. Identity; then the workspace and whatever it contains; then Home and notifications, which span every workspace rather than describing where you are. The rules are `Divider`s inset to `-mx-2 my-1` so they run edge-to-edge across the rail, and they disappear when collapsed, matching the footer.
@@ -1058,16 +1082,16 @@ Built on Astryx's `Chat` family — `ChatLayout` owns the scroll container and
 follow-on-append; `ChatMessage` wraps a same-sender run; `ChatMessageBubble`
 draws each bubble.
 
-- **Fill:** `--color-neutral` — the accent tone at 6% in light, 10% in dark — for **both directions**. Inbound and outbound share one tint. On a light pane that composites to `#f2f2f2`: 1.12:1 against the pane, with `text-primary` on it at 13.63:1. Direction reads from alignment and from the delivery-tick row, not from color. Anything that wants to distinguish them by fill has to introduce a second tint, and that is a system change, not a component tweak.
+- **Fill:** `--color-neutral` — the primary text tone at 6% in light, 10% in dark, achromatic and deliberately not the accent — for **both directions**. Inbound and outbound share one tint. On a light pane that composites to `#f2f2f2`: 1.12:1 against the pane, with `text-primary` on it at 13.63:1. Direction reads from alignment and from the delivery-tick row, not from color. Anything that wants to distinguish them by fill has to introduce a second tint, and that is a system change, not a component tweak.
 - **Grouping:** consecutive same-direction messages render as one run with grouped corner radii (`group="first" | "middle" | "last"`). A run shows one timestamp footer; a message carrying state of its own (edited, failed, reactions) always shows its own.
 - **Ghost variant:** media-only messages drop the bubble boundary and keep the padding, so the frame is the object.
 - **Failed:** the bubble states it — `bg-error/12 ring-1 ring-error/70` — and the caption explains it. Under stone that ring is a muted clay rather than a red, so the failure reads quieter than it used to; the copy is now carrying most of the signal. The failure never gets a line of its own: `time · ⚠ Not sent · Retry` stays on the single footer row, because a second line sits closer to the next message than to the bubble it describes. The retry is caption-scale and underlined, with padding for a real hit target.
 - **Quoted reply:** a 2px `border-current/30` rule with the author at `font-semibold` over the quoted text at 60%, both truncated to one line. Never a plate — the bubble is already the plate, and a fill inside it is a box in a box. The loaded parent outranks the channel's quote payload for author and text, so "Quoted message" only appears when neither is resolvable; without a loaded parent the strip is inert rather than a control that silently does nothing. The composer's reply drawer uses the same rule.
 - **Action rail:** a reply control parked in the transcript gutter, absolutely positioned outside the bubble, revealed on `group-hover/msg` and `group-focus-within/msg`. Anchored to the first text line (`top-2`) for text and to the middle for media or structured blocks. Zero hit target until engaged; on touch it sits permanently at 60% opacity with an expanded 44px target.
-- **Pane wash:** the transcript pane carries one static `radial-gradient` — a wide, shallow ellipse (`120% 85% at 100% 0%`) of `--color-accent` at **5.5%**, out to a `transparent` stop at 62%. It is the sole exception to the no-decorative-background rule below. It takes the accent rather than a hue, so it inverts by mode for free with no `dark:` variant. Its ceiling is a tone the system already owns: measured in a browser, the peak is **`#f3f3f3`** on the white pane — the body canvas (T96 `#f3f3f5`) the shell floats its panes on — and `#27272a` in dark, one ramp step above the `#1b1b1f` pane. The corner meets the app's own canvas tone and goes no further. Corner-to-far-edge is 1.11:1 light and 1.15:1 dark, which is a soft vignette across an 844px pane rather than a visible edge. It lives as an inline style on the pane wrapper in `message-thread.tsx`, painted on the wrapper itself rather than a sibling, so it needs no `isolate` and no negative z-index, and it does not scroll with the transcript.
+- **Pane wash:** the transcript pane carries one static `radial-gradient` — a wide, shallow ellipse (`120% 85% at 100% 0%`) of `--color-accent` at **5.5%**, out to a `transparent` stop at 62%. It is the sole exception to the no-decorative-background rule below. It reads `--color-accent`, so it inverts by mode for free with no `dark:` variant — and since the accent became a brand hue it is now a faint violet cast rather than a neutral one. **The measurements in this bullet and the two below it predate that change and have not been re-taken in a browser.** Composited, the peak is now `#f5f5f8` on the white pane (it was `#f3f3f3`) and `#232228` in dark (it was `#27272a`) — still inside the tonal range the shell already owns, and still a soft vignette across an 844px pane rather than a visible edge, but the exact ratios below are stale. It lives as an inline style on the pane wrapper in `message-thread.tsx`, painted on the wrapper itself rather than a sibling, so it needs no `isolate` and no negative z-index, and it does not scroll with the transcript.
   - **It does not disturb the bubble edge**, which is the obvious worry and is measurably not real. `--color-neutral` is an *alpha* fill, so a bubble composites over the wash rather than over the bare pane, and the wash darkens figure and ground together. Measured: the bubble edge is **1.114:1** over the wash's peak versus **1.119:1** over a bare pane (dark: 1.334:1 vs 1.324:1). A future opaque bubble fill would break this property and would have to re-measure.
   - **What it does cost is `text-secondary`**, and only in light mode: `#83838a` falls from 3.76:1 on the bare pane to **3.48:1** at the worst real text position (an outbound footer at the top of the view) and 3.39:1 at the peak pixel. Every other sampled footer position is unchanged at 3.76:1. This does not create a failure — Known drift 4 already records that token as failing AA at 3.76:1 — but it deepens one, and it removes an option from that drift's fix: **T50 `#77777c` no longer suffices.** Measured, T50 is 4.45:1 on the bare pane and 4.01:1 on the wash peak, so it clears neither. **T45 `#6a6a6f` clears both** at 5.38:1 and 4.85:1, and is now the only listed candidate that does.
-  - It replaces a WebGL ray canvas (`ogl`, ported from React Bits' `SideRays`) that shipped here after the stone swap. That canvas was drift on two counts this document already legislates: it painted `#63fe13` / `#2e7a00` into a theme whose whole premise is that **the accent is not a hue**, and it cited `neutralTheme.ts` — deleted — for the choice. A static gradient also drops a runtime dependency, a GL context per open thread, an `IntersectionObserver`, a resize listener, an `rAF` loop, and a `prefers-reduced-motion` branch. Nothing that does not move needs a reduced-motion guard.
+  - It replaces a WebGL ray canvas (`ogl`, ported from React Bits' `SideRays`) that shipped here after the stone swap. That canvas was drift on two counts this document already legislates: it painted `#63fe13` / `#2e7a00`, a hue belonging to no ramp in this theme and to no brand, and it cited `neutralTheme.ts` — deleted — for the choice. A static gradient also drops a runtime dependency, a GL context per open thread, an `IntersectionObserver`, a resize listener, an `rAF` loop, and a `prefers-reduced-motion` branch. Nothing that does not move needs a reduced-motion guard.
 
 ### Cards
 
@@ -1235,8 +1259,9 @@ rather than working around it.
 - **Do** give a light-mode surface a shadow token when it should read as raised. Pane, card, and popover are all `#ffffff`; the shadow is the only thing that makes it a sheet.
 - **Do** give a dark-mode overlay a tonal step or a `border-border`. Shadows contribute nothing in dark and there is no inset rim.
 - **Do** use the Tailwind bridge names (`text-primary`, `text-secondary`, `bg-muted`, `bg-card`, `bg-surface`, `bg-accent-bg`, `text-on-accent`, `border-border`, `text-error`, `bg-blue-subtle`, `text-blue-vivid`) rather than raw `var(--color-*)` in class strings.
-- **Do** express state as the accent at low alpha: `bg-primary/4` hover, `bg-primary/10` selected, `bg-primary/5` quiet plate.
-- **Do** put `text-on-accent` on any accent fill, so labels invert with their background.
+- **Do** express state as the primary text tone at low alpha: `bg-primary/4` hover, `bg-primary/10` selected, `bg-primary/5` quiet plate. State is achromatic; it did not follow the accent to violet.
+- **Do** put `text-on-accent` on any _flat_ accent fill, so labels invert with their background.
+- **Do** put `text-on-dark` on a `bg-accent-gradient` fill instead. The ramp is dark in both modes, so a label that inverts would disappear in dark.
 - **Do** reach for a `Badge` / `Banner` / `Card` variant to get a hue, so the plate and its text arrive as a matched pair.
 - **Do** fill a full-measure status surface with the hue's `-muted` well and spend the hue on the icon, the copy, and the action. A chip plate stretched to a region is a slab.
 - **Do** put body copy on `text-base` and metadata on `text-sm`, and escalate through weight and opacity.
@@ -1273,7 +1298,7 @@ rather than working around it.
 - **Don't** nest a Card in a Card, or put a Card inside a shell pane.
 - **Don't** card-wrap dense list rows. Conversations are transparent rows in a scrollable list; records are ruled rows in a `divide-y border-y` group.
 - **Don't** change the box metrics of anything inside the transcript for cosmetic reasons — the list measures row heights for scroll anchoring, so a border or type-size change on a bubble or date separator perturbs the pin. Restyle with color.
-- **Don't** add a decorative background. `src/styles.css` has no pattern, gradient, or texture, and the auth screens do not want one. The transcript pane's wash is the one exception and is specified under Message Bubbles; it earns it by taking the accent tone rather than a hue, by staying under the bubble fill in both modes, and by being static. A second exception needs the same three arguments.
+- **Don't** add a decorative background. `src/styles.css` carries no pattern or texture; its one gradient is `--gradient-accent`, which is a component fill rather than a decoration, and the auth screens want neither. The transcript pane's wash is the one decorative exception and is specified under Message Bubbles; it earns it by reading a token rather than a literal color, by staying under the bubble fill in both modes, and by being static. A second exception needs the same three arguments.
 - **Don't** add a top bar. Identity, navigation, notifications, and the account live in the rail; color mode and language live in Settings under Appearance; every page owns its own title.
 - **Don't** redirect on a failed query. Render the error with a retry — a failed check is not a known-empty result.
 - **Don't** cite a verification command for anything in this document. None exists; `package.json` is the complete list of what can be run.
