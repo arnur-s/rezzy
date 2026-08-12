@@ -108,6 +108,33 @@
   }
 }
 
+/* The brand primary ramp.
+
+   `--color-accent` in `src/themes/stone/stoneTheme.ts` is this gradient's flat
+   tone (`#534c7e`) and carries every accent *line* — text, icon, focus ring,
+   and the low-alpha plates behind them. This is the *fill*, for the surfaces
+   big enough to show a ramp: the primary `Button` (applied in the theme's
+   component overrides) and `bg-accent-gradient` below.
+
+   It lives here rather than in the theme because `defineTheme`'s token map is
+   typed to Astryx's own token names and has no slot for a gradient. This is
+   not a `--color-*` override, so the rule against redefining color tokens in
+   `:root` does not apply. */
+:root {
+  --gradient-accent: linear-gradient(
+    135deg,
+    #8365a6 0%,
+    #715b96 40%,
+    #534c7e 100%
+  );
+}
+
+@layer utilities {
+  .bg-accent-gradient {
+    background-image: var(--gradient-accent);
+  }
+}
+
 html,
 body {
   height: 100%;

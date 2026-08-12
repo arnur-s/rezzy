@@ -10,6 +10,27 @@ import {defineTheme, defineSyntaxTheme} from '@astryxdesign/core/theme';
 import {stoneIconRegistry} from './icons';
 
 /**
+ * Brand primary.
+ *
+ * `#534C7E` is the flat tone: it is what every accent *line* takes — text,
+ * icons, focus rings, and the low-alpha plates behind them — because a
+ * gradient cannot be a color token. Contrast on the light pane is 7.8:1.
+ *
+ * Dark mode takes a lighter stop of the same hue (`#b4a3ca`, 7.4:1 on the
+ * dark pane). This preserves the Accent Label Inverts rule in DESIGN.md:
+ * `--color-on-accent` stays light-in-light / dark-in-dark, so the small
+ * accent-filled controls (checkbox, switch, radio, tab indicator) keep a
+ * readable mark in both modes.
+ *
+ * `--gradient-accent` is the ramp itself, declared in `src/styles.css`
+ * because Astryx's token map is typed to its own token names and has no
+ * slot for a gradient. Only fills large enough to show a ramp use it —
+ * the primary Button below, and `bg-accent-gradient` in the app.
+ */
+const PRIMARY = '#534c7e';
+const PRIMARY_DARK = '#b4a3ca';
+
+/**
  * Input status border overrides (per-component, per-status). All 9 input
  * components share inputStatusBorderStyles in core, which read
  * --color-{success,warning,error} (T30 light / T80 dark = saturated text
@@ -91,8 +112,8 @@ export const stoneTheme = defineTheme({
 
     // Core semantic — all neutrals H=291
     // Stone 900 T=16 C=1.4, Stone 500 T=55 C=4, Stone 300 T=86 C=1.6, Stone 100 T=96 C=1
-    '--color-accent': ['#25252a', '#f3f3f5'], // light: Stone Neutral T15
-    '--color-accent-muted': ['#25252a14', '#f3f3f520'], // light: Stone Neutral T15 · 8% / dark: T96 · 12.5%
+    '--color-accent': [PRIMARY, PRIMARY_DARK], // brand primary
+    '--color-accent-muted': ['#534c7e14', '#b4a3ca20'], // primary · 8% light / 12.5% dark
     '--color-neutral': ['#25252a0f', '#f3f3f51a'], // light: Stone Neutral T15 · 6% / dark: T96 · 10%
     '--color-background-surface': ['#ffffff', '#1b1b1f'], // dark: Stone Neutral T10
     '--color-background-body': ['#f3f3f5', '#111015'], // dark: Stone Neutral T5
@@ -105,7 +126,8 @@ export const stoneTheme = defineTheme({
     '--color-text-primary': ['#25252a', '#f3f3f5'], // light: Stone Neutral T15
     '--color-text-secondary': ['#83838a', '#9d9da3'], // T55 C=4 / T65 C=3
     '--color-text-disabled': ['#d7d7da', '#5e5e61'], // T86 C=1.6 / T40 C=2
-    '--color-text-accent': ['#25252a', '#f3f3f5'], // light: Stone Neutral T15
+    // Must stay byte-identical to --color-accent — see DESIGN.md.
+    '--color-text-accent': [PRIMARY, PRIMARY_DARK],
     '--color-on-dark': '#FFFFFF',
     '--color-on-light': ['#25252a', '#28282a'], // light: Stone Neutral T15
     '--color-on-accent': ['#ffffff', '#25252a'], // dark: Stone Neutral T15
@@ -115,7 +137,7 @@ export const stoneTheme = defineTheme({
     '--color-on-warning': ['#524622', '#f4e1b7'], // Yellow T30 / T90
 
     // Icon — H=291
-    '--color-icon-accent': ['#25252a', '#f3f3f5'], // light: Stone Neutral T15
+    '--color-icon-accent': [PRIMARY, PRIMARY_DARK],
     '--color-icon-primary': ['#25252a', '#f3f3f5'], // light: Stone Neutral T15
     '--color-icon-secondary': ['#83838a', '#9d9da3'], // T55 C=4 / T65 C=3
     '--color-icon-disabled': ['#d7d7da', '#5e5e61'], // T86 C=1.6 / T40 C=2
@@ -242,6 +264,24 @@ export const stoneTheme = defineTheme({
     button: {
       base: {
         borderRadius: 'var(--radius-full)',
+      },
+      // The primary fill is the brand ramp, not the flat tone. Astryx paints
+      // its own hover/pressed tint into `background-image` (over the flat
+      // `--color-accent` background-color), so those two states have to
+      // restack the overlay above the ramp or hovering would drop it. The
+      // label is fixed white: the ramp is dark in both modes, unlike
+      // --color-on-accent, which inverts.
+      'variant:primary': {
+        backgroundImage: 'var(--gradient-accent)',
+        color: 'var(--color-on-dark)',
+        ':hover': {
+          backgroundImage:
+            'linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)), var(--gradient-accent)',
+        },
+        ':active': {
+          backgroundImage:
+            'linear-gradient(var(--color-overlay-pressed), var(--color-overlay-pressed)), var(--gradient-accent)',
+        },
       },
       'variant:secondary': {
         backgroundColor: 'transparent',
