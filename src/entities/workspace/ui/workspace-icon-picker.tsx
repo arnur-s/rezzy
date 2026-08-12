@@ -1,6 +1,9 @@
 import { IconButton } from '@astryxdesign/core/IconButton'
 import type { WorkspaceIconName } from '../lib/workspace-icons'
-import { WORKSPACE_CURATED_ICONS } from '../lib/workspace-icons'
+import {
+  WORKSPACE_CURATED_ICONS,
+  workspaceIconLabel,
+} from '../lib/workspace-icons'
 import { WorkspaceIcon } from './workspace-icon'
 
 type WorkspaceIconPickerProps = {
@@ -51,7 +54,9 @@ function IconTile({
 }) {
   return (
     <IconButton
-      label={name}
+      // The localized name, not the slug: this is the tile's only accessible
+      // name, and `folder-kanban` is not a word in any of this app's locales.
+      label={workspaceIconLabel(name)}
       icon={<WorkspaceIcon name={name} className="size-5" />}
       variant={isSelected ? 'primary' : 'ghost'}
       size="sm"

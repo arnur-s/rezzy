@@ -102,7 +102,7 @@ export function ConversationList({
       <div className="flex h-14 shrink-0 items-center justify-center px-1">
         <ConversationSearch value={searchQuery} onChange={onSearchChange} />
       </div>
-      <div className="border-border/60 shrink-0 border-b">
+      <div className="border-border shrink-0 border-b">
         <PrimaryInboxFilters
           primaryFilter={primaryFilter}
           onPrimaryFilterChange={onPrimaryFilterChange}

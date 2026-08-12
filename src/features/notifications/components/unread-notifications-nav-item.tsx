@@ -114,7 +114,7 @@ export function UnreadNotificationsNavItem({ workspaceId, onNavigate }: Props) {
       )}
 
       {workspaceId ? (
-        <div className="border-border/60 border-t p-1.5">
+        <div className="border-border border-t p-1.5">
           <Button
             label={m.notifications_view_all()}
             size="sm"

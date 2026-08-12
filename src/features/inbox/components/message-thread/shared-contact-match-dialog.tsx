@@ -51,7 +51,7 @@ export function SharedContactMatchDialog({
       <div className="flex flex-col gap-4 px-4 pt-2 pb-6">
         {/* A list of choices, not a list of cards: rows edge to edge, one
           decision per row. */}
-        <ul className="border-border/60 divide-border/60 -mx-4 divide-y border-y">
+        <ul className="border-border divide-border -mx-4 divide-y border-y">
           {matches.map((match) => (
             <li key={match.id}>
               <button

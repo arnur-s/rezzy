@@ -193,7 +193,7 @@ function RouteComponent() {
           )}
         />
 
-        <div className="border-border/60 flex justify-end border-t pt-5">
+        <div className="border-border flex justify-end border-t pt-5">
           <Button
             label={m.common_save_changes()}
             type="submit"

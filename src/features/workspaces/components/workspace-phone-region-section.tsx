@@ -75,7 +75,7 @@ export function WorkspacePhoneRegionSection({
   }
 
   return (
-    <section className="border-border/60 flex flex-col gap-3 border-t pt-6">
+    <section className="border-border flex flex-col gap-3 border-t pt-6">
       <SettingsSectionHeader
         as="h3"
         title={m.workspace_settings_phone_region_title()}

@@ -17,7 +17,7 @@ const CONNECT_CHANNEL_TYPES = [
 
 export function ConnectChannelPicker({ onSelect }: Props) {
   return (
-    <div className="divide-y divide-border/60 border-y border-border/60">
+    <div className="divide-y divide-border border-y border-border">
       {CONNECT_CHANNEL_TYPES.map((type) => (
         <ChannelTypeCard
           key={type}
