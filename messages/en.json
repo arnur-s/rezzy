@@ -589,7 +589,6 @@
   "home_attention_reason_stale_hint": "Waiting on a reply for more than 2 days",
   "home_attention_waking_now": "now",
   "home_unassigned_title": "Unassigned",
-  "home_unassigned_hint": "Open conversations nobody has picked up yet",
   "home_unassigned_error": "Couldn't load unassigned conversations",
   "home_unassigned_showing_top": [
     {

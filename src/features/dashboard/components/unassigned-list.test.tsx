@@ -69,11 +69,6 @@ describe('UnassignedList', () => {
     expect(screen.queryByText(m.home_unassigned_title())).toBeNull()
   })
 
-  it('explains what qualifies on the page, not only in a hover tooltip', () => {
-    renderList({ items: [item] })
-    expect(screen.getByText(m.home_unassigned_hint())).toBeTruthy()
-  })
-
   it('does not hide a query failure behind the empty state', () => {
     renderList({ isError: true })
     expect(screen.getByText(m.home_unassigned_error())).toBeTruthy()

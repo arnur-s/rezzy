@@ -26,7 +26,12 @@ import {
 } from '@astryxdesign/core/SideNav'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
 import { Tooltip } from '@astryxdesign/core/Tooltip'
-import { useNavigate, useParams, useRouterState } from '@tanstack/react-router'
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useRouterState,
+} from '@tanstack/react-router'
 import {
   ChevronsUpDownIcon,
   HomeIcon,
@@ -104,12 +109,12 @@ export function Sidebar({
         // sits in the nav body where it belongs — it is a destination you
         // change, not the name of the product.
         header={
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <img src={logo} alt="Rezzy" className="size-8" />
             {!isCollapsed && (
               <span className="text-primary text-xl font-bold">Rezzy</span>
             )}
-          </div>
+          </Link>
         }
         collapsible={{
           isCollapsed,

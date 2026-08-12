@@ -616,8 +616,7 @@
   "home_attention_reason_stale": "Без ответа 2+ дн.",
   "home_attention_reason_stale_hint": "Ждёт вашего ответа больше 2 дней",
   "home_attention_waking_now": "уже",
-  "home_unassigned_title": "Никто не взял",
-  "home_unassigned_hint": "Открытые диалоги, которые пока ни за кем не закреплены",
+  "home_unassigned_title": "Без исполнителя",
   "home_unassigned_error": "Не удалось загрузить незакреплённые диалоги",
   "home_unassigned_showing_top": [
     {

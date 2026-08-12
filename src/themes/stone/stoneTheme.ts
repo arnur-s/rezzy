@@ -6,8 +6,8 @@
  * Montserrat for headings, Figtree for body, JetBrains Mono for code.
  */
 
-import {defineTheme, defineSyntaxTheme} from '@astryxdesign/core/theme';
-import {stoneIconRegistry} from './icons';
+import { defineSyntaxTheme, defineTheme } from '@astryxdesign/core/theme'
+import { stoneIconRegistry } from './icons'
 
 /**
  * Brand primary.
@@ -27,8 +27,8 @@ import {stoneIconRegistry} from './icons';
  * slot for a gradient. Only fills large enough to show a ramp use it —
  * the primary Button below, and `bg-accent-gradient` in the app.
  */
-const PRIMARY = '#534c7e';
-const PRIMARY_DARK = '#b4a3ca';
+const PRIMARY = '#534c7e'
+const PRIMARY_DARK = '#b4a3ca'
 
 /**
  * Input status border overrides (per-component, per-status). All 9 input
@@ -48,7 +48,7 @@ const INPUT_STATUS_VARS = {
   'status:error': {
     '--color-error': 'light-dark(#a58b86, #c0a5a1)', // Red T60 / T70
   },
-} as const;
+} as const
 
 /**
  * Stone syntax palette — light values snap to T40 / T45 stops on the
@@ -76,13 +76,13 @@ const stoneSyntax = defineSyntaxTheme({
     punctuation: ['#5e5e5e', '#ababb0'], // Stone Neutral T40 / T70
     background: ['#f3f3f5', '#171719'],
   },
-});
+})
 
 export const stoneTheme = defineTheme({
   name: 'stone',
 
   typography: {
-    scale: {base: 14, ratio: 1.25},
+    scale: { base: 14, ratio: 1.25 },
     body: {
       family: 'Figtree',
       fallbacks:
@@ -92,7 +92,7 @@ export const stoneTheme = defineTheme({
       family: 'Montserrat',
       fallbacks:
         '"Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-      weights: {3: 'bold', 4: 'bold'},
+      weights: { 3: 'bold', 4: 'bold' },
     },
     code: {
       family: 'JetBrains Mono',
@@ -100,7 +100,7 @@ export const stoneTheme = defineTheme({
     },
   },
 
-  motion: {fast: 125, medium: 300, slow: 700, ratio: 0.75},
+  motion: { fast: 125, medium: 300, slow: 700, ratio: 0.75 },
 
   syntax: stoneSyntax,
 
@@ -429,7 +429,7 @@ export const stoneTheme = defineTheme({
   },
 
   icons: stoneIconRegistry,
-});
+})
 
 /**
  * Raw tonal palettes — every color at every tone step (0–100 in 5s).
@@ -687,4 +687,4 @@ export const stonePalettes = {
     95: '#f6edff',
     100: '#ffffff',
   },
-} as const;
+} as const

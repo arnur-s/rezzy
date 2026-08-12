@@ -244,15 +244,15 @@ token is chosen by picking a stop, not by picking a color.
 
 The stops in use, and what each means:
 
-| stop        | role                                                    |
-| ----------- | ------------------------------------------------------- |
-| T90 / T85   | light categorical plate / its border                    |
-| T35 / T25   | dark categorical plate / its border                     |
-| T30         | light plate text and icon; light status tone            |
-| T90 (again) | dark plate text — the same hex as the light plate       |
-| T60 / T70   | softened input status borders                           |
-| T80         | dark status tone                                        |
-| T40 / T45   | syntax-highlighting light stops                         |
+| stop        | role                                              |
+| ----------- | ------------------------------------------------- |
+| T90 / T85   | light categorical plate / its border              |
+| T35 / T25   | dark categorical plate / its border               |
+| T30         | light plate text and icon; light status tone      |
+| T90 (again) | dark plate text — the same hex as the light plate |
+| T60 / T70   | softened input status borders                     |
+| T80         | dark status tone                                  |
+| T40 / T45   | syntax-highlighting light stops                   |
 
 The symmetry is deliberate: a dark plate's text is byte-identical to the light
 plate's surface, which is why every categorical pair lands within 0.1 of the
@@ -422,7 +422,12 @@ hue appears only where something needs to be _told_ to the user.
 The ramp is the fill:
 
 ```css
---gradient-accent: linear-gradient(135deg, #8365a6 0%, #715b96 40%, #534c7e 100%);
+--gradient-accent: linear-gradient(
+  135deg,
+  #8365a6 0%,
+  #715b96 40%,
+  #534c7e 100%
+);
 ```
 
 The flat tone is its dark stop, `#534c7e` in light and a lighter stop of the
@@ -491,13 +496,13 @@ are close in tone — not because it is compositing.
 
 Every pair lands in the same narrow band, by construction:
 
-| hue    | light plate / text | computed | dark plate / text | computed |
-| ------ | ------------------ | -------- | ----------------- | -------- |
-| blue   | `#d7e4f5` / `#3c4856` | 7.24:1 | `#485362` / `#d7e4f5` | 6.06:1 |
-| green  | `#d0e9ce` / `#374c36` | 7.21:1 | `#425841` / `#d0e9ce` | 6.00:1 |
-| red    | `#f9dcd7` / `#58413e` | 7.25:1 | `#644d49` / `#f9dcd7` | 6.02:1 |
-| yellow | `#f4e1b7` / `#524622` | 7.22:1 | `#5e512d` / `#f4e1b7` | 6.06:1 |
-| gray   | `#e2e2e8` / `#46464b` | 7.27:1 | `#525257` / `#e2e2e8` | 6.02:1 |
+| hue    | light plate / text    | computed | dark plate / text     | computed |
+| ------ | --------------------- | -------- | --------------------- | -------- |
+| blue   | `#d7e4f5` / `#3c4856` | 7.24:1   | `#485362` / `#d7e4f5` | 6.06:1   |
+| green  | `#d0e9ce` / `#374c36` | 7.21:1   | `#425841` / `#d0e9ce` | 6.00:1   |
+| red    | `#f9dcd7` / `#58413e` | 7.25:1   | `#644d49` / `#f9dcd7` | 6.02:1   |
+| yellow | `#f4e1b7` / `#524622` | 7.22:1   | `#5e512d` / `#f4e1b7` | 6.06:1   |
+| gray   | `#e2e2e8` / `#46464b` | 7.27:1   | `#525257` / `#e2e2e8` | 6.02:1   |
 
 Orange, teal, cyan, purple, and pink land in the same band and are unused by any
 product surface. They are capacity for a future categorization, not current
@@ -1029,7 +1034,7 @@ Resolved and unfussy. State is a tonal shift, never a scale or bounce.
 The rail is the product's spine and the only persistent chrome.
 
 - **Structure:** `SideNav` with `header`, `collapsible`, and `footer` slots. Collapse state persists to `app:sidebar-collapsed`.
-- **Heading:** the wordmark alone, linking to `/`. It is the rail's only identity chrome — the workspace does not share the row, because a name you switch and a name you cannot are not the same kind of thing. A quiet `bg-primary/5` monogram plate rides beside it, which is also what keeps the header alive collapsed: `SideNavHeading` renders nothing there without an icon.
+- **Heading:** the wordmark alone, linking to `/`. It is the rail's only identity chrome — the workspace does not share the row, because a name you switch and a name you cannot are not the same kind of thing.
 - **Workspace switcher:** the first row of the nav body rather than part of the heading. Built like the account row in the footer — a ghost `Button` inside a `DropdownMenu`, `px-2` with the label span grown so a trailing `chevrons-up-down` pins to the edge — carrying a `WorkspaceMark` (24px plate, `rounded-md`, `bg-accent-gradient text-on-dark` when active and `bg-accent-bg/10 text-accent` when not) and the workspace name at `font-medium`. The active mark is the brand ramp — the one app-side surface big enough to carry it — so it reads as identity as well as emphasis. Collapsed it becomes an icon-only trigger with a tooltip.
 - **Items:** `SideNavItem` with a 16px Lucide icon. Selection is a quiet accent-tone fill; the same grammar as a conversation row.
 - **Workspace group:** the selected workspace's destinations sit in a nested `SideNavSection` indented `ml-5` behind a `border-l border-border`, which lands the rule on the workspace mark's own centre axis. The indent is what says the rows belong to that workspace, so the group never repeats the name two rows below the row already showing it — the name goes to the section's hidden group label instead, where a screen reader still gets it. Dropped when collapsed. The bracket runs at full `border-border`.
@@ -1089,7 +1094,7 @@ draws each bubble.
 - **Quoted reply:** a 2px `border-current/30` rule with the author at `font-semibold` over the quoted text at 60%, both truncated to one line. Never a plate — the bubble is already the plate, and a fill inside it is a box in a box. The loaded parent outranks the channel's quote payload for author and text, so "Quoted message" only appears when neither is resolvable; without a loaded parent the strip is inert rather than a control that silently does nothing. The composer's reply drawer uses the same rule.
 - **Action rail:** a reply control parked in the transcript gutter, absolutely positioned outside the bubble, revealed on `group-hover/msg` and `group-focus-within/msg`. Anchored to the first text line (`top-2`) for text and to the middle for media or structured blocks. Zero hit target until engaged; on touch it sits permanently at 60% opacity with an expanded 44px target.
 - **Pane wash:** the transcript pane carries one static `radial-gradient` — a wide, shallow ellipse (`120% 85% at 100% 0%`) of `--color-accent` at **5.5%**, out to a `transparent` stop at 62%. It is the sole exception to the no-decorative-background rule below. It reads `--color-accent`, so it inverts by mode for free with no `dark:` variant — and since the accent became a brand hue it is now a faint violet cast rather than a neutral one. **The measurements in this bullet and the two below it predate that change and have not been re-taken in a browser.** Composited, the peak is now `#f5f5f8` on the white pane (it was `#f3f3f3`) and `#232228` in dark (it was `#27272a`) — still inside the tonal range the shell already owns, and still a soft vignette across an 844px pane rather than a visible edge, but the exact ratios below are stale. It lives as an inline style on the pane wrapper in `message-thread.tsx`, painted on the wrapper itself rather than a sibling, so it needs no `isolate` and no negative z-index, and it does not scroll with the transcript.
-  - **It does not disturb the bubble edge**, which is the obvious worry and is measurably not real. `--color-neutral` is an *alpha* fill, so a bubble composites over the wash rather than over the bare pane, and the wash darkens figure and ground together. Measured: the bubble edge is **1.114:1** over the wash's peak versus **1.119:1** over a bare pane (dark: 1.334:1 vs 1.324:1). A future opaque bubble fill would break this property and would have to re-measure.
+  - **It does not disturb the bubble edge**, which is the obvious worry and is measurably not real. `--color-neutral` is an _alpha_ fill, so a bubble composites over the wash rather than over the bare pane, and the wash darkens figure and ground together. Measured: the bubble edge is **1.114:1** over the wash's peak versus **1.119:1** over a bare pane (dark: 1.334:1 vs 1.324:1). A future opaque bubble fill would break this property and would have to re-measure.
   - **What it does cost is `text-secondary`**, and only in light mode: `#83838a` falls from 3.76:1 on the bare pane to **3.48:1** at the worst real text position (an outbound footer at the top of the view) and 3.39:1 at the peak pixel. Every other sampled footer position is unchanged at 3.76:1. This does not create a failure — Known drift 4 already records that token as failing AA at 3.76:1 — but it deepens one, and it removes an option from that drift's fix: **T50 `#77777c` no longer suffices.** Measured, T50 is 4.45:1 on the bare pane and 4.01:1 on the wash peak, so it clears neither. **T45 `#6a6a6f` clears both** at 5.38:1 and 4.85:1, and is now the only listed candidate that does.
   - It replaces a WebGL ray canvas (`ogl`, ported from React Bits' `SideRays`) that shipped here after the stone swap. That canvas was drift on two counts this document already legislates: it painted `#63fe13` / `#2e7a00`, a hue belonging to no ramp in this theme and to no brand, and it cited `neutralTheme.ts` — deleted — for the choice. A static gradient also drops a runtime dependency, a GL context per open thread, an `IntersectionObserver`, a resize listener, an `rAF` loop, and a `prefers-reduced-motion` branch. Nothing that does not move needs a reduced-motion guard.
 

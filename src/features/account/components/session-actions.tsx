@@ -73,7 +73,7 @@ export function SessionActions() {
         {/* A row action rather than a form submit, so it keeps hugging its
             label — only the thumb target grows. Ending sessions is not
             something to make easier to hit by accident than it needs to be. */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between flex-1">
           <Button
             ref={otherDevicesRef}
             label={m.security_sign_out_others_action()}
@@ -81,6 +81,7 @@ export function SessionActions() {
             isLoading={signOutOthers.isPending}
             isDisabled={signOutOthers.isPending || isSigningOut}
             onClick={() => setConfirmation('other-devices')}
+            className="w-full md:w-fit"
           />
 
           <Button
@@ -90,6 +91,7 @@ export function SessionActions() {
             isLoading={isSigningOut}
             isDisabled={isSigningOut || signOutOthers.isPending}
             onClick={() => setConfirmation('this-device')}
+            className="w-full md:w-fit mt-4 md:mt-0"
           />
         </div>
       </div>

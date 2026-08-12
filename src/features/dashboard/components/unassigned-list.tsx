@@ -57,7 +57,6 @@ export function UnassignedList({
       <SectionHeading
         id="home-unassigned-title"
         title={m.home_unassigned_title()}
-        description={m.home_unassigned_hint()}
       />
 
       {isPending ? (
