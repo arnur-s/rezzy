@@ -44,7 +44,7 @@ export function ChannelList({ workspaceId }: Props) {
       ) : channelsQuery.data.length === 0 ? (
         <ChannelListEmpty onConnect={openConnect} />
       ) : (
-        <div className="divide-y divide-border/60 border-y border-border/60">
+        <div className="divide-y divide-border border-y border-border">
           {channelsQuery.data.map((channel) => (
             <ChannelCard
               key={channel.id}
@@ -66,7 +66,7 @@ export function ChannelList({ workspaceId }: Props) {
 
 function ChannelListSkeleton() {
   return (
-    <div className="divide-y divide-border/60 border-y border-border/60">
+    <div className="divide-y divide-border border-y border-border">
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex items-center gap-4 py-4">
           <Skeleton width={48} height={48} radius={3} />
@@ -83,7 +83,7 @@ function ChannelListSkeleton() {
 
 function ChannelListEmpty({ onConnect }: { onConnect: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-4 border-y border-border/60 px-6 py-12 text-center">
+    <div className="flex flex-col items-center gap-4 border-y border-border px-6 py-12 text-center">
       <span className="flex size-11 items-center justify-center rounded-xl bg-accent-bg/10 text-accent">
         <PlugIcon className="size-6" />
       </span>
@@ -105,7 +105,7 @@ function ChannelListEmpty({ onConnect }: { onConnect: () => void }) {
 
 function ChannelListError({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 border-y border-border/60 px-6 py-10 text-center">
+    <div className="flex flex-col items-center gap-3 border-y border-border px-6 py-10 text-center">
       <p className="text-sm text-error">{m.channels_load_error_title()}</p>
       <Button
         label={m.common_retry()}

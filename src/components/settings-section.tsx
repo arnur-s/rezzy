@@ -75,7 +75,7 @@ export function SettingRow({
   return (
     // Stacks below `sm`: a control and a description competing for the same
     // row get cramped long before the viewport does.
-    <div className="border-border/60 flex flex-col gap-3 border-t py-4 first:border-t-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+    <div className="border-border flex flex-col gap-3 border-t py-4 first:border-t-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
       <div className="min-w-0">
         <p className="text-primary text-sm font-medium">{label}</p>
         {description && (

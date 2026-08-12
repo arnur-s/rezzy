@@ -1,6 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { WORKSPACE_CURATED_ICONS } from '../lib/workspace-icons'
+import {
+  WORKSPACE_CURATED_ICONS,
+  workspaceIconLabel,
+} from '../lib/workspace-icons'
 import { WorkspaceIcon } from './workspace-icon'
 import { WorkspaceIconPicker } from './workspace-icon-picker'
 
@@ -49,7 +52,11 @@ describe('WorkspaceIconPicker', () => {
     const onChange = vi.fn()
     render(<WorkspaceIconPicker onChange={onChange} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'rocket' }))
+    // Looked up by the localized label, not the slug: the tile's accessible
+    // name is what a user hears, and `rocket` is not a word in either locale.
+    fireEvent.click(
+      screen.getByRole('button', { name: workspaceIconLabel('rocket') }),
+    )
 
     expect(onChange).toHaveBeenCalledWith('rocket')
   })

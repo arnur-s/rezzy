@@ -130,7 +130,7 @@ export function SettingsShell({
           conversation list, the thread, and the contact panel. The inset
           matches the column below it, so the title and the fields share one
           axis instead of the title floating 16px inside them. */}
-      <header className="border-border/60 flex h-14 shrink-0 items-center border-b">
+      <header className="border-border flex h-14 shrink-0 items-center border-b">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
           <h1 className="truncate text-base font-semibold">{title}</h1>
         </div>
@@ -239,7 +239,19 @@ export function SettingsShell({
             </TabList>
           </div>
 
-          <div className="pt-7">{children}</div>
+          {/*
+            The 44px floor applies to the sections too, not just the tab strip
+            above. Astryx buttons are a fixed 32px and `size="sm"` is smaller,
+            so every row control in every settings section — including the
+            members page, where two adjacent controls change permissions and
+            remove a colleague — was under the touch-target criterion on a
+            phone. Coarse pointers only, for the same reason it is scoped that
+            way on the strip: a thumb needs the room, a mouse does not, and
+            raising it everywhere would coarsen Astryx's own desktop density.
+          */}
+          <div className="pointer-coarse:[&_button]:min-h-11 pt-7">
+            {children}
+          </div>
         </div>
       </div>
     </AppPane>

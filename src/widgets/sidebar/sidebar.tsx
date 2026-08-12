@@ -451,7 +451,7 @@ function WorkspaceSwitcher({
           two buttons do not fit at this width, and the decision belongs with
           the invitation's detail anyway. */}
       {invitations.length > 0 ? (
-        <div className="border-border/60 border-t p-1.5">
+        <div className="border-border border-t p-1.5">
           <p className="text-secondary px-2 pt-1 pb-1.5 text-sm font-semibold">
             {m.workspace_invitations_section_title()}
           </p>

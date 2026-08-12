@@ -2,27 +2,26 @@ import { SettingsSectionHeader } from '@/components/settings-section'
 import type { WorkspaceMember } from '@/entities/workspace'
 import {
   WORKSPACE_MEMBER_ROLES,
+  workspaceMemberLabels,
+  workspaceMemberRoleGroupLabel,
   workspaceMemberRoleLabel,
 } from '@/entities/workspace'
-import { useLocalizedSchema } from '@/hooks/use-localized-schema'
-import { cn } from '@/lib/cn'
+import { formatDate } from '@/lib/format-date'
 import { m } from '@/paraglide/messages'
+import { useAuth } from '@/providers/auth-provider'
+import { AlertDialog } from '@astryxdesign/core/AlertDialog'
 import { Avatar } from '@astryxdesign/core/Avatar'
 import { Badge } from '@astryxdesign/core/Badge'
 import { Button } from '@astryxdesign/core/Button'
 import { MoreMenu } from '@astryxdesign/core/MoreMenu'
-import { Selector } from '@astryxdesign/core/Selector'
 import { Skeleton } from '@astryxdesign/core/Skeleton'
-import { TextInput } from '@astryxdesign/core/TextInput'
 import { useToast } from '@astryxdesign/core/Toast'
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
-import { MailPlusIcon } from 'lucide-react'
-import { useMemo } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useNavigate } from '@tanstack/react-router'
+import { UserPlusIcon } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import type { WorkspaceInvitationForAdmin } from '../api/workspace-membership'
 import { membershipErrorMessage } from '../api/workspace-membership'
 import {
-  useInviteMember,
   useRemoveMember,
   useRevokeInvitation,
   useUpdateMemberRole,
@@ -30,23 +29,31 @@ import {
 } from '../hooks/use-workspace-membership'
 import {
   useIsWorkspaceAdmin,
+  useWorkspace,
   useWorkspaceMemberDirectory,
 } from '../hooks/use-workspaces'
-import type { InviteMemberFormValues } from '../schemas/invite-member-schema'
-import {
-  INVITE_MEMBER_ROLES,
-  createInviteMemberSchema,
-  inviteMemberDefaultValues,
-} from '../schemas/invite-member-schema'
+import { InviteMemberModal } from './invite-member-modal'
 
 type Props = {
   workspaceId: string
 }
 
+/** The date a membership or invitation started. Day precision is the most this
+ *  ever needs: nobody triages a roster by the hour. */
+const DAY_FORMAT: Intl.DateTimeFormatOptions = {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}
+
 export function WorkspaceMembersSection({ workspaceId }: Props) {
+  const { user } = useAuth()
   const { isAdmin, isLoaded: isAdminLoaded } = useIsWorkspaceAdmin(workspaceId)
   const membersQuery = useWorkspaceMemberDirectory(workspaceId)
-  const members = membersQuery.data ?? []
+  const workspaceQuery = useWorkspace(workspaceId)
+  const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data])
+
+  const [isInviteOpen, setIsInviteOpen] = useState(false)
 
   // Before the roster arrives, `isAdmin` and "not known yet" are both `false`.
   // Gating on `isAdminLoaded` too keeps an admin's own controls from flashing
@@ -58,155 +65,105 @@ export function WorkspaceMembersSection({ workspaceId }: Props) {
   // update_workspace_member_role and remove_workspace_member enforce the same
   // rule, and they are what decides.
   const ownerCount = members.filter((member) => member.role === 'owner').length
-  const isLastOwner = (member: WorkspaceMember) =>
-    member.role === 'owner' && ownerCount <= 1
+
+  // Two colleagues sharing a display name is ordinary, and this is the page
+  // where you pick which of them to remove — the one place a roster must not
+  // render both as the same string. Every other picker in the product already
+  // routes through this helper.
+  const labels = useMemo(() => workspaceMemberLabels(members), [members])
+
+  // The RPC already returns the roster ordered owner -> admin -> member, so the
+  // grouping below preserves the server's order within each group rather than
+  // imposing one. Roles the app does not define keep their raw value as a
+  // heading rather than being dropped from the page.
+  const groups = useMemo(() => {
+    const byRole = new Map<string, Array<WorkspaceMember>>()
+    for (const member of members) {
+      const group = byRole.get(member.role)
+      if (group) group.push(member)
+      else byRole.set(member.role, [member])
+    }
+
+    const known = WORKSPACE_MEMBER_ROLES.filter((role) => byRole.has(role))
+    const unknown = [...byRole.keys()].filter(
+      (role) => !(WORKSPACE_MEMBER_ROLES as ReadonlyArray<string>).includes(role),
+    )
+
+    return [...known, ...unknown].map((role) => ({
+      role,
+      members: byRole.get(role) ?? [],
+    }))
+  }, [members])
 
   return (
     <div className="flex flex-col gap-6">
-      <SettingsSectionHeader
-        title={m.workspace_settings_members_title()}
-        description={m.workspace_settings_members_description()}
-      />
+      <div className="flex items-start justify-between gap-4">
+        <SettingsSectionHeader
+          title={m.workspace_settings_members_title()}
+          description={m.workspace_settings_members_description()}
+        />
+        {canManage ? (
+          <Button
+            label={m.workspace_settings_members_invite_open()}
+            variant="primary"
+            icon={<UserPlusIcon className="size-4" />}
+            onClick={() => setIsInviteOpen(true)}
+          />
+        ) : null}
+      </div>
 
-      {canManage ? <InviteMemberForm workspaceId={workspaceId} /> : null}
+      {canManage ? (
+        <InviteMemberModal
+          workspaceId={workspaceId}
+          isOpen={isInviteOpen}
+          onOpenChange={setIsInviteOpen}
+        />
+      ) : null}
+
       {canManage ? <PendingInvitationsList workspaceId={workspaceId} /> : null}
 
-      <section className="flex flex-col gap-3">
-        <h3 className="text-secondary text-sm font-medium">
-          {m.workspace_settings_members_list_title()}
-        </h3>
-
-        {membersQuery.isPending ? (
-          <MembersSkeleton />
-        ) : membersQuery.isError ? (
-          <div className="text-error border-border/60 border-y py-6 text-sm">
+      {membersQuery.isPending ? (
+        <MembersSkeleton />
+      ) : membersQuery.isError ? (
+        <div
+          role="alert"
+          className="border-border flex flex-col items-start gap-3 border-y py-6"
+        >
+          <p className="text-error text-sm">
             {m.workspace_settings_members_load_error()}
-          </div>
-        ) : members.length === 0 ? (
-          <div className="text-secondary border-border/60 border-y py-10 text-center text-sm">
-            {m.workspace_settings_members_empty()}
-          </div>
-        ) : (
-          <div className="divide-border/60 border-border/60 divide-y border-y">
-            {members.map((member) => (
-              <MemberRow
-                key={member.userId}
-                member={member}
-                workspaceId={workspaceId}
-                canManage={canManage}
-                isLastOwner={isLastOwner(member)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  )
-}
-
-/**
- * The invite form. Rendered only for owners and admins; the RPC refuses
- * everyone else, so this hides an affordance rather than enforcing a rule.
- *
- * The helper text is permanent and sits on the field itself via `description`,
- * not in an error slot. Only registered users can be invited, which is a
- * standing property of the invite model — an inviter needs to know it before
- * they type, not after the attempt fails. `USER_NOT_FOUND` explains a failed
- * attempt; this prevents one.
- */
-function InviteMemberForm({ workspaceId }: { workspaceId: string }) {
-  const invite = useInviteMember(workspaceId)
-  const showToast = useToast()
-  const schema = useLocalizedSchema(createInviteMemberSchema)
-
-  const { control, handleSubmit, reset } = useForm<InviteMemberFormValues>({
-    defaultValues: inviteMemberDefaultValues,
-    disabled: invite.isPending,
-    resolver: standardSchemaResolver(schema),
-  })
-
-  function onSubmit(values: InviteMemberFormValues) {
-    invite.mutate(values, {
-      onSuccess: () => {
-        // Reset to the defaults rather than clearing the email alone: the role
-        // selector is part of the same form state, and leaving it on the last
-        // pick makes the next invite silently inherit it.
-        reset(inviteMemberDefaultValues)
-        showToast({
-          body: m.workspace_settings_members_invite_sent(),
-          type: 'info',
-        })
-      },
-    })
-  }
-
-  return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="border-border/60 flex flex-col gap-3 border-y py-5"
-    >
-      <div className="flex items-center gap-2">
-        <MailPlusIcon className="text-secondary size-4" />
-        <h3 className="text-sm font-medium">
-          {m.workspace_settings_members_invite_title()}
-        </h3>
-      </div>
-      <p className="text-secondary text-sm">
-        {m.workspace_settings_members_invite_description()}
-      </p>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <Controller
-            control={control}
-            name="email"
-            render={({ field, fieldState }) => (
-              <TextInput
-                label={m.workspace_settings_members_invite_email_label()}
-                description={m.workspace_settings_members_invite_help()}
-                type="email"
-                placeholder={m.workspace_settings_members_invite_email_placeholder()}
-                value={field.value}
-                onChange={(next) => field.onChange(next)}
-                isDisabled={invite.isPending}
-                status={
-                  fieldState.error?.message
-                    ? { type: 'error', message: fieldState.error.message }
-                    : undefined
-                }
-              />
-            )}
+          </p>
+          <Button
+            label={m.common_retry()}
+            variant="secondary"
+            size="sm"
+            onClick={() => void membersQuery.refetch()}
+            isLoading={membersQuery.isFetching}
           />
         </div>
-        <Controller
-          control={control}
-          name="role"
-          render={({ field }) => (
-            <Selector
-              label={m.workspace_settings_members_invite_role_label()}
-              value={field.value}
-              onChange={(next) => field.onChange(next)}
-              options={INVITE_MEMBER_ROLES.map((role) => ({
-                value: role,
-                label: workspaceMemberRoleLabel(role),
-              }))}
-              isDisabled={invite.isPending}
-            />
-          )}
-        />
-        <Button
-          label={m.workspace_settings_members_invite_action()}
-          type="submit"
-          isLoading={invite.isPending}
-        />
-      </div>
-
-      {invite.isError ? (
-        <p className="text-error text-sm" role="alert">
-          {membershipErrorMessage(invite.error)}
-        </p>
-      ) : null}
-    </form>
+      ) : (
+        groups.map((group) => (
+          <section key={group.role} className="flex flex-col gap-3">
+            <h3 className="text-secondary text-sm font-medium">
+              {workspaceMemberRoleGroupLabel(group.role)}
+            </h3>
+            <ul className="divide-border border-border divide-y border-y">
+              {group.members.map((member) => (
+                <MemberRow
+                  key={member.userId}
+                  member={member}
+                  label={labels.get(member.userId) ?? member.fullName}
+                  workspaceId={workspaceId}
+                  workspaceName={workspaceQuery.data?.name ?? ''}
+                  canManage={canManage}
+                  isSelf={member.userId === user?.id}
+                  isLastOwner={member.role === 'owner' && ownerCount <= 1}
+                />
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
+    </div>
   )
 }
 
@@ -218,42 +175,49 @@ function PendingInvitationsList({ workspaceId }: { workspaceId: string }) {
 
   function handleRevoke(invitationId: string) {
     revoke.mutate(invitationId, {
+      onSuccess: () => {
+        showToast({
+          body: m.workspace_settings_members_revoke_success(),
+          type: 'info',
+        })
+      },
       onError: (error) => {
         showToast({ body: membershipErrorMessage(error), type: 'error' })
       },
     })
   }
 
+  if (invitationsQuery.isPending) return <PendingInvitationsSkeleton />
+
+  if (invitationsQuery.isError) {
+    return (
+      <p role="alert" className="text-error border-border border-y py-4 text-sm">
+        {m.workspace_settings_members_load_error()}
+      </p>
+    )
+  }
+
+  // Nothing pending is the ordinary state of this list, and a heading plus a
+  // sentence saying so was on screen on every visit to every workspace that had
+  // none — spending the top of the page to report an absence. The section now
+  // appears only when it has something to say.
+  if (invitationsQuery.data.length === 0) return null
+
   return (
     <section className="flex flex-col gap-3">
       <h3 className="text-secondary text-sm font-medium">
         {m.workspace_settings_members_pending_title()}
       </h3>
-
-      {invitationsQuery.isPending ? (
-        <PendingInvitationsSkeleton />
-      ) : invitationsQuery.isError ? (
-        <div className="text-error border-border/60 border-y py-4 text-sm">
-          {m.workspace_settings_members_load_error()}
-        </div>
-      ) : invitationsQuery.data.length === 0 ? (
-        <p className="text-secondary text-sm">
-          {m.workspace_settings_members_pending_empty()}
-        </p>
-      ) : (
-        <div className="divide-border/60 border-border/60 divide-y border-y">
-          {invitationsQuery.data.map((invitation) => (
-            <PendingInvitationRow
-              key={invitation.id}
-              invitation={invitation}
-              isRevoking={
-                revoke.isPending && revoke.variables === invitation.id
-              }
-              onRevoke={() => handleRevoke(invitation.id)}
-            />
-          ))}
-        </div>
-      )}
+      <ul className="divide-border border-border divide-y border-y">
+        {invitationsQuery.data.map((invitation) => (
+          <PendingInvitationRow
+            key={invitation.id}
+            invitation={invitation}
+            isRevoking={revoke.isPending && revoke.variables === invitation.id}
+            onRevoke={() => handleRevoke(invitation.id)}
+          />
+        ))}
+      </ul>
     </section>
   )
 }
@@ -267,19 +231,33 @@ function PendingInvitationRow({
   isRevoking: boolean
   onRevoke: () => void
 }) {
+  const sentOn = formatDate(invitation.createdAt, DAY_FORMAT)
+
   return (
-    <div className="flex min-h-14 items-center gap-3 py-3">
+    <li className="flex min-h-14 items-center gap-3 py-3">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
+        {/*
+          The email is always shown, never replaced by the name. Re-inviting the
+          same address resends the invitation — the RPC upserts on the pending
+          row — so the address is the one fact this row exists to make
+          actionable, and hiding it behind a resolved name meant retyping an
+          address the page was refusing to display.
+        */}
+        <p className="truncate text-base font-medium">
           {invitation.invitedName || invitation.invitedEmail}
         </p>
-        {invitation.invitedByName ? (
+        {invitation.invitedName ? (
           <p className="text-secondary truncate text-sm">
-            {m.workspace_settings_members_pending_invited_by({
-              name: invitation.invitedByName,
-            })}
+            {invitation.invitedEmail}
           </p>
         ) : null}
+        <p className="text-secondary truncate text-sm">
+          {invitation.invitedByName
+            ? `${m.workspace_settings_members_pending_invited_by({
+                name: invitation.invitedByName,
+              })} · ${m.workspace_settings_members_pending_sent({ date: sentOn })}`
+            : m.workspace_settings_members_pending_sent({ date: sentOn })}
+        </p>
       </div>
       <Badge
         variant="neutral"
@@ -292,24 +270,85 @@ function PendingInvitationRow({
         isLoading={isRevoking}
         onClick={onRevoke}
       />
-    </div>
+    </li>
   )
+}
+
+/** What the row's confirmation dialog is currently asking about. */
+type PendingAction =
+  | { kind: 'remove' }
+  | { kind: 'leave' }
+  | { kind: 'demote'; role: string }
+
+/**
+ * The title, consequence and action label for one confirmation.
+ *
+ * Three actions share one dialog because they share one row, and each states
+ * what is actually lost rather than asking "are you sure": removal and leaving
+ * both revoke access to every conversation in the workspace, and giving up
+ * ownership cannot be undone by the person doing it.
+ */
+function confirmationCopy(
+  pending: PendingAction,
+  subject: { name: string; workspace: string },
+) {
+  switch (pending.kind) {
+    case 'leave':
+      return {
+        title: m.workspace_settings_members_leave_confirm_title(),
+        description: m.workspace_settings_members_leave_confirm_description({
+          workspace: subject.workspace,
+        }),
+        actionLabel: m.workspace_settings_members_leave(),
+        actionVariant: 'destructive' as const,
+      }
+    case 'demote':
+      return {
+        title: m.workspace_settings_members_demote_self_confirm_title(),
+        description:
+          m.workspace_settings_members_demote_self_confirm_description({
+            role: workspaceMemberRoleLabel(pending.role),
+          }),
+        actionLabel: m.workspace_settings_members_demote_self_action(),
+        // A real loss, but not a deletion. DESIGN.md's destructive button is a
+        // pastel well rather than a fill precisely so weight can live in copy.
+        actionVariant: 'primary' as const,
+      }
+    case 'remove':
+      return {
+        title: m.workspace_settings_members_remove_confirm_title(),
+        description: m.workspace_settings_members_remove_confirm_description({
+          name: subject.name,
+        }),
+        actionLabel: m.workspace_settings_members_remove(),
+        actionVariant: 'destructive' as const,
+      }
+  }
 }
 
 function MemberRow({
   member,
+  label,
   workspaceId,
+  workspaceName,
   canManage,
+  isSelf,
   isLastOwner,
 }: {
   member: WorkspaceMember
+  label: string
   workspaceId: string
+  workspaceName: string
   canManage: boolean
+  isSelf: boolean
   isLastOwner: boolean
 }) {
   const updateRole = useUpdateMemberRole(workspaceId)
   const removeMember = useRemoveMember(workspaceId)
   const showToast = useToast()
+  const navigate = useNavigate()
+
+  const [pending, setPending] = useState<PendingAction | null>(null)
 
   // Null when the row has no real name to show, so the placeholder can be kept
   // out of `Avatar`: it derives initials from whatever string it is handed, and
@@ -320,15 +359,24 @@ function MemberRow({
     return trimmed ? trimmed : null
   }, [member.fullName])
 
-  const displayName = knownName ?? m.workspace_settings_members_unknown_user()
-  const roleLabel = workspaceMemberRoleLabel(member.role)
-
+  const displayName = knownName
+    ? label
+    : m.workspace_settings_members_unknown_user()
   const lastOwnerHint = m.workspace_settings_members_remove_last_owner_hint()
 
-  function handleRoleChange(role: string) {
+  function applyRole(role: string) {
     updateRole.mutate(
       { userId: member.userId, role },
       {
+        onSuccess: () => {
+          showToast({
+            body: m.workspace_settings_members_role_updated({
+              name: displayName,
+              role: workspaceMemberRoleLabel(role),
+            }),
+            type: 'info',
+          })
+        },
         onError: (error) => {
           showToast({ body: membershipErrorMessage(error), type: 'error' })
         },
@@ -336,101 +384,198 @@ function MemberRow({
     )
   }
 
-  function handleRemove() {
+  function handleRoleSelect(role: string) {
+    if (role === member.role) return
+    // Dropping your own owner rights is not recoverable by you — only another
+    // owner can hand them back — so it is confirmed even though changing
+    // somebody else's role is not. The last-owner case never reaches here; that
+    // row's role items are disabled.
+    if (isSelf && member.role === 'owner') {
+      setPending({ kind: 'demote', role })
+      return
+    }
+    applyRole(role)
+  }
+
+  function confirmDestructive() {
+    const leaving = pending?.kind === 'leave'
     removeMember.mutate(
       { userId: member.userId },
       {
+        onSuccess: () => {
+          setPending(null)
+          if (leaving) {
+            showToast({
+              body: m.workspace_settings_members_leave_success(),
+              type: 'info',
+            })
+            // RLS has already withdrawn this workspace; staying on its settings
+            // page would leave the user looking at content they can no longer
+            // read.
+            void navigate({ to: '/' })
+            return
+          }
+          showToast({
+            body: m.workspace_settings_members_remove_success({
+              name: displayName,
+            }),
+            type: 'info',
+          })
+        },
         onError: (error) => {
+          setPending(null)
           showToast({ body: membershipErrorMessage(error), type: 'error' })
         },
       },
     )
   }
 
+  // A member can always leave; only an owner or admin can act on anyone else.
+  // The previous version gated the whole menu on `canManage`, which left a
+  // plain member with no exit at all while an admin removed *themselves* under
+  // a label that read as an action taken on somebody else.
+  const hasMenu = canManage || isSelf
+
+  const roleItems = WORKSPACE_MEMBER_ROLES.map((role) => ({
+    label: workspaceMemberRoleLabel(role),
+    icon:
+      role === member.role ? <span aria-hidden>✓</span> : <span aria-hidden />,
+    onClick: () => handleRoleSelect(role),
+    isDisabled: isLastOwner || updateRole.isPending,
+  }))
+
+  const destructiveItem = isSelf
+    ? {
+        label: m.workspace_settings_members_leave(),
+        onClick: () => setPending({ kind: 'leave' }),
+        isDisabled: isLastOwner || removeMember.isPending,
+      }
+    : {
+        label: m.workspace_settings_members_remove(),
+        onClick: () => setPending({ kind: 'remove' }),
+        isDisabled: isLastOwner || removeMember.isPending,
+      }
+
   return (
-    <div className="flex min-h-14 items-center gap-3 py-3">
+    <li className="flex min-h-14 items-center gap-3 py-3">
       <Avatar
         name={knownName ?? undefined}
         src={member.avatarUrl ?? undefined}
         size="sm"
       />
+      {/*
+        The name column is the only part of this row that has to survive a
+        320px viewport, and it now does: the role control that used to sit
+        beside it — intrinsically sized, growing with the longest role label,
+        taking its width out of the name — has moved into the menu below. The
+        role is still visible, as the heading over this group.
+      */}
       <div className="min-w-0 flex-1">
+        {/*
+          The name gets the line to itself. The "you" marker used to sit beside
+          it and took 40px out of a column that has 196 at 320px — enough to
+          push "Александр Верещагин" into an ellipsis. It is a fact *about* the
+          person, so it reads correctly next to their title and start date, and
+          the name keeps the full measure.
+        */}
         <p
-          className={cn(
-            'truncate text-sm font-medium',
-            // The placeholder is a statement about missing data, not a name.
-            !knownName && 'text-secondary italic',
-          )}
+          className={
+            knownName
+              ? 'truncate text-base font-medium'
+              : 'text-secondary truncate text-base font-medium italic'
+          }
         >
           {displayName}
         </p>
+        <p className="text-secondary flex items-center gap-2 text-sm">
+          {isSelf ? (
+            <Badge
+              variant="neutral"
+              label={m.workspace_settings_members_you()}
+            />
+          ) : null}
+          <span className="truncate">
+            {member.jobTitle
+              ? `${member.jobTitle} · ${m.workspace_settings_members_joined({
+                  date: formatDate(member.joinedAt, DAY_FORMAT),
+                })}`
+              : m.workspace_settings_members_joined({
+                  date: formatDate(member.joinedAt, DAY_FORMAT),
+                })}
+          </span>
+        </p>
       </div>
 
-      {canManage ? (
-        <>
-          {/*
-           * `disabledMessage` is the Astryx-documented way to explain a
-           * disabled trigger (see the component's own guidance against
-           * wrapping a disabled control in `Tooltip`), and its content turns
-           * out to render into the DOM unconditionally — Astryx mounts the
-           * tooltip's content div at all times via the native `popover`
-           * attribute and toggles only its visibility; it does not wait for
-           * hover/focus to mount it. Confirmed empirically while writing
-           * workspace-members-section.test.tsx: an earlier version of this
-           * row also rendered the hint in a permanent, always-visible `<p>`,
-           * and the "disables removal of the last owner" test started
-           * failing on "multiple elements found" for the same string — proof
-           * the tooltip's own text was already in the DOM. So the hint is
-           * reachable by `getByText` without simulating hover, and one copy
-           * is enough.
-           */}
-          <Selector
-            label={m.workspace_settings_members_role_change_label({
-              name: displayName,
-            })}
-            isLabelHidden
-            size="sm"
-            value={member.role}
-            onChange={handleRoleChange}
-            options={WORKSPACE_MEMBER_ROLES.map((role) => ({
-              value: role,
-              label: workspaceMemberRoleLabel(role),
-            }))}
-            isDisabled={isLastOwner || updateRole.isPending}
-            disabledMessage={isLastOwner ? lastOwnerHint : undefined}
-          />
-          <MoreMenu
-            label={m.workspace_settings_members_row_actions_label({
-              name: displayName,
-            })}
-            size="sm"
-            items={[
-              // `DropdownMenuItemData` has no message slot (no
-              // `disabledMessage`, unlike `Selector`/`TextInput`), so a
-              // greyed-out "Remove from workspace" item would explain
-              // nothing once opened. For the last owner, the item's own
-              // label *becomes* the reason instead of the action — the only
-              // way this control can tell a user why it is inert.
-              isLastOwner
-                ? { label: lastOwnerHint, isDisabled: true }
-                : {
-                    label: m.workspace_settings_members_remove(),
-                    onClick: handleRemove,
-                    isDisabled: removeMember.isPending,
-                  },
-            ]}
-          />
-        </>
-      ) : (
-        <Badge variant="neutral" label={roleLabel} />
-      )}
-    </div>
+      {hasMenu ? (
+        <MoreMenu
+          label={m.workspace_settings_members_row_actions_label({
+            name: displayName,
+          })}
+          size="sm"
+          items={
+            isLastOwner
+              ? [
+                  // `DropdownMenuItemData` has no message slot (no
+                  // `disabledMessage`, unlike `Selector`/`TextInput`), so a
+                  // greyed-out set of items would explain nothing once opened.
+                  // For the last owner the item's own label *becomes* the
+                  // reason instead of the action — the only way this control
+                  // can tell a user why it is inert.
+                  { label: lastOwnerHint, isDisabled: true },
+                ]
+              : [
+                  ...(canManage
+                    ? [
+                        {
+                          type: 'section' as const,
+                          title: m.workspace_settings_members_role_menu_section(),
+                          items: roleItems,
+                        },
+                        { type: 'divider' as const },
+                      ]
+                    : []),
+                  destructiveItem,
+                ]
+          }
+        />
+      ) : null}
+
+      {/* Mounted only while it is asking something. A roster of 40 people would
+          otherwise carry 40 idle dialogs. */}
+      {pending !== null ? (
+        <AlertDialog
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setPending(null)
+          }}
+          {...confirmationCopy(pending, {
+            name: displayName,
+            workspace: workspaceName,
+          })}
+          onAction={() => {
+            if (pending.kind === 'demote') {
+              const role = pending.role
+              setPending(null)
+              applyRole(role)
+              return
+            }
+            confirmDestructive()
+          }}
+          cancelLabel={m.common_cancel()}
+          isActionLoading={removeMember.isPending || updateRole.isPending}
+        />
+      ) : null}
+    </li>
   )
 }
 
 function MembersSkeleton() {
   return (
-    <div className="divide-border/60 border-border/60 divide-y border-y">
+    <div
+      aria-busy="true"
+      aria-label={m.workspace_settings_members_list_title()}
+      className="divide-border border-border divide-y border-y"
+    >
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex min-h-14 items-center gap-3 py-3">
           <Skeleton width={32} height={32} radius="rounded" />
@@ -447,7 +592,11 @@ function MembersSkeleton() {
 
 function PendingInvitationsSkeleton() {
   return (
-    <div className="divide-border/60 border-border/60 divide-y border-y">
+    <div
+      aria-busy="true"
+      aria-label={m.workspace_settings_members_pending_title()}
+      className="divide-border border-border divide-y border-y"
+    >
       {[0, 1].map((i) => (
         <div key={i} className="flex min-h-14 items-center gap-3 py-3">
           <div className="flex-1 space-y-1.5">

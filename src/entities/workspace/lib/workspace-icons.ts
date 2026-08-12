@@ -1,3 +1,5 @@
+import { m } from '@/paraglide/messages'
+
 /**
  * The icons a workspace may actually be given.
  *
@@ -36,6 +38,37 @@ export const WORKSPACE_CURATED_ICONS = [
 ] as const
 
 export type WorkspaceIconName = (typeof WORKSPACE_CURATED_ICONS)[number]
+
+/**
+ * The localized name of an icon, for the picker's accessible labels.
+ *
+ * The tiles are icon-only `IconButton`s, so this string *is* their accessible
+ * name — it used to be the raw slug, which put `briefcase` and `folder-kanban`
+ * into a Russian interface as the only thing a screen-reader user heard. Called
+ * at render time rather than hoisted, for the reason given on
+ * `workspaceMemberRoleLabel`: Paraglide resolves the locale on call.
+ */
+export function workspaceIconLabel(name: WorkspaceIconName): string {
+  return ICON_LABELS[name]()
+}
+
+const ICON_LABELS: Record<WorkspaceIconName, () => string> = {
+  briefcase: () => m.workspaces_icon_briefcase(),
+  'building-2': () => m.workspaces_icon_building_2(),
+  rocket: () => m.workspaces_icon_rocket(),
+  'folder-kanban': () => m.workspaces_icon_folder_kanban(),
+  boxes: () => m.workspaces_icon_boxes(),
+  sparkles: () => m.workspaces_icon_sparkles(),
+  layers: () => m.workspaces_icon_layers(),
+  compass: () => m.workspaces_icon_compass(),
+  globe: () => m.workspaces_icon_globe(),
+  target: () => m.workspaces_icon_target(),
+  gauge: () => m.workspaces_icon_gauge(),
+  store: () => m.workspaces_icon_store(),
+  lightbulb: () => m.workspaces_icon_lightbulb(),
+  shield: () => m.workspaces_icon_shield(),
+  flame: () => m.workspaces_icon_flame(),
+}
 
 export const WORKSPACE_DEFAULT_ICON: WorkspaceIconName = 'briefcase'
 

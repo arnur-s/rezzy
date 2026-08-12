@@ -7,6 +7,7 @@ import {
   revokeWorkspaceInvitation,
   updateMemberRole,
 } from '@/features/workspaces/api/workspace-membership'
+import type { WorkspaceMember } from '@/entities/workspace'
 import { workspaceQueryKeys } from '@/features/workspaces/api/workspaces'
 import { useAuth } from '@/providers/auth-provider'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -64,7 +65,10 @@ export function useRevokeInvitation(workspaceId: string) {
 
   return useMutation({
     mutationFn: revokeWorkspaceInvitation,
-    onSuccess: async () => {
+    // Both paths, for the same reason removal invalidates on error:
+    // `INVITATION_NOT_FOUND` means somebody else already revoked or the invitee
+    // already answered, so this list is the stale thing.
+    onSettled: async () => {
       await queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.invitations(workspaceId),
       })
@@ -102,13 +106,51 @@ export function useRespondToInvitation() {
   })
 }
 
+/**
+ * Optimistic, because the roster control is bound to server state.
+ *
+ * Without this the selected role reverts to its previous value the instant the
+ * control closes and stays there — greyed, because the mutation is pending —
+ * for a whole network round trip. A disabled control displaying the value you
+ * just replaced does not read as "saving", it reads as "refused", which is how
+ * an admin ends up clicking it a second time.
+ *
+ * The snapshot is the whole roster array rather than the one row, so a rollback
+ * restores the exact list the cache held, including the RPC's ordering.
+ */
 export function useUpdateMemberRole(workspaceId: string) {
   const queryClient = useQueryClient()
+  const rosterKey = workspaceQueryKeys.memberDirectory(workspaceId)
 
   return useMutation({
     mutationFn: (input: { userId: string; role: string }) =>
       updateMemberRole({ workspaceId, ...input }),
-    onSuccess: async () => {
+    onMutate: async ({ userId, role }) => {
+      // Any roster fetch already in flight would land after this write and
+      // overwrite it with pre-change data.
+      await queryClient.cancelQueries({ queryKey: rosterKey })
+      const previous =
+        queryClient.getQueryData<Array<WorkspaceMember>>(rosterKey)
+
+      if (previous) {
+        queryClient.setQueryData<Array<WorkspaceMember>>(
+          rosterKey,
+          previous.map((member) =>
+            member.userId === userId ? { ...member, role } : member,
+          ),
+        )
+      }
+
+      return { previous }
+    },
+    onError: (_error, _input, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(rosterKey, context.previous)
+      }
+    },
+    // On both paths: the optimistic row is a guess about one field, and the
+    // server owns the ordering and the rest of the record.
+    onSettled: async () => {
       await invalidateRoster(queryClient, workspaceId)
     },
   })
@@ -139,6 +181,14 @@ export function useRemoveMember(workspaceId: string) {
           }),
         ])
       }
+    },
+    // The roster carries a five-minute `staleTime`, so a second admin can be
+    // holding live controls for somebody the first one already removed.
+    // `MEMBER_NOT_FOUND` is precisely the signal that this copy is stale —
+    // without this the toast explains the person is gone while their row stays
+    // on screen, still offering the action that just failed.
+    onError: async () => {
+      await invalidateRoster(queryClient, workspaceId)
     },
   })
 }
