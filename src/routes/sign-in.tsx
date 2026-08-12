@@ -1,9 +1,8 @@
+import { AuthCard } from '@/components/auth-card'
 import { useLocalizedSchema } from '@/hooks/use-localized-schema'
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { Button } from '@astryxdesign/core/Button'
-import { Card } from '@astryxdesign/core/Card'
-import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { useToast } from '@astryxdesign/core/Toast'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
@@ -64,10 +63,7 @@ function RouteComponent() {
 
   const isFormDisabled = signInMutation.isPending
 
-  const {
-    control,
-    handleSubmit,
-  } = useForm<LoginForm>({
+  const { control, handleSubmit } = useForm<LoginForm>({
     resolver: standardSchemaResolver(loginFormSchema),
     defaultValues,
     disabled: isFormDisabled,
@@ -78,41 +74,36 @@ function RouteComponent() {
   }
 
   return (
-    <div className="bg-surface md:bg-body flex min-h-dvh items-center justify-center px-4">
-      <Card variant="default" maxWidth={448} width="100%">
-        <div className="flex flex-col gap-1">
-          <Text as="p" size="lg" weight="semibold">
-            {m.auth_sign_in_welcome()}
-          </Text>
-          <Text as="p" type="supporting">
-            {m.auth_sign_in_description()}
-          </Text>
-        </div>
+    <AuthCard
+      title={m.auth_sign_in_welcome()}
+      description={m.auth_sign_in_description()}
+    >
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="mt-6 flex flex-col gap-4"
+      >
+        <Controller
+          control={control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <TextInput
+              label={m.common_email()}
+              type="email"
+              size="lg"
+              placeholder={m.common_email_placeholder()}
+              value={field.value}
+              onChange={(next) => field.onChange(next)}
+              isDisabled={isFormDisabled}
+              status={
+                fieldState.error?.message
+                  ? { type: 'error', message: fieldState.error.message }
+                  : undefined
+              }
+            />
+          )}
+        />
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="mt-6 flex flex-col gap-4"
-        >
-          <Controller
-            control={control}
-            name="email"
-            render={({ field, fieldState }) => (
-              <TextInput
-                label={m.common_email()}
-                type="email"
-                placeholder={m.common_email_placeholder()}
-                value={field.value}
-                onChange={(next) => field.onChange(next)}
-                isDisabled={isFormDisabled}
-                status={
-                  fieldState.error?.message
-                    ? { type: 'error', message: fieldState.error.message }
-                    : undefined
-                }
-              />
-            )}
-          />
-
+        <div className="flex flex-col gap-2">
           <Controller
             control={control}
             name="password"
@@ -120,6 +111,7 @@ function RouteComponent() {
               <TextInput
                 label={m.common_password()}
                 type="password"
+                size="lg"
                 placeholder="••••••••"
                 value={field.value}
                 onChange={(next) => field.onChange(next)}
@@ -133,33 +125,32 @@ function RouteComponent() {
             )}
           />
 
-          <div className="text-right">
-            <RouterLink
-              to="/password-reset"
-              className="text-accent text-sm underline"
-            >
-              {m.auth_sign_in_forgot_password_label()}
-            </RouterLink>
-          </div>
+          <RouterLink
+            to="/password-reset"
+            className="text-accent self-end text-sm underline"
+          >
+            {m.auth_sign_in_forgot_password_label()}
+          </RouterLink>
+        </div>
 
-          <Button
-            label={m.common_sign_in()}
-            type="submit"
-            variant="primary"
-            width="100%"
-            isLoading={signInMutation.isPending}
-          />
+        <Button
+          label={m.common_sign_in()}
+          type="submit"
+          variant="primary"
+          size="lg"
+          width="100%"
+          isLoading={signInMutation.isPending}
+        />
 
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-secondary text-sm">
-              {m.auth_sign_in_dont_have_an_account_label()}
-            </span>
-            <RouterLink to="/sign-up" className="text-accent text-sm underline">
-              {m.common_sign_up()}
-            </RouterLink>
-          </div>
-        </form>
-      </Card>
-    </div>
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-secondary text-sm">
+            {m.auth_sign_in_dont_have_an_account_label()}
+          </span>
+          <RouterLink to="/sign-up" className="text-accent text-sm underline">
+            {m.common_sign_up()}
+          </RouterLink>
+        </div>
+      </form>
+    </AuthCard>
   )
 }
