@@ -26,7 +26,10 @@ export const listItemStyle = {
   press: 'active:scale-[0.98]',
   hover: 'hover:bg-primary/4',
   selected: 'bg-primary/10 text-primary',
-  unselected: 'text-primary/60 hover:bg-primary/4 hover:text-primary',
+  // `/70`, not `/60`: at 60% the primary tone composites to roughly 4.16:1 on
+  // the pane, under the 4.5:1 this text has to clear. It is the resting state
+  // of every unselected row in the app, so it is the most-read tone here.
+  unselected: 'text-primary/70 hover:bg-primary/4 hover:text-primary',
   // Data-attribute variants for rows that reflect selection via data-selected
   data: {
     hover: 'data-[selected=false]:hover:bg-primary/4',

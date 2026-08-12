@@ -10,6 +10,12 @@
  *
  * A closed list is also the honest model: the picker only ever offered these,
  * and `ui/workspace-icon.tsx` can only draw these.
+ *
+ * `users-round` is deliberately absent. The sidebar draws the current
+ * workspace's icon as a bare 16px glyph at the same size and tone as the
+ * navigation rows beneath it, one of which is Contacts — also `UsersRound`.
+ * Collapsed, the rail is glyphs alone, so offering it here means offering a
+ * workspace mark indistinguishable from a destination two rows below it.
  */
 export const WORKSPACE_CURATED_ICONS = [
   'briefcase',
@@ -24,7 +30,6 @@ export const WORKSPACE_CURATED_ICONS = [
   'target',
   'gauge',
   'store',
-  'users-round',
   'lightbulb',
   'shield',
   'flame',

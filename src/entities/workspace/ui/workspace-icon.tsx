@@ -14,7 +14,6 @@ import {
   SparklesIcon,
   StoreIcon,
   TargetIcon,
-  UsersRoundIcon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { WorkspaceIconName } from '../lib/workspace-icons'
@@ -49,7 +48,6 @@ const WORKSPACE_ICON_COMPONENTS = {
   sparkles: SparklesIcon,
   store: StoreIcon,
   target: TargetIcon,
-  'users-round': UsersRoundIcon,
 } as const satisfies Record<WorkspaceIconName, LucideIcon>
 
 export type WorkspaceIconProps = {
