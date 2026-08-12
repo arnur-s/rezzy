@@ -1,3 +1,4 @@
+import logo from '@/assets/logo.png'
 import type { Workspace } from '@/entities/workspace'
 import { WorkspaceIcon } from '@/entities/workspace'
 import { useMyIdentity } from '@/features/account'
@@ -19,7 +20,6 @@ import type {
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
 import {
   SideNav,
-  SideNavHeading,
   SideNavItem,
   SideNavSection,
   useSideNavCollapse,
@@ -104,16 +104,18 @@ export function Sidebar({
         // sits in the nav body where it belongs — it is a destination you
         // change, not the name of the product.
         header={
-          <SideNavHeading
-            heading={m.sidebar_brand_label()}
-            headingHref="/"
-            icon={isCollapsed ? <BrandMark /> : undefined}
-          />
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="Rezzy" className="size-8" />
+            {!isCollapsed && (
+              <span className="text-primary text-xl font-bold">Rezzy</span>
+            )}
+          </div>
         }
         collapsible={{
           isCollapsed,
           onCollapsedChange,
           buttonLabel: m.sidebar_toggle_label(),
+          hasButton: true,
         }}
         footer={<AccountMenu onNavigate={onNavigate} />}
       >
@@ -299,21 +301,6 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
       menuWidth={isCollapsed ? 200 : undefined}
       hasChevron={false}
     />
-  )
-}
-
-/**
- * Product mark. Carries the rail's identity while collapsed, where
- * SideNavHeading drops its text — and where the wordmark alone would leave the
- * header empty. The quiet `bg-primary/5` plate keeps it below the workspace
- * mark in the same column: the product is a constant, the workspace is the
- * thing you are currently inside.
- */
-function BrandMark() {
-  return (
-    <span className="text-primary flex size-6 shrink-0 items-center justify-center leading-none font-semibold text-xl">
-      R
-    </span>
   )
 }
 
