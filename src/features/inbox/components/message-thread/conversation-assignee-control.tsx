@@ -1,6 +1,7 @@
 import {
   WorkspaceMemberCard,
   workspaceMemberFirstName,
+  workspaceMemberLabels,
 } from '@/entities/workspace'
 import type { WorkspaceMember } from '@/entities/workspace'
 import { useWorkspaceMemberDirectory } from '@/features/workspaces/hooks/use-workspaces'
@@ -256,8 +257,12 @@ function buildMenuItems({
         ]
       : []
 
+  // Not `member.fullName`: two colleagues can share one, and DropdownMenu keys
+  // its items by label.
+  const labels = workspaceMemberLabels(members)
+
   const roster = members.map((member) => ({
-    label: member.fullName,
+    label: labels.get(member.userId) ?? member.fullName,
     // The same faces the list rows carry, so picking from the menu is
     // recognition rather than reading.
     icon: (

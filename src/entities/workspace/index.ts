@@ -9,6 +9,7 @@ export {
 } from './lib/workspace-icons'
 export { workspaceMemberRoleLabel } from './lib/member-role'
 export { workspaceMemberFirstName } from './lib/member-name'
+export { workspaceMemberLabels } from './lib/member-labels'
 export type { WorkspaceIconName } from './lib/workspace-icons'
 export type { Workspace } from './model/types'
 export {
