@@ -3,7 +3,7 @@
  *
  * A warm, earthy neutral theme inspired by natural stone and sandstone.
  * Core palette: #28282A, #84848B, #D8D8DB, #f3f3f5, #FFFFFF
- * Montserrat for headings, Figtree for body, JetBrains Mono for code.
+ * Golos Text for body and headings, the platform mono stack for code.
  */
 
 import { defineSyntaxTheme, defineTheme } from '@astryxdesign/core/theme'
@@ -81,21 +81,41 @@ const stoneSyntax = defineSyntaxTheme({
 export const stoneTheme = defineTheme({
   name: 'stone',
 
+  /**
+   * Only families with an `@font-face` in `src/assets/fonts/fonts.css` may be
+   * named here. A family the repo does not load is not a typeface choice — it
+   * is a string the browser skips on its way to the fallback stack, which is
+   * how three successive themes shipped rendering entirely in system UI.
+   *
+   * Golos Text is the one self-hosted family, and it carries Cyrillic as well
+   * as Latin. That matters more than any other property here: `baseLocale` is
+   * `ru` (`project.inlang/settings.json`), so a Latin-only face styles the
+   * translation and leaves the default locale in the system fallback. Figtree
+   * — named here previously, and by the theme before it — ships Latin and
+   * Latin-ext only and has failed this test twice.
+   *
+   * `heading` names no family on purpose: Astryx falls back to the body family
+   * (`defineTheme`, headingFamily ?? bodyFamily), so headings are Golos Text at
+   * a heavier weight. That is the hierarchy DESIGN.md already asks for — weight
+   * and opacity, not a second family — and Golos is variable 400–900, so the
+   * weights below cost no extra file.
+   *
+   * `code` names the platform mono stack directly rather than a webfont, so it
+   * resolves rather than falls through. `ui-monospace` is a CSS keyword and
+   * must stay unquoted — `buildFontFamily` only quotes families with a space.
+   */
   typography: {
     scale: { base: 14, ratio: 1.25 },
     body: {
-      family: 'Figtree',
+      family: 'Golos Text',
       fallbacks:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     },
     heading: {
-      family: 'Montserrat',
-      fallbacks:
-        '"Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       weights: { 3: 'bold', 4: 'bold' },
     },
     code: {
-      family: 'JetBrains Mono',
+      family: 'ui-monospace',
       fallbacks: '"SF Mono", Monaco, Consolas, monospace',
     },
   },
@@ -124,7 +144,14 @@ export const stoneTheme = defineTheme({
 
     // Text — H=291
     '--color-text-primary': ['#25252a', '#f3f3f5'], // light: Stone Neutral T15
-    '--color-text-secondary': ['#83838a', '#9d9da3'], // T55 C=4 / T65 C=3
+    // T45 / T70. Both stops are set by the worst surface the tone lands on,
+    // not by the pane. Light: T55 (#83838a) was 3.76:1 on the pane and 3.48:1
+    // over the transcript wash; T50 clears neither (4.45 / 4.01), so T45 is the
+    // first stop that passes both at 5.38:1 and 4.85:1. Dark: T65 (#9d9da3) was
+    // fine on the pane but 4.13:1 on the muted well, where the date separator
+    // and assignee mark put it; T70 lifts that to 4.88:1. Computed, not
+    // measured. See DESIGN.md, Known drift 1.
+    '--color-text-secondary': ['#6a6a6f', '#ababb0'], // T45 C=3 / T70 C=3
     '--color-text-disabled': ['#d7d7da', '#5e5e61'], // T86 C=1.6 / T40 C=2
     // Must stay byte-identical to --color-accent — see DESIGN.md.
     '--color-text-accent': [PRIMARY, PRIMARY_DARK],
@@ -166,6 +193,29 @@ export const stoneTheme = defineTheme({
 
     // Typography override
     '--text-supporting-size': '12px',
+
+    /**
+     * The 12px readable floor, applied at the scale rather than per component.
+     *
+     * Base 14 at ratio 1.25 generates sm=11.2px, xs=8.96px, and a sub-scale
+     * below that — every step under `base` is unreadable, and `expandTypeScale`
+     * clamps nothing. `--text-supporting-size` above pins Astryx's own
+     * `supporting` type, but the Tailwind bridge maps `text-sm` straight to
+     * `--font-size-sm` (`tailwind-theme.css`) and bypasses that pin, so every
+     * `text-sm` in `src/` — the whole metadata tier, ~117 usages — rendered at
+     * 11px.
+     *
+     * Explicit tokens beat generated ones in `defineTheme` (step 2 overwrites
+     * step 1a), so clamping here is the whole fix; no component changes.
+     * Collapsing five steps onto one value is intended: DESIGN.md runs two type
+     * tiers, 14px body and 12px metadata, and the sub-scale steps exist only
+     * because the generator emits them.
+     */
+    '--font-size-sm': '0.75rem',
+    '--font-size-xs': '0.75rem',
+    '--font-size-2xs': '0.75rem',
+    '--font-size-3xs': '0.75rem',
+    '--font-size-4xs': '0.75rem',
 
     // Categorical hues
     //   Light: T90 solid bg + T30 text (pastel surface, dark text)

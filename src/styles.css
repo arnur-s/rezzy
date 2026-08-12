@@ -30,10 +30,10 @@
 /* The 12px readable floor, for the sizes a theme token cannot reach.
 
    NOTE: this file only ever covered the sizes a component computes for itself.
-   The `--font-size-*` scale used to be clamped by the theme; `stoneTheme.ts`
-   clamps nothing, so `text-sm` currently resolves to 11px and `text-xs` to 9px
-   and the floor below is no longer the whole story. See DESIGN.md, Known drift
-   2 — the fix belongs in the theme, not here.
+   The `--font-size-*` scale is clamped by the theme — `stoneTheme.ts` pins
+   `--font-size-sm` and every step below it to 0.75rem — so `text-sm` and
+   `text-xs` are handled there, not here. Keep it that way: a size a token can
+   reach belongs in the theme.
 
    The sizes this file does cover: Astryx's `Avatar` derives its initials from
    the avatar's pixel size (`size * 0.4`) and writes the result to an inline

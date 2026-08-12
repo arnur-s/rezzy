@@ -9,18 +9,20 @@
  * on its own — it writes a `font-family` string, and if no `@font-face` here
  * matches it the browser falls straight through to the fallback stack.
  *
- * !! NOTHING THE ACTIVE THEME NAMES IS DECLARED HERE. !!
+ * !! ONLY A FAMILY DECLARED HERE MAY BE NAMED BY THE ACTIVE THEME. !!
  *
- * `stoneTheme.ts` names Figtree (body), Montserrat (heading), and JetBrains
- * Mono (code). None of the three has an `@font-face` anywhere in the repo, so
- * every glyph currently resolves to `-apple-system` and the whole interface
- * renders in the system UI stack — including Russian, which is `baseLocale`.
- * Both blocks below are therefore inert: nothing names Golos Text any more.
+ * `stoneTheme.ts` previously named Figtree (body), Montserrat (heading), and
+ * JetBrains Mono (code), none of which has an `@font-face` anywhere in the
+ * repo — so every glyph resolved to `-apple-system` and the whole interface
+ * rendered in the system UI stack, Russian included. It now names Golos Text
+ * for body and headings, which is declared below, and the platform mono stack
+ * for code, which needs no file. Keep it that way: adding a family to the
+ * theme means adding its subsets here first.
  *
  * Figtree in particular ships Latin and Latin-ext only, so self-hosting it as
- * written would still leave Cyrillic in the system stack. This is the second
- * time Figtree has caused exactly this. Montserrat does ship Cyrillic.
- * See DESIGN.md, Known drift 1 and The Cyrillic Coverage Rule.
+ * written would still have left Cyrillic in the system stack. That was the
+ * second time Figtree caused exactly this. Montserrat does ship Cyrillic.
+ * See DESIGN.md, The Cyrillic Coverage Rule.
  *
  * Families declared here, and why these subsets:
  *
@@ -28,9 +30,9 @@
  *   is `ru` (see `project.inlang/settings.json`) — a Latin-only body face
  *   leaves the default locale in the system fallback and styles only the Latin
  *   strings beside it. This rule has now ruled out three candidates: Fustat
- *   (Arabic + Latin) and Figtree (Latin + Latin-ext), twice. **Currently
- *   unreferenced** — put `'Golos Text'` directly behind the theme's body
- *   family to make Russian real again.
+ *   (Arabic + Latin) and Figtree (Latin + Latin-ext), twice. The variable
+ *   400–900 range is what lets headings share the family at a heavier weight
+ *   instead of loading a second one.
  * - Manufacturing Consent (weight 400). Latin only. **Currently unreferenced**
  *   — it was the gothic theme's display face, bound to `display-1..3`.
  *   `font-display: swap` plus `unicode-range` means the browser never

@@ -60,35 +60,36 @@ colors:
   status-error: '#58413e' # --color-error, light (dark #dcc0bc)
   status-warning: '#524622' # --color-warning, light (dark #d7c59c)
 typography:
-  # Three families are named and NONE of them is declared anywhere in the
-  # repo. See The Cyrillic Coverage Rule and Known drift 1.
+  # One family, self-hosted with Cyrillic. Headings name no family of their
+  # own and inherit the body face at a heavier weight. See The Cyrillic
+  # Coverage Rule.
   display:
-    fontFamily: "Montserrat, 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
     fontSize: '3.3125rem'
     fontWeight: 400
     lineHeight: 1.283
   heading:
-    fontFamily: "Montserrat, 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
     fontSize: '1.6875rem'
     fontWeight: 600
     lineHeight: 1.3333
   title:
-    fontFamily: "Figtree, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
     fontSize: '0.875rem'
     fontWeight: 600
     lineHeight: 1.4286
   body:
-    fontFamily: "Figtree, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
     fontSize: '0.875rem'
     fontWeight: 400
     lineHeight: 1.4286
   label:
-    fontFamily: "Figtree, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-    fontSize: '0.6875rem'
+    fontFamily: "'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    fontSize: '0.75rem'
     fontWeight: 500
     lineHeight: 1.4545
   code:
-    fontFamily: "'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace"
+    fontFamily: "ui-monospace, 'SF Mono', Monaco, Consolas, monospace"
     fontSize: '0.875rem'
     fontWeight: 400
     lineHeight: 1.4286
@@ -309,7 +310,7 @@ mechanism the other one lacks.
 - One brand hue: a violet accent — a `135deg` ramp on solid fills, its dark stop `#534c7e` (light) / `#b4a3ca` (dark) everywhere else
 - One color language: muted pastel plate plus same-hue text, for categories and for status alike
 - Light lifts by shadow, dark lifts by tone — and neither mode has both
-- Two type tiers: 14px body, 11px metadata — the second of which is below this document's own floor (see Known drift)
+- Two type tiers: 14px body, 12px metadata — the scale below `base` is clamped to the 12px floor by the theme
 - Pill buttons, and a radius scale that dropped at every step: 2 / 4 / 8 / 12 / 24px
 - Snappier motion: 125 / 300 / 700ms
 
@@ -321,90 +322,64 @@ against the previous values. Nothing here is a style preference — each is a
 place where the code and this document deliberately disagree, with this document
 describing the target. Each is stated again in the section that owns it.
 
-1. **No font in the stack exists.** The theme names **Figtree** (body),
-   **Montserrat** (heading), and **JetBrains Mono** (code). None of the three
-   has an `@font-face` anywhere in the repo, so every glyph resolves to
-   `-apple-system` / the system UI stack. The self-hosted **Golos Text** subsets
-   in `src/fonts` are still declared and are now referenced by nothing. This is
-   the third time a theme has named a family it does not load, and it is the
-   worst instance: Figtree ships Latin and Latin-ext only, so even if it were
-   self-hosted `baseLocale: ru` would fall through it. Montserrat does ship
-   Cyrillic; Figtree does not. Fixing it means self-hosting the families the
-   theme names with their Cyrillic subsets, or putting `'Golos Text'` back
-   immediately behind the body family. See The Cyrillic Coverage Rule.
-2. **The 12px floor is broken at the token level.** Base 14 at ratio 1.25
-   generates `sm=11px` and `xs=9px`, and — unlike the theme it replaced — stone
-   **clamps nothing**. `--text-supporting-size` is pinned to 12px by hand, which
-   covers Astryx's own `supporting` text type (`Badge`, `Banner`,
-   `ChatMessageMetadata`, breadcrumbs, calendar), but the Tailwind `text-sm`
-   utility reads `--font-size-sm` and bypasses that pin entirely. Every
-   `text-sm` in `src/` renders at **11px**. See The 12px Floor Rule.
-3. **The metadata tier was swept onto that broken step.** All ~117 `text-xs`
-   usages in `src/` were replaced with `text-sm` in the same change as the theme
-   swap; `text-xs` no longer appears in the codebase at all. Under the previous
-   theme that was the correct fix (13px vs 12px); under stone it moves the
-   entire metadata tier from 9px to 11px — better, and still below the floor.
-   The right resolution is at the theme, not in the components: clamp
-   `--font-size-sm` (and everything below it) to `0.75rem` in `stoneTheme.ts`,
-   exactly as the previous theme did.
-4. **`text-secondary` fails AA in light mode.** `#83838a` computes **3.76:1**
-   on the white pane and **3.40:1** on the canvas, against a 4.5:1 requirement.
-   This is a regression of the single largest accessibility gain the previous
-   theme made (7.0:1), and it hits the most-used receding tone in the product:
-   timestamps, previews, descriptions, every supporting caption. T50 (`#77777c`)
-   was listed here as reaching ~4.5:1; measured in a browser it is **4.45:1** on
-   the pane and does not clear, and on the transcript's pane wash it drops to
-   4.01:1. **T45 (`#6a6a6f`) is the only candidate that clears both**, at 5.38:1
-   and 4.85:1. Dark mode is fine on the pane (6.36:1) but also fails on the muted
-   well (4.13:1). The transcript wash deepens the light-mode failure slightly —
-   3.48:1 at the worst real text position; see Pane wash under Message Bubbles.
-5. **Light mode has no raised tone.** `bg-card` and `bg-popover` are both
+1. **`text-secondary` is still short of AA on the light muted well.** The token
+   is now `#6a6a6f` (T45), which clears the pane at **5.38:1**, the canvas at
+   **4.85:1**, and the transcript wash at 4.85:1 — but the opaque `bg-muted`
+   well (`#e2e2e8`) is **4.17:1**, against a 4.5:1 requirement. That surface is
+   real: the date separator pill, the directory section header, the assignee
+   mark, and the image placeholder all put secondary text straight on it. T40
+   (`#5e5e63`) clears it at 5.00:1 and is the obvious next stop, but it is a
+   full step darker than the tone this document settled on and it narrows the
+   gap to `text-primary`, so it is a design call rather than a token swap. Dark
+   mode clears everywhere at T70 (`#ababb0`): 7.51:1 on the pane, 4.88:1 on the
+   dark muted well. All computed, not measured.
+2. **Light mode has no raised tone.** `bg-card` and `bg-popover` are both
    `#ffffff`, identical to `bg-surface`. A card on a pane, and a popover over a
    card, are separated by `--shadow-low` / `--shadow-high` alone. The shadows
    are soft (5–10% at 4–24px), so this works but has no margin; anything that
    drops its shadow becomes invisible. See The Rim Is Gone Rule.
-6. **Dark mode's shadows do nothing.** All three shadow tokens are a fixed
+3. **Dark mode's shadows do nothing.** All three shadow tokens are a fixed
    `#28282A` at 5–15% with no `light-dark()` switch, so in dark mode they paint
    near-black on near-black. The 1px white inset rim the previous theme carried
    is gone. Dark elevation is entirely tonal, and the popover/card step is
    `#25252a` over `#242325` — **1.03:1**, effectively no step at all. A popover
    opened over a card in dark mode has no edge by any mechanism.
-7. **`border-border-emphasized` is below 3:1 in dark mode.** `#5e5e61` on the
+4. **`border-border-emphasized` is below 3:1 in dark mode.** `#5e5e61` on the
    `#1b1b1f` pane computes **2.66:1**, and it is the secondary Button's entire
    visible form — that button is `transparent` with a 1.5px border and nothing
    else. In light mode the same token is 3.76:1 and clears.
-8. **The status inset rings lost their status.** `--shadow-inset-success`,
+5. **The status inset rings lost their status.** `--shadow-inset-success`,
    `-warning`, and `-error` are all `inset 0 0 0 2px #83838a30` — the same
    neutral gray. A success ring and an error ring are now indistinguishable.
    `--shadow-inset-hover` / `-selected` moved from signal blue to neutral
    `#28282A` at 30% / 50%, which is intentional and fine; the three status ones
    are not.
-9. **Plates went round again, and now at both sizes.** `--radius-page` moved
+6. **Plates went round again, and now at both sizes.** `--radius-page` moved
    18px → 24px. It is exactly half of 48px, so a `size-12` plate is now exactly
    circular, and it exceeds half of 36px, so a `size-9` plate clamps to a circle
    too. Every avatar and platform plate in the product is a circle. See The
    Plate Went Round.
-10. **Buttons are pill-shaped and still 32px tall.** `components.button.base`
-    sets `borderRadius: var(--radius-full)`, so every button in the product is a
-    stadium. The height is still Astryx's declared `height: 32px`, still below
-    the 44px touch-target criterion in the Accessibility section.
-11. **`--color-*-muted` equals `--color-*` in dark mode.** `--color-success` and
-    `--color-success-muted` are both `#b4cdb2` in dark; error and warning do the
-    same. Status text drawn on its own well would be invisible. In practice the
-    theme's `banner` and `field-status` overrides redirect those surfaces to the
-    categorical plates, and product code uses `bg-error/10` alpha rather than the
-    `-muted` token, so nothing currently hits it — but any new use of a
-    `-muted` well with its matching tone on top will render blank in dark mode.
-12. **`border-border/60` is close to invisible in light mode.** 30 usages
-    remain. The border token is an opaque `#e2e2e8`; at `/60` it composites to
-    roughly `#eeeef1` on a white pane. See The Hairline Is Already Thin Rule.
-13. **Fixed-width controls were sized against a 16px body.** Body type moved
+7. **Buttons are pill-shaped and still 32px tall.** `components.button.base`
+   sets `borderRadius: var(--radius-full)`, so every button in the product is a
+   stadium. The height is still Astryx's declared `height: 32px`, still below
+   the 44px touch-target criterion in the Accessibility section.
+8. **`--color-*-muted` equals `--color-*` in dark mode.** `--color-success` and
+   `--color-success-muted` are both `#b4cdb2` in dark; error and warning do the
+   same. Status text drawn on its own well would be invisible. In practice the
+   theme's `banner` and `field-status` overrides redirect those surfaces to the
+   categorical plates, and product code uses `bg-error/10` alpha rather than the
+   `-muted` token, so nothing currently hits it — but any new use of a
+   `-muted` well with its matching tone on top will render blank in dark mode.
+9. **`border-border/60` is close to invisible in light mode.** 30 usages
+   remain. The border token is an opaque `#e2e2e8`; at `/60` it composites to
+   roughly `#eeeef1` on a white pane. See The Hairline Is Already Thin Rule.
+10. **Fixed-width controls were sized against a 16px body.** Body type moved
     16px → 14px, so every control with a hard width now holds roughly 14% _more_
     characters than when its budget was set — the safe direction, for once. The
     budgets in `src/lib/message-lengths.test.ts` are character counts and cannot
     see either direction. Russian still runs 15–30% longer than English; verify
     in a browser at phone width.
-14. **No command verifies anything in this document.** Contrast, font size,
+11. **No command verifies anything in this document.** Contrast, font size,
     overflow, and shell elevation have no automated check, so every rule here is
     held by review alone. Contrast figures below are computed from the token
     values rather than measured in a browser, and are marked as such.
@@ -472,10 +447,10 @@ read each role as a pair.
 - **T100 `#ffffff`** / **T15 `#25252a`**: `bg-popover`. Same story, and in dark it is 1.03:1 against the card beneath it.
 - **T90 `#e2e2e8`** / **T25 `#3b3b3f`**: `bg-muted`. In light it is a genuine step _down_ from both the pane (1.29:1) and the canvas (1.16:1) — an improvement, since it used to be byte-identical to the canvas. In dark it is a step _up_ from the pane (1.54:1). One token, opposite directions by mode; see The Recess Is Pane-Relative Rule.
 - **T15 `#25252a`** / **T96 `#f3f3f5`**: `text-primary`. Computed **15.25:1** light and **15.49:1** dark against the pane. This used to be the same value as the accent; since the accent became a brand hue, running text and the primary fill are two separate tones and `text-primary` is purely the neutral ramp's endpoint.
-- **T55 `#83838a`** / **T65 `#9d9da3`**: `text-secondary`. Computed **3.76:1** light and 6.36:1 dark against the pane. **The light slot fails AA** — see Known drift 4. Until it moves, treat `text-secondary` in light mode as a known defect rather than as the safe default it used to be.
+- **T45 `#6a6a6f`** / **T70 `#ababb0`**: `text-secondary`. Computed **5.38:1** light and **7.51:1** dark against the pane, and 4.85:1 / 4.94:1 on the light canvas and transcript wash. Both stops are set by the worst surface the tone lands on rather than by the pane. The one surface it does not clear is the opaque `bg-muted` well at 4.17:1 — see Known drift 1.
 - **`#d7d7da`** / **T40 `#5e5e61`**: `text-disabled`. 1.44:1 light — disabled text is exempt from the contrast requirement, and this is the value that makes that exemption load-bearing.
 - **T90 `#e2e2e8`** / **T96 at 10%**: `border-border`. Light is an opaque tone, dark is an alpha wash. The light hairline is byte-identical to the light muted well, so a rule and a recessed surface are the same tone.
-- **T55 `#83838a`** / **T40 `#5e5e61`**: `border-border-emphasized`. The secondary Button's outline. 3.76:1 light, **2.66:1 dark** — see Known drift 7.
+- **T55 `#83838a`** / **T40 `#5e5e61`**: `border-border-emphasized`. The secondary Button's outline. 3.76:1 light, **2.66:1 dark** — see Known drift 4.
 - **T85 `#d4d4da`** / **`#5e5e64`**: `--color-skeleton`. Also the ProgressBar track and the Switch off-track, both redirected there by component overrides because `--color-background-muted` reads too close to the body tone to be a visible channel.
 
 ### Secondary (Categorical)
@@ -535,7 +510,7 @@ Computed against the pane: 9.34:1, 9.37:1, and 9.30:1 in light; 10.07:1,
 Their `-muted` partners are the T90 plates in light — the same value as the
 matching categorical chip, so a green chip and a success banner are one tone on
 purpose. **In dark mode `-muted` is byte-identical to the tone itself**, which
-is a defect rather than a decision; see Known drift 11.
+is a defect rather than a decision; see Known drift 8.
 
 Three component overrides shape how status reaches the screen, and they are
 worth knowing before styling anything with a state:
@@ -617,55 +592,60 @@ ever appear on screen: the palette around them has nothing at that chroma.
 
 ## Typography
 
-**Body / Interface Font:** Figtree, falling back to `-apple-system,
+**Body / Interface Font:** Golos Text, falling back to `-apple-system,
 BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`
-**Heading Font:** Montserrat, falling back to Figtree and then the same stack
-**Display Font:** Montserrat — `display-1..3` use the heading family
-**Code Font:** JetBrains Mono, falling back to `"SF Mono", Monaco, Consolas, monospace`
+**Heading Font:** Golos Text — `typography.heading` names no family, so Astryx
+resolves it to the body family (`headingFamily ?? bodyFamily` in `defineTheme`)
+**Display Font:** Golos Text — `display-1..3` use the heading family
+**Code Font:** `ui-monospace`, falling back to `"SF Mono", Monaco, Consolas, monospace`
 
-**None of the three is loaded.** There is no `@font-face` for Figtree,
-Montserrat, or JetBrains Mono anywhere in the repo, so the browser falls through
-every named family to `-apple-system` and the entire interface renders in the
-system UI stack. The self-hosted Golos Text woff2 subsets in `src/fonts` are
-still declared in `src/fonts/fonts.css` and imported by `src/styles.css`, but
-nothing names Golos Text any more, so nothing downloads them. See Known drift 1.
+**The family is loaded, and it covers Cyrillic.** Golos Text is self-hosted as
+four woff2 subsets in `src/assets/fonts/`, declared in
+`src/assets/fonts/fonts.css`, and imported by `src/styles.css`. It is the only
+family the theme names, and it is a variable face spanning 400–900, which is
+what lets headings share it at a heavier weight instead of loading a second one.
+`baseLocale` is `ru` and Golos ships Cyrillic and Cyrillic-ext, so the default
+locale renders in the designed face rather than in the system fallback.
 
-**The Cyrillic problem is worse than the loading problem.** `baseLocale` is
-`ru`. Figtree ships Latin and Latin-ext only — self-hosting it as written would
-put the primary locale in the system stack and style only the Latin strings
-beside it, which reads as two typefaces on one screen. This is the exact failure
-Figtree already caused once in this repository. Montserrat does ship Cyrillic
-and is safe as the heading family. Either self-host Figtree _and_ put a
-Cyrillic-covering face directly behind it, or make the body family one that
-ships Cyrillic itself.
+This replaced Figtree (body), Montserrat (heading), and JetBrains Mono (code),
+none of which had an `@font-face` anywhere in the repo — the browser fell
+through every named family to `-apple-system` and the whole interface rendered
+in the system UI stack. Figtree could not have been fixed by self-hosting alone:
+it ships Latin and Latin-ext only, so Russian would have stayed in the fallback
+and the screen would have carried two typefaces at once. See The Cyrillic
+Coverage Rule, which has now caught that face twice.
 
-**Character:** Figtree is a geometric sans with a tall x-height and fairly
-closed apertures; Montserrat is a wider geometric with a much larger cap height,
-so a Montserrat heading over Figtree body is a deliberate two-voice register
-rather than one family at two sizes — the first time this product has had one.
-Whether that register is right for a shell read all day is a live question and
-not one this document can settle; what it can say is that the two families must
-both be loaded before the question is even askable.
+**Character:** Golos Text is a contemporary grotesque drawn for Cyrillic first —
+open apertures, a tall x-height, and slightly condensed proportions that suit
+dense list rows. One family at two weights is a narrower register than a
+heading face over a body face, and that is the intended trade: the shell is read
+all day, and DESIGN.md already escalates hierarchy through weight and opacity
+rather than through a second voice. A display face, if one is ever wanted back,
+has to clear the Cyrillic rule before it clears the taste question.
 
 ### Hierarchy
 
 The scale is **base 14, ratio 1.25**, `Math.round`ed to whole px by
-`expandTypeScale`, producing 7 / 9 / 11 / 14 / 18 / 22 / 27 / 34 / 43 / 53px.
-Line heights are 4px-grid-snapped with a `fontSize + 4` minimum, so 14px body
-sets on a 20px line (1.4286) and 11px metadata on a 16px line (1.4545).
+`expandTypeScale`, producing 7 / 9 / 11 / 14 / 18 / 22 / 27 / 34 / 43 / 53px —
+and then **every step below `base` is clamped to 12px by `stoneTheme.ts`**, so
+what actually ships is 12 / 12 / 12 / 14 / 18 / 22 / 27 / 34 / 43 / 53px. Line
+heights are 4px-grid-snapped with a `fontSize + 4` minimum and are _not_
+re-derived after the clamp, so 14px body sets on a 20px line (1.4286) and 12px
+metadata on the 16px line computed for 11px (1.3333) — tighter than the tier
+above it, which is correct for single-line labels and is the tier's only use.
 
 - **Display** (400, 3.3125rem / 53px, 1.283 lh): `Text type="display-1"`, plus `display-2` (43px) and `display-3` (34px). No product surface uses these.
 - **Heading** (600, 1.6875rem / 27px, 1.3333 lh): Astryx `heading-1`. Theme capacity; the shell has nothing at this scale. `h3` and `h4` are bold (700) rather than semibold, set by `typography.heading.weights`.
 - **Title** (600, 0.875rem / 14px): `text-base font-semibold`. Page titles — the workspace settings `h1`, empty-state headings.
 - **Body** (400–500, 0.875rem / 14px, 1.4286 lh): `text-base`. The workhorse: message text, contact names, previews, form content, descriptions. Prose runs inside a `max-w-3xl` measure.
-- **Metadata** (500, 0.6875rem / 11px, 1.4545 lh): `text-sm`. Timestamps, chip text, filter labels, supporting captions. Sentence case, always. **This is below the 12px floor** — see Known drift 2 and 3.
-- **Supporting** (400, 12px): `Text type="supporting"` and the Astryx components that read `--text-supporting-size` — `Badge`, `Banner`, `ChatMessageMetadata`, breadcrumbs, calendar. The one size the theme pins by hand, and currently the only thing in the product holding the floor.
+- **Metadata** (500, 0.75rem / 12px, 1.3333 lh): `text-sm`. Timestamps, chip text, filter labels, supporting captions. Sentence case, always. Holds the 12px floor by the theme's clamp on `--font-size-sm`.
+- **Supporting** (400, 12px): `Text type="supporting"` and the Astryx components that read `--text-supporting-size` — `Badge`, `Banner`, `ChatMessageMetadata`, breadcrumbs, calendar. Pinned by hand in the theme, and now the same size as the metadata tier rather than the only thing holding the floor.
 
 ### Named Rules
 
 **The Remapped Scale Rule.** Tailwind's size names do not mean their Tailwind
 values here. `@astryxdesign/core/tailwind-theme.css` rebinds `--text-*` to the
-theme scale, so **`text-base` is 14px, `text-sm` is 11px, `text-lg` is 18px, and
+theme scale, so **`text-base` is 14px, `text-sm` is 12px, `text-lg` is 18px, and
 `text-xl` is 22px**. Not one of them matches Tailwind's default. Never convert a
 design spec's px value by assuming Tailwind's scale. The same bridge rebinds
 `--spacing` to `--spacing-1` (4px), so `p-4` is 16px as expected — spacing is
@@ -675,11 +655,15 @@ safe, type is not.
 is the bottom of the legible range for interface text, and `baseLocale` is `ru`,
 whose diacritics and soft signs are the first things to go as size drops.
 
-_The theme does not currently hold this._ The previous theme clamped
-`--font-size-xs` and every step below it to `0.75rem`; stone clamps nothing, so
-`text-sm` ships at 11px and `text-xs` at 9px. The fix belongs in
-`stoneTheme.ts` — clamp `--font-size-sm` and below to `0.75rem`, which leaves
-the base and every size above it untouched — not in a sweep across components.
+_The theme holds this at the scale._ `stoneTheme.ts` pins `--font-size-sm`,
+`-xs`, `-2xs`, `-3xs`, and `-4xs` to `0.75rem`, leaving `base` and every size
+above it on the generated geometric progression. Explicit tokens beat generated
+ones in `defineTheme` (step 2 overwrites step 1a), and the Tailwind bridge maps
+`--text-sm` straight to `--font-size-sm`, so the clamp reaches both Astryx's own
+type ramp and every `text-sm` utility in `src/` without a sweep across
+components. Collapsing five steps onto one value is deliberate — the product
+runs two tiers, and the sub-scale steps exist only because the generator emits
+them.
 
 Two sizes are outside a token's reach either way and are floored in
 `src/generated/astryx-font-floor.css`: Astryx's `Avatar` computes its initials
@@ -697,17 +681,20 @@ vocabulary. Escalate through weight (400 → 500 → 600) and opacity, not throu
 size. Introducing a third size into a shell means the hierarchy failed at weight
 first.
 
-`text-xs` no longer appears anywhere in `src/` and should not come back: at 9px
-it is unusable, and the tier it used to serve is `text-sm`'s job.
+`text-xs` no longer appears anywhere in `src/` and should not come back. It is
+now clamped to the same 12px as `text-sm`, so it is no longer dangerous — but a
+second utility name for one size is a hierarchy waiting to be invented, and the
+tier it used to serve is `text-sm`'s job.
 
 **The Opacity Step Is Mode-Asymmetric Rule.** `text-primary/55` computes to
 3.58:1 in light and 5.53:1 in dark, so an opacity step tuned in one mode can be
 under AA in the other. `/70` (5.72:1 light, 8.12:1 dark) remains the lowest rung
 that clears both; `/60` (4.16:1 light) does not. Under stone an opacity step is
-also **safer than `text-secondary` in light mode**, which is the inverse of the
-previous theme and the inverse of the advice this document used to give — until
-Known drift 4 is fixed, prefer `text-primary/70` where a designed tone would
-have been the obvious choice.
+now **comparable to `text-secondary` in light mode** rather than safer than it:
+`text-secondary` is 5.38:1 on the pane against `/70`'s 5.72:1. Either is a
+defensible receding tone. Prefer `text-secondary`, which is a designed stop on
+the ramp, and reach for `/70` only where the tone has to sit on the one surface
+`text-secondary` does not clear — the opaque `bg-muted` well (Known drift 1).
 
 **The Cyrillic Coverage Rule.** Cyrillic must be covered by a font the repo
 declares, and it must be covered _before_ the system fallback. `baseLocale` is
@@ -716,10 +703,11 @@ a translation bolted on.
 
 This rule has now caught four faces: **Fustat**, the gothic theme's choice,
 which ships Arabic and Latin; **Figtree**, which arrived with the neutral theme,
-was removed for exactly this reason, and is back as stone's body family;
-**Albert Sans**, which was survivable only because self-hosted Golos Text sat
-directly behind it; and **JetBrains Mono**, which does ship Cyrillic but is
-declared nowhere.
+was removed for exactly this reason, came back as stone's body family, and has
+been removed again; **Albert Sans**, which was survivable only because
+self-hosted Golos Text sat directly behind it; and **JetBrains Mono**, which
+does ship Cyrillic but was declared nowhere. Golos Text is the face that
+actually satisfies it, and is what the theme names today.
 
 Judge a candidate body face by its `unicode-range` coverage before its shapes.
 If it does not ship Cyrillic, it may only be the primary of a stack whose next
@@ -884,7 +872,7 @@ single large-negative-spread layer the previous theme used.
 - **`--shadow-med`** (`0 2px 4px #28282A0D, 0 4px 12px #28282A1A`): Hover and mid-elevation containers, via `shadow-md`. Note it differs from `low` only in the second layer's blur — the two are nearly the same shadow.
 - **`--shadow-high`** (`0 4px 6px #28282A1A, 0 12px 24px #28282A26`): Popovers, dropdowns, dialogs, via `shadow-lg`.
 - **`--shadow-inset-hover` / `-selected`** (`inset 0 0 0 2px #28282A30 / 50`): Ring-style emphasis where a real border would shift layout. Neutral, matching the accent.
-- **`--shadow-inset-success` / `-warning` / `-error`** (`inset 0 0 0 2px #83838a30`): **all three are the same neutral gray** — see Known drift 8.
+- **`--shadow-inset-success` / `-warning` / `-error`** (`inset 0 0 0 2px #83838a30`): **all three are the same neutral gray** — see Known drift 5.
 
 ### Named Rules
 
@@ -1024,7 +1012,7 @@ Resolved and unfussy. State is a tonal shift, never a scale or bounce.
 - **Shape:** **a pill** — `--radius-full`, set on `components.button.base`. Every button, every variant, both modes.
 - **Height:** **a fixed 32px, set by Astryx**, not derived from its padding. The label is flex-centered inside a declared `height: 32px`, which is why the body type moving 16px → 14px did not change the control height. It also means the button is **below the 44px touch-target criterion** in the Accessibility section, at every breakpoint.
 - **Primary:** the brand ramp — `--gradient-accent` at `135deg`, with a `#ffffff` label in both modes. Worst case is the ramp's lightest stop, `#8365a6`, at 4.8:1 against white; the label sits over the `#534c7e` end at 7.8:1. Stone overrides `button` / `variant:primary` for this, and the override has to restack Astryx's hover and pressed tints — they are painted into `background-image`, which the ramp otherwise replaces. The label is `--color-on-dark`, not `--color-on-accent`: the ramp does not invert.
-- **Secondary:** **an outline, not a fill.** `transparent` with a 1.5px `--color-border-emphasized` border, hovering to `--color-neutral`. This is a change of kind from the previous theme's gray fill. In dark mode that border computes 2.66:1 against the pane — see Known drift 7 — which makes the secondary button the weakest-defined control in the product.
+- **Secondary:** **an outline, not a fill.** `transparent` with a 1.5px `--color-border-emphasized` border, hovering to `--color-neutral`. This is a change of kind from the previous theme's gray fill. In dark mode that border computes 2.66:1 against the pane — see Known drift 4 — which makes the secondary button the weakest-defined control in the product.
 - **Ghost:** transparent, hover `--color-overlay-hover` (black at 5% / white at 5%). The default for icon buttons and inline actions. Ghost and secondary are now closer to each other than they used to be: one is an invisible box, the other an outlined one.
 - **Destructive:** **a pastel well, not a fill.** `--color-background-red` (`#f9dcd7` / `#644d49`) with `--color-text-red`, computed 7.25:1 light and 6.02:1 dark. A destructive action is the quietest colored object on screen. If a delete confirmation needs more weight, the weight belongs in the copy and the dialog, not in a re-fill.
 - **Loading:** `isLoading` keeps the label visible alongside the spinner.
@@ -1049,7 +1037,7 @@ The rail is the product's spine and the only persistent chrome.
 The most-read surface in the product.
 
 - **Layout:** a 36px platform plate (`rounded-xl`, now a full circle) plus a text body, `gap-3`, `px-3 py-2.5`. Direct children of a scrollable `role="listbox"` with `gap-0.5` — no card wrapping.
-- **Typography:** contact name at 600 (unread) or 500 (read); preview at `text-primary/80` (unread) or `text-secondary` (read); timestamp at `text-secondary`. Name and preview are `text-base` (14px); the timestamp is `text-sm` (11px, below the floor — Known drift 2). The read-state preview and the timestamp both land on `text-secondary`, which is 3.76:1 in light — the drift in Known drift 4 lands hardest right here, on the surface that is read most.
+- **Typography:** contact name at 600 (unread) or 500 (read); preview at `text-primary/80` (unread) or `text-secondary` (read); timestamp at `text-secondary`. Name and preview are `text-base` (14px); the timestamp is `text-sm` (12px, on the floor). The read-state preview and the timestamp both land on `text-secondary`, which is 5.38:1 on the light pane — this row is the surface that is read most, and it is now the best case for that token rather than the worst.
 - **Unread:** name goes semibold, preview brightens, and a `NumericUnreadChip` appears in the trailing position. The chip hides on the selected row — opening a conversation resets its count visually.
 - **The state line:** the row's third line is where the work stands and who owns it — `ConversationStatusChip` on the leading edge, a 24px assignee face on the trailing one, `justify-between` at `min-h-6`. 24px because that is exactly the badge's own height, so the line has one rhythm rather than two. Nothing renders there when nobody is assigned: an unassigned conversation is the common case in a shared inbox, and a column of empty placeholders down the most-read surface would spend real estate saying "no". An `assigned_to` the workspace roster cannot resolve — a colleague who has left — gets a muted `UserRound` plate instead, because that state must not read as unassigned.
 - **The right rail:** timestamp, unread count and assignee face land on one vertical axis at the row's trailing edge, one per line. Three answers to "does this need me", stacked.
@@ -1097,7 +1085,7 @@ draws each bubble.
 - **Action rail:** a reply control parked in the transcript gutter, absolutely positioned outside the bubble, revealed on `group-hover/msg` and `group-focus-within/msg`. Anchored to the first text line (`top-2`) for text and to the middle for media or structured blocks. Zero hit target until engaged; on touch it sits permanently at 60% opacity with an expanded 44px target.
 - **Pane wash:** the transcript pane carries one static `radial-gradient` — a wide, shallow ellipse (`120% 85% at 100% 0%`) of `--color-accent` at **5.5%**, out to a `transparent` stop at 62%. It is the sole exception to the no-decorative-background rule below. It reads `--color-accent`, so it inverts by mode for free with no `dark:` variant — and since the accent became a brand hue it is now a faint violet cast rather than a neutral one. **The measurements in this bullet and the two below it predate that change and have not been re-taken in a browser.** Composited, the peak is now `#f5f5f8` on the white pane (it was `#f3f3f3`) and `#232228` in dark (it was `#27272a`) — still inside the tonal range the shell already owns, and still a soft vignette across an 844px pane rather than a visible edge, but the exact ratios below are stale. It lives as an inline style on the pane wrapper in `message-thread.tsx`, painted on the wrapper itself rather than a sibling, so it needs no `isolate` and no negative z-index, and it does not scroll with the transcript.
   - **It does not disturb the bubble edge**, which is the obvious worry and is measurably not real. `--color-neutral` is an _alpha_ fill, so a bubble composites over the wash rather than over the bare pane, and the wash darkens figure and ground together. Measured: the bubble edge is **1.114:1** over the wash's peak versus **1.119:1** over a bare pane (dark: 1.334:1 vs 1.324:1). A future opaque bubble fill would break this property and would have to re-measure.
-  - **What it does cost is `text-secondary`**, and only in light mode: `#83838a` falls from 3.76:1 on the bare pane to **3.48:1** at the worst real text position (an outbound footer at the top of the view) and 3.39:1 at the peak pixel. Every other sampled footer position is unchanged at 3.76:1. This does not create a failure — Known drift 4 already records that token as failing AA at 3.76:1 — but it deepens one, and it removes an option from that drift's fix: **T50 `#77777c` no longer suffices.** Measured, T50 is 4.45:1 on the bare pane and 4.01:1 on the wash peak, so it clears neither. **T45 `#6a6a6f` clears both** at 5.38:1 and 4.85:1, and is now the only listed candidate that does.
+  - **What it costs `text-secondary` is now affordable.** The wash is why that token is T45 and not T50: measured against the old `#83838a`, the wash pulled it from 3.76:1 on the bare pane down to 3.48:1 at the worst real text position (an outbound footer at the top of the view) and 3.39:1 at the peak pixel, and it ruled out T50 `#77777c` as a fix — 4.45:1 on the bare pane, 4.01:1 on the wash peak, clearing neither. T45 `#6a6a6f` clears both at **5.38:1** and **4.94:1** against the composited peak (`#f5f5f8`), computed. The wash still costs roughly 0.44 of a ratio point at the worst position; the tone now has the margin to pay it.
   - It replaces a WebGL ray canvas (`ogl`, ported from React Bits' `SideRays`) that shipped here after the stone swap. That canvas was drift on two counts this document already legislates: it painted `#63fe13` / `#2e7a00`, a hue belonging to no ramp in this theme and to no brand, and it cited `neutralTheme.ts` — deleted — for the choice. A static gradient also drops a runtime dependency, a GL context per open thread, an `IntersectionObserver`, a resize listener, an `rAF` loop, and a `prefers-reduced-motion` branch. Nothing that does not move needs a reduced-motion guard.
 
 ### Cards
@@ -1183,7 +1171,7 @@ checkable by one person in a browser in under a minute — that is the standard
 these have to meet to be worth writing down.
 
 **Three criteria currently fail against the shipped theme** (2, 3, and 11
-below). They are stated as targets, and the gaps are in Known drift 2–4 and 7.
+below). They are stated as targets, and the gaps are in Known drift 1 and 4.
 
 ### Acceptance criteria
 
