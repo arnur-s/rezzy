@@ -7,6 +7,7 @@ import { setLocale } from '@/paraglide/runtime'
 import { createTestQueryClient, renderWithQueryClient } from '@/test/render'
 import type { User } from '@supabase/supabase-js'
 import { screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sidebar } from './sidebar'
 
@@ -17,6 +18,12 @@ vi.mock('@tanstack/react-router', async () => {
     useNavigate: () => vi.fn(),
     useParams: () => ({ id: 'workspace-1' }),
     useRouterState: () => '/workspaces/workspace-1',
+    // The rail's header links the logo home. The real `Link` reads router
+    // context, which this suite deliberately does not mount, so it throws
+    // before anything under test renders.
+    Link: ({ to, children }: { to: string; children: ReactNode }) => (
+      <a href={to}>{children}</a>
+    ),
   }
 })
 
@@ -402,6 +409,32 @@ describe('Sidebar workspace switcher invitations indicator', () => {
       expect(
         screen.getByRole('button', { name: /Acme Sales.*2 invitations/ }),
       ).toBeTruthy()
+    })
+  })
+
+  // The expanded row shows the workspace name and nothing else, so the counted
+  // phrase is written onto the trigger button rather than nested in its markup
+  // (a name assembled from contents runs the two strings together). Collapsing
+  // and expanding replaces that button, so the name has to survive the swap —
+  // which a pair of separate renders, each mounting one variant, cannot show.
+  it('keeps the count on the trigger across a collapse and back', async () => {
+    const { rerender } = renderSidebar()
+
+    const named = () =>
+      screen.getByRole('button', { name: /Acme Sales.*2 invitations/ })
+
+    await waitFor(() => {
+      expect(named()).toBeTruthy()
+    })
+
+    rerender(<Sidebar isCollapsed onCollapsedChange={() => {}} />)
+    await waitFor(() => {
+      expect(named()).toBeTruthy()
+    })
+
+    rerender(<Sidebar isCollapsed={false} onCollapsedChange={() => {}} />)
+    await waitFor(() => {
+      expect(named()).toBeTruthy()
     })
   })
 

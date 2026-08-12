@@ -34,7 +34,7 @@
   "sidebar_settings_label": "Настройки",
   "auth_sign_in_welcome": "С возвращением",
   "auth_sign_in_description": "Войдите по email и паролю",
-  "auth_sign_in_brand_tagline": "Все обращения клиентов — в одном окне",
+  "auth_sign_in_brand_tagline": "Все обращения клиентов в одном приложении",
   "auth_sign_in_email_invalid": "Проверьте адрес: похоже, в нём опечатка",
   "auth_sign_in_password_min": "Пароль должен содержать не менее 8 символов",
   "auth_sign_in_forgot_password_label": "Забыли пароль?",

@@ -1,4 +1,5 @@
 import logo from '@/assets/logo.png'
+import { List } from '@/components/list'
 import type { Workspace } from '@/entities/workspace'
 import { WorkspaceIcon } from '@/entities/workspace'
 import { useMyIdentity } from '@/features/account'
@@ -18,6 +19,7 @@ import type {
   DropdownMenuOption,
 } from '@astryxdesign/core/DropdownMenu'
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
+import { Popover } from '@astryxdesign/core/Popover'
 import {
   SideNav,
   SideNavItem,
@@ -43,8 +45,8 @@ import {
   UserRoundIcon,
   UsersRoundIcon,
 } from 'lucide-react'
-import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import type { ReactNode, RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 export interface SidebarProps {
   isCollapsed: boolean
@@ -310,11 +312,12 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 /**
- * Workspace row at the head of the nav body, built on the same construction as
- * the account row in the footer: a ghost button restyled to read as a nav row,
- * with a chevron pinned to the trailing edge and a menu unfolding from it. The
- * rail's two entity rows — the workspace you are in, the person you are — then
- * bracket the navigation between them in one shared vocabulary.
+ * Workspace row at the head of the nav body. It is a `SideNavItem` — the same
+ * component as every other row in the rail — rather than a ghost button talked
+ * into looking like one: the row chrome (height, inset, radius, hover, type)
+ * then comes from the design system instead of from local overrides that drift.
+ * The list opens in a sibling `Popover`, the construction the notifications row
+ * already uses, because `DropdownMenu` insists on rendering its own `Button`.
  */
 function WorkspaceSwitcher({
   currentWorkspace,
@@ -335,6 +338,9 @@ function WorkspaceSwitcher({
   const [respondingTo, setRespondingTo] = useState<WorkspaceInvitation | null>(
     null,
   )
+  // Sibling mode: the popover anchors to SideNavItem's own button rather than
+  // wrapping it in a div, which would break the nav row's full-width layout.
+  const triggerRef = useRef<HTMLElement>(null)
   // The rail's own collapse state, not the prop: SideNav drops this context in
   // drawer and topbar modes, so the mobile drawer keeps the expanded row even
   // while the desktop rail is collapsed.
@@ -342,6 +348,34 @@ function WorkspaceSwitcher({
 
   const invitationsQuery = useMyInvitations()
   const invitations = invitationsQuery.data ?? []
+  const invitationCount = invitations.length
+
+  const label = currentWorkspace?.name ?? m.sidebar_select_workspace_label()
+
+  // The whole sentence — including the separator between the workspace name
+  // and the count — is composed inside the message catalogue via the
+  // `workspace` placeholder, not joined with a literal here: a hardcoded `": "`
+  // would be a typographic choice authored in TypeScript instead of the copy it
+  // actually is, and Russian and English do not have to agree on it.
+  const triggerLabel =
+    invitationCount > 0
+      ? m.workspace_invitations_indicator_aria({
+          workspace: label,
+          count: invitationCount,
+        })
+      : label
+
+  // `SideNavItem` renders `label` as the row's visible text and takes no
+  // `aria-label` of its own once expanded, so the counted phrase is written
+  // onto the trigger button directly — the same element, through the same
+  // lever, that `Popover` uses for its own ARIA below. Carrying the count in
+  // visually-hidden markup inside the row does not work: a name assembled from
+  // contents runs the two strings together with no separator. `isCollapsed` is
+  // a dependency because the collapsed and expanded rows are different
+  // elements, and the new one arrives without the attribute.
+  useEffect(() => {
+    triggerRef.current?.setAttribute('aria-label', triggerLabel)
+  }, [triggerLabel, isCollapsed])
 
   if (isLoading) {
     return <Skeleton width="100%" height={32} radius={3} />
@@ -355,62 +389,72 @@ function WorkspaceSwitcher({
     )
   }
 
-  const label = currentWorkspace?.name ?? m.sidebar_select_workspace_label()
   const mark = currentWorkspace ? (
     <WorkspaceMark icon={currentWorkspace.icon} isActive />
   ) : (
     <WorkspacesMark />
   )
 
-  const items: Array<DropdownMenuOption> = workspaces.map((workspace) => ({
-    label: workspace.name,
-    icon: (
-      <WorkspaceMark
-        icon={workspace.icon}
-        isActive={workspace.id === currentWorkspace?.id}
-      />
-    ),
-    onClick: () => {
-      setIsOpen(false)
-      onSelect(workspace)
-    },
-  }))
-  // items.push({
-  //   label: m.workspaces_create_button(),
-  //   icon: <PlusIcon className="size-4" />,
-  //   onClick: onCreateWorkspace,
-  // })
+  const content = (
+    <div className="flex w-full flex-col overflow-hidden">
+      <List className="p-1.5">
+        {workspaces.map((workspace) => {
+          const isCurrent = workspace.id === currentWorkspace?.id
+          return (
+            <List.Item key={workspace.id} isActive={isCurrent}>
+              <button
+                type="button"
+                className="cursor-pointer px-2"
+                aria-current={isCurrent ? true : undefined}
+                onClick={() => {
+                  setIsOpen(false)
+                  onSelect(workspace)
+                }}
+              >
+                <WorkspaceMark icon={workspace.icon} isActive={isCurrent} />
+                <span className="flex-1 truncate text-left">
+                  {workspace.name}
+                </span>
+              </button>
+            </List.Item>
+          )
+        })}
+      </List>
 
-  // Astryx DropdownMenu items are single-action rows, so Accept/Decline cannot
-  // live in the menu; a row opens the dialog, which is the better home for the
-  // decision anyway — at menuWidth 220 two buttons do not fit.
-  if (invitations.length > 0) {
-    items.push({ type: 'divider' })
-    items.push({
-      type: 'section',
-      title: m.workspace_invitations_section_title(),
-      items: invitations.map((invitation) => ({
-        label: invitation.workspaceName,
-        icon: <MailPlusIcon className="size-4" aria-hidden />,
-        onClick: () => {
-          setIsOpen(false)
-          setRespondingTo(invitation)
-        },
-      })),
-    })
-  }
+      {/* A row opens the dialog rather than carrying Accept/Decline itself:
+          two buttons do not fit at this width, and the decision belongs with
+          the invitation's detail anyway. */}
+      {invitations.length > 0 ? (
+        <div className="border-border/60 border-t p-1.5">
+          <p className="text-secondary px-2 pt-1 pb-1.5 text-sm font-semibold">
+            {m.workspace_invitations_section_title()}
+          </p>
+          <List>
+            {invitations.map((invitation) => (
+              <List.Item key={invitation.id}>
+                <button
+                  type="button"
+                  className="cursor-pointer px-2"
+                  onClick={() => {
+                    setIsOpen(false)
+                    setRespondingTo(invitation)
+                  }}
+                >
+                  <MailPlusIcon className="size-4 shrink-0" aria-hidden />
+                  <span className="flex-1 truncate text-left">
+                    {invitation.workspaceName}
+                  </span>
+                </button>
+              </List.Item>
+            ))}
+          </List>
+        </div>
+      ) : null}
+    </div>
+  )
 
-  const invitationCount = invitations.length
-  // Purely decorative: the count it would otherwise announce lives in
-  // `triggerLabel` below instead. Astryx `Button` computes its own
-  // `aria-label` from the `label` prop whenever the trigger is icon-only
-  // (collapsed) or is given custom `children` (expanded) — see `needsAriaLabel`
-  // in Button.js — and that computed `aria-label` wins over any accessible
-  // name nested content would otherwise contribute, including an `aria-label`
-  // on this span (which is also invalid here: `aria-label` has no effect on an
-  // element with no role). So the badge itself must stay out of the
-  // accessibility tree, and the count has to reach assistive tech through the
-  // one lever Button exposes for it.
+  // Purely decorative: the count it stands for reaches assistive technology
+  // through the trigger's `aria-label` instead.
   const invitationBadge =
     invitationCount > 0 ? (
       <span
@@ -419,77 +463,51 @@ function WorkspaceSwitcher({
       />
     ) : null
 
-  // The trigger's `label` prop is both the accessible name (collapsed and
-  // expanded alike) and the collapsed tooltip text, so the counted phrase
-  // belongs there rather than stranded in the badge's markup. The whole
-  // sentence — including the separator between the workspace name and the
-  // count — is composed inside the message catalogue via the `workspace`
-  // placeholder, not joined with a literal here: a hardcoded `": "` would be a
-  // typographic choice authored in TypeScript instead of the copy it actually
-  // is, and Russian and English do not have to agree on it.
-  const triggerLabel =
-    invitationCount > 0
-      ? m.workspace_invitations_indicator_aria({
-          workspace: label,
-          count: invitationCount,
-        })
-      : label
-
-  const button: DropdownMenuButtonProps = isCollapsed
-    ? {
-        label: triggerLabel,
-        variant: 'ghost',
-        icon: (
-          <span className="relative inline-flex">
+  return (
+    <>
+      <SideNavItem
+        ref={triggerRef}
+        // Expanded, `label` is the row's visible text, so it stays the bare
+        // workspace name. Collapsed, the row is icon-only and `label` is what
+        // the tooltip shows, so the counted phrase belongs there.
+        label={isCollapsed ? triggerLabel : label}
+        icon={
+          <span className="relative inline-flex shrink-0">
             {mark}
             {invitationBadge}
           </span>
-        ),
-        isIconOnly: true,
-        tooltip: triggerLabel,
-      }
-    : {
-        label: triggerLabel,
-        variant: 'ghost',
-        // Same handles as the account row: 8px inset instead of Button's 12px,
-        // and the label span grown so the chevron pins to the trailing edge.
-        // The name keeps medium weight where the account row runs normal — it
-        // is the one row that names what everything under it belongs to.
-        className: 'px-2 [&>span>span:first-child]:grow',
-        children: (
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="relative inline-flex shrink-0">
-              {mark}
-              {invitationBadge}
-            </span>
-            {/* Plain workspace name, not `triggerLabel`: this is the visible
-                text, and the count is already carried by `button.label` above,
-                which Button uses for the accessible name instead of this
-                span's content. */}
-            <span className="truncate font-medium">{label}</span>
-          </span>
-        ),
-        endContent: (
+        }
+        endContent={
           <ChevronsUpDownIcon className="text-secondary size-4" aria-hidden />
-        ),
-      }
+        }
+      />
 
-  return (
-    <>
-      <DropdownMenu
-        button={button}
-        items={items}
-        isMenuOpen={isOpen}
+      <Popover
+        // Astryx types anchorRef as a non-null RefObject, but any DOM ref is
+        // null until mount. Popover reads it inside a layout effect and bails
+        // when it is empty, so the narrowing is safe.
+        anchorRef={triggerRef as RefObject<HTMLElement>}
+        isOpen={isOpen}
         onOpenChange={setIsOpen}
         placement="below"
-        // Expanded, the menu inherits the trigger's width so it reads as the row
-        // unfolding. Collapsed, the trigger is a 32px square and needs a floor.
-        menuWidth={isCollapsed ? 220 : undefined}
-        hasChevron={false}
+        alignment="start"
+        // Expanded, the surface inherits the trigger's width so it reads as the
+        // row unfolding. Collapsed, the trigger is a 32px square and needs a
+        // floor.
+        width={isCollapsed ? 220 : undefined}
+        label={m.sidebar_select_workspace_label()}
+        // The rows carry their own 6px gutter; paying Astryx's 12px surface
+        // padding on top of it would inset them twice and leave the invitations
+        // rule floating short of both edges.
+        className="overflow-hidden p-0"
+        // The default close button is first in focus order, so autofocus lands
+        // on it and reveals it. Escape and outside click still dismiss.
+        hasCloseButton={false}
+        content={isOpen ? content : null}
       />
-      {/* Sibling of the menu, not nested inside it: DropdownMenu unmounts its
-          content on close, which would take the dialog with it before the
-          person could accept or decline. */}
+      {/* Sibling of the popover, not nested inside it: the content unmounts on
+          close, which would take the dialog with it before the person could
+          accept or decline. */}
       <InvitationResponseDialog
         invitation={respondingTo}
         onOpenChange={(open) => {
