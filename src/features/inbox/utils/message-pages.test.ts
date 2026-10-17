@@ -37,11 +37,17 @@ describe('flattenMessagePages', () => {
   it('merges pages oldest-to-newest in chronological order', () => {
     const pages: Array<MessagesPageResult> = [
       {
-        messages: [msg('3', '2026-05-15T10:00:00Z'), msg('4', '2026-05-15T11:00:00Z')],
+        messages: [
+          msg('3', '2026-05-15T10:00:00Z'),
+          msg('4', '2026-05-15T11:00:00Z'),
+        ],
         hasMore: false,
       },
       {
-        messages: [msg('1', '2026-05-15T08:00:00Z'), msg('2', '2026-05-15T09:00:00Z')],
+        messages: [
+          msg('1', '2026-05-15T08:00:00Z'),
+          msg('2', '2026-05-15T09:00:00Z'),
+        ],
         hasMore: true,
       },
     ]
@@ -116,5 +122,24 @@ describe('appendMessageToNewestPage', () => {
       msg('1', '2026-05-15T08:00:00Z'),
     )
     expect(next).toBe(pages)
+  })
+
+  it('dedupes a delayed insert that is already present in an older fetched page', () => {
+    const older = msg('1', '2026-05-15T08:00:00Z')
+    const pages: Array<MessagesPageResult> = [
+      { messages: [msg('2', '2026-05-15T09:00:00Z')], hasMore: true },
+      { messages: [older], hasMore: false },
+    ]
+    expect(appendMessageToNewestPage(pages, older)).toBe(pages)
+  })
+
+  it('uses the database id tie-break when realtime messages share a timestamp', () => {
+    const createdAt = '2026-05-15T08:00:00Z'
+    const pages = [{ messages: [msg('b', createdAt)], hasMore: false }]
+    expect(
+      appendMessageToNewestPage(pages, msg('a', createdAt))[0]?.messages.map(
+        (row) => row.id,
+      ),
+    ).toEqual(['a', 'b'])
   })
 })

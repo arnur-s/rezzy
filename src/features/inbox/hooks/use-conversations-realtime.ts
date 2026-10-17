@@ -1,6 +1,4 @@
-import {
-  sortConversationsByActivity,
-} from '@/entities/conversation'
+import { sortConversationsByActivity } from '@/entities/conversation'
 import type { ConversationWithRelations } from '@/entities/conversation'
 import { supabase } from '@/utils/supabase'
 import { useQueryClient } from '@tanstack/react-query'
@@ -19,6 +17,35 @@ export function useConversationsRealtime(workspaceId: string) {
     if (!workspaceId) return
 
     const key = inboxQueryKeys.conversations(workspaceId)
+    let active = true
+    const revisions = new Map<string, number>()
+    const advanceRevision = (id: string) => {
+      const revision = (revisions.get(id) ?? 0) + 1
+      revisions.set(id, revision)
+      return revision
+    }
+    const hydrateConversation = (id: string, revision: number) => {
+      void getConversationById(id)
+        .then((conversation) => {
+          // An archive/delete/newer event or subscription cleanup may have
+          // happened while this relational lookup was in flight.
+          if (!active || revisions.get(id) !== revision || !conversation) return
+          queryClient.setQueryData<Array<ConversationWithRelations>>(
+            key,
+            (current) => {
+              if (!current) return [conversation]
+              if (current.some((row) => row.id === conversation.id))
+                return current
+              return sortConversationsByActivity([conversation, ...current])
+            },
+          )
+        })
+        .catch(() => {
+          if (active && revisions.get(id) === revision) {
+            void queryClient.invalidateQueries({ queryKey: key })
+          }
+        })
+    }
 
     const channel = supabase
       .channel(`inbox:conversations:${workspaceId}`)
@@ -35,6 +62,7 @@ export function useConversationsRealtime(workspaceId: string) {
             id: string
             deleted_at?: string | null
           }
+          const revision = advanceRevision(next.id)
 
           // An archived conversation arrives as an UPDATE, not a DELETE, and
           // merging it would leave a hidden row in the list that 404s when
@@ -70,21 +98,7 @@ export function useConversationsRealtime(workspaceId: string) {
             queryClient.getQueryData<Array<ConversationWithRelations>>(key)
 
           if (cached && !cached.some((row) => row.id === next.id)) {
-            void getConversationById(next.id).then((conversation) => {
-              if (!conversation) return
-              queryClient.setQueryData<Array<ConversationWithRelations>>(
-                key,
-                (current) => {
-                  if (!current) return [conversation]
-                  if (current.some((row) => row.id === conversation.id))
-                    return current
-                  return sortConversationsByActivity([
-                    conversation,
-                    ...current,
-                  ])
-                },
-              )
-            })
+            hydrateConversation(next.id, revision)
           } else {
             queryClient.setQueryData<Array<ConversationWithRelations>>(
               key,
@@ -116,19 +130,7 @@ export function useConversationsRealtime(workspaceId: string) {
         (payload) => {
           const inserted = payload.new as { id?: string }
           if (!inserted.id) return
-
-          void getConversationById(inserted.id).then((conversation) => {
-            if (!conversation) return
-            queryClient.setQueryData<Array<ConversationWithRelations>>(
-              key,
-              (current) => {
-                if (!current) return [conversation]
-                if (current.some((row) => row.id === conversation.id))
-                  return current
-                return sortConversationsByActivity([conversation, ...current])
-              },
-            )
-          })
+          hydrateConversation(inserted.id, advanceRevision(inserted.id))
           void queryClient.invalidateQueries({
             queryKey: inboxQueryKeys.unreadCountsForWorkspace(workspaceId),
           })
@@ -146,6 +148,7 @@ export function useConversationsRealtime(workspaceId: string) {
           const removed = payload.old as { id?: string }
           const id = removed.id
           if (!id) return
+          advanceRevision(id)
           queryClient.setQueryData<Array<ConversationWithRelations>>(
             key,
             (current) => current?.filter((row) => row.id !== id),
@@ -155,6 +158,7 @@ export function useConversationsRealtime(workspaceId: string) {
       .subscribe()
 
     return () => {
+      active = false
       void supabase.removeChannel(channel)
     }
   }, [workspaceId, queryClient])

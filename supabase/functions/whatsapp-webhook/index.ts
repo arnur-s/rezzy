@@ -334,14 +334,21 @@ async function applyStatuses(
       continue
     }
 
-    const { data: target } = await supabase
+    const { data: target, error: targetError } = await supabase
       .from('messages')
-      .select('id')
+      .select('id, conversations!inner(channel_id)')
       .eq('workspace_id', workspaceId)
+      .eq('conversations.channel_id', channelId)
+      .eq('direction', 'outbound')
       .eq('external_id', normalized.externalId)
       .limit(1)
       .maybeSingle()
 
+    if (targetError) {
+      await markEventFailed(supabase, claim.eventId, 'temporary', 'status_target_lookup_failed')
+      hadTemporaryFailure = true
+      continue
+    }
     if (!target) {
       await markEventIgnored(supabase, claim.eventId, 'status_target_missing')
       continue
@@ -352,7 +359,7 @@ async function applyStatuses(
         | Array<Record<string, unknown>>
         | undefined)?.[0] ?? null
 
-    await insertStatusEvent(supabase, {
+    const persisted = await insertStatusEvent(supabase, {
       workspaceId,
       messageId: target.id,
       status: normalized.status,
@@ -363,6 +370,11 @@ async function applyStatuses(
         typeof firstError?.title === 'string' ? (firstError.title as string) : null,
       metadata: normalized.metadata,
     })
+    if (persisted.error) {
+      await markEventFailed(supabase, claim.eventId, 'temporary', 'status_persistence_failed')
+      hadTemporaryFailure = true
+      continue
+    }
 
     if (normalized.status === 'failed') {
       await touchChannelActivity(supabase, channelId, 'error', normalized.errorCode)
@@ -431,7 +443,11 @@ async function ingestMessage(args: {
           keepEmoji: normalized.op?.emoji,
         },
       },
-    )
+    ).catch(() => null)
+    if (!reactionIds) {
+      await markEventFailed(supabase, eventId, 'temporary', 'reaction_persistence_failed')
+      return 'temporary_failure'
+    }
     await markEventProcessed(supabase, eventId, {
       createdRecordIds:
         reactionIds.length > 0 ? { message_reactions: reactionIds } : {},

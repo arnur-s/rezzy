@@ -6,6 +6,7 @@
   "common_password": "Пароль",
   "common_email_placeholder": "Ваш email",
   "common_retry": "Повторить",
+  "inbox_composer_delivery_unconfirmed": "Доставка не подтверждена. Проверьте переписку перед повторной отправкой.",
   "common_cancel": "Отмена",
   "common_unknown_error": "Что-то пошло не так",
   "common_search": "Поиск",

@@ -6,6 +6,7 @@
   "common_password": "Password",
   "common_email_placeholder": "Your email",
   "common_retry": "Retry",
+  "inbox_composer_delivery_unconfirmed": "Delivery is not confirmed. Check the conversation before sending again.",
   "common_cancel": "Cancel",
   "common_unknown_error": "Something went wrong",
   "common_search": "Search",

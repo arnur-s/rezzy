@@ -314,6 +314,7 @@ export default {
       .from('contact_channels')
       .select('external_id')
       .eq('contact_id', contactId)
+      .eq('channel_id', channelId)
       .eq('channel_type', channelType)
       .maybeSingle()
 
@@ -386,14 +387,18 @@ export default {
     // Only after the provider accepted it: the row is a record of what the
     // provider holds, and writing it earlier would leave a chip behind on a
     // send that never happened.
-    await recordReaction(admin, {
-      workspaceId: row.workspace_id,
-      channelId,
-      conversationId: row.conversation_id,
-      messageId: row.id,
-      providerMessageId,
-      emoji,
-    })
+    try {
+      await recordReaction(admin, {
+        workspaceId: row.workspace_id,
+        channelId,
+        conversationId: row.conversation_id,
+        messageId: row.id,
+        providerMessageId,
+        emoji,
+      })
+    } catch {
+      return failure(500, 'persistence_failed')
+    }
 
     return jsonResponse(200, { ok: true })
   },

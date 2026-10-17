@@ -9,6 +9,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { resolveOutboundRoute } from '../_shared/outbound-route.ts'
+import { claimOutboundDispatch, reconcileOutboundReceipts, recordUnclaimedFailure, releaseRejectedDispatch } from '../_shared/outbound-dispatch.ts'
+import { isOutboundMediaPath } from '../_shared/outbound-media.ts'
 import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 import {
   instagramAttachmentType,
@@ -143,7 +145,14 @@ async function recordSendFailure(
   errorCode: string | null,
   errorType: string | null,
   traceId: string | null = null,
+  dispatchClaimed = false,
 ): Promise<void> {
+  if (!dispatchClaimed) {
+    if (await recordUnclaimedFailure(admin, row.id, errorCode, errorType)) {
+      if (channelId) await touchChannelActivity(admin, channelId, 'error', errorCode)
+    }
+    return
+  }
   await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
   await insertStatusEvent(admin, {
     workspaceId: row.workspace_id,
@@ -240,6 +249,7 @@ export default {
 
     // Idempotency: if Meta already accepted this row it has an external_id.
     if (row.external_id) {
+      await reconcileOutboundReceipts(admin, row.id)
       return jsonResponse(200, {
         ok: true,
         message: { id: row.id, status: row.status, external_id: row.external_id },
@@ -368,6 +378,10 @@ export default {
     const attachmentType = instagramAttachmentType(row.type)
     let messagePayload: Record<string, unknown>
     if (attachmentType && row.media_url) {
+      if (!isOutboundMediaPath(row.media_url, row.workspace_id, row.conversation_id)) {
+        await recordSendFailure(admin, row, channelId, 'invalid_media_path', null)
+        return jsonResponse(400, { error: 'Invalid media path' })
+      }
       const { data: signedData, error: signedError } = await admin.storage
         .from(CHAT_MEDIA_BUCKET)
         .createSignedUrl(row.media_url, 3600)
@@ -393,6 +407,11 @@ export default {
       message: messagePayload,
     }
 
+    const claim = await claimOutboundDispatch(admin, row.id)
+    if (claim !== 'claimed') {
+      return jsonResponse(claim === 'error' ? 503 : 409, { code: 'delivery_unconfirmed' })
+    }
+
     let igRes: Response
     try {
       igRes = await fetch(`${IG_GRAPH}/${igUserId}/messages`, {
@@ -405,23 +424,20 @@ export default {
       })
     } catch (e) {
       logNetworkError('send-instagram-message: Instagram network error', e)
-      await recordSendFailure(admin, row, channelId, 'network_error', null)
-      return jsonResponse(502, { error: 'Instagram request failed' })
+      return jsonResponse(502, { code: 'delivery_unconfirmed' })
     }
 
-    let igJson: InstagramSendResponse
+    let igJson: InstagramSendResponse | null
     try {
-      igJson = (await igRes.json()) as InstagramSendResponse
+      igJson = (await igRes.json()) as InstagramSendResponse | null
     } catch (e) {
       logNetworkError('send-instagram-message: invalid Instagram response', e)
-      await recordSendFailure(admin, row, channelId, 'parse_error', null)
-      return jsonResponse(502, {
-        error: 'Instagram returned an invalid response',
-      })
+      return jsonResponse(502, { code: 'delivery_unconfirmed' })
     }
 
-    const providerMessageId = igJson.message_id
-    if (!igRes.ok || !providerMessageId) {
+    const providerMessageId = igJson?.message_id
+    if (!igRes.ok || typeof providerMessageId !== 'string' || !providerMessageId) {
+      if (!igJson?.error) return jsonResponse(502, { code: 'delivery_unconfirmed' })
       const diagnostics = providerDiagnostics(igRes.status, igJson.error)
       await recordSendFailure(
         admin,
@@ -430,7 +446,9 @@ export default {
         diagnostics.code != null ? String(diagnostics.code) : null,
         typeof diagnostics.type === 'string' ? diagnostics.type : null,
         typeof diagnostics.trace_id === 'string' ? diagnostics.trace_id : null,
+        true,
       )
+      await releaseRejectedDispatch(admin, row.id)
       console.error(
         'send-instagram-message: Instagram API error',
         JSON.stringify({ message_id: row.id, ...diagnostics }),
@@ -459,9 +477,10 @@ export default {
       .eq('id', row.id)
     if (updateMsgError) {
       console.error('send-instagram-message: message update', updateMsgError)
-      return jsonResponse(500, { error: 'Failed to update message' })
+      return jsonResponse(500, { code: 'delivery_unconfirmed' })
     }
 
+    await reconcileOutboundReceipts(admin, row.id)
     await insertStatusEvent(admin, {
       workspaceId: row.workspace_id,
       messageId: row.id,
@@ -475,9 +494,6 @@ export default {
       .eq('id', row.conversation_id)
     if (updateConvError) {
       console.error('send-instagram-message: conversation update', updateConvError)
-      return jsonResponse(500, {
-        error: 'Message sent but conversation update failed',
-      })
     }
 
     return jsonResponse(200, {
