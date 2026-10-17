@@ -16,7 +16,7 @@ import { useToast } from '@astryxdesign/core/Toast'
 import { useNavigate } from '@tanstack/react-router'
 import type { CountryCode } from 'libphonenumber-js'
 import { PlusIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { MAX_CONTACT_PHONES } from '../api/contact-phones'
 import type { ContactPhone } from '../api/contact-phones'
@@ -184,8 +184,19 @@ export function ContactFormDialog({
   const initialValuesKey = JSON.stringify(initialValues ?? null)
   const additionalPhonesKey = JSON.stringify(additionalPhones ?? null)
   const loadedPhones = phonesQuery.data
-  useEffect(() => {
-    if (!isOpen) return
+  const initializedContact = useRef<string | null>(null)
+  // Reading dirtyFields subscribes RHF to it, which keepDirtyValues needs.
+  const hasDirtyValues = Object.keys(formState.dirtyFields).length > 0
+  // Establish the new baseline before the opened dialog can accept input.
+  // A passive effect can otherwise replace an immediately typed first value.
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      initializedContact.current = null
+      return
+    }
+    const contactKey = contact?.id ?? 'new'
+    const isSameEdit = initializedContact.current === contactKey
+    initializedContact.current = contactKey
     reset(
       toFormValues(
         contact,
@@ -194,6 +205,10 @@ export function ContactFormDialog({
           undefined,
         (JSON.parse(additionalPhonesKey) as Array<string> | null) ?? undefined,
       ),
+      // Phones can arrive after the operator has already started typing. A
+      // refreshed record may fill untouched fields, but must never replace
+      // an unsaved name/number. Reopening or switching contacts starts fresh.
+      { keepDirtyValues: isSameEdit },
     )
   }, [
     additionalPhonesKey,
@@ -201,6 +216,7 @@ export function ContactFormDialog({
     initialValuesKey,
     isOpen,
     loadedPhones,
+    hasDirtyValues,
     reset,
   ])
 

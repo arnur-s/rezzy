@@ -488,7 +488,11 @@ export default {
           conversationId: resolved?.conversationId ?? null,
         },
         normalized.ops,
-      )
+      ).catch(() => null)
+      if (!reactionIds) {
+        await markEventFailed(supabase, eventId, 'temporary', 'reaction_persistence_failed')
+        return new Response('Temporary failure', { status: 500 })
+      }
       await markEventProcessed(supabase, eventId, {
         createdRecordIds:
           reactionIds.length > 0 ? { message_reactions: reactionIds } : {},

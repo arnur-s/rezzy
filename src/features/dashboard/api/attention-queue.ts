@@ -7,15 +7,9 @@ import {
 import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { getUnreadCountsForWorkspaces } from './unread-counts'
+import { readDashboardPages } from './read-dashboard-pages'
 
 const MAX_ITEMS = 10
-
-/**
- * Supabase truncates at `max_rows` (1000) silently, so an unbounded select
- * returns a wrong answer rather than a slow one. The status filter below keeps
- * the live set far under this in practice; the ceiling is the backstop.
- */
-const ROW_LIMIT = 1001
 
 export type AttentionReason = 'snoozed' | 'unread' | 'stale'
 
@@ -99,31 +93,27 @@ export async function getAttentionQueue(
   if (workspaceIds.length === 0) return { items: [], total: 0 }
 
   // Only open and snoozed conversations can qualify for any attention reason,
-  // so the closed backlog stays in the database. Ordering by recency means that
-  // if the ceiling below is ever reached, what survives is the live edge of the
-  // queue rather than an arbitrary slice.
-  const [conversationsResult, unreadByConversation] = await Promise.all([
-    supabase
-      .from('conversations')
-      .select(ATTENTION_SELECT)
-      .eq('assigned_to', userId)
-      .in('workspace_id', workspaceIds)
-      .in('status', ['open', 'snoozed'])
-      .order('last_message_at', { ascending: false, nullsFirst: false })
-      .limit(ROW_LIMIT),
+  // so the closed backlog stays in the database. Read every page before ranking:
+  // the oldest overdue snooze must not disappear behind newer conversations.
+  const [data, unreadByConversation] = await Promise.all([
+    readDashboardPages((from, to) =>
+      supabase
+        .from('conversations')
+        .select(ATTENTION_SELECT)
+        .eq('assigned_to', userId)
+        .in('workspace_id', workspaceIds)
+        .in('status', ['open', 'snoozed'])
+        .order('id', { ascending: true })
+        .range(from, to),
+    ),
     unreadCounts ?? getUnreadCountsForWorkspaces(workspaceIds),
   ])
 
-  if (conversationsResult.error) throw conversationsResult.error
-
-  const { data } = conversationsResult
   const now = Date.now()
 
   const items: Array<AttentionItem> = []
 
-  for (const raw of data as Array<Row>) {
-    if (!raw.contact || !raw.channel) continue
-
+  for (const raw of data) {
     const base = {
       conversationId: raw.id,
       workspaceId: raw.workspace_id,
@@ -134,7 +124,7 @@ export async function getAttentionQueue(
       contactName: raw.contact.name?.trim() || m.contact_unnamed(),
       contactAvatarUrl: raw.contact.avatar_url,
       channelType: isChannelType(raw.channel.type) ? raw.channel.type : null,
-      channelName: raw.channel.name,
+      channelName: raw.channel.name ?? '',
       preview: raw.last_message_preview?.trim() || null,
     }
 

@@ -4,6 +4,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { resolveOutboundRoute } from '../_shared/outbound-route.ts'
+import { claimOutboundDispatch, recordUnclaimedFailure, releaseRejectedDispatch } from '../_shared/outbound-dispatch.ts'
+import { isOutboundMediaPath } from '../_shared/outbound-media.ts'
 import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 
 const CORS_HEADERS = {
@@ -54,7 +56,14 @@ async function recordSendFailure(
   channelId: string | null,
   errorCode: string | null,
   errorDetail: string | null,
+  dispatchClaimed = false,
 ): Promise<void> {
+  if (!dispatchClaimed) {
+    if (await recordUnclaimedFailure(admin, row.id, errorCode, errorDetail)) {
+      if (channelId) await touchChannelActivity(admin, channelId, 'error', errorCode)
+    }
+    return
+  }
   await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
   await insertStatusEvent(admin, {
     workspaceId: row.workspace_id,
@@ -223,7 +232,7 @@ export default {
       return jsonResponse(400, { error: 'Message is not outbound' })
     }
 
-    if (row.status === 'delivered' && row.external_id) {
+    if (row.external_id) {
       return jsonResponse(200, {
         ok: true,
         message: {
@@ -307,6 +316,7 @@ export default {
       .from('contact_channels')
       .select('external_id')
       .eq('contact_id', contactId)
+      .eq('channel_id', channelId)
       .eq('channel_type', 'telegram')
       .maybeSingle()
 
@@ -334,6 +344,11 @@ export default {
 
     const chatId = contactChannel.external_id.trim()
 
+    if (row.media_url && !isOutboundMediaPath(row.media_url, row.workspace_id, row.conversation_id)) {
+      await recordSendFailure(admin, row, channelId, 'invalid_media_path', null)
+      return jsonResponse(400, { error: 'Invalid media path' })
+    }
+
     // Outbound replies use the parent's provider message id when known.
     let replyParameters: { message_id: number } | null = null
     if (row.reply_to_message_id) {
@@ -348,7 +363,7 @@ export default {
       }
     }
 
-    let telegramJson: TelegramSendMessageResponse
+    let telegramJson: TelegramSendMessageResponse | null
     const isMediaType = row.type !== 'text' && row.type !== 'sticker'
 
     if (isMediaType && row.media_url) {
@@ -372,6 +387,11 @@ export default {
       if (caption) tgBody.caption = caption.slice(0, 1024)
       if (replyParameters) tgBody.reply_parameters = replyParameters
 
+      const claim = await claimOutboundDispatch(admin, row.id)
+      if (claim !== 'claimed') {
+        return jsonResponse(claim === 'error' ? 503 : 409, { code: 'delivery_unconfirmed' })
+      }
+
       try {
         const tgRes = await fetch(
           `https://api.telegram.org/bot${botToken}/${method}`,
@@ -381,17 +401,20 @@ export default {
             body: JSON.stringify(tgBody),
           },
         )
-        telegramJson = (await tgRes.json()) as TelegramSendMessageResponse
+        telegramJson = (await tgRes.json()) as TelegramSendMessageResponse | null
       } catch (e) {
         logTelegramNetworkError(
           'send-telegram-message: Telegram network error',
           e,
         )
-        await recordSendFailure(admin, row, channelId, 'network_error', null)
-        return jsonResponse(502, { error: 'Telegram request failed' })
+        return jsonResponse(502, { code: 'delivery_unconfirmed' })
       }
     } else {
       const content = row.content?.trim() ?? ''
+      const claim = await claimOutboundDispatch(admin, row.id)
+      if (claim !== 'claimed') {
+        return jsonResponse(claim === 'error' ? 503 : 409, { code: 'delivery_unconfirmed' })
+      }
       try {
         const tgRes = await fetch(
           `https://api.telegram.org/bot${botToken}/sendMessage`,
@@ -405,18 +428,18 @@ export default {
             }),
           },
         )
-        telegramJson = (await tgRes.json()) as TelegramSendMessageResponse
+        telegramJson = (await tgRes.json()) as TelegramSendMessageResponse | null
       } catch (e) {
         logTelegramNetworkError(
           'send-telegram-message: Telegram network error',
           e,
         )
-        await recordSendFailure(admin, row, channelId, 'network_error', null)
-        return jsonResponse(502, { error: 'Telegram request failed' })
+        return jsonResponse(502, { code: 'delivery_unconfirmed' })
       }
     }
 
-    if (!telegramJson.ok || telegramJson.result?.message_id == null) {
+    if (telegramJson?.ok !== true || !Number.isSafeInteger(telegramJson.result?.message_id)) {
+      if (telegramJson?.ok !== false) return jsonResponse(502, { code: 'delivery_unconfirmed' })
       console.error(
         'send-telegram-message: Telegram API error',
         JSON.stringify(telegramJson),
@@ -427,13 +450,15 @@ export default {
         channelId,
         telegramJson.error_code != null ? String(telegramJson.error_code) : null,
         telegramJson.description ?? null,
+        true,
       )
+      await releaseRejectedDispatch(admin, row.id)
       return jsonResponse(502, {
         error: telegramJson.description ?? 'Telegram send failed',
       })
     }
 
-    const telegramMessageId = String(telegramJson.result.message_id)
+    const telegramMessageId = String(telegramJson.result?.message_id)
     const now = new Date().toISOString()
     const preview = previewFromRow(row)
 
@@ -447,7 +472,7 @@ export default {
 
     if (updateMsgError) {
       console.error('send-telegram-message: message update', updateMsgError)
-      return jsonResponse(500, { error: 'Failed to update message' })
+      return jsonResponse(500, { code: 'delivery_unconfirmed' })
     }
 
     await insertStatusEvent(admin, {
@@ -470,9 +495,6 @@ export default {
         'send-telegram-message: conversation update',
         updateConvError,
       )
-      return jsonResponse(500, {
-        error: 'Message sent but conversation update failed',
-      })
     }
 
     return jsonResponse(200, {

@@ -87,12 +87,14 @@ function RouteComponent() {
           name="email"
           render={({ field, fieldState }) => (
             <TextInput
+              ref={field.ref}
               label={m.common_email()}
               type="email"
               size="lg"
               placeholder={m.common_email_placeholder()}
               value={field.value}
               onChange={(next) => field.onChange(next)}
+              onBlur={field.onBlur}
               isDisabled={isFormDisabled}
               status={
                 fieldState.error?.message
@@ -109,12 +111,14 @@ function RouteComponent() {
             name="password"
             render={({ field, fieldState }) => (
               <TextInput
+                ref={field.ref}
                 label={m.common_password()}
                 type="password"
                 size="lg"
                 placeholder="••••••••"
                 value={field.value}
                 onChange={(next) => field.onChange(next)}
+                onBlur={field.onBlur}
                 isDisabled={isFormDisabled}
                 status={
                   fieldState.error?.message

@@ -2,10 +2,28 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 import { defaultExclude, defineConfig } from 'vitest/config'
 
+const require = createRequire(import.meta.url)
+const lottieRequire = createRequire(require.resolve('lottie-react'))
+
 const config = defineConfig({
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    tsconfigPaths: true,
+    alias: [
+      // Telegram TGS stickers cannot use expressions or effects. Keep their
+      // untrusted animation data away from the full player's eval runtime.
+      // Resolve through lottie-react so pnpm's isolated dependency layout works.
+      {
+        find: /^lottie-web$/,
+        replacement: lottieRequire.resolve(
+          'lottie-web/build/player/lottie_light.js',
+        ),
+      },
+    ],
+  },
   plugins: [
     // Serves the dev server over https. The Facebook SDK refuses FB.login on
     // http pages (localhost included), so WhatsApp Embedded Signup cannot be
@@ -51,6 +69,20 @@ const config = defineConfig({
     },
   },
   test: {
+    // Exercise the actual Deno handlers with the installed client and mocked
+    // provider I/O. These aliases apply only to Vitest, never deployed functions.
+    alias: [
+      {
+        find: 'jsr:@supabase/supabase-js@2',
+        replacement: require.resolve('@supabase/supabase-js'),
+      },
+      {
+        find: 'jsr:@supabase/functions-js/edge-runtime.d.ts',
+        replacement: fileURLToPath(
+          new URL('./src/test/edge-runtime.ts', import.meta.url),
+        ),
+      },
+    ],
     // Sibling agent worktrees hold a full copy of src/, so their tests would
     // be collected twice over. See "Parallel agent work" in AGENTS.md.
     exclude: [...defaultExclude, '.claude/worktrees/**'],

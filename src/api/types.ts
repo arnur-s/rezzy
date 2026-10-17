@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -1171,6 +1166,10 @@ export type Database = {
         Args: { p_channel_id?: string; p_workspace_id: string }
         Returns: string
       }
+      claim_outbound_message: {
+        Args: { p_message_id: string }
+        Returns: boolean
+      }
       claim_provider_event: {
         Args: {
           p_channel_id: string
@@ -1406,6 +1405,22 @@ export type Database = {
       normalize_reaction_emoji: { Args: { emoji: string }; Returns: string }
       phone_digits: { Args: { p_value: string }; Returns: string }
       phone_from_wa_id: { Args: { p_external_id: string }; Returns: string }
+      reconcile_outbound_receipts: {
+        Args: { p_message_id: string }
+        Returns: number
+      }
+      record_outbound_preflight_failure: {
+        Args: {
+          p_error_code: string
+          p_error_type?: string
+          p_message_id: string
+        }
+        Returns: boolean
+      }
+      release_outbound_message: {
+        Args: { p_message_id: string }
+        Returns: undefined
+      }
       remove_workspace_member: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: undefined
@@ -1436,6 +1451,15 @@ export type Database = {
       revoke_workspace_invitation: {
         Args: { p_invitation_id: string }
         Returns: undefined
+      }
+      save_contact: {
+        Args: {
+          p_contact_id?: string
+          p_fields: Json
+          p_phones?: string[]
+          p_workspace_id: string
+        }
+        Returns: Json
       }
       search_workspace_contacts: {
         Args: {

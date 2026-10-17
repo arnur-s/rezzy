@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 11.13.0
+          version: 11.13.1
           run_install: false
       - uses: actions/setup-node@v4
         with:
@@ -29,6 +29,30 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
+
+  browser:
+    name: Browser regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: http://127.0.0.1:54321
+      VITE_SUPABASE_PUBLISHABLE_KEY: local-browser-fixture
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm supabase:start
+      - run: pnpm test:e2e
+      - if: always()
+        run: pnpm supabase:stop
 
   database:
     name: Database
@@ -38,7 +62,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 11.13.0
+          version: 11.13.1
           run_install: false
       - uses: actions/setup-node@v4
         with:

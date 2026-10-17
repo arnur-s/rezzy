@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabase'
+import { readDashboardPages } from './read-dashboard-pages'
 
 /**
  * Per-agent unread message counts across the given workspaces, keyed by
@@ -12,12 +13,14 @@ export async function getUnreadCountsForWorkspaces(
 ): Promise<Map<string, number>> {
   if (workspaceIds.length === 0) return new Map()
 
-  const { data, error } = await supabase.rpc(
-    'get_unread_counts_for_workspaces',
-    { p_workspace_ids: workspaceIds },
+  const data = await readDashboardPages((from, to) =>
+    supabase
+      .rpc('get_unread_counts_for_workspaces', {
+        p_workspace_ids: workspaceIds,
+      })
+      .order('conversation_id', { ascending: true })
+      .range(from, to),
   )
-
-  if (error) throw error
 
   const counts = new Map<string, number>()
   for (const row of data) {

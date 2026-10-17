@@ -1,10 +1,12 @@
 # Rezzy
 
-Rezzy is an **inbox-first, AI-powered customer engagement platform** for
+Rezzy is an **inbox-first customer engagement platform** for
 customer-facing teams.
 
 The current implementation centers on a multi-workspace shared inbox, lightweight
-CRM, and Telegram/WhatsApp channel integrations. The product direction expands
+CRM, and Telegram, WhatsApp, and Instagram channel integrations. Provider
+permissions and account setup are still required for real channel operation.
+The product direction expands
 that foundation into public social engagement, social publishing, AI assistance,
 and carefully scoped automation. Planned capabilities are not assumed to be
 implemented; the repository remains the source of truth for current behavior.
@@ -24,7 +26,7 @@ Repository documentation:
 ## Prerequisites
 
 - Node.js `24.18.0` (the pinned and CI-tested version; see `.node-version`)
-- pnpm `11.13.0` (pinned by the `packageManager` field)
+- pnpm `11.13.1` (pinned by the `packageManager` field)
 - Docker Desktop or another Docker-compatible runtime for local Supabase
 - A Supabase account only when working with the linked development project
 
@@ -67,12 +69,29 @@ pnpm dev
 `pnpm dev` opens a browser. Automation and agents should use `pnpm dev:agent`,
 which starts the same server without opening one.
 
-Use `https://127.0.0.1:3000` for the frontend; that exact origin matches the
+Use `http://127.0.0.1:3000` for the frontend; that exact origin matches the
 local Supabase Auth redirect configuration. If Vite opens another hostname,
 navigate to the `127.0.0.1` URL instead. Local Supabase Studio is at
-`http://127.0.0.1:54323`. The first frontend visit shows a browser warning for
-Vite's self-signed development certificate. Accept it once for local
-development.
+`http://127.0.0.1:54323`. Worktrees use a different port; use the URL printed by
+the development server.
+
+### Isolated development accounts
+
+Create disposable users through local Supabase Auth. Use generated passwords
+kept in process memory or ignored `.env.local` files; never put shared-account
+credentials in tracked documentation. Local email confirmations and password
+reset messages can be inspected in the local mail inbox shown by
+`pnpm exec supabase status`.
+
+`pnpm test:e2e` creates and removes its own local users and workspace fixtures.
+It reads local API credentials into memory, validates the loopback endpoint,
+and blocks browser requests to hosted services. Start local Supabase first.
+Provider-handler tests mock Telegram/Meta HTTP calls while exercising the real
+handlers; they never send messages to real recipients.
+
+The shared account previously listed in `AGENTS.md` requires owner action:
+rotate its password and revoke its sessions. Removing the credentials from the
+current file does not remove them from Git history or invalidate them.
 
 ## Local and linked Supabase workflows
 
@@ -82,7 +101,7 @@ project; `.env` decides which one it uses.
 | Workflow                   | Use it for                                                                             | Important boundary                                                                                          |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Local Supabase             | Schema, migrations, Auth/RLS, database tests, and ordinary UI development              | Safe to reset; external Telegram and Meta services cannot call loopback webhooks without a tunnel           |
-| Linked development project | Real Telegram/WhatsApp callbacks, provider credentials, and end-to-end channel testing | Shared remote state; pushes, secret updates, and function deployments affect the hosted development project |
+| Linked development project | Real Telegram/WhatsApp/Instagram callbacks, provider credentials, and end-to-end channel testing | Shared remote state; pushes, secret updates, and function deployments affect the hosted development project |
 
 Local Supabase is the default for database work because the complete schema can
 be recreated from versioned migrations without changing shared hosted data. It
@@ -150,9 +169,11 @@ do not paste them into Git, issues, logs, or chat.
 
 ## HTTPS and provider callbacks
 
-Vite intentionally uses HTTPS because Meta's browser SDK and WhatsApp Embedded
-Signup require a secure browser origin. Use the exact HTTPS origin shown by
-Vite and register the corresponding development origin in Meta when needed.
+The default Vite configuration uses HTTP. Meta's browser SDK and WhatsApp
+Embedded Signup require HTTPS: use a trusted HTTPS development origin or
+enable the existing `@vitejs/plugin-basic-ssl` plugin locally for that workflow.
+Register the exact callback origin with Meta and Supabase Auth. Do not assume
+that ordinary local sign-in verifies provider OAuth or embedded signup.
 
 Telegram and Meta cannot deliver webhooks to `127.0.0.1`. For normal provider
 testing, keep Vite local and point `.env` at the linked Supabase development
@@ -243,12 +264,48 @@ pnpm test
 pnpm test:e2e
 pnpm build
 pnpm test:db
+pnpm test:db:races
 ```
 
 Database changes require a running local Supabase stack and `pnpm test:db`.
 
-`pnpm verify` chains typecheck, lint, test, and build in that order and stops at
-the first failure. See `AGENTS.md` for the current validation rules.
+`pnpm verify` checks generated Astryx font-floor CSS, then chains typecheck,
+lint, test, and build, stopping at the first failure. After upgrading Astryx,
+run `pnpm astryx:font-floor` and review the regenerated stylesheet. The check
+fails on stale output or an unsupported dependency CSS shape.
+
+CI runs unit/provider-handler tests and build checks, local pgTAP and concurrent
+transaction tests, and a separate Playwright browser job (Chromium and WebKit).
+The browser suite covers local auth/onboarding, contacts and merging, membership,
+assignment, scrolling, keyboard focus, and English/Russian light/dark layouts.
+See `AGENTS.md` for the current validation rules.
+
+### Outbound delivery recovery
+
+Sending claims a message atomically before contacting its provider. Known
+provider rejections release that claim and mark the message failed. A timeout,
+unreadable response, or database failure after provider acceptance keeps the
+claim: retrying an ambiguous delivery automatically can send the customer a
+duplicate. The UI reports that delivery needs verification.
+
+For an uncertain delivery, an operator must inspect the provider first. If it
+was accepted, reconcile the existing message's provider ID/status. Only after
+confirming it was rejected may an authorized service call
+`release_outbound_message` to permit a retry. Never release solely because a
+timeout elapsed. These RPCs are unavailable to browser roles.
+
+Meta delivery receipts are retained in the provider event ledger and reconciled
+after the outbound provider ID is saved. A repeated accepted-send request also
+retries reconciliation without sending again. After a database outage, operators
+can call the service-only `reconcile_outbound_receipts` helper; there is no
+automatic background replay worker.
+
+Existing Telegram channels need a controlled reconnect to replace the old
+channel-ID-derived webhook secret with a random secret. Apply the contact-save,
+phone-replacement, dispatch, receipt and preflight-guard migrations before
+releasing the updated frontend and sending functions. Hosted
+migrations, function deployments, account rotation, and reconnects require
+separate authorization; the audit does not perform them.
 
 ## Production build
 

@@ -140,6 +140,7 @@ export function useMessageNotifications(): void {
 
     const deduper = new NotificationDeduper()
     const coordinator = createTabCoordinator()
+    let active = true
 
     const present = async (row: MessageNotificationRow) => {
       if (!deduper.add(row.id)) return
@@ -165,17 +166,30 @@ export function useMessageNotifications(): void {
       // Only one tab presents a given notification.
       if (!coordinator.claim(row.id)) return
 
-      const details = await getMessageNotificationDetails(row)
-      if (!details) return
+      const details = await getMessageNotificationDetails(row).catch(() => null)
+      const latest = contextRef.current
+      if (
+        !active ||
+        !details ||
+        !shouldPresentInApp({
+          inAppEnabled: latest.preferences.inAppEnabled,
+          isFocused:
+            document.visibilityState === 'visible' && document.hasFocus(),
+          openWorkspaceId: latest.openWorkspaceId,
+          openConversationId: latest.openConversationId,
+          notification: row,
+        })
+      )
+        return
 
       showMessageNotificationToast({
         details,
-        previewMode: ctx.preferences.previewMode,
+        previewMode: latest.preferences.previewMode,
         onOpen: (target) => goToThread.current(target),
         showToast: showToastRef.current,
       })
 
-      if (ctx.preferences.soundEnabled) playNotificationSound()
+      if (latest.preferences.soundEnabled) playNotificationSound()
     }
 
     // Mirrors `present` above, but for invitations: no `shouldPresentInApp` —
@@ -212,6 +226,15 @@ export function useMessageNotifications(): void {
         .catch(() => null)
       const workspaceName = findInvitationWorkspaceName(invitations, row.id)
 
+      const latest = contextRef.current
+      if (
+        !active ||
+        !latest.preferences.inAppEnabled ||
+        document.visibilityState !== 'visible' ||
+        !document.hasFocus()
+      )
+        return
+
       showInvitationNotificationToast({
         row,
         workspaceName,
@@ -219,7 +242,7 @@ export function useMessageNotifications(): void {
         onOpen: (workspaceId) => goToWorkspace.current(workspaceId),
       })
 
-      if (ctx.preferences.soundEnabled) playNotificationSound()
+      if (latest.preferences.soundEnabled) playNotificationSound()
     }
 
     // Keeps the header bell live for workspaces the agent is not viewing. The
@@ -292,6 +315,7 @@ export function useMessageNotifications(): void {
       })
 
     return () => {
+      active = false
       coordinator.destroy()
       void supabase.removeChannel(channel)
     }

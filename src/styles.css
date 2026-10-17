@@ -45,10 +45,9 @@
    so the rules were generated from the installed `astryx.css` rather than
    written here by hand.
 
-   The generator (`scripts/font-floor-build.mjs`) and its drift check were
-   removed along with the rest of `scripts/`, so this file can no longer be
-   regenerated: treat it as pinned to @astryxdesign/core@0.1.8 and re-derive the
-   hashes before upgrading, or the rules stop matching silently. */
+   Run `pnpm astryx:font-floor` after a dependency upgrade. Verification runs
+   `pnpm astryx:font-floor:check` and fails if the generated CSS is stale or
+   the installed dependency introduces an unsupported font-size expression. */
 @import './generated/astryx-font-floor.css';
 
 /* No rule above the account row.

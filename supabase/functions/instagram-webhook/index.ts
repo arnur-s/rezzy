@@ -330,36 +330,51 @@ async function resolveConversation(args: {
 async function applyDeletedMessage(args: {
   supabase: SupabaseClient
   workspaceId: string
+  channelId: string
   eventId: string
   mid: string | null
-}): Promise<void> {
-  const { supabase, workspaceId, eventId, mid } = args
+}): Promise<boolean> {
+  const { supabase, workspaceId, channelId, eventId, mid } = args
   if (!mid) {
     await markEventIgnored(supabase, eventId, 'deleted_without_mid')
-    return
+    return false
   }
-  const { data: target } = await supabase
+  const { data: target, error: targetError } = await supabase
     .from('messages')
-    .select('id')
+    .select('id, conversations!inner(channel_id)')
     .eq('workspace_id', workspaceId)
+    .eq('conversations.channel_id', channelId)
     .eq('external_id', mid)
     .limit(1)
     .maybeSingle()
+  if (targetError) {
+    await markEventFailed(supabase, eventId, 'temporary', 'deleted_target_lookup_failed')
+    return true
+  }
   if (!target) {
     await markEventIgnored(supabase, eventId, 'deleted_target_missing')
-    return
+    return false
   }
-  await supabase
+  const { error: updateError } = await supabase
     .from('messages')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', target.id)
-  await insertStatusEvent(supabase, {
+  if (updateError) {
+    await markEventFailed(supabase, eventId, 'temporary', 'deleted_update_failed')
+    return true
+  }
+  const persisted = await insertStatusEvent(supabase, {
     workspaceId,
     messageId: target.id,
     status: 'deleted',
     providerEventId: eventId,
   })
+  if (persisted.error) {
+    await markEventFailed(supabase, eventId, 'temporary', 'status_persistence_failed')
+    return true
+  }
   await markEventProcessed(supabase, eventId, { createdMessageId: target.id })
+  return false
 }
 
 async function ingestMessage(args: {
@@ -630,7 +645,10 @@ export default {
             payload: sanitizedEvent,
             providerTimestamp,
           })
-          if (claim.outcome !== 'claimed') continue
+          if (claim.outcome !== 'claimed') {
+            if (claim.outcome === 'error') hadTemporaryFailure = true
+            continue
+          }
 
           const mid = extractReadMid(event)
           const { error: readError } = await supabase.rpc(
@@ -643,23 +661,38 @@ export default {
           )
           if (readError) {
             console.error('instagram-webhook: mark read failed', readError)
+            await markEventFailed(supabase, claim.eventId, 'temporary', 'read_update_failed')
+            hadTemporaryFailure = true
+            continue
           }
           if (mid) {
-            const { data: target } = await supabase
+            const { data: target, error: targetError } = await supabase
               .from('messages')
-              .select('id')
+              .select('id, conversations!inner(channel_id)')
               .eq('workspace_id', workspaceId)
+              .eq('conversations.channel_id', channelId)
+              .eq('direction', 'outbound')
               .eq('external_id', mid)
               .limit(1)
               .maybeSingle()
+            if (targetError) {
+              await markEventFailed(supabase, claim.eventId, 'temporary', 'status_target_lookup_failed')
+              hadTemporaryFailure = true
+              continue
+            }
             if (target) {
-              await insertStatusEvent(supabase, {
+              const persisted = await insertStatusEvent(supabase, {
                 workspaceId,
                 messageId: target.id,
                 status: 'read',
                 providerEventId: claim.eventId,
                 providerTimestamp,
               })
+              if (persisted.error) {
+                await markEventFailed(supabase, claim.eventId, 'temporary', 'status_persistence_failed')
+                hadTemporaryFailure = true
+                continue
+              }
             }
           }
           await markEventProcessed(supabase, claim.eventId)
@@ -680,7 +713,10 @@ export default {
             payload: sanitizedEvent,
             providerTimestamp,
           })
-          if (claim.outcome !== 'claimed') continue
+          if (claim.outcome !== 'claimed') {
+            if (claim.outcome === 'error') hadTemporaryFailure = true
+            continue
+          }
 
           const targetMid = event.reaction.mid
           const op = instagramReactionOp({
@@ -698,7 +734,12 @@ export default {
             supabase,
             { workspaceId, channelId, providerMessageId: targetMid },
             [op],
-          )
+          ).catch(() => null)
+          if (!reactionIds) {
+            await markEventFailed(supabase, claim.eventId, 'temporary', 'reaction_persistence_failed')
+            hadTemporaryFailure = true
+            continue
+          }
           await markEventProcessed(supabase, claim.eventId, {
             createdRecordIds:
               reactionIds.length > 0 ? { message_reactions: reactionIds } : {},
@@ -727,14 +768,19 @@ export default {
             payload: sanitizedEvent,
             providerTimestamp,
           })
-          if (claim.outcome !== 'claimed') continue
+          if (claim.outcome !== 'claimed') {
+            if (claim.outcome === 'error') hadTemporaryFailure = true
+            continue
+          }
           if (message.is_deleted) {
-            await applyDeletedMessage({
+            const deletionFailed = await applyDeletedMessage({
               supabase,
               workspaceId,
+              channelId,
               eventId: claim.eventId,
               mid,
             })
+            hadTemporaryFailure = hadTemporaryFailure || deletionFailed
           } else {
             await markEventIgnored(supabase, claim.eventId, 'echo_message')
           }

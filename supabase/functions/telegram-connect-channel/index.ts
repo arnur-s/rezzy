@@ -2,6 +2,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { createWebhookSecret } from './lib.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -196,7 +197,7 @@ export default {
       })
     }
 
-    const webhookSecret = channelId.replace(/-/g, '')
+    const webhookSecret = createWebhookSecret()
 
     const { error: secretError } = await admin.rpc(
       'upsert_channel_credentials',

@@ -19,8 +19,7 @@ import {
   updateContact,
 } from '../api/contacts'
 import type { ContactListPage, ContactWritePayload } from '../api/contacts'
-import { isMissingFunctionError } from '@/utils/supabase-rpc'
-import { listContactPhones, setContactPhones } from '../api/contact-phones'
+import { listContactPhones } from '../api/contact-phones'
 import { contactQueryKeys } from '../api/query-keys'
 import type { ContactListParams } from '../model/contact-list-params'
 
@@ -189,54 +188,26 @@ function patchCachedLists(
  *
  * `phones` is optional: a caller that only has the one number keeps passing
  * `payload.phone` and nothing changes for it. When it IS given, it is the whole
- * set — `contacts.phone` is its first entry, and `public.set_contact_phones`
- * writes both in one statement pair so the two cannot drift.
+ * set. The contact fields and numbers are saved by one transaction.
  */
 export type ContactWriteInput = ContactWritePayload & {
   phones?: Array<string>
-}
-
-async function writePhoneSet({
-  workspaceId,
-  contactId,
-  phones,
-}: {
-  workspaceId: string
-  contactId: string
-  phones: Array<string> | undefined
-}): Promise<void> {
-  if (!phones) return
-
-  try {
-    await setContactPhones({ workspaceId, contactId, phones })
-  } catch (error) {
-    // The RPC ships with a migration, so between deploying this code and
-    // applying that migration it does not exist. A single number is already
-    // fully stored by `contacts.phone`, so saving it succeeds either way; a set
-    // the column cannot hold is a real failure and is reported as one.
-    if (isMissingFunctionError(error) && phones.length <= 1) return
-    throw error
-  }
 }
 
 export function useCreateContact(workspaceId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ phones, ...payload }: ContactWriteInput) => {
-      const created = await createContact({ workspaceId, payload })
-      // After the insert, not inside it: the numbers hang off a contact id that
-      // does not exist until the insert returns. A failure here surfaces as a
-      // failed save with the contact already created, which the form reports —
-      // better than silently keeping one number out of the set the user typed.
-      await writePhoneSet({ workspaceId, contactId: created.id, phones })
-      return created
-    },
+    mutationFn: ({ phones, ...payload }: ContactWriteInput) =>
+      createContact({ workspaceId, payload, phones }),
     onSuccess: (created) => {
       queryClient.setQueryData(
         contactQueryKeys.detail(workspaceId, created.id),
         created,
       )
+      void queryClient.invalidateQueries({
+        queryKey: contactQueryKeys.phones(workspaceId, created.id),
+      })
       // Never splice a new row into a cached page: where it lands depends on the
       // active sort, the active filters may exclude it entirely, and totalCount
       // would drift out of step with the rows. A refetch is cheaper than being
@@ -260,20 +231,17 @@ export function useUpdateContact(workspaceId: string, contactId: string) {
   const detailKey = contactQueryKeys.detail(workspaceId, contactId)
 
   return useMutation({
-    mutationFn: async ({ phones, ...patch }: Partial<ContactWriteInput>) => {
-      // Numbers first: `set_contact_phones` syncs `contacts.phone` to the new
-      // primary, and the update below carries the same value, so whichever runs
-      // last writes the same thing. Reversing the order would let the RPC's sync
-      // overwrite a phone the patch had just cleared.
-      await writePhoneSet({ workspaceId, contactId, phones })
-      return updateContact({ workspaceId, contactId, patch })
-    },
+    mutationFn: ({ phones, ...patch }: Partial<ContactWriteInput>) =>
+      updateContact({ workspaceId, contactId, patch, phones }),
 
     // The server response is authoritative and is written before the list is
     // touched, so a list row can never be newer than the detail it came from.
     onSuccess: (updated) => {
       queryClient.setQueryData(detailKey, updated)
       patchCachedLists(queryClient, workspaceId, updated)
+      void queryClient.invalidateQueries({
+        queryKey: contactQueryKeys.phones(workspaceId, contactId),
+      })
 
       // Mark this workspace's pages stale WITHOUT refetching. The row's position
       // and the total may now be wrong under the active sort and filters, but

@@ -30,7 +30,9 @@ vi.mock('@tanstack/react-router', async () => {
 })
 
 vi.mock('@/providers/auth-provider', () => ({
-  useAuth: () => ({ user: { id: 'u1', email: 'kim@example.com', user_metadata: {} } }),
+  useAuth: () => ({
+    user: { id: 'u1', email: 'kim@example.com', user_metadata: {} },
+  }),
 }))
 vi.mock('@/features/workspaces/components/create-workspace-modal', () => ({
   CreateWorkspaceModal: () => null,
@@ -83,7 +85,7 @@ function mockSupabase({
     }
     return mockQueryBuilder([])
   })
-  supabaseMock.rpc.mockResolvedValue({ data: unread, error: null })
+  supabaseMock.rpc.mockImplementation(() => mockQueryBuilder(unread))
 }
 
 function conversation(overrides: Conversation = {}): Conversation {
@@ -202,13 +204,12 @@ describe('home page wiring', () => {
       return mockQueryBuilder([])
     })
     supabaseMock.rpc.mockImplementation(() =>
-      Promise.resolve({
-        data: rows.map((r) => ({
+      mockQueryBuilder(
+        rows.map((r) => ({
           conversation_id: r.id as string,
           unread_count: 1,
         })),
-        error: null,
-      }),
+      ),
     )
 
     const queryClient = createTestQueryClient()

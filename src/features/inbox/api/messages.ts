@@ -1,6 +1,7 @@
 import type { TablesInsert } from '@/api/types'
 import type { ChannelType } from '@/entities/channel'
 import type { MessageRow } from '@/entities/message'
+import { m } from '@/paraglide/messages'
 import { supabase } from '@/utils/supabase'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import { mapDatabaseError } from '../utils/error-message'
@@ -31,7 +32,8 @@ const MESSAGE_SELECT = `
 ` as const
 
 /** Page select embeds structured attachments (legacy media_* stays for realtime rows). */
-const MESSAGE_PAGE_SELECT = `${MESSAGE_SELECT}, message_attachments (*)` as const
+const MESSAGE_PAGE_SELECT =
+  `${MESSAGE_SELECT}, message_attachments (*)` as const
 
 export const MESSAGE_PAGE_SIZE = 50
 
@@ -85,19 +87,18 @@ export async function getConversationMessagesPage({
   }
 }
 
-async function markMessageFailed(messageId: string): Promise<void> {
-  await supabase
-    .from('messages')
-    .update({ status: 'failed' })
-    .eq('id', messageId)
-}
-
 async function mapSendInvokeError(error: unknown): Promise<Error> {
   if (error instanceof FunctionsHttpError) {
     const res = error.context as Response
     let message: string | undefined
     try {
-      const body = (await res.clone().json()) as { error?: string }
+      const body = (await res.clone().json()) as {
+        error?: string
+        code?: string
+      }
+      if (body.code === 'delivery_unconfirmed') {
+        return new PresentableError(m.inbox_composer_delivery_unconfirmed())
+      }
       message = body.error
     } catch {
       /* ignore */
@@ -115,6 +116,31 @@ async function mapSendInvokeError(error: unknown): Promise<Error> {
 type SendInvokeResult = {
   ok?: boolean
   message?: { id: string; status: string; external_id: string | null }
+}
+
+async function dispatchOutboundMessage(
+  functionName: string,
+  messageId: string,
+): Promise<MessageRow> {
+  const { data: invokeData, error: invokeError } =
+    await supabase.functions.invoke<SendInvokeResult>(functionName, {
+      body: { messageId },
+    })
+
+  // An HTTP error can arrive after the provider accepted the message. The
+  // server owns delivery state: never turn an accepted/in-flight send into a
+  // failed row just because its response was lost.
+  const { data: fresh, error: reloadError } = await supabase
+    .from('messages')
+    .select(MESSAGE_SELECT)
+    .eq('id', messageId)
+    .single()
+
+  if (!reloadError && fresh.external_id) return fresh
+  if (invokeError) throw await mapSendInvokeError(invokeError)
+  if (!invokeData?.ok) throw new Error('Send failed')
+  if (reloadError) throw reloadError
+  return fresh
 }
 
 /** Channel types whose outbound messages are delivered by an edge function. */
@@ -174,9 +200,7 @@ export async function sendOutboundMessage({
     // WhatsApp, which may strip the metadata during its own media processing.
     // Other channels receive the original file byte-for-byte.
     const uploadFile =
-      channelType === 'whatsapp'
-        ? await normalizeImageOrientation(file)
-        : file
+      channelType === 'whatsapp' ? await normalizeImageOrientation(file) : file
     const msgType = detectMessageType(uploadFile.type)
     const uuid = crypto.randomUUID()
     const safeFilename = sanitizeFilename(uploadFile.name)
@@ -235,32 +259,7 @@ export async function sendOutboundMessage({
     return inserted
   }
 
-  const { data: invokeData, error: invokeError } =
-    await supabase.functions.invoke<SendInvokeResult>(remoteSendFunction, {
-      body: { messageId: inserted.id },
-    })
-
-  if (invokeError) {
-    await markMessageFailed(inserted.id)
-    throw await mapSendInvokeError(invokeError)
-  }
-
-  if (!invokeData?.ok) {
-    await markMessageFailed(inserted.id)
-    throw new Error('Send failed')
-  }
-
-  const { data: fresh, error: reloadError } = await supabase
-    .from('messages')
-    .select(MESSAGE_SELECT)
-    .eq('id', inserted.id)
-    .single()
-
-  if (reloadError) {
-    throw reloadError
-  }
-
-  return fresh
+  return dispatchOutboundMessage(remoteSendFunction, inserted.id)
 }
 
 /**
@@ -286,35 +285,11 @@ export async function retryOutboundMessage({
     .eq('id', messageId)
     .eq('direction', 'outbound')
     .eq('status', 'failed')
+    .is('external_id', null)
 
   if (resetError) {
     throw mapDatabaseError(resetError.message)
   }
 
-  const { data: invokeData, error: invokeError } =
-    await supabase.functions.invoke<SendInvokeResult>(remoteSendFunction, {
-      body: { messageId },
-    })
-
-  if (invokeError) {
-    await markMessageFailed(messageId)
-    throw await mapSendInvokeError(invokeError)
-  }
-  if (!invokeData?.ok) {
-    await markMessageFailed(messageId)
-    throw new Error('Send failed')
-  }
-
-  const { data: fresh, error: reloadError } = await supabase
-    .from('messages')
-    .select(MESSAGE_SELECT)
-    .eq('id', messageId)
-    .single()
-
-  if (reloadError) {
-    throw reloadError
-  }
-
-  return fresh
+  return dispatchOutboundMessage(remoteSendFunction, messageId)
 }
-

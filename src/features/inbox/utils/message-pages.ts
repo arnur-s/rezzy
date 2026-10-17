@@ -32,7 +32,8 @@ export function sortMessagesChronologically(
 ): Array<MessageRow> {
   return [...messages].sort(
     (a, b) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime() ||
+      a.id.localeCompare(b.id),
   )
 }
 
@@ -45,7 +46,9 @@ export function appendMessageToNewestPage(
   }
 
   const [newest, ...rest] = pages
-  if (newest.messages.some((row) => row.id === message.id)) {
+  if (
+    pages.some((page) => page.messages.some((row) => row.id === message.id))
+  ) {
     return pages
   }
 

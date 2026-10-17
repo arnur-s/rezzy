@@ -8,6 +8,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { resolveOutboundRoute } from '../_shared/outbound-route.ts'
+import { claimOutboundDispatch, reconcileOutboundReceipts, recordUnclaimedFailure, releaseRejectedDispatch } from '../_shared/outbound-dispatch.ts'
+import { isOutboundMediaPath } from '../_shared/outbound-media.ts'
 import { insertStatusEvent, touchChannelActivity } from '../_shared/persist.ts'
 
 const GRAPH_VERSION = Deno.env.get('WHATSAPP_GRAPH_VERSION') ?? 'v23.0'
@@ -144,10 +146,17 @@ async function recordSendFailure(
   row: { id: string; workspace_id: string },
   channelId: string | null,
   diagnostics: Partial<WhatsappErrorDiagnostics> & { reason?: string },
+  dispatchClaimed = false,
 ): Promise<void> {
-  await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
   const errorCode =
     diagnostics.code != null ? String(diagnostics.code) : (diagnostics.reason ?? null)
+  if (!dispatchClaimed) {
+    if (await recordUnclaimedFailure(admin, row.id, errorCode, diagnostics.type ?? null)) {
+      if (channelId) await touchChannelActivity(admin, channelId, 'error', errorCode)
+    }
+    return
+  }
+  await admin.from('messages').update({ status: 'failed' }).eq('id', row.id)
   await insertStatusEvent(admin, {
     workspaceId: row.workspace_id,
     messageId: row.id,
@@ -313,6 +322,7 @@ export default {
     // Idempotency / double-send guard: if Meta already accepted this row it has
     // an external_id — return the current state instead of sending again.
     if (row.external_id) {
+      await reconcileOutboundReceipts(admin, row.id)
       return jsonResponse(200, {
         ok: true,
         message: {
@@ -395,6 +405,7 @@ export default {
       .from('contact_channels')
       .select('external_id, metadata')
       .eq('contact_id', contactId)
+      .eq('channel_id', channelId)
       .eq('channel_type', 'whatsapp')
       .maybeSingle()
 
@@ -438,6 +449,10 @@ export default {
     let messagePayload: Record<string, unknown>
 
     if (waMediaType && row.media_url) {
+      if (!isOutboundMediaPath(row.media_url, row.workspace_id, row.conversation_id)) {
+        await recordSendFailure(admin, row, channelId, { reason: 'invalid_media_path' })
+        return jsonResponse(400, { error: 'Invalid media path' })
+      }
       const { data: signedData, error: signedError } = await admin.storage
         .from(CHAT_MEDIA_BUCKET)
         .createSignedUrl(row.media_url, 3600)
@@ -491,9 +506,9 @@ export default {
         return { ok: false, httpStatus: 0, failureKind: 'network' }
       }
 
-      let waJson: WhatsappSendResponse
+      let waJson: WhatsappSendResponse | null
       try {
-        waJson = (await waRes.json()) as WhatsappSendResponse
+        waJson = (await waRes.json()) as WhatsappSendResponse | null
       } catch (e) {
         const parseErrorType = e instanceof Error ? e.name : typeof e
         console.error(
@@ -507,12 +522,12 @@ export default {
         return { ok: false, httpStatus: waRes.status, failureKind: 'parse' }
       }
 
-      const waMessageId = waJson.messages?.[0]?.id
-      if (waMessageId) {
+      const waMessageId = waJson?.messages?.[0]?.id
+      if (waRes.ok && typeof waMessageId === 'string' && waMessageId) {
         return { ok: true, waMessageId, httpStatus: waRes.status }
       }
 
-      const providerError = whatsappErrorDiagnostics(waRes.status, waJson.error)
+      const providerError = whatsappErrorDiagnostics(waRes.status, waJson?.error)
       console.error(
         'send-whatsapp-message: WhatsApp API error',
         JSON.stringify({
@@ -529,8 +544,13 @@ export default {
         ok: false,
         httpStatus: waRes.status,
         failureKind: 'api',
-        error: waJson.error,
+        error: waJson?.error,
       }
+    }
+
+    const claim = await claimOutboundDispatch(admin, row.id)
+    if (claim !== 'claimed') {
+      return jsonResponse(claim === 'error' ? 503 : 409, { code: 'delivery_unconfirmed' })
     }
 
     let result = await postToWhatsapp(to)
@@ -546,8 +566,10 @@ export default {
       const variant = trunkVariant(canonicalTo)
       if (variant && variant !== to) {
         const retry = await postToWhatsapp(variant)
+        // The final attempt determines certainty. Keeping the first rejection
+        // after an ambiguous fallback would incorrectly reopen delivery.
+        result = retry
         if (retry.ok) {
-          result = retry
           // Cache the working recipient so future sends go direct. Stored in
           // metadata, not external_id, which is the inbound-matching key.
           const { error: cacheError } = await admin
@@ -559,6 +581,7 @@ export default {
               },
             })
             .eq('contact_id', contactId)
+            .eq('channel_id', channelId)
             .eq('channel_type', 'whatsapp')
           if (cacheError) {
             console.error(
@@ -571,23 +594,13 @@ export default {
     }
 
     if (!result.ok) {
+      if (result.failureKind !== 'api' || !result.error) {
+        return jsonResponse(502, { code: 'delivery_unconfirmed' })
+      }
       await recordSendFailure(admin, row, channelId, {
         ...whatsappErrorDiagnostics(result.httpStatus, result.error),
-        ...(result.failureKind !== 'api' ? { reason: result.failureKind } : {}),
-      })
-
-      if (result.failureKind === 'network') {
-        return jsonResponse(502, { error: 'WhatsApp request failed' })
-      }
-      if (result.failureKind === 'parse') {
-        return jsonResponse(502, {
-          error: 'WhatsApp returned an invalid response',
-          provider_error: whatsappErrorDiagnostics(
-            result.httpStatus,
-            undefined,
-          ),
-        })
-      }
+      }, true)
+      await releaseRejectedDispatch(admin, row.id)
 
       const providerError = whatsappErrorDiagnostics(
         result.httpStatus,
@@ -608,8 +621,7 @@ export default {
 
     const waMessageId = result.waMessageId
     if (!waMessageId) {
-      await recordSendFailure(admin, row, channelId, { reason: 'missing_wamid' })
-      return jsonResponse(502, { error: 'WhatsApp send failed' })
+      return jsonResponse(502, { code: 'delivery_unconfirmed' })
     }
 
     const now = new Date().toISOString()
@@ -624,9 +636,10 @@ export default {
 
     if (updateMsgError) {
       console.error('send-whatsapp-message: message update', updateMsgError)
-      return jsonResponse(500, { error: 'Failed to update message' })
+      return jsonResponse(500, { code: 'delivery_unconfirmed' })
     }
 
+    await reconcileOutboundReceipts(admin, row.id)
     await insertStatusEvent(admin, {
       workspaceId: row.workspace_id,
       messageId: row.id,
@@ -644,9 +657,6 @@ export default {
         'send-whatsapp-message: conversation update',
         updateConvError,
       )
-      return jsonResponse(500, {
-        error: 'Message sent but conversation update failed',
-      })
     }
 
     return jsonResponse(200, {

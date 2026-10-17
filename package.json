@@ -2,30 +2,32 @@
   "name": "rezzy",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.13.1",
   "engines": {
     "node": ">=24.18.0",
-    "pnpm": "11.13.0"
+    "pnpm": "11.13.1"
   },
   "imports": {
     "@/*": "./src/*"
   },
   "scripts": {
     "i18n:compile": "pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations",
+    "astryx:font-floor": "node scripts/font-floor-build.mjs",
+    "astryx:font-floor:check": "node scripts/font-floor-build.mjs --check",
     "typecheck": "pnpm i18n:compile && tsc --noEmit",
     "lint": "eslint",
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "build": "vite build",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "verify": "pnpm astryx:font-floor:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "dev": "node scripts/dev.mjs --open --host",
     "dev:agent": "node scripts/dev.mjs --host 127.0.0.1",
     "worktree:setup": "node scripts/worktree-setup.mjs --strict",
     "worktree:finish": "node scripts/worktree-finish.mjs",
     "preview": "vite preview",
     "test:watch": "vitest",
-    "test:db": "supabase test db",
-    "test:db:races": "bash supabase/tests/concurrency/race.sh",
+    "test:db": "supabase test db --local",
+    "test:db:races": "node scripts/test-db-races.mjs",
     "format": "eslint --fix . && prettier --write .",
     "check": "prettier --check .",
     "project-structure": "npx tree-node-cli -I \"node_modules|dist|build|.git|.next|coverage\" > project-structure.txt",

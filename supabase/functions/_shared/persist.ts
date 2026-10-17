@@ -51,13 +51,17 @@ export async function persistInboundMessage(
   // Internal reply target when the parent already exists.
   let replyToMessageId: string | null = null
   if (input.externalReplyToId) {
-    const { data: parent } = await client
+    const { data: parent, error: parentError } = await client
       .from('messages')
       .select('id')
       .eq('workspace_id', input.workspaceId)
       .eq('conversation_id', input.conversationId)
       .eq('external_id', input.externalReplyToId)
       .maybeSingle()
+    if (parentError) {
+      await cleanupStoredAttachments(client, input.attachments)
+      return { outcome: 'error', message: parentError.message }
+    }
     replyToMessageId = parent?.id ?? null
   }
 
@@ -88,27 +92,57 @@ export async function persistInboundMessage(
   }
 
   const { error: insertError } = await client.from('messages').insert(row)
+  let persistedMessageId = messageId
+  let legacyStoragePath = first?.storagePath ?? null
+  const duplicate = insertError?.code === UNIQUE_VIOLATION
   if (insertError) {
-    await cleanupStoredAttachments(client, input.attachments)
-    if (insertError.code === UNIQUE_VIOLATION) {
-      return { outcome: 'duplicate' }
+    if (!duplicate || !input.externalId) {
+      // A lost HTTP response can follow a committed insert. Only a database
+      // rejection proves these objects are not referenced by that insert.
+      if (insertError.code) {
+        await cleanupStoredAttachments(client, input.attachments)
+      }
+      logDbError('persist: message insert failed', insertError)
+      return { outcome: 'error', message: insertError.message }
     }
-    logDbError('persist: message insert failed', insertError)
-    return { outcome: 'error', message: insertError.message }
+
+    // A prior attempt may have saved the message but failed its attachment or
+    // backfill writes. Resolve the exact duplicate and finish those writes;
+    // acknowledging it immediately would make that partial loss permanent.
+    const { data: existing, error: existingError } = await client
+      .from('messages')
+      .select('id, media_url')
+      .eq('workspace_id', input.workspaceId)
+      .eq('conversation_id', input.conversationId)
+      .eq('external_id', input.externalId)
+      .maybeSingle()
+    if (existingError || !existing) {
+      await cleanupStoredAttachments(client, input.attachments)
+      return {
+        outcome: 'error',
+        message: existingError?.message ?? 'Duplicate target missing',
+      }
+    }
+    persistedMessageId = existing.id
+    legacyStoragePath = existing.media_url
   }
 
   if (input.attachments.length > 0) {
-    const { error: attachmentsError } = await client
+    const { data: insertedAttachments, error: attachmentsError } = await client
       .from('message_attachments')
-      .insert(
+      .upsert(
         input.attachments.map((a) => ({
           workspace_id: input.workspaceId,
-          message_id: messageId,
+          message_id: persistedMessageId,
           position: a.position,
           kind: a.kind,
           provider_media_id: a.providerMediaId ?? null,
           provider_media_unique_id: a.providerMediaUniqueId ?? null,
-          storage_path: a.storagePath ?? null,
+          // Reuse the first attempt's retained legacy object on repair.
+          storage_path:
+            duplicate && a === first && legacyStoragePath
+              ? legacyStoragePath
+              : (a.storagePath ?? null),
           filename: a.filename ?? null,
           mime_type: a.mimeType ?? null,
           size_bytes: a.sizeBytes ?? null,
@@ -116,34 +150,71 @@ export async function persistInboundMessage(
           height: a.height ?? null,
           duration_seconds: a.durationSeconds ?? null,
           checksum: a.checksum ?? null,
-          download_status: a.downloadStatus,
-          failure_reason: a.failureReason ?? null,
+          download_status:
+            duplicate && a === first && legacyStoragePath
+              ? 'stored'
+              : a.downloadStatus,
+          failure_reason:
+            duplicate && a === first && legacyStoragePath
+              ? null
+              : (a.failureReason ?? null),
           metadata: a.metadata ?? {},
         })),
+        { onConflict: 'message_id,position', ignoreDuplicates: true },
       )
-    if (attachmentsError && attachmentsError.code !== UNIQUE_VIOLATION) {
-      // Attachment bookkeeping failure must not reject the stored message.
+      .select('storage_path')
+    if (attachmentsError) {
       logDbError('persist: attachments insert failed', attachmentsError)
+      // The legacy first object is already referenced by the stored message.
+      // Other unreferenced uploads can be retried from the raw provider event.
+      if (attachmentsError.code) {
+        await cleanupStoredAttachments(
+          client,
+          input.attachments.filter((a) => a.storagePath !== legacyStoragePath),
+        )
+      }
+      return { outcome: 'error', message: attachmentsError.message }
     }
+    const adoptedPaths = new Set(
+      (insertedAttachments ?? []).map(
+        (a: { storage_path: string | null }) => a.storage_path,
+      ),
+    )
+    await cleanupStoredAttachments(
+      client,
+      input.attachments.filter(
+        (a) => a.storagePath !== legacyStoragePath && !adoptedPaths.has(a.storagePath ?? null),
+      ),
+    )
+  }
+
+  if (duplicate && replyToMessageId) {
+    const { error } = await client
+      .from('messages')
+      .update({ reply_to_message_id: replyToMessageId })
+      .eq('id', persistedMessageId)
+      .is('reply_to_message_id', null)
+    if (error) return { outcome: 'error', message: error.message }
   }
 
   if (input.externalId) {
     // Late-parent backfill: children that referenced this provider message id.
     const { error: replyBackfillError } = await client
       .from('messages')
-      .update({ reply_to_message_id: messageId })
+      .update({ reply_to_message_id: persistedMessageId })
       .eq('conversation_id', input.conversationId)
       .eq('external_reply_to_id', input.externalId)
       .is('reply_to_message_id', null)
     if (replyBackfillError) {
       logDbError('persist: reply backfill failed', replyBackfillError)
+      return { outcome: 'error', message: replyBackfillError.message }
     }
 
     // Reactions that arrived before their message.
     const { error: reactionBackfillError } = await client
       .from('message_reactions')
       .update({
-        message_id: messageId,
+        message_id: persistedMessageId,
         conversation_id: input.conversationId,
       })
       .eq('channel_id', input.channelId)
@@ -151,17 +222,20 @@ export async function persistInboundMessage(
       .is('message_id', null)
     if (reactionBackfillError) {
       logDbError('persist: reaction backfill failed', reactionBackfillError)
+      return { outcome: 'error', message: reactionBackfillError.message }
     }
   }
 
-  return { outcome: 'inserted', messageId }
+  return duplicate
+    ? { outcome: 'duplicate' }
+    : { outcome: 'inserted', messageId: persistedMessageId }
 }
 
 /** Appends a status event; the DB trigger projects it onto messages.status. */
 export async function insertStatusEvent(
   client: SupabaseClient,
   input: StatusEventInput,
-): Promise<{ inserted: boolean }> {
+): Promise<{ inserted: boolean; error: boolean }> {
   const { error } = await client.from('message_status_events').insert({
     workspace_id: input.workspaceId,
     message_id: input.messageId,
@@ -176,11 +250,11 @@ export async function insertStatusEvent(
     metadata: input.metadata ?? {},
   })
   if (error) {
-    if (error.code === UNIQUE_VIOLATION) return { inserted: false }
+    if (error.code === UNIQUE_VIOLATION) return { inserted: false, error: false }
     logDbError('persist: status event insert failed', error)
-    return { inserted: false }
+    return { inserted: false, error: true }
   }
-  return { inserted: true }
+  return { inserted: true, error: false }
 }
 
 export interface ReactionTarget {
@@ -214,13 +288,15 @@ export async function applyReactionOps(
   if (!messageId) {
     let lookup = client
       .from('messages')
-      .select('id, conversation_id')
+      .select('id, conversation_id, conversations!inner(channel_id)')
       .eq('workspace_id', target.workspaceId)
+      .eq('conversations.channel_id', target.channelId)
       .eq('external_id', target.providerMessageId)
     if (conversationId) {
       lookup = lookup.eq('conversation_id', conversationId)
     }
-    const { data: message } = await lookup.limit(1).maybeSingle()
+    const { data: message, error: lookupError } = await lookup.limit(1).maybeSingle()
+    if (lookupError) throw new Error('reaction_target_lookup_failed')
     if (message) {
       messageId = message.id
       conversationId = message.conversation_id
@@ -242,7 +318,7 @@ export async function applyReactionOps(
       )
     }
     const { error } = await replace
-    if (error) logDbError('persist: reaction replace failed', error)
+    if (error) throw new Error('reaction_replace_failed')
   }
 
   const affectedIds: string[] = []
@@ -271,7 +347,7 @@ export async function applyReactionOps(
     const { data: updated, error: updateError } = await update.select('id')
     if (updateError) {
       logDbError('persist: reaction update failed', updateError)
-      continue
+      throw new Error('reaction_update_failed')
     }
     if (updated && updated.length > 0) {
       affectedIds.push(...updated.map((r: { id: string }) => r.id))
@@ -300,6 +376,7 @@ export async function applyReactionOps(
       // stale update): both are successful dedup, not failures.
       if (insertError.code !== UNIQUE_VIOLATION) {
         logDbError('persist: reaction insert failed', insertError)
+        throw new Error('reaction_insert_failed')
       }
       continue
     }

@@ -1,0 +1,2 @@
+# Bash must receive Unix line endings on Windows as well as Linux CI.
+supabase/tests/concurrency/*.sh text eol=lf

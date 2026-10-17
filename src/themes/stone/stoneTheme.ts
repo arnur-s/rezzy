@@ -144,14 +144,10 @@ export const stoneTheme = defineTheme({
 
     // Text — H=291
     '--color-text-primary': ['#25252a', '#f3f3f5'], // light: Stone Neutral T15
-    // T45 / T70. Both stops are set by the worst surface the tone lands on,
-    // not by the pane. Light: T55 (#83838a) was 3.76:1 on the pane and 3.48:1
-    // over the transcript wash; T50 clears neither (4.45 / 4.01), so T45 is the
-    // first stop that passes both at 5.38:1 and 4.85:1. Dark: T65 (#9d9da3) was
-    // fine on the pane but 4.13:1 on the muted well, where the date separator
-    // and assignee mark put it; T70 lifts that to 4.88:1. Computed, not
-    // measured. See DESIGN.md, Known drift 1.
-    '--color-text-secondary': ['#6a6a6f', '#ababb0'], // T45 C=3 / T70 C=3
+    // T40 / T70 clear 4.5:1 on the opaque muted well as well as the pane,
+    // canvas, and transcript. Date separators and directory section labels
+    // use this pair directly; the previous T45 light stop was only 4.17:1.
+    '--color-text-secondary': ['#5e5e63', '#ababb0'], // T40 C=3 / T70 C=3
     '--color-text-disabled': ['#d7d7da', '#5e5e61'], // T86 C=1.6 / T40 C=2
     // Must stay byte-identical to --color-accent — see DESIGN.md.
     '--color-text-accent': [PRIMARY, PRIMARY_DARK],
@@ -184,7 +180,9 @@ export const stoneTheme = defineTheme({
 
     // Border — H=291
     '--color-border': ['#e2e2e8', '#f3f3f51a'], // light: Stone Neutral T90 / dark: T96 · 10%
-    '--color-border-emphasized': ['#83838a', '#5e5e61'], // T55 C=4 / T40 C=2
+    // Secondary controls rely on this outline. T50 in dark clears 3:1 even
+    // against the raised popover, where the former T40 stop failed.
+    '--color-border-emphasized': ['#83838a', '#77777c'], // T55 C=4 / T50 C=3
 
     // Effects — H=291
     '--color-skeleton': ['#d4d4da', '#5e5e64'], // T85 / T40 from H=291 C=3

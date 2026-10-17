@@ -1,4 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Session, User } from '@supabase/supabase-js'
 import type { ReactNode } from 'react'
 import { supabase } from '@/utils/supabase'
@@ -20,43 +29,72 @@ export type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const currentUserId = useRef<string | null>(null)
+  const sessionRevision = useRef(0)
+
+  const acceptSession = useCallback(
+    (nextSession: Session | null) => {
+      const nextUserId = nextSession?.user.id ?? null
+      if (currentUserId.current !== nextUserId) {
+        // Most workspace queries are keyed by resource, not by user. Cancel
+        // pending reads and discard private results before exposing a different
+        // identity, including a cross-tab sign-out or sign-in.
+        queryClient.clear()
+        currentUserId.current = nextUserId
+      }
+      sessionRevision.current += 1
+      setSession(nextSession)
+      setIsLoading(false)
+    },
+    [queryClient],
+  )
 
   useEffect(() => {
     let isMounted = true
+    const initialRevision = sessionRevision.current
 
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!isMounted) {
-        return
-      }
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (!isMounted || sessionRevision.current !== initialRevision) {
+          return
+        }
 
-      if (error) {
-        console.error('Unable to load Supabase session', error)
-      }
+        if (error) {
+          console.error('Unable to load Supabase session', error)
+        }
 
-      setSession(data.session)
-      setIsLoading(false)
-    })
+        acceptSession(error ? null : data.session)
+      })
+      .catch(() => {
+        // A storage/network failure must not leave the application spinner up
+        // forever, nor overwrite an auth event that already resolved the session.
+        if (isMounted && sessionRevision.current === initialRevision) {
+          acceptSession(null)
+        }
+      })
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
-      setIsLoading(false)
+      if (isMounted) acceptSession(nextSession)
     })
 
     return () => {
       isMounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [acceptSession])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       isLoading,
       session,
       signOut: async (scope?: SignOutScope) => {
+        const revision = sessionRevision.current
         const { error } = await supabase.auth.signOut(
           scope ? { scope } : undefined,
         )
@@ -67,13 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // 'others' leaves this session signed in, so clearing it here would
         // sign the user out of the device they are looking at.
-        if (scope !== 'others') {
-          setSession(null)
+        if (scope !== 'others' && sessionRevision.current === revision) {
+          acceptSession(null)
         }
       },
       user: session?.user ?? null,
     }),
-    [isLoading, session],
+    [acceptSession, isLoading, session],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

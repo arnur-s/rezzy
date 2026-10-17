@@ -1,48 +1,49 @@
 #!/usr/bin/env bash
-# Two-session race tests for the membership RPCs.
-#
-# supabase test db runs one session per file inside a transaction it rolls
-# back, so the interleavings these functions are locked against cannot be
-# observed there. Each psql below is an independent backend against the same
-# local database, which is what makes the lock testable at all.
-#
-# These COMMIT. Fixtures use the 70000000- id namespace, owned by this file
-# alone, and are dropped before and after every run so a failed run cannot
-# poison the next one.
-set -uo pipefail
+# Real two-session regressions against this project's local database only.
+set -euo pipefail
 
-# The container name is derived from the local checkout's directory name
-# (docker-compose project naming), so it varies between machines and CI --
-# it is not necessarily "supabase_db_cms" outside this worktree. Resolve it
-# from the running containers instead of hardcoding it.
-DB_CONTAINER=$(docker ps --filter "name=supabase_db_" --format '{{.Names}}' | head -n1)
-if [ -z "$DB_CONTAINER" ]; then
-  echo "race.sh: no running container matching 'supabase_db_*' found -- is 'supabase start' (or 'pnpm supabase:start') running?" >&2
+cd "$(dirname "$0")/../../.."
+project_id=$(sed -n 's/^project_id[[:space:]]*=[[:space:]]*"\([A-Za-z0-9_-]*\)".*/\1/p' supabase/config.toml)
+if [[ -z "$project_id" || "$project_id" == *$'\n'* ]]; then
+  echo 'race.sh: expected one simple project_id in supabase/config.toml' >&2
   exit 1
 fi
-
-DB="docker exec -i $DB_CONTAINER psql -U postgres -d postgres -qtAX"
+DB_CONTAINER="supabase_db_$project_id"
+if [[ "$(docker inspect --format '{{.State.Running}}' "$DB_CONTAINER")" != true ]]; then
+  echo "race.sh: local container $DB_CONTAINER is not running" >&2
+  exit 1
+fi
+DB=(docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -qtAX -v ON_ERROR_STOP=1)
 WS=70000000-0000-4000-8000-000000000001
 OWNER_A=70000000-0000-4000-8000-000000000011
 OWNER_B=70000000-0000-4000-8000-000000000012
 ADMIN=70000000-0000-4000-8000-000000000013
 TARGET=70000000-0000-4000-8000-000000000014
 INVITEE=70000000-0000-4000-8000-000000000015
+CONTACT=70000000-0000-4000-8000-000000000021
+CHANNEL=70000000-0000-4000-8000-000000000031
+CONVERSATION=70000000-0000-4000-8000-000000000041
+MESSAGE=70000000-0000-4000-8000-000000000051
+RUN_ID="rezzy_race_$$"
+GATE_KEY=70820176
+scratch=$(mktemp -d)
 
-fail=0
-check() { # check <description> <actual> <expected>
-  if [ "$2" = "$3" ]; then
-    echo "ok - $1"
-  else
-    echo "not ok - $1 (got '$2', want '$3')"
-    fail=1
+check() {
+  if [[ "$2" != "$3" ]]; then
+    echo "not ok - $1 (got '$2', want '$3')" >&2
+    exit 1
   fi
+  echo "ok - $1"
 }
 
-claims() { echo "set local role authenticated; set local request.jwt.claims = '{\"sub\":\"$1\",\"role\":\"authenticated\"}';"; }
+claims() { printf "set local role authenticated; set local request.jwt.claims = '{\"sub\":\"%s\",\"role\":\"authenticated\"}';" "$1"; }
 
 teardown() {
-  $DB -v ON_ERROR_STOP=1 >/dev/null 2>&1 <<SQL
+  "${DB[@]}" >/dev/null <<SQL
+delete from public.messages where workspace_id = '$WS';
+delete from public.conversations where workspace_id = '$WS';
+delete from public.contacts where workspace_id = '$WS';
+delete from public.channels where workspace_id = '$WS';
 delete from public.workspace_invitations where workspace_id = '$WS';
 delete from public.workspace_members where workspace_id = '$WS';
 delete from public.workspaces where id = '$WS';
@@ -50,113 +51,149 @@ delete from auth.users where id in ('$OWNER_A','$OWNER_B','$ADMIN','$TARGET','$I
 SQL
 }
 
+cleanup() {
+  local result=$?
+  trap - EXIT
+  # Terminate only sessions created by this invocation, including a gate left
+  # behind by an assertion failure. Then cleanup cannot wait on their row locks.
+  "${DB[@]}" -c "select pg_terminate_backend(pid) from pg_stat_activity where application_name like '${RUN_ID}_%';" >/dev/null 2>&1 || result=1
+  teardown || result=1
+  rm -f "$scratch"/*
+  rmdir "$scratch"
+  exit "$result"
+}
+trap cleanup EXIT
+trap 'exit 130' INT TERM
+
 seed() {
   teardown
-  $DB -v ON_ERROR_STOP=1 <<SQL
+  "${DB[@]}" >/dev/null <<SQL
 insert into auth.users (id, email, raw_user_meta_data) values
-  ('$OWNER_A', 'race-owner-a@example.com', '{"full_name":"Race Owner A"}'::jsonb),
-  ('$OWNER_B', 'race-owner-b@example.com', '{"full_name":"Race Owner B"}'::jsonb),
-  ('$ADMIN', 'race-admin@example.com', '{"full_name":"Race Admin"}'::jsonb),
-  ('$TARGET', 'race-target@example.com', '{"full_name":"Race Target"}'::jsonb),
-  ('$INVITEE', 'race-invitee@example.com', '{"full_name":"Race Invitee"}'::jsonb);
-
-insert into public.workspaces (id, name, created_by)
-values ('$WS', 'Race Workspace', '$OWNER_A');
--- on_workspace_created seated OWNER_A as owner.
-
-insert into public.workspace_members (workspace_id, user_id, role)
-values
-  ('$WS', '$OWNER_B', 'owner'),
-  ('$WS', '$ADMIN', 'admin'),
-  ('$WS', '$TARGET', 'member');
+  ('$OWNER_A', 'race-owner-a@example.com', '{"full_name":"Race Owner A"}'),
+  ('$OWNER_B', 'race-owner-b@example.com', '{"full_name":"Race Owner B"}'),
+  ('$ADMIN', 'race-admin@example.com', '{"full_name":"Race Admin"}'),
+  ('$TARGET', 'race-target@example.com', '{"full_name":"Race Target"}'),
+  ('$INVITEE', 'race-invitee@example.com', '{"full_name":"Race Invitee"}');
+insert into public.workspaces (id, name, created_by) values ('$WS', 'Race Workspace', '$OWNER_A');
+insert into public.workspace_members (workspace_id, user_id, role) values
+  ('$WS', '$OWNER_B', 'owner'), ('$WS', '$ADMIN', 'admin'), ('$WS', '$TARGET', 'member');
+insert into public.contacts (id, workspace_id, name) values ('$CONTACT', '$WS', 'Race Customer');
 SQL
 }
 
-# ── Race 1: two concurrent demotions cannot reach zero owners ────────────────
-#
-# Without the roster lock both sessions read two owners, both pass the
-# last-owner check, and both commit — leaving none.
-seed
-$DB -c "begin; $(claims $OWNER_A) select public.update_workspace_member_role('$WS','$OWNER_A','member'); select pg_sleep(2); commit;" >/dev/null 2>&1 &
-sleep 1
-b_err=$($DB -c "begin; $(claims $OWNER_B) select public.update_workspace_member_role('$WS','$OWNER_B','member'); commit;" 2>&1 | grep -c 'LAST_OWNER')
-wait
-owners=$($DB -c "select count(*) from public.workspace_members where workspace_id='$WS' and role='owner';")
-check "concurrent demotions leave at least one owner" "$owners" "1"
-check "the second demotion is refused with LAST_OWNER" "$b_err" "1"
-teardown
+# A separate backend holds an advisory gate. A executes its write and then
+# blocks at that gate with its transaction open. Only after observing B waiting
+# for A's row/unique-index lock do we release the gate. Polling observes database
+# state; timing does not decide which operation wins.
+wait_for() {
+  local query=$1
+  for ((attempt=0; attempt<150; attempt++)); do
+    if [[ "$("${DB[@]}" -c "$query")" == t ]]; then return; fi
+    sleep 0.1
+  done
+  echo 'race.sh: timed out waiting for the database interleaving' >&2
+  cat "$scratch"/*.log >&2
+  exit 1
+}
 
-# ── Race 1b: two concurrent self-removals cannot reach zero owners ──────────
-#
-# remove_workspace_member's roster lock is a separate "perform ... for
-# update" statement from update_workspace_member_role's -- stripping only
-# this one previously left the whole race suite green, because nothing here
-# exercised it. Same shape as Race 1, through the leaving path instead of the
-# demotion path: two owners leave (remove themselves) at the same time.
-# Without this function's own lock, both read two owners, both pass the
-# last-owner check, and both commit -- zero owners left.
-seed
-$DB -c "begin; $(claims $OWNER_A) select public.remove_workspace_member('$WS','$OWNER_A'); select pg_sleep(2); commit;" >/dev/null 2>&1 &
-sleep 1
-b_err=$($DB -c "begin; $(claims $OWNER_B) select public.remove_workspace_member('$WS','$OWNER_B'); commit;" 2>&1 | grep -c 'LAST_OWNER')
-wait
-owners=$($DB -c "select count(*) from public.workspace_members where workspace_id='$WS' and role='owner';")
-check "concurrent self-removals leave at least one owner" "$owners" "1"
-check "the second removal is refused with LAST_OWNER" "$b_err" "1"
-teardown
+race() {
+  local first=$1 second=$2 expected_error=${3:-}
+  "${DB[@]}" -c "set application_name='${RUN_ID}_gate'; select pg_advisory_lock($GATE_KEY); select pg_sleep(45);" >"$scratch/gate.log" 2>&1 &
+  local gate_pid=$!
+  wait_for "select exists(select 1 from pg_stat_activity where application_name='${RUN_ID}_gate' and wait_event='PgSleep');"
+  "${DB[@]}" -c "set application_name='${RUN_ID}_a'; begin; $first select pg_advisory_lock($GATE_KEY); commit;" >"$scratch/a.log" 2>&1 &
+  local a_pid=$!
+  wait_for "select exists(select 1 from pg_stat_activity where application_name='${RUN_ID}_a' and wait_event='advisory');"
+  "${DB[@]}" -c "set application_name='${RUN_ID}_b'; begin; $second commit;" >"$scratch/b.log" 2>&1 &
+  local b_pid=$!
+  wait_for "select exists(select 1 from pg_stat_activity where application_name='${RUN_ID}_b' and wait_event_type='Lock');"
+  "${DB[@]}" -c "select pg_terminate_backend(pid) from pg_stat_activity where application_name='${RUN_ID}_gate';" >/dev/null
+  # The gate is intentionally terminated. All workload process statuses are
+  # checked; an unrelated SQL error must never look like a passing race.
+  wait "$gate_pid" 2>/dev/null || true
+  if ! wait "$a_pid"; then cat "$scratch/a.log" >&2; exit 1; fi
+  if wait "$b_pid"; then
+    if [[ -n "$expected_error" ]]; then
+      echo "race.sh: expected $expected_error, but the second writer succeeded" >&2
+      exit 1
+    fi
+  elif [[ -z "$expected_error" ]] || ! grep -q "ERROR:  $expected_error" "$scratch/b.log"; then
+    cat "$scratch/b.log" >&2
+    exit 1
+  fi
+}
 
-# ── Race 2: a concurrent promotion cannot slip under an admin's demotion ────
-#
-# Session A (an owner) promotes $TARGET to owner and holds the transaction
-# open. Session B (the admin) tries to move $TARGET to 'admin' while A is
-# still inside its lock.
-#
-# B's role target ('admin') is deliberately different from $TARGET's pre-race
-# role ('member'): if it matched, the function's "no-op when the role is
-# already what was asked for" branch would return before ever reaching the
-# update, and the interleaving below would go unexercised. With that branch
-# avoided, an unlocked read lets B observe the pre-promotion role ('member'),
-# pass every authorization check as an ordinary admin action, then block on
-# Postgres's own row lock for the final UPDATE statement -- not on our
-# roster lock, since it doesn't exist in this configuration. Once A commits,
-# B's UPDATE re-acquires the row, but its WHERE clause never re-checks role,
-# so it blindly overwrites A's freshly committed 'owner' with 'admin': an
-# admin action landing on an owner's row, exactly what
-# OWNER_ROLE_REQUIRES_OWNER exists to stop. With the roster lock restored, B
-# blocks earlier -- before it ever reads the target's role -- and once
-# unblocked it re-reads $TARGET as 'owner' and is refused.
 seed
-$DB -c "begin; $(claims $OWNER_A) select public.update_workspace_member_role('$WS','$TARGET','owner'); select pg_sleep(2); commit;" >/dev/null 2>&1 &
-sleep 1
-b_err=$($DB -c "begin; $(claims $ADMIN) select public.update_workspace_member_role('$WS','$TARGET','admin'); commit;" 2>&1 | grep -c 'OWNER_ROLE_REQUIRES_OWNER')
-wait
-target_role=$($DB -c "select role from public.workspace_members where workspace_id='$WS' and user_id='$TARGET';")
-check "the target is still an owner" "$target_role" "owner"
-check "the admin's demotion is refused with OWNER_ROLE_REQUIRES_OWNER" "$b_err" "1"
-teardown
+race "$(claims "$OWNER_A") select public.update_workspace_member_role('$WS','$OWNER_A','member');" \
+     "$(claims "$OWNER_B") select public.update_workspace_member_role('$WS','$OWNER_B','member');" LAST_OWNER
+check 'concurrent demotions retain one owner' "$("${DB[@]}" -c "select count(*) from public.workspace_members where workspace_id='$WS' and role='owner';")" 1
 
-# ── Race 3: two concurrent invitations for the same address cannot collide ──
-#
-# invite_workspace_member relies on ON CONFLICT ... DO UPDATE inferring
-# workspace_invitations_pending_key, in one statement, rather than a
-# read-then-write. Two truly concurrent callers must resolve to exactly one
-# pending row and neither may surface a raw 23505.
 seed
-# Backgrounded command substitution runs the assignment in a subshell, so the
-# parent never sees $(...) captured that way — each side writes to its own
-# file instead, read back after both finish.
-race3_a=$(mktemp)
-race3_b=$(mktemp)
-$DB -c "begin; $(claims $OWNER_A) select public.invite_workspace_member('$WS','race-invitee@example.com','member'); commit;" >"$race3_a" 2>&1 &
-$DB -c "begin; $(claims $OWNER_B) select public.invite_workspace_member('$WS','race-invitee@example.com','admin'); commit;" >"$race3_b" 2>&1 &
-wait
-pending=$($DB -c "select count(*) from public.workspace_invitations where workspace_id='$WS' and invited_email='race-invitee@example.com' and status='pending';")
-check "exactly one pending invitation exists" "$pending" "1"
-a_23505=$(grep -c '23505' "$race3_a")
-b_23505=$(grep -c '23505' "$race3_b")
-check "neither concurrent invite surfaces a raw unique violation" "$((a_23505 + b_23505))" "0"
-rm -f "$race3_a" "$race3_b"
-teardown
+race "$(claims "$OWNER_A") select public.remove_workspace_member('$WS','$OWNER_A');" \
+     "$(claims "$OWNER_B") select public.remove_workspace_member('$WS','$OWNER_B');" LAST_OWNER
+check 'concurrent self-removals retain one owner' "$("${DB[@]}" -c "select count(*) from public.workspace_members where workspace_id='$WS' and role='owner';")" 1
 
-if [ "$fail" -ne 0 ]; then echo "FAILED"; exit 1; fi
-echo "all race tests passed"
+seed
+race "$(claims "$OWNER_A") select public.update_workspace_member_role('$WS','$TARGET','owner');" \
+     "$(claims "$ADMIN") select public.update_workspace_member_role('$WS','$TARGET','admin');" OWNER_ROLE_REQUIRES_OWNER
+check 'an admin cannot overwrite a concurrent promotion to owner' "$("${DB[@]}" -c "select role from public.workspace_members where workspace_id='$WS' and user_id='$TARGET';")" owner
+
+seed
+race "$(claims "$OWNER_A") select public.update_workspace_member_role('$WS','$OWNER_B','member');" \
+     "$(claims "$OWNER_B") select public.update_workspace_member_role('$WS','$TARGET','owner');" NOT_A_WORKSPACE_ADMIN
+check 'a caller demoted while waiting cannot grant owner' "$("${DB[@]}" -c "select role from public.workspace_members where workspace_id='$WS' and user_id='$TARGET';")" member
+
+seed
+race "$(claims "$OWNER_A") select public.remove_workspace_member('$WS','$ADMIN');" \
+     "$(claims "$ADMIN") select public.remove_workspace_member('$WS','$TARGET');" NOT_A_WORKSPACE_ADMIN
+check 'a caller removed while waiting cannot remove someone else' "$("${DB[@]}" -c "select count(*) from public.workspace_members where workspace_id='$WS' and user_id='$TARGET';")" 1
+
+seed
+race "$(claims "$OWNER_A") select public.invite_workspace_member('$WS','race-invitee@example.com','member');" \
+     "$(claims "$OWNER_B") select public.invite_workspace_member('$WS','race-invitee@example.com','admin');"
+check 'both concurrent invites succeed and share one pending row' "$("${DB[@]}" -c "select count(*) from public.workspace_invitations where workspace_id='$WS' and status='pending';")" 1
+
+invitation_id=$("${DB[@]}" -c "select id from public.workspace_invitations where workspace_id='$WS' and status='pending';")
+race "$(claims "$INVITEE") select public.respond_to_workspace_invitation('$invitation_id',true);" \
+     "$(claims "$INVITEE") select public.respond_to_workspace_invitation('$invitation_id',true);" INVITATION_NOT_FOUND
+check 'two accepting tabs create exactly one membership' "$("${DB[@]}" -c "select count(*) from public.workspace_members where workspace_id='$WS' and user_id='$INVITEE';")" 1
+
+seed
+race "$(claims "$OWNER_A") select * from public.set_contact_phones('$WS','$CONTACT',array['+77011111111']);" \
+     "$(claims "$OWNER_B") select * from public.set_contact_phones('$WS','$CONTACT',array['+77012222222']);"
+check 'a concurrent replacement keeps only the second requested phone set' "$("${DB[@]}" -c "select string_agg(phone,',' order by position) from public.contact_phones where contact_id='$CONTACT';")" +77012222222
+check 'the primary matches that complete set' "$("${DB[@]}" -c "select phone from public.contacts where id='$CONTACT';")" +77012222222
+
+seed_outbound() {
+  seed
+  "${DB[@]}" >/dev/null <<SQL
+insert into public.channels (id, workspace_id, type) values ('$CHANNEL', '$WS', 'telegram');
+insert into public.conversations (id, workspace_id, contact_id, channel_id) values ('$CONVERSATION','$WS','$CONTACT','$CHANNEL');
+insert into public.messages (id, workspace_id, conversation_id, direction, sender_id, content)
+values ('$MESSAGE','$WS','$CONVERSATION','outbound','$OWNER_A','Send once');
+SQL
+}
+
+seed_outbound
+race "set local role service_role; select public.claim_outbound_message('$MESSAGE');" \
+     "set local role service_role; select public.claim_outbound_message('$MESSAGE');"
+check 'the first provider dispatch owns the claim' "$(grep -c '^t$' "$scratch/a.log")" 1
+check 'a simultaneous provider dispatch is refused' "$(grep -c '^f$' "$scratch/b.log")" 1
+check 'one durable fence survives both dispatch attempts' "$("${DB[@]}" -c "select count(*) from private.outbound_message_dispatches where message_id='$MESSAGE';")" 1
+
+seed_outbound
+race "set local role service_role; select public.claim_outbound_message('$MESSAGE');" \
+     "set local role service_role; select public.record_outbound_preflight_failure('$MESSAGE','late_failure');"
+check 'a concurrent preflight failure refuses an owned dispatch' "$(grep -c '^f$' "$scratch/b.log")" 1
+check 'the in-flight message remains sent' "$("${DB[@]}" -c "select status from public.messages where id='$MESSAGE';")" sent
+check 'refused preflight adds no projecting history' "$("${DB[@]}" -c "select count(*) from public.message_status_events where message_id='$MESSAGE';")" 0
+
+seed_outbound
+race "set local role service_role; select public.record_outbound_preflight_failure('$MESSAGE','signed_url_failed');" \
+     "set local role service_role; select public.claim_outbound_message('$MESSAGE');"
+check 'preflight failure wins before a competing dispatch' "$(grep -c '^t$' "$scratch/a.log")" 1
+check 'a competing dispatch observes the committed failure' "$(grep -c '^f$' "$scratch/b.log")" 1
+check 'preflight preserves the retryable failed state' "$("${DB[@]}" -c "select status from public.messages where id='$MESSAGE';")" failed
+check 'no delivery fence is left by a failed preflight' "$("${DB[@]}" -c "select count(*) from private.outbound_message_dispatches where message_id='$MESSAGE';")" 0
+
+echo 'all race tests passed'

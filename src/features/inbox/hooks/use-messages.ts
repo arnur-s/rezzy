@@ -172,7 +172,6 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
       const messagesKey = inboxQueryKeys.messages(conversationId)
       await queryClient.cancelQueries({ queryKey: messagesKey })
 
-      const snapshot = queryClient.getQueryData(messagesKey)
       const tempId = clientMessageId
 
       const tempMessage: MessageRow = {
@@ -211,13 +210,31 @@ export function useSendMessage({ workspaceId }: { workspaceId: string }) {
         }
       })
 
-      return { snapshot, tempId, messagesKey }
+      return { tempId, messagesKey }
     },
 
     onError: (_error, _variables, context) => {
-      if (context?.snapshot) {
-        queryClient.setQueryData(context.messagesKey, context.snapshot)
-      }
+      if (!context) return
+      // Roll back only this optimistic send. Restoring a snapshot would erase
+      // messages/status updates received while the request was in flight.
+      patchInfiniteMessagesCache(queryClient, context.messagesKey, (current) =>
+        current
+          ? {
+              ...current,
+              pages: current.pages.map((page) => ({
+                ...page,
+                messages: page.messages.filter(
+                  (row) =>
+                    row.id !== context.tempId ||
+                    row.status !== 'sent' ||
+                    row.external_id !== null,
+                ),
+              })),
+            }
+          : current,
+      )
+      // An edge failure may still have persisted a failed or accepted row.
+      void queryClient.invalidateQueries({ queryKey: context.messagesKey })
     },
 
     onSuccess: (message, _variables, context) => {

@@ -3,7 +3,7 @@ import { useConversationsRealtime } from '@/features/inbox/hooks/use-conversatio
 import { createTestQueryClient } from '@/test/render'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -38,11 +38,7 @@ const handlers = new Map<string, ChangeHandler>()
 
 const channelMock = {
   on: vi.fn(
-    (
-      _type: string,
-      config: { event: string },
-      handler: ChangeHandler,
-    ) => {
+    (_type: string, config: { event: string }, handler: ChangeHandler) => {
       handlers.set(config.event, handler)
       return channelMock
     },
@@ -132,7 +128,9 @@ describe('useConversationsRealtime and archived conversations', () => {
 
     handlers.get('UPDATE')?.({
       new: {
-        ...conversationRow('c1', { last_message_preview: 'archived after this' }),
+        ...conversationRow('c1', {
+          last_message_preview: 'archived after this',
+        }),
         deleted_at: '2026-08-08T12:00:00.000Z',
       },
     })
@@ -185,5 +183,58 @@ describe('useConversationsRealtime and archived conversations', () => {
     expect(rows).toHaveLength(1)
     expect(rows?.[0]?.status).toBe('closed')
     expect(conversationsApi.getConversationById).not.toHaveBeenCalled()
+  })
+
+  it.each(['archive', 'delete', 'unmount'])(
+    'does not resurrect a row when hydration completes after %s',
+    async (change) => {
+      const queryClient = createTestQueryClient()
+      const key = inboxQueryKeys.conversations(WORKSPACE_ID)
+      queryClient.setQueryData(key, [])
+      let resolveConversation: (
+        row: ReturnType<typeof conversationRow>,
+      ) => void = () => {
+        throw new Error('Not requested')
+      }
+      conversationsApi.getConversationById.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveConversation = resolve
+          }),
+      )
+      const { unmount } = renderHook(
+        () => useConversationsRealtime(WORKSPACE_ID),
+        { wrapper: createWrapper(queryClient) },
+      )
+      handlers.get('INSERT')?.({ new: { id: 'c1' } })
+      if (change === 'archive')
+        handlers.get('UPDATE')?.({
+          new: { id: 'c1', deleted_at: '2026-10-17T10:00:00Z' },
+        })
+      else if (change === 'delete')
+        handlers.get('DELETE')?.({ old: { id: 'c1' } })
+      else unmount()
+
+      await act(() =>
+        Promise.resolve(resolveConversation(conversationRow('c1'))),
+      )
+      expect(queryClient.getQueryData(key)).toEqual([])
+    },
+  )
+
+  it('refetches after a failed hydration instead of leaving an unhandled rejection', async () => {
+    const queryClient = createTestQueryClient()
+    const key = inboxQueryKeys.conversations(WORKSPACE_ID)
+    queryClient.setQueryData(key, [])
+    conversationsApi.getConversationById.mockRejectedValue(
+      new Error('Temporary network failure'),
+    )
+    renderHook(() => useConversationsRealtime(WORKSPACE_ID), {
+      wrapper: createWrapper(queryClient),
+    })
+    handlers.get('INSERT')?.({ new: { id: 'c1' } })
+    await waitFor(() =>
+      expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true),
+    )
   })
 })

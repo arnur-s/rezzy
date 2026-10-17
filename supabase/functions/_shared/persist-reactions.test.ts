@@ -27,7 +27,9 @@ type Row = Record<string, unknown>
  * 20260803100000_normalize_reaction_emoji.sql, so a test that passes here is a
  * test the database would agree with.
  */
-function createFakeSupabase(seed: { messages?: Row[]; reactions?: Row[] } = {}) {
+function createFakeSupabase(
+  seed: { messages?: Row[]; reactions?: Row[] } = {},
+) {
   const tables: Record<string, Array<Row>> = {
     messages: [...(seed.messages ?? [])],
     message_reactions: [...(seed.reactions ?? [])],
@@ -52,7 +54,11 @@ function createFakeSupabase(seed: { messages?: Row[]; reactions?: Row[] } = {}) 
       throw new Error(`unsupported or() operator: ${operator}`)
     })
 
-  function query(table: string, kind: 'select' | 'update' | 'insert', payload?: Row) {
+  function query(
+    table: string,
+    kind: 'select' | 'update' | 'insert',
+    payload?: Row,
+  ) {
     const filters: Array<(row: Row) => boolean> = []
     let returning = kind === 'select'
     let single = false
@@ -108,7 +114,11 @@ function createFakeSupabase(seed: { messages?: Row[]; reactions?: Row[] } = {}) 
 
     const api = {
       eq(column: string, value: unknown) {
-        filters.push((row) => row[column] === value)
+        filters.push((row) =>
+          column === 'conversations.channel_id'
+            ? (row.conversations as Row | undefined)?.channel_id === value
+            : row[column] === value,
+        )
         return api
       },
       neq(column: string, value: unknown) {
@@ -242,7 +252,11 @@ describe('applyReactionOps emoji identity', () => {
       providerTimestamp: null,
     })
 
-    await applyReactionOps(whatsapp.client, target, whatsappOp ? [whatsappOp] : [])
+    await applyReactionOps(
+      whatsapp.client,
+      target,
+      whatsappOp ? [whatsappOp] : [],
+    )
     await applyReactionOps(
       instagram.client,
       target,
@@ -253,14 +267,22 @@ describe('applyReactionOps emoji identity', () => {
     expect(instagram.reactions[0].emoji).toBe(HEART)
   })
 
-  it('links a new reaction to the message it targets', async () => {
+  it('links a new reaction only to the target on its own channel', async () => {
     const { client, reactions } = createFakeSupabase({
       messages: [
+        {
+          id: 'other-channel-message',
+          workspace_id: WORKSPACE,
+          conversation_id: 'other-conversation',
+          external_id: PROVIDER_MESSAGE,
+          conversations: { channel_id: 'other-channel' },
+        },
         {
           id: 'message-1',
           workspace_id: WORKSPACE,
           conversation_id: 'conversation-1',
           external_id: PROVIDER_MESSAGE,
+          conversations: { channel_id: CHANNEL },
         },
       ],
     })
