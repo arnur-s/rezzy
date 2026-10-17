@@ -90,7 +90,9 @@ const TWO_NUMBER_CARD = {
   ],
 }
 
-function sharedContact(metadata: unknown = WHATSAPP_CARD): Array<SharedContact> {
+function sharedContact(
+  metadata: unknown = WHATSAPP_CARD,
+): Array<SharedContact> {
   return parseSharedContacts(metadata)
 }
 
@@ -202,7 +204,9 @@ describe('MessageContactCard', () => {
   it('opens the contact form prefilled from the shared payload', async () => {
     renderCard()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Create contact' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Create contact' }),
+    )
 
     const name = await screen.findByLabelText<HTMLInputElement>(/Name/)
     expect(name.value).toBe('Dana Abisheva')
@@ -218,7 +222,9 @@ describe('MessageContactCard', () => {
     api.createContact.mockResolvedValue(contactDetail())
     renderCard()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Create contact' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Create contact' }),
+    )
     fireEvent.click(await screen.findByRole('button', { name: 'Save' }))
 
     const open = await screen.findByRole('button', { name: 'Open contact' })
@@ -239,9 +245,7 @@ describe('MessageContactCard', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Open contact' }))
 
-    expect(
-      screen.queryByRole('button', { name: 'Create contact' }),
-    ).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Create contact' })).toBeNull()
     await waitFor(() =>
       expect(api.navigate).toHaveBeenCalledWith({
         to: '/workspaces/$id/contacts/$contactId',
@@ -335,9 +339,7 @@ describe('MessageContactCard', () => {
 
     expect(await screen.findByText('Unable to check contacts')).toBeTruthy()
     expect(screen.getByText('Dana Abisheva')).toBeTruthy()
-    expect(
-      screen.getByRole('button', { name: 'Copy details' }),
-    ).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Copy details' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Create contact' })).toBeNull()
   })
 
@@ -351,7 +353,9 @@ describe('MessageContactCard', () => {
     // Claiming "Create contact" here would imply the CRM was checked and came
     // back empty. It was not checked at all.
     expect(
-      await screen.findByText('Number has no country code — can’t check the CRM'),
+      await screen.findByText(
+        'Number has no country code — can’t check the CRM',
+      ),
     ).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Copy details' })).toBeTruthy()
     // Creating is still allowed — the user reviews the number in the form.
@@ -390,13 +394,18 @@ describe('MessageContactCard', () => {
         contacts: [
           {
             name: 'Dana Abisheva',
-            phones: [{ phone: '+7 701 123 45 67' }, { phone: '+7 701 999 88 77' }],
+            phones: [
+              { phone: '+7 701 123 45 67' },
+              { phone: '+7 701 999 88 77' },
+            ],
           },
         ],
       }),
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Create contact' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Create contact' }),
+    )
 
     expect(
       (await screen.findByLabelText<HTMLInputElement>(/^Phone ·/)).value,
@@ -409,9 +418,12 @@ describe('MessageContactCard', () => {
 
     // Both numbers are persisted, not just the primary.
     await waitFor(() =>
-      expect(api.setContactPhones).toHaveBeenCalledWith({
+      expect(api.createContact).toHaveBeenCalledWith({
         workspaceId: 'workspace-1',
-        contactId: 'contact-new',
+        payload: expect.objectContaining({
+          name: 'Dana Abisheva',
+          phone: '+77011234567',
+        }),
         phones: ['+77011234567', '+77019998877'],
       }),
     )
@@ -423,7 +435,12 @@ describe('MessageContactCard', () => {
     // record the card can see is incomplete.
     api.matchWorkspaceContacts.mockResolvedValue([contactMatch()])
     api.listContactPhones.mockResolvedValue([
-      { id: 'phone-1', phone: '+77011234567', digits: '77011234567', position: 0 },
+      {
+        id: 'phone-1',
+        phone: '+77011234567',
+        digits: '77011234567',
+        position: 0,
+      },
     ])
     api.updateContact.mockResolvedValue(contactDetail({ id: 'contact-1' }))
 
@@ -445,9 +462,13 @@ describe('MessageContactCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(api.setContactPhones).toHaveBeenCalledWith({
+      expect(api.updateContact).toHaveBeenCalledWith({
         workspaceId: 'workspace-1',
         contactId: 'contact-1',
+        patch: expect.objectContaining({
+          name: 'Dana Abisheva',
+          phone: '+77011234567',
+        }),
         phones: ['+77011234567', '+77059949082'],
       }),
     )
@@ -456,7 +477,12 @@ describe('MessageContactCard', () => {
   it('says nothing when the contact already has every number on the card', async () => {
     api.matchWorkspaceContacts.mockResolvedValue([contactMatch()])
     api.listContactPhones.mockResolvedValue([
-      { id: 'phone-1', phone: '+77011234567', digits: '77011234567', position: 0 },
+      {
+        id: 'phone-1',
+        phone: '+77011234567',
+        digits: '77011234567',
+        position: 0,
+      },
       // The same second number, spelled the way somebody typed it. Identity is
       // compared by number, not by string, so this is not a missing one.
       {

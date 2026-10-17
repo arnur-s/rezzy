@@ -61,11 +61,6 @@ function renderHook<T>(useHook: () => T) {
   return box as { current: T }
 }
 
-/** The error PostgREST returns for a function that is not in the schema. */
-function missingFunction() {
-  return { ...postgrestError('Could not find the function'), code: 'PGRST202' }
-}
-
 beforeEach(() => {
   vi.clearAllMocks()
   api.createContact.mockResolvedValue(contactDetail())
@@ -74,7 +69,7 @@ beforeEach(() => {
 })
 
 describe('contact writes with several phone numbers', () => {
-  it('writes the whole set after creating the contact', async () => {
+  it('saves the contact and whole phone set in one mutation', async () => {
     const hook = renderHook(() => useCreateContact('workspace-1'))
 
     await act(async () => {
@@ -89,11 +84,19 @@ describe('contact writes with several phone numbers', () => {
       } satisfies ContactWriteInput)
     })
 
-    expect(api.setContactPhones).toHaveBeenCalledWith({
+    expect(api.createContact).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
-      contactId: 'contact-1',
+      payload: {
+        name: 'Dana',
+        phone: '+77011234567',
+        email: null,
+        status: 'new',
+        tags: [],
+        ownerId: null,
+      },
       phones: ['+77011234567', '+77019998877'],
     })
+    expect(api.setContactPhones).not.toHaveBeenCalled()
   })
 
   it('leaves the numbers alone when a caller does not manage them', async () => {
@@ -104,45 +107,57 @@ describe('contact writes with several phone numbers', () => {
     })
 
     expect(api.setContactPhones).not.toHaveBeenCalled()
+    expect(api.updateContact).toHaveBeenCalledWith({
+      workspaceId: 'workspace-1',
+      contactId: 'contact-1',
+      patch: { status: 'done' },
+      phones: undefined,
+    })
   })
 
-  it('still saves a single number when the phones RPC is not deployed yet', async () => {
-    // Between deploying this code and applying its migration the function does
-    // not exist. One number lives in contacts.phone regardless, so the save
-    // must not fail — and must not leave the user staring at an error for a
-    // contact that was in fact created.
-    api.setContactPhones.mockRejectedValue(missingFunction())
+  it('surfaces an atomic save failure without issuing a separate phone write', async () => {
+    const failure = postgrestError('PHONE_WRITE_FAILED')
+    api.createContact.mockRejectedValue(failure)
     const hook = renderHook(() => useCreateContact('workspace-1'))
 
     await act(async () => {
-      await hook.current.mutateAsync({
-        name: 'Dana',
-        phone: '+77011234567',
-        email: null,
-        status: 'new',
-        tags: [],
-        ownerId: null,
-        phones: ['+77011234567'],
-      })
+      await expect(
+        hook.current.mutateAsync({
+          name: 'Dana',
+          phone: '+77011234567',
+          email: null,
+          status: 'new',
+          tags: [],
+          ownerId: null,
+          phones: ['+77011234567', '+77019998877'],
+        }),
+      ).rejects.toBe(failure)
     })
 
-    await waitFor(() => expect(hook.current.isSuccess).toBe(true))
+    await waitFor(() => expect(hook.current.isError).toBe(true))
+    expect(api.createContact).toHaveBeenCalledTimes(1)
+    expect(api.setContactPhones).not.toHaveBeenCalled()
   })
 
-  it('reports a failure when a set the column cannot hold is lost', async () => {
-    api.setContactPhones.mockRejectedValue(missingFunction())
-    const hook = renderHook(() => useCreateContact('workspace-1'))
+  it('submits scalar changes and replacement numbers together when editing', async () => {
+    const failure = postgrestError('CONTACT_OWNER_NOT_WORKSPACE_MEMBER')
+    api.updateContact.mockRejectedValue(failure)
+    const hook = renderHook(() => useUpdateContact('workspace-1', 'contact-1'))
 
-    await expect(
-      hook.current.mutateAsync({
-        name: 'Dana',
-        phone: '+77011234567',
-        email: null,
-        status: 'new',
-        tags: [],
-        ownerId: null,
-        phones: ['+77011234567', '+77019998877'],
-      }),
-    ).rejects.toBeTruthy()
+    await act(async () => {
+      await expect(
+        hook.current.mutateAsync({
+          ownerId: 'outside-user',
+          phones: ['+77019998877'],
+        }),
+      ).rejects.toBe(failure)
+    })
+    expect(api.updateContact).toHaveBeenCalledWith({
+      workspaceId: 'workspace-1',
+      contactId: 'contact-1',
+      patch: { ownerId: 'outside-user' },
+      phones: ['+77019998877'],
+    })
+    expect(api.setContactPhones).not.toHaveBeenCalled()
   })
 })

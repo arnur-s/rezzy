@@ -211,56 +211,89 @@ export type ContactWritePayload = {
   ownerId: string | null
 }
 
+const savedContactSchema = z.object({
+  id: z.string(),
+  workspace_id: z.string(),
+  name: z.string().nullable(),
+  phone: z.string().nullable(),
+  email: z.string().nullable(),
+  avatar_url: z.string().nullable(),
+  status: z.string(),
+  source: z.string().nullable(),
+  tags: z.array(z.string()),
+  owner_id: z.string().nullable(),
+  last_seen_at: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  deleted_at: z.string().nullable(),
+  merged_into_id: z.string().nullable(),
+  merged_at: z.string().nullable(),
+  merged_by: z.string().nullable(),
+  contact_channels: z.array(
+    z.object({
+      id: z.string(),
+      channel_type: z.string(),
+      external_id: z.string(),
+      external_name: z.string().nullable(),
+      channel_id: z.string().nullable(),
+    }),
+  ),
+})
+
 export async function createContact({
   workspaceId,
   payload,
+  phones,
 }: {
   workspaceId: string
   payload: ContactWritePayload
+  phones?: Array<string>
 }): Promise<ContactDetail> {
-  const { data, error } = await supabase
-    .from('contacts')
-    .insert({
-      workspace_id: workspaceId,
-      name: payload.name,
-      phone: payload.phone,
-      email: payload.email,
-      status: payload.status,
-      tags: payload.tags,
-      owner_id: payload.ownerId,
-      source: 'manual',
-    })
-    .select(CONTACT_DETAIL_SELECT)
-    .single()
-
-  if (error) throw error
-  return data
+  return saveContact({ workspaceId, patch: payload, phones })
 }
 
 export async function updateContact({
   workspaceId,
   contactId,
   patch,
+  phones,
 }: {
   workspaceId: string
   contactId: string
   patch: Partial<ContactWritePayload>
+  phones?: Array<string>
 }): Promise<ContactDetail> {
-  const { data, error } = await supabase
-    .from('contacts')
-    .update({
-      ...(patch.name !== undefined && { name: patch.name }),
-      ...(patch.phone !== undefined && { phone: patch.phone }),
-      ...(patch.email !== undefined && { email: patch.email }),
-      ...(patch.status !== undefined && { status: patch.status }),
-      ...(patch.tags !== undefined && { tags: patch.tags }),
-      ...(patch.ownerId !== undefined && { owner_id: patch.ownerId }),
-    })
-    .eq('workspace_id', workspaceId)
-    .eq('id', contactId)
-    .select(CONTACT_DETAIL_SELECT)
-    .single()
+  return saveContact({ workspaceId, contactId, patch, phones })
+}
 
-  if (error) throw error
-  return data
+function saveContact({
+  workspaceId,
+  contactId,
+  patch,
+  phones,
+}: {
+  workspaceId: string
+  contactId?: string
+  patch: Partial<ContactWritePayload>
+  phones?: Array<string>
+}): Promise<ContactDetail> {
+  // No two-request fallback: a failed phone write must roll back the scalar
+  // fields and a new contact, rather than leaving a partial save to retry.
+  return callRpc(
+    'save_contact',
+    {
+      p_workspace_id: workspaceId,
+      p_contact_id: contactId,
+      p_phones: phones,
+      p_fields: {
+        ...(patch.name !== undefined && { name: patch.name }),
+        ...(patch.phone !== undefined && { phone: patch.phone }),
+        ...(patch.email !== undefined && { email: patch.email }),
+        ...(patch.status !== undefined && { status: patch.status }),
+        ...(patch.tags !== undefined && { tags: patch.tags }),
+        ...(patch.ownerId !== undefined && { owner_id: patch.ownerId }),
+      },
+    },
+    savedContactSchema,
+  )
 }
