@@ -3,6 +3,7 @@ import type { ChannelType } from '@/entities/channel'
 import { isConversationStatus } from '@/entities/conversation'
 import { supabase } from '@/utils/supabase'
 import { getUnreadCountsForWorkspaces } from './unread-counts'
+import { readDashboardPages } from './read-dashboard-pages'
 
 export const dashboardQueryKeys = {
   all: ['dashboard'] as const,
@@ -30,9 +31,6 @@ export type DashboardStats = {
   perWorkspace: Array<WorkspaceDashboardStats>
 }
 
-/** See home-stats: Supabase truncates at max_rows silently rather than erroring. */
-const ROW_LIMIT = 1001
-
 export async function getDashboardStats(
   workspaceIds: Array<string>,
   unreadCounts?: Promise<Map<string, number>>,
@@ -44,29 +42,34 @@ export async function getDashboardStats(
     }
   }
 
-  const [conversationsResult, channelsResult, contactsResult, unreadByConversation] =
+  const [conversations, channels, contacts, unreadByConversation] =
     await Promise.all([
-      supabase
-        .from('conversations')
-        .select('id, workspace_id, status, last_message_at')
-        .in('workspace_id', workspaceIds)
-        .limit(ROW_LIMIT),
-      supabase
-        .from('channels')
-        .select('workspace_id, type')
-        .in('workspace_id', workspaceIds)
-        .limit(ROW_LIMIT),
-      supabase
-        .from('contacts')
-        .select('workspace_id')
-        .in('workspace_id', workspaceIds)
-        .limit(ROW_LIMIT),
+      readDashboardPages((from, to) =>
+        supabase
+          .from('conversations')
+          .select('id, workspace_id, status, last_message_at')
+          .in('workspace_id', workspaceIds)
+          .order('id', { ascending: true })
+          .range(from, to),
+      ),
+      readDashboardPages((from, to) =>
+        supabase
+          .from('channels')
+          .select('workspace_id, type')
+          .in('workspace_id', workspaceIds)
+          .order('id', { ascending: true })
+          .range(from, to),
+      ),
+      readDashboardPages((from, to) =>
+        supabase
+          .from('contacts')
+          .select('workspace_id')
+          .in('workspace_id', workspaceIds)
+          .order('id', { ascending: true })
+          .range(from, to),
+      ),
       unreadCounts ?? getUnreadCountsForWorkspaces(workspaceIds),
     ])
-
-  if (conversationsResult.error) throw conversationsResult.error
-  if (channelsResult.error) throw channelsResult.error
-  if (contactsResult.error) throw contactsResult.error
 
   const perWorkspace = new Map<string, WorkspaceDashboardStats>()
   for (const id of workspaceIds) {
@@ -86,7 +89,7 @@ export async function getDashboardStats(
     channelTypesByWorkspace.set(id, new Set())
   }
 
-  for (const row of conversationsResult.data) {
+  for (const row of conversations) {
     const entry = perWorkspace.get(row.workspace_id)
     if (!entry) continue
     entry.unread += unreadByConversation.get(row.id) ?? 0
@@ -101,7 +104,7 @@ export async function getDashboardStats(
     }
   }
 
-  for (const row of channelsResult.data) {
+  for (const row of channels) {
     const entry = perWorkspace.get(row.workspace_id)
     if (!entry) continue
     entry.channels += 1
@@ -110,7 +113,7 @@ export async function getDashboardStats(
     }
   }
 
-  for (const row of contactsResult.data) {
+  for (const row of contacts) {
     const entry = perWorkspace.get(row.workspace_id)
     if (!entry) continue
     entry.contacts += 1

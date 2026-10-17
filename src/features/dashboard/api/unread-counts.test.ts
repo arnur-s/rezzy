@@ -1,3 +1,4 @@
+import { mockQueryBuilder, postgrestError } from '@/test/supabase-query-mock'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getUnreadCountsForWorkspaces } from './unread-counts'
 
@@ -22,13 +23,12 @@ describe('getUnreadCountsForWorkspaces', () => {
   })
 
   it('maps per-conversation unread rows keyed by conversation id', async () => {
-    supabaseMock.rpc.mockResolvedValue({
-      data: [
+    supabaseMock.rpc.mockReturnValue(
+      mockQueryBuilder([
         { conversation_id: 'c1', unread_count: 2 },
         { conversation_id: 'c2', unread_count: 10 },
-      ],
-      error: null,
-    })
+      ]),
+    )
 
     const result = await getUnreadCountsForWorkspaces(['w1', 'w2'])
 
@@ -45,9 +45,27 @@ describe('getUnreadCountsForWorkspaces', () => {
   })
 
   it('throws when the RPC returns an error', async () => {
-    const error = new Error('rpc failed')
-    supabaseMock.rpc.mockResolvedValue({ data: null, error })
+    const error = postgrestError('rpc failed')
+    supabaseMock.rpc.mockReturnValue(mockQueryBuilder(null, error))
 
     await expect(getUnreadCountsForWorkspaces(['w1'])).rejects.toBe(error)
+  })
+
+  it('retains unread conversations past the REST response cap', async () => {
+    const rows = Array.from({ length: 1205 }, (_, i) => ({
+      conversation_id: `c${i}`,
+      unread_count: 1,
+    }))
+    supabaseMock.rpc.mockImplementation(() =>
+      mockQueryBuilder((calls) => {
+        const range = calls.find(([name]) => name === 'range')
+        const from = Number(range?.[1] ?? 0)
+        const to = Number(range?.[2] ?? 999)
+        return rows.slice(from, Math.min(to + 1, from + 1000))
+      }),
+    )
+    const counts = await getUnreadCountsForWorkspaces(['w1'])
+    expect(counts.size).toBe(1205)
+    expect(counts.get('c1204')).toBe(1)
   })
 })

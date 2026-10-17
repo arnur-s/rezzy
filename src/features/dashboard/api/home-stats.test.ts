@@ -52,9 +52,24 @@ describe('getHomeStats', () => {
 
   it('counts unread from the per-agent read cursor, not a shared column', async () => {
     mockConversations([
-      { id: 'c1', status: 'open', snoozed_until: null, last_message_at: recent },
-      { id: 'c2', status: 'open', snoozed_until: null, last_message_at: recent },
-      { id: 'c3', status: 'open', snoozed_until: null, last_message_at: recent },
+      {
+        id: 'c1',
+        status: 'open',
+        snoozed_until: null,
+        last_message_at: recent,
+      },
+      {
+        id: 'c2',
+        status: 'open',
+        snoozed_until: null,
+        last_message_at: recent,
+      },
+      {
+        id: 'c3',
+        status: 'open',
+        snoozed_until: null,
+        last_message_at: recent,
+      },
     ])
     // Only c1 is unread for this agent; c2/c3 are read (absent from the map).
     unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(
@@ -73,7 +88,12 @@ describe('getHomeStats', () => {
     // summary claimed work the attention list could never show, and the
     // all-clear was unreachable while any such row existed.
     mockConversations([
-      { id: 'c1', status: 'snoozed', snoozed_until: null, last_message_at: recent },
+      {
+        id: 'c1',
+        status: 'snoozed',
+        snoozed_until: null,
+        last_message_at: recent,
+      },
     ])
     unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
 
@@ -109,12 +129,12 @@ describe('getHomeStats', () => {
     await getHomeStats('user-1', ['w1'])
 
     expect(lastQuery.argsFor('in')).toEqual(['workspace_id', ['w1']])
-    expect(
-      lastQuery.calls.filter(([name]) => name === 'in'),
-    ).toContainEqual(['in', 'status', ['open', 'snoozed']])
-    const limit = lastQuery.argsFor('limit')?.[0]
-    expect(typeof limit).toBe('number')
-    expect(limit).toBeGreaterThan(1000)
+    expect(lastQuery.calls.filter(([name]) => name === 'in')).toContainEqual([
+      'in',
+      'status',
+      ['open', 'snoozed'],
+    ])
+    expect(lastQuery.argsFor('range')).toEqual([0, 499])
   })
 
   it('reuses a shared unread map instead of fetching its own', async () => {

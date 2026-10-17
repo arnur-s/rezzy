@@ -80,10 +80,10 @@ describe('getAttentionQueue', () => {
     expect(result.items.every((i) => i.reason === 'stale')).toBe(true)
   })
 
-  it('asks only for live conversations, newest first, under a row ceiling', async () => {
+  it('pages live conversations in a stable order before ranking urgency', async () => {
     // Closed threads can never qualify for an attention reason, and Supabase
-    // truncates at max_rows silently. Ordering means that if the ceiling is
-    // ever reached, what survives is the live edge rather than a random slice.
+    // truncates at max_rows silently. Stable ordering and bounded pages ensure
+    // older actionable rows remain available for urgency ranking.
     mockConversations([])
     unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(new Map())
 
@@ -94,10 +94,8 @@ describe('getAttentionQueue', () => {
       'status',
       ['open', 'snoozed'],
     ])
-    expect(lastQuery.argsFor('order')?.[0]).toBe('last_message_at')
-    const limit = lastQuery.argsFor('limit')?.[0]
-    expect(typeof limit).toBe('number')
-    expect(limit).toBeGreaterThan(1000)
+    expect(lastQuery.argsFor('order')?.[0]).toBe('id')
+    expect(lastQuery.argsFor('range')).toEqual([0, 499])
   })
 
   it('reuses a shared unread map instead of fetching its own', async () => {

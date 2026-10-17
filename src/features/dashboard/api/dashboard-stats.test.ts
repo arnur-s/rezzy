@@ -71,12 +71,8 @@ describe('getDashboardStats', () => {
     await getDashboardStats(['w1'])
 
     for (const [table, query] of queries) {
-      const limit = query.argsFor('limit')?.[0]
-      expect({ table, isNumber: typeof limit === 'number' }).toEqual({
-        table,
-        isNumber: true,
-      })
-      expect(limit).toBeGreaterThan(1000)
+      expect(query.argsFor('range'), table).toEqual([0, 499])
+      expect(query.argsFor('order'), table).toEqual(['id', { ascending: true }])
     }
   })
 
@@ -87,5 +83,37 @@ describe('getDashboardStats', () => {
     await getDashboardStats(['w1'], shared)
 
     expect(unreadMock.getUnreadCountsForWorkspaces).not.toHaveBeenCalled()
+  })
+
+  it('includes contacts and unread conversations beyond the first 1000 rows', async () => {
+    const conversations = Array.from({ length: 1205 }, (_, i) => ({
+      id: `c${i}`,
+      workspace_id: 'w1',
+      status: 'open',
+      last_message_at: null,
+    }))
+    const tables: Record<string, Array<unknown>> = {
+      conversations,
+      channels: [{ workspace_id: 'w1', type: 'telegram' }],
+      contacts: Array.from({ length: 1205 }, () => ({ workspace_id: 'w1' })),
+    }
+    supabaseMock.from.mockImplementation((table: string) =>
+      mockQueryBuilder((calls) => {
+        const range = calls.find(([name]) => name === 'range')
+        const from = Number(range?.[1] ?? 0)
+        const to = Number(range?.[2] ?? 999)
+        return tables[table].slice(from, Math.min(to + 1, from + 1000))
+      }),
+    )
+    unreadMock.getUnreadCountsForWorkspaces.mockResolvedValue(
+      new Map([['c1204', 3]]),
+    )
+
+    expect((await getDashboardStats(['w1'])).aggregate).toEqual({
+      unread: 3,
+      open: 1205,
+      channels: 1,
+      contacts: 1205,
+    })
   })
 })

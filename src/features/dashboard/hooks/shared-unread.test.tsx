@@ -31,7 +31,7 @@ describe('home shares one unread fetch across its queries', () => {
     supabaseMock.from.mockReset()
     supabaseMock.rpc.mockReset()
     supabaseMock.from.mockImplementation(() => mockQueryBuilder([]))
-    supabaseMock.rpc.mockResolvedValue({ data: [], error: null })
+    supabaseMock.rpc.mockImplementation(() => mockQueryBuilder([]))
   })
 
   it('calls the unread RPC once for all three home queries', async () => {
