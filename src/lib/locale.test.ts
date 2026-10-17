@@ -85,6 +85,25 @@ describe('locale resolution', () => {
     expect(locale.resolveLocale()).toBe('ru')
   })
 
+  it('ignores a malformed cookie instead of failing application boot', async () => {
+    setCookie('%E0%A4%A')
+    setBrowserLanguages(['ru-RU'])
+    const locale = await loadLocale()
+
+    expect(locale.getLocalePreference()).toBe('auto')
+    expect(locale.resolveLocale()).toBe('ru')
+  })
+
+  it('sets the document language for assistive technology', async () => {
+    setBrowserLanguages(['ru-RU'])
+    document.documentElement.lang = 'en'
+    const locale = await loadLocale()
+
+    locale.initLocale()
+
+    expect(document.documentElement.lang).toBe('ru')
+  })
+
   // Signed out there is no server preference at all: the cache is the whole
   // story, and it still has to distinguish an explicit choice from 'auto'.
   it('uses the cached preference for a signed-out visitor', async () => {

@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createTestQueryClient, renderWithQueryClient } from '@/test/render'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider, useAuth } from './auth-provider'
@@ -42,12 +43,24 @@ function AuthProbe() {
       <button onClick={() => void auth.signOut()} type="button">
         Sign out
       </button>
+      <button onClick={() => void auth.signOut('others')} type="button">
+        Sign out other devices
+      </button>
     </div>
   )
 }
 
 function renderProvider(children: ReactNode) {
-  return render(<AuthProvider>{children}</AuthProvider>)
+  return renderWithQueryClient(<AuthProvider>{children}</AuthProvider>)
+}
+
+function emitSession(nextSession: Session | null) {
+  act(() => {
+    supabaseMock.auth.onAuthStateChange.mock.calls.at(-1)?.[0](
+      nextSession ? 'SIGNED_IN' : 'SIGNED_OUT',
+      nextSession,
+    )
+  })
 }
 
 describe('AuthProvider', () => {
@@ -108,6 +121,147 @@ describe('AuthProvider', () => {
     view.unmount()
 
     expect(unsubscribe).toHaveBeenCalledOnce()
+  })
+
+  it('does not resurrect a session when the initial read finishes after sign out', async () => {
+    let finishRead!: (value: {
+      data: { session: Session }
+      error: null
+    }) => void
+    supabaseMock.auth.getSession.mockReturnValue(
+      new Promise((resolve) => {
+        finishRead = resolve
+      }),
+    )
+    renderProvider(<AuthProbe />)
+
+    emitSession(null)
+    await act(async () => {
+      finishRead({ data: { session }, error: null })
+      await Promise.resolve()
+    })
+
+    expect(screen.getByTestId('email').textContent).toBe('none')
+    expect(screen.getByTestId('loading').textContent).toBe('false')
+  })
+
+  it('finishes loading when the initial session read rejects', async () => {
+    supabaseMock.auth.getSession.mockRejectedValue(
+      new Error('Storage unavailable'),
+    )
+    renderProvider(<AuthProbe />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false')
+    })
+    expect(screen.getByTestId('email').textContent).toBe('none')
+  })
+
+  it('clears private cached data on a cross-tab identity change and cancels old reads', async () => {
+    const queryClient = createTestQueryClient()
+    renderWithQueryClient(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('email').textContent).toBe('alex@example.com'),
+    )
+    queryClient.setQueryData(['inbox', 'contact', 'contact-1'], {
+      name: 'Private customer',
+    })
+    let finishRead!: (value: string) => void
+    const pending = queryClient
+      .fetchQuery({
+        queryKey: ['inbox', 'messages', 'conversation-1'],
+        queryFn: () =>
+          new Promise<string>((resolve) => {
+            finishRead = resolve
+          }),
+      })
+      .catch(() => undefined)
+
+    emitSession({
+      ...session,
+      user: { ...session.user, id: 'user-2', email: 'other@example.com' },
+    })
+    await act(async () => {
+      finishRead('Private message')
+      await pending
+    })
+
+    expect(screen.getByTestId('email').textContent).toBe('other@example.com')
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+  })
+
+  it('preserves the cache for token refresh and signing out other devices', async () => {
+    const { queryClient } = renderProvider(<AuthProbe />)
+    await waitFor(() =>
+      expect(screen.getByTestId('email').textContent).toBe('alex@example.com'),
+    )
+    queryClient.setQueryData(
+      ['inbox', 'messages', 'conversation-1'],
+      ['message'],
+    )
+
+    emitSession({ ...session, access_token: 'refreshed-token' })
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sign out other devices' }),
+    )
+    await waitFor(() =>
+      expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({
+        scope: 'others',
+      }),
+    )
+
+    expect(screen.getByTestId('email').textContent).toBe('alex@example.com')
+    expect(
+      queryClient.getQueryData(['inbox', 'messages', 'conversation-1']),
+    ).toEqual(['message'])
+  })
+
+  it('clears the cache when signing out locally even without an auth callback', async () => {
+    const { queryClient } = renderProvider(<AuthProbe />)
+    await waitFor(() =>
+      expect(screen.getByTestId('email').textContent).toBe('alex@example.com'),
+    )
+    queryClient.setQueryData(
+      ['inbox', 'messages', 'conversation-1'],
+      ['message'],
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+
+    await waitFor(() =>
+      expect(screen.getByTestId('email').textContent).toBe('none'),
+    )
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+  })
+
+  it('does not clear a newer account when an older sign-out finishes', async () => {
+    let finishSignOut!: (value: { error: null }) => void
+    supabaseMock.auth.signOut.mockReturnValue(
+      new Promise((resolve) => {
+        finishSignOut = resolve
+      }),
+    )
+    const { queryClient } = renderProvider(<AuthProbe />)
+    await waitFor(() =>
+      expect(screen.getByTestId('email').textContent).toBe('alex@example.com'),
+    )
+    fireEvent.click(screen.getByRole('button', { name: /^Sign out$/ }))
+    emitSession({
+      ...session,
+      user: { ...session.user, id: 'user-2', email: 'other@example.com' },
+    })
+    queryClient.setQueryData(['new-account-data'], 'current')
+    await act(async () => {
+      finishSignOut({ error: null })
+      await Promise.resolve()
+    })
+    expect(screen.getByTestId('email').textContent).toBe('other@example.com')
+    expect(queryClient.getQueryData(['new-account-data'])).toBe('current')
   })
 
   it('requires the provider', () => {

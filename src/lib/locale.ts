@@ -36,7 +36,14 @@ function readChosenLocale(): AppLocale | undefined {
   const match = document.cookie.match(
     new RegExp(`(?:^|;\\s*)${cookieName}=([^;]*)`),
   )
-  const value = match ? decodeURIComponent(match[1]) : undefined
+  let value: string | undefined
+  try {
+    value = match ? decodeURIComponent(match[1]) : undefined
+  } catch {
+    // A malformed cookie is an invalid preference, not a reason to prevent
+    // the entire application from booting.
+    return undefined
+  }
 
   return isLocale(value) ? value : undefined
 }
@@ -91,6 +98,9 @@ export function initLocale() {
   resolvedLocale = undefined
   const locale = resolveLocale()
   overwriteGetLocale(() => locale)
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale
+  }
 }
 
 /**
