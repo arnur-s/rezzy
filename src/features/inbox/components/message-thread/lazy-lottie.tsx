@@ -5,10 +5,8 @@ import { lazy } from 'react'
  * Lottie player, loaded only when a Telegram animated sticker is actually
  * rendered.
  *
- * `lottie-react` bundles `lottie-web`, a full SVG/canvas animation runtime
- * (~250 kB raw). A static import put it in the conversation chunk, so every
- * thread paid for it whether or not it contained a `.tgs` sticker, which most
- * do not.
+ * Vite resolves `lottie-web` to its expression-free light SVG player. Keep it
+ * lazy so ordinary conversations do not load the sticker runtime.
  *
  * Some bundlers deliver this CJS-published default export wrapped as
  * `{ default: Component }`; the unwrap below keeps that defence, now applied

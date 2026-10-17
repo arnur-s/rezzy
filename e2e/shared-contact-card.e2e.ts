@@ -1,10 +1,8 @@
 import type { ChildProcess } from 'node:child_process'
-import { spawn } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
-import process from 'node:process'
 import type { Browser, Page } from 'playwright'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { localRequestsOnly, startVite } from './server'
 
 /**
  * Real-browser fixture for the shared-contact card, driving the dev-only
@@ -27,48 +25,23 @@ const HARNESS_PATH = '/e2e-shared-contact'
 /** iPhone SE width — the narrowest phone worth supporting. */
 const PHONE = { width: 375, height: 720 }
 
-let server: ChildProcess
-let browser: Browser
-
-async function waitForServer(url: string, timeoutMs = 120_000): Promise<void> {
-  const deadline = Date.now() + timeoutMs
-  for (;;) {
-    try {
-      const res = await fetch(url)
-      if (res.ok) return
-    } catch {
-      /* not up yet */
-    }
-    if (Date.now() > deadline) {
-      throw new Error(`Dev server did not start at ${url}`)
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250))
-  }
-}
+let server: ChildProcess | undefined
+let browser: Browser | undefined
 
 beforeAll(async () => {
-  // Vite's own entry through the current node binary, rather than `pnpm exec`:
-  // on Windows `pnpm` is a .cmd, which `spawn` cannot resolve without a shell,
-  // and a fixture that only runs on one OS is not a fixture.
-  const viteBin = fileURLToPath(
-    new URL('../node_modules/vite/bin/vite.js', import.meta.url),
-  )
-  server = spawn(
-    process.execPath,
-    [viteBin, 'dev', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'],
-    { cwd: process.cwd(), stdio: 'ignore' },
-  )
-  await waitForServer(`${BASE_URL}${HARNESS_PATH}?scenario=unknown`)
+  server = await startVite(PORT)
   browser = await chromium.launch()
 })
 
 afterAll(async () => {
-  await browser.close()
-  server.kill('SIGTERM')
+  await browser?.close()
+  server?.kill('SIGTERM')
 })
 
 async function openScenario(query: string): Promise<Page> {
+  if (!browser) throw new Error('Browser fixture has not started')
   const context = await browser.newContext({ viewport: PHONE })
+  await localRequestsOnly(context, PORT)
   const page = await context.newPage()
   await page.goto(`${BASE_URL}${HARNESS_PATH}?${query}`)
   await page.waitForSelector('[data-testid="shared-contact-harness"]')
@@ -176,6 +149,9 @@ describe('shared contact card', () => {
       'ambiguous',
     ]) {
       const page = await openScenario(`locale=ru&scenario=${scenario}`)
+      if (scenario === 'unknown') {
+        expect(await isVisible(page, 'Создать контакт')).toBe(true)
+      }
       expect(
         await horizontalOverflow(page),
         `${scenario} overflows in Russian`,

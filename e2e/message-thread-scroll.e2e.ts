@@ -1,9 +1,8 @@
 import type { ChildProcess } from 'node:child_process'
-import { spawn } from 'node:child_process'
-import process from 'node:process'
 import type { Browser, BrowserContext, Page } from 'playwright'
 import { chromium, webkit } from 'playwright'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { localRequestsOnly, startVite } from './server'
 
 /**
  * Real-browser regression tests for the chat transcript (astryx ChatLayout +
@@ -45,35 +44,14 @@ const HARNESS_PATH = '/e2e-message-list'
 /** Must match SCROLL_END_THRESHOLD in the component; assertions stay well under it. */
 const AT_END_EPSILON = 3
 
-let server: ChildProcess
-
-async function waitForServer(url: string, timeoutMs = 120_000): Promise<void> {
-  const deadline = Date.now() + timeoutMs
-  for (;;) {
-    try {
-      const res = await fetch(url)
-      if (res.ok) return
-    } catch {
-      /* not up yet */
-    }
-    if (Date.now() > deadline) {
-      throw new Error(`Dev server did not start at ${url}`)
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250))
-  }
-}
+let server: ChildProcess | undefined
 
 beforeAll(async () => {
-  server = spawn(
-    'pnpm',
-    ['exec', 'vite', 'dev', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'],
-    { cwd: process.cwd(), stdio: 'ignore' },
-  )
-  await waitForServer(BASE_URL + HARNESS_PATH)
+  server = await startVite(PORT)
 })
 
 afterAll(() => {
-  server.kill('SIGTERM')
+  server?.kill('SIGTERM')
 })
 
 type Metrics = {
@@ -88,6 +66,7 @@ const SCROLLER = '[data-testid="harness-root"] .astryx-chat-layout'
 async function openHarness(page: Page, count: number): Promise<void> {
   await page.goto(`${BASE_URL}${HARNESS_PATH}?count=${count}`)
   await page.waitForSelector('[data-testid="message-transcript"]')
+  await page.waitForFunction(() => Boolean(window.__mtHarness))
 }
 
 function metrics(page: Page): Promise<Metrics> {
@@ -199,15 +178,16 @@ function runScrollSuite(
     })
 
     afterAll(async () => {
-      await browser.close()
+      if (typeof browser !== 'undefined') await browser.close()
     })
 
     afterEach(async () => {
-      await context.close()
+      if (typeof context !== 'undefined') await context.close()
     })
 
     async function newPage(viewport = { width: 900, height: 720 }) {
       context = await browser.newContext({ viewport })
+      await localRequestsOnly(context, PORT)
       page = await context.newPage()
       return page
     }
@@ -445,11 +425,11 @@ describe('message thread scrolling (webkit specifics)', () => {
   })
 
   afterAll(async () => {
-    await browser.close()
+    if (typeof browser !== 'undefined') await browser.close()
   })
 
   afterEach(async () => {
-    await context.close()
+    if (typeof context !== 'undefined') await context.close()
   })
 
   it('opens at the end, follows appends, and leaves historical reading undisturbed', async () => {
@@ -458,6 +438,7 @@ describe('message thread scrolling (webkit specifics)', () => {
       hasTouch: true,
       isMobile: true,
     })
+    await localRequestsOnly(context, PORT)
     page = await context.newPage()
     await openHarness(page, 400)
     await expectPinned(page)

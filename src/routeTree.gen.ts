@@ -15,6 +15,7 @@ import { Route as PasswordResetRouteImport } from './routes/password-reset'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as InstagramCallbackRouteImport } from './routes/instagram-callback'
 import { Route as E2eSharedContactRouteImport } from './routes/e2e-shared-contact'
+import { Route as E2eMessageListRouteImport } from './routes/e2e-message-list'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -67,6 +68,11 @@ const InstagramCallbackRoute = InstagramCallbackRouteImport.update({
 const E2eSharedContactRoute = E2eSharedContactRouteImport.update({
   id: '/e2e-shared-contact',
   path: '/e2e-shared-contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const E2eMessageListRoute = E2eMessageListRouteImport.update({
+  id: '/e2e-message-list',
+  path: '/e2e-message-list',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -205,6 +211,7 @@ const AuthenticatedWorkspacesIdSettingsChannelsNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/e2e-message-list': typeof E2eMessageListRoute
   '/e2e-shared-contact': typeof E2eSharedContactRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$id/settings/channels/': typeof AuthenticatedWorkspacesIdSettingsChannelsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/e2e-message-list': typeof E2eMessageListRoute
   '/e2e-shared-contact': typeof E2eSharedContactRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
@@ -262,6 +270,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/e2e-message-list': typeof E2eMessageListRoute
   '/e2e-shared-contact': typeof E2eSharedContactRoute
   '/instagram-callback': typeof InstagramCallbackRoute
   '/onboarding': typeof OnboardingRoute
@@ -295,6 +304,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/e2e-message-list'
     | '/e2e-shared-contact'
     | '/instagram-callback'
     | '/onboarding'
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/workspaces/$id/settings/channels/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/e2e-message-list'
     | '/e2e-shared-contact'
     | '/instagram-callback'
     | '/onboarding'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/e2e-message-list'
     | '/e2e-shared-contact'
     | '/instagram-callback'
     | '/onboarding'
@@ -383,6 +395,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  E2eMessageListRoute: typeof E2eMessageListRoute
   E2eSharedContactRoute: typeof E2eSharedContactRoute
   InstagramCallbackRoute: typeof InstagramCallbackRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -433,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/e2e-shared-contact'
       fullPath: '/e2e-shared-contact'
       preLoaderRoute: typeof E2eSharedContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e2e-message-list': {
+      id: '/e2e-message-list'
+      path: '/e2e-message-list'
+      fullPath: '/e2e-message-list'
+      preLoaderRoute: typeof E2eMessageListRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -714,6 +734,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  E2eMessageListRoute: E2eMessageListRoute,
   E2eSharedContactRoute: E2eSharedContactRoute,
   InstagramCallbackRoute: InstagramCallbackRoute,
   OnboardingRoute: OnboardingRoute,

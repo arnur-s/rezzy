@@ -12,6 +12,7 @@ import { setLocale } from '@/paraglide/runtime'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import { initLocale } from '@/lib/locale'
 
 /**
  * Browser fixture for the shared-contact card.
@@ -130,6 +131,7 @@ function RouteComponent() {
   // Seeded once, before the card mounts, so nothing ever reaches the network.
   const [isSeeded] = useState(() => {
     setLocale(locale as Locale, { reload: false })
+    initLocale()
     queryClient.setQueryData(
       workspacePhoneRegionQueryKeys.detail(WORKSPACE_ID),
       region,
