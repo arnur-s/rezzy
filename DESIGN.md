@@ -222,7 +222,7 @@ The canonical values. `src/themes/stone/stoneTheme.ts` is the source of truth;
 if it and this list disagree, the theme wins and this list is stale.
 
 - **Font family:** `font.family.body=Figtree`, `font.family.heading=Montserrat`, `font.family.code=JetBrains Mono`, `font.size.base=14px`, `font.weight.base=400`, `font.lineHeight.base=1.4286`
-- **Typography scale** (base 14, ratio 1.25, `Math.round`ed to whole px by `expandTypeScale`, **not clamped**): `font.size.2xs=7px`, `font.size.xs=9px`, `font.size.sm=11px`, `font.size.base=14px`, `font.size.lg=18px`, `font.size.xl=22px`, `font.size.2xl=27px`, `font.size.3xl=34px`, `font.size.4xl=43px`, `font.size.5xl=53px`. One size is pinned by hand: `--text-supporting-size=12px`.
+- **Typography scale:** base 14px, ratio 1.25, rounded by `expandTypeScale`; explicit theme overrides clamp every sub-base step (`sm` through `4xs`) to 12px. Above base: 18 / 22 / 27 / 34 / 43 / 53px. `--text-supporting-size` is also 12px. The generated dependency override handles sizes outside this scale.
 - **Color — accent:** `color.accent=#534c7e` (light) / `#b4a3ca` (dark) — the brand violet's dark stop, and a lighter stop of the same hue in dark. `color.accent.muted=#534c7e14` (light) / `#b4a3ca20` (dark). `color.neutral=#25252a0f` / `#f3f3f51a` stays achromatic — it is the interaction tint, not the accent. The gradient form, `--gradient-accent`, is declared in `src/styles.css` rather than the theme: `defineTheme`'s token map is typed to Astryx's own token names and has no gradient slot.
 - **Color — text:** `color.text.primary=#25252a` / `#f3f3f5`, `color.text.secondary=#83838a` / `#9d9da3`, `color.text.disabled=#d7d7da` / `#5e5e61`, `color.text.on-accent=#ffffff` (light) / `#25252a` (dark)
 - **Color — surface:** `color.surface.pane=#ffffff` / `#1b1b1f`, `color.surface.card=#ffffff` / `#242325`, `color.surface.popover=#ffffff` / `#25252a`, `color.surface.canvas=#f3f3f5` / `#111015`, `color.surface.muted=#e2e2e8` / `#3b3b3f`
@@ -316,73 +316,51 @@ mechanism the other one lacks.
 
 ### Known drift
 
-The theme was swapped from `neutralTheme` to `stoneTheme` (`src/themes/stone/`,
-applied in `src/main.tsx`) without a follow-up pass over the surfaces built
-against the previous values. Nothing here is a style preference — each is a
-place where the code and this document deliberately disagree, with this document
-describing the target. Each is stated again in the section that owns it.
+Audit status against current `stoneTheme` and Astryx 0.1.8. Resolved items have
+regression checks; intentional choices preserve the existing identity. Open
+and dormant items remain review obligations.
 
-1. **`text-secondary` is still short of AA on the light muted well.** The token
-   is now `#6a6a6f` (T45), which clears the pane at **5.38:1**, the canvas at
-   **4.85:1**, and the transcript wash at 4.85:1 — but the opaque `bg-muted`
-   well (`#e2e2e8`) is **4.17:1**, against a 4.5:1 requirement. That surface is
-   real: the date separator pill, the directory section header, the assignee
-   mark, and the image placeholder all put secondary text straight on it. T40
-   (`#5e5e63`) clears it at 5.00:1 and is the obvious next stop, but it is a
-   full step darker than the tone this document settled on and it narrows the
-   gap to `text-primary`, so it is a design call rather than a token swap. Dark
-   mode clears everywhere at T70 (`#ababb0`): 7.51:1 on the pane, 4.88:1 on the
-   dark muted well. All computed, not measured.
-2. **Light mode has no raised tone.** `bg-card` and `bg-popover` are both
-   `#ffffff`, identical to `bg-surface`. A card on a pane, and a popover over a
-   card, are separated by `--shadow-low` / `--shadow-high` alone. The shadows
-   are soft (5–10% at 4–24px), so this works but has no margin; anything that
-   drops its shadow becomes invisible. See The Rim Is Gone Rule.
-3. **Dark mode's shadows do nothing.** All three shadow tokens are a fixed
-   `#28282A` at 5–15% with no `light-dark()` switch, so in dark mode they paint
-   near-black on near-black. The 1px white inset rim the previous theme carried
-   is gone. Dark elevation is entirely tonal, and the popover/card step is
-   `#25252a` over `#242325` — **1.03:1**, effectively no step at all. A popover
-   opened over a card in dark mode has no edge by any mechanism.
-4. **`border-border-emphasized` is below 3:1 in dark mode.** `#5e5e61` on the
-   `#1b1b1f` pane computes **2.66:1**, and it is the secondary Button's entire
-   visible form — that button is `transparent` with a 1.5px border and nothing
-   else. In light mode the same token is 3.76:1 and clears.
-5. **The status inset rings lost their status.** `--shadow-inset-success`,
-   `-warning`, and `-error` are all `inset 0 0 0 2px #83838a30` — the same
-   neutral gray. A success ring and an error ring are now indistinguishable.
-   `--shadow-inset-hover` / `-selected` moved from signal blue to neutral
-   `#28282A` at 30% / 50%, which is intentional and fine; the three status ones
-   are not.
-6. **Plates went round again, and now at both sizes.** `--radius-page` moved
-   18px → 24px. It is exactly half of 48px, so a `size-12` plate is now exactly
-   circular, and it exceeds half of 36px, so a `size-9` plate clamps to a circle
-   too. Every avatar and platform plate in the product is a circle. See The
-   Plate Went Round.
-7. **Buttons are pill-shaped and still 32px tall.** `components.button.base`
-   sets `borderRadius: var(--radius-full)`, so every button in the product is a
-   stadium. The height is still Astryx's declared `height: 32px`, still below
-   the 44px touch-target criterion in the Accessibility section.
-8. **`--color-*-muted` equals `--color-*` in dark mode.** `--color-success` and
-   `--color-success-muted` are both `#b4cdb2` in dark; error and warning do the
-   same. Status text drawn on its own well would be invisible. In practice the
-   theme's `banner` and `field-status` overrides redirect those surfaces to the
-   categorical plates, and product code uses `bg-error/10` alpha rather than the
-   `-muted` token, so nothing currently hits it — but any new use of a
-   `-muted` well with its matching tone on top will render blank in dark mode.
-9. **`border-border/60` is close to invisible in light mode.** 30 usages
-   remain. The border token is an opaque `#e2e2e8`; at `/60` it composites to
-   roughly `#eeeef1` on a white pane. See The Hairline Is Already Thin Rule.
-10. **Fixed-width controls were sized against a 16px body.** Body type moved
-    16px → 14px, so every control with a hard width now holds roughly 14% _more_
-    characters than when its budget was set — the safe direction, for once. The
-    budgets in `src/lib/message-lengths.test.ts` are character counts and cannot
-    see either direction. Russian still runs 15–30% longer than English; verify
-    in a browser at phone width.
-11. **No command verifies anything in this document.** Contrast, font size,
-    overflow, and shell elevation have no automated check, so every rule here is
-    held by review alone. Contrast figures below are computed from the token
-    values rather than measured in a browser, and are marked as such.
+1. **Resolved — light secondary text.** T40 `#5e5e63` gives **5.00:1** on the
+   muted well, **6.45:1** on the pane and **5.82:1** on the canvas. Dark stays
+   T70 `#ababb0`. The browser suite checks the limiting muted-well pair.
+2. **Intentional — light elevation uses shadows.** Card, popover and pane
+   remain white. Raised surfaces must retain their shadow or a visible boundary.
+   This convention is not itself a text-contrast failure.
+3. **Open — weak dark elevation.** Popover `#25252a` over card `#242325` is
+   **1.03:1** and fixed dark shadows add little separation. Existing boundaries
+   need contextual review; a broad elevation change needs a visual pass across
+   nested overlays. The contrast tests do not validate this depth hierarchy.
+4. **Resolved — dark control outlines.** `border-emphasized` now uses T50
+   `#77777c`: **3.85:1** on the pane and **3.42:1** on the popover. Light
+   remains `#83838a`. Both modes have a live-browser contrast assertion.
+5. **Dormant — status inset rings share gray.** No app-side consumer uses
+   these shadows. Current banners and field statuses use categorical plates
+   and text. New ring consumers require distinct paired semantic hues.
+6. **Intentional — circular plates.** A 24px radius makes 36px and 48px avatar
+   and platform plates circular. Preserve the identity; this is not an
+   accessibility failure.
+7. **Intentional shape; open touch comfort — 32px pill buttons.** Pills stay.
+   Standard buttons exceed WCAG 2.2 AA's 24px minimum but remain below the
+   product's 44px comfort goal (also the AAA criterion). Compact icon targets
+   and spacing still need individual review; overflow tests do not audit them.
+8. **Dormant — equal dark semantic foreground/muted tokens.** Directly
+   pairing them would hide text. Current banner and field-status overrides use
+   categorical plates; app code has no direct muted-status pairing. New uses
+   must use the semantic component or its paired categorical tokens.
+9. **Intentional for structure — faint alpha hairlines.** `border-border/60`
+   is decorative separation. It must not be the sole boundary of an input or
+   secondary action; use the emphasized outline and its 3:1 check there.
+10. **Partially verified — translated fixed-width controls.** The 14px body
+    increases capacity over 16px. EN/RU auth is checked at 375px and 1280px in
+    both themes; shared-contact fixtures cover Cyrillic content, and real
+    inbox navigation is checked at phone width. This does not cover every
+    route, 320px or 200% browser zoom.
+11. **Resolved automation gap, bounded coverage.** `pnpm astryx:font-floor`
+    derives overrides from installed dependency CSS; `:check` rejects drift
+    and runs in `pnpm verify`. Unit tests cover changed atomic selectors.
+    `pnpm test:e2e` checks computed contrast, invalid-input focus, locale,
+    overflow, contact dialogs and local persisted workflows. Visual elevation
+    and all-route accessibility remain manual review obligations.
 
 ## Colors
 
@@ -447,10 +425,10 @@ read each role as a pair.
 - **T100 `#ffffff`** / **T15 `#25252a`**: `bg-popover`. Same story, and in dark it is 1.03:1 against the card beneath it.
 - **T90 `#e2e2e8`** / **T25 `#3b3b3f`**: `bg-muted`. In light it is a genuine step _down_ from both the pane (1.29:1) and the canvas (1.16:1) — an improvement, since it used to be byte-identical to the canvas. In dark it is a step _up_ from the pane (1.54:1). One token, opposite directions by mode; see The Recess Is Pane-Relative Rule.
 - **T15 `#25252a`** / **T96 `#f3f3f5`**: `text-primary`. Computed **15.25:1** light and **15.49:1** dark against the pane. This used to be the same value as the accent; since the accent became a brand hue, running text and the primary fill are two separate tones and `text-primary` is purely the neutral ramp's endpoint.
-- **T45 `#6a6a6f`** / **T70 `#ababb0`**: `text-secondary`. Computed **5.38:1** light and **7.51:1** dark against the pane, and 4.85:1 / 4.94:1 on the light canvas and transcript wash. Both stops are set by the worst surface the tone lands on rather than by the pane. The one surface it does not clear is the opaque `bg-muted` well at 4.17:1 — see Known drift 1.
+- **T40 `#5e5e63`** / **T70 `#ababb0`**: `text-secondary`. Computed **6.45:1** light and **7.51:1** dark against the pane, and **5.00:1** / **4.88:1** against the opaque muted wells. Both stops are set by the worst surface the tone lands on. The browser suite checks this limiting pair in both modes.
 - **`#d7d7da`** / **T40 `#5e5e61`**: `text-disabled`. 1.44:1 light — disabled text is exempt from the contrast requirement, and this is the value that makes that exemption load-bearing.
 - **T90 `#e2e2e8`** / **T96 at 10%**: `border-border`. Light is an opaque tone, dark is an alpha wash. The light hairline is byte-identical to the light muted well, so a rule and a recessed surface are the same tone.
-- **T55 `#83838a`** / **T40 `#5e5e61`**: `border-border-emphasized`. The secondary Button's outline. 3.76:1 light, **2.66:1 dark** — see Known drift 4.
+- **T55 `#83838a`** / **T50 `#77777c`**: `border-border-emphasized`. The secondary Button's outline. **3.76:1** light and **3.85:1** dark against the pane; **3.42:1** remains on the dark popover.
 - **T85 `#d4d4da`** / **`#5e5e64`**: `--color-skeleton`. Also the ProgressBar track and the Switch off-track, both redirected there by component overrides because `--color-background-muted` reads too close to the body tone to be a visible channel.
 
 ### Secondary (Categorical)
@@ -670,10 +648,11 @@ Two sizes are outside a token's reach either way and are floored in
 from the avatar's pixel size (`size * 0.4`) and writes an inline
 `--x-fontSize`, and `Table`'s sort indicator carries a literal `font-size: 10px`.
 Both are raised with `max()`, so larger avatars keep their proportional initials.
-The selectors are StyleX atomic hashes read out of the installed package rather
-than written by hand — **and there is no generator**, so the file cannot be
-regenerated after an `@astryxdesign/core` upgrade without re-deriving the hashes.
-Treat it as pinned to 0.1.8.
+The selectors are StyleX atomic hashes read out of the installed package by
+`scripts/font-floor-build.mjs`, including their specificity suffixes. Run
+`pnpm astryx:font-floor` after an Astryx upgrade; `pnpm astryx:font-floor:check`
+fails if the checked-in output is stale. Unknown expressions or compound
+selectors fail for review rather than silently weakening the floor.
 
 **The Two-Tier Rule.** The interface has two tiers: **body at `text-base`** and
 **metadata at `text-sm`**. `text-lg` and above are theme capacity, not shell
@@ -691,7 +670,7 @@ tier it used to serve is `text-sm`'s job.
 under AA in the other. `/70` (5.72:1 light, 8.12:1 dark) remains the lowest rung
 that clears both; `/60` (4.16:1 light) does not. Under stone an opacity step is
 now **comparable to `text-secondary` in light mode** rather than safer than it:
-`text-secondary` is 5.38:1 on the pane against `/70`'s 5.72:1. Either is a
+`text-secondary` is 6.45:1 on the pane against `/70`'s 5.72:1. Either is a
 defensible receding tone. Prefer `text-secondary`, which is a designed stop on
 the ramp, and reach for `/70` only where the tone has to sit on the one surface
 `text-secondary` does not clear — the opaque `bg-muted` well (Known drift 1).
@@ -1012,7 +991,7 @@ Resolved and unfussy. State is a tonal shift, never a scale or bounce.
 - **Shape:** **a pill** — `--radius-full`, set on `components.button.base`. Every button, every variant, both modes.
 - **Height:** **a fixed 32px, set by Astryx**, not derived from its padding. The label is flex-centered inside a declared `height: 32px`, which is why the body type moving 16px → 14px did not change the control height. It also means the button is **below the 44px touch-target criterion** in the Accessibility section, at every breakpoint.
 - **Primary:** the brand ramp — `--gradient-accent` at `135deg`, with a `#ffffff` label in both modes. Worst case is the ramp's lightest stop, `#8365a6`, at 4.8:1 against white; the label sits over the `#534c7e` end at 7.8:1. Stone overrides `button` / `variant:primary` for this, and the override has to restack Astryx's hover and pressed tints — they are painted into `background-image`, which the ramp otherwise replaces. The label is `--color-on-dark`, not `--color-on-accent`: the ramp does not invert.
-- **Secondary:** **an outline, not a fill.** `transparent` with a 1.5px `--color-border-emphasized` border, hovering to `--color-neutral`. This is a change of kind from the previous theme's gray fill. In dark mode that border computes 2.66:1 against the pane — see Known drift 4 — which makes the secondary button the weakest-defined control in the product.
+- **Secondary:** **an outline, not a fill.** `transparent` with a 1.5px `--color-border-emphasized` border, hovering to `--color-neutral`. The outline clears 3:1 in both modes, including the dark popover surface; see Known drift 4.
 - **Ghost:** transparent, hover `--color-overlay-hover` (black at 5% / white at 5%). The default for icon buttons and inline actions. Ghost and secondary are now closer to each other than they used to be: one is an invisible box, the other an outlined one.
 - **Destructive:** **a pastel well, not a fill.** `--color-background-red` (`#f9dcd7` / `#644d49`) with `--color-text-red`, computed 7.25:1 light and 6.02:1 dark. A destructive action is the quietest colored object on screen. If a delete confirmation needs more weight, the weight belongs in the copy and the dialog, not in a re-fill.
 - **Loading:** `isLoading` keeps the label visible alongside the spinner.
@@ -1037,7 +1016,7 @@ The rail is the product's spine and the only persistent chrome.
 The most-read surface in the product.
 
 - **Layout:** a 36px platform plate (`rounded-xl`, now a full circle) plus a text body, `gap-3`, `px-3 py-2.5`. Direct children of a scrollable `role="listbox"` with `gap-0.5` — no card wrapping.
-- **Typography:** contact name at 600 (unread) or 500 (read); preview at `text-primary/80` (unread) or `text-secondary` (read); timestamp at `text-secondary`. Name and preview are `text-base` (14px); the timestamp is `text-sm` (12px, on the floor). The read-state preview and the timestamp both land on `text-secondary`, which is 5.38:1 on the light pane — this row is the surface that is read most, and it is now the best case for that token rather than the worst.
+- **Typography:** contact name at 600 (unread) or 500 (read); preview at `text-primary/80` (unread) or `text-secondary` (read); timestamp at `text-secondary`. Name and preview are `text-base` (14px); timestamp is `text-sm` (12px). The secondary tone gives 6.45:1 on the light pane.
 - **Unread:** name goes semibold, preview brightens, and a `NumericUnreadChip` appears in the trailing position. The chip hides on the selected row — opening a conversation resets its count visually.
 - **The state line:** the row's third line is where the work stands and who owns it — `ConversationStatusChip` on the leading edge, a 24px assignee face on the trailing one, `justify-between` at `min-h-6`. 24px because that is exactly the badge's own height, so the line has one rhythm rather than two. Nothing renders there when nobody is assigned: an unassigned conversation is the common case in a shared inbox, and a column of empty placeholders down the most-read surface would spend real estate saying "no". An `assigned_to` the workspace roster cannot resolve — a colleague who has left — gets a muted `UserRound` plate instead, because that state must not read as unassigned.
 - **The right rail:** timestamp, unread count and assignee face land on one vertical axis at the row's trailing edge, one per line. Three answers to "does this need me", stacked.
@@ -1085,7 +1064,7 @@ draws each bubble.
 - **Action rail:** a reply control parked in the transcript gutter, absolutely positioned outside the bubble, revealed on `group-hover/msg` and `group-focus-within/msg`. Anchored to the first text line (`top-2`) for text and to the middle for media or structured blocks. Zero hit target until engaged; on touch it sits permanently at 60% opacity with an expanded 44px target.
 - **Pane wash:** the transcript pane carries one static `radial-gradient` — a wide, shallow ellipse (`120% 85% at 100% 0%`) of `--color-accent` at **5.5%**, out to a `transparent` stop at 62%. It is the sole exception to the no-decorative-background rule below. It reads `--color-accent`, so it inverts by mode for free with no `dark:` variant — and since the accent became a brand hue it is now a faint violet cast rather than a neutral one. **The measurements in this bullet and the two below it predate that change and have not been re-taken in a browser.** Composited, the peak is now `#f5f5f8` on the white pane (it was `#f3f3f3`) and `#232228` in dark (it was `#27272a`) — still inside the tonal range the shell already owns, and still a soft vignette across an 844px pane rather than a visible edge, but the exact ratios below are stale. It lives as an inline style on the pane wrapper in `message-thread.tsx`, painted on the wrapper itself rather than a sibling, so it needs no `isolate` and no negative z-index, and it does not scroll with the transcript.
   - **It does not disturb the bubble edge**, which is the obvious worry and is measurably not real. `--color-neutral` is an _alpha_ fill, so a bubble composites over the wash rather than over the bare pane, and the wash darkens figure and ground together. Measured: the bubble edge is **1.114:1** over the wash's peak versus **1.119:1** over a bare pane (dark: 1.334:1 vs 1.324:1). A future opaque bubble fill would break this property and would have to re-measure.
-  - **What it costs `text-secondary` is now affordable.** The wash is why that token is T45 and not T50: measured against the old `#83838a`, the wash pulled it from 3.76:1 on the bare pane down to 3.48:1 at the worst real text position (an outbound footer at the top of the view) and 3.39:1 at the peak pixel, and it ruled out T50 `#77777c` as a fix — 4.45:1 on the bare pane, 4.01:1 on the wash peak, clearing neither. T45 `#6a6a6f` clears both at **5.38:1** and **4.94:1** against the composited peak (`#f5f5f8`), computed. The wash still costs roughly 0.44 of a ratio point at the worst position; the tone now has the margin to pay it.
+  - **Secondary text retains contrast over the wash.** T40 `#5e5e63` gives **6.45:1** on the pane and **5.93:1** against the composited peak (`#f5f5f8`), computed. The opaque muted well is the limiting surface at **5.00:1** and is protected by the browser regression.
   - It replaces a WebGL ray canvas (`ogl`, ported from React Bits' `SideRays`) that shipped here after the stone swap. That canvas was drift on two counts this document already legislates: it painted `#63fe13` / `#2e7a00`, a hue belonging to no ramp in this theme and to no brand, and it cited `neutralTheme.ts` — deleted — for the choice. A static gradient also drops a runtime dependency, a GL context per open thread, an `IntersectionObserver`, a resize listener, an `rAF` loop, and a `prefers-reduced-motion` branch. Nothing that does not move needs a reduced-motion guard.
 
 ### Cards
@@ -1180,7 +1159,7 @@ Each is pass/fail. "Fail" means the change does not ship.
 **Contrast**
 
 1. Body and metadata text must reach 4.5:1 against every surface it lands on — pane, canvas, card, muted well, and any categorical plate. Check both modes.
-2. `text-secondary` must reach 4.5:1 in both modes. **It currently does not in light** (3.76:1 on the pane, 3.40:1 on the canvas), so until the token moves, receding copy should use `text-primary/70` (5.72:1) instead.
+2. `text-secondary` must reach 4.5:1 in both modes. It now clears the opaque muted wells at 5.00:1 light and 4.88:1 dark; the browser suite protects that pair. Prefer the token for receding copy.
 3. An opacity step on `text-primary` must be `/70` or higher. `/60` computes to 4.16:1 and `/55` to 3.58:1 in light. Verify in light mode specifically — the two modes disagree, and dark is the forgiving one.
 4. Icons, borders, and other non-text objects that carry meaning must reach 3:1 against their background. A decorative icon beside a text label that already says the same thing is exempt.
 5. A categorical or semantic plate must carry its paired `*-vivid` token, never `text-primary`. Every pairing in the theme is ~7.2:1 light / ~6.0:1 dark by construction; a hand-assembled one is not.
@@ -1196,10 +1175,10 @@ Each is pass/fail. "Fail" means the change does not ship.
 
 **Text and layout**
 
-12. Nothing renders below 12px. **The theme does not currently hold this** — `text-sm` is 11px and `text-xs` is 9px, and only `--text-supporting-size` and `src/generated/astryx-font-floor.css` hold the floor where they reach. Fix at the theme, not per component.
+12. Nothing renders below 12px. The theme clamps its sub-base scale to 0.75rem. The generated dependency override covers computed Avatar initials and the literal Table indicator. Regenerate and check it after upgrades; do not patch private hashes by hand.
 13. At 200% zoom and at 320px width, no content is clipped and nothing scrolls horizontally.
 14. Every string is checked in Russian at phone width. Russian runs 15–30% longer than English.
-15. Touch targets are at least 44px in their smallest dimension. Buttons are 32px and do not meet this; the message action rail expands to 44px on touch specifically to meet it.
+15. Aim for 44px touch targets in their smallest dimension (WCAG AAA). Standard buttons remain 32px: above the WCAG 2.2 AA 24px minimum, below this comfort goal. The message action rail expands to 44px on touch. Review smaller controls and target spacing individually.
 
 **Motion**
 
@@ -1208,9 +1187,10 @@ Each is pass/fail. "Fail" means the change does not ship.
 
 ### Named Rules
 
-**The Contrast Is Computed, Not Measured Rule.** Every ratio in this document
-was computed from the token values in `stoneTheme.ts`, not read off a rendered
-page. Computed figures can still be wrong for the screen when an alpha
+**The Contrast Needs Context Rule.** Ratios here are computed from token values.
+The browser suite also resolves live styles for secondary text on muted wells
+and emphasized outlines on popovers. Other pairs need rendered verification.
+Token figures can still be wrong for the screen when an alpha
 composites over an unexpected background, when a categorical plate sits behind a
 component that assumed the pane, or when a token resolves through a variant
 override. Treat the figures as the reason to check, not the result of having
@@ -1269,8 +1249,8 @@ rather than working around it.
 
 ### Don't:
 
-- **Don't** assume Tailwind's default scales. `text-sm` is 11px, `text-base` is 14px, `rounded-sm` is 4px, `rounded-md` is 8px, `rounded-lg` is 12px, and `rounded-xl` is 24px in this project. Not one type step matches Tailwind's.
-- **Don't** reintroduce `text-xs`, `text-2xs`, or anything below `text-sm`. They resolve to 9px and 7px; the theme clamps nothing.
+- **Don't** assume Tailwind's default scales. `text-sm` is 12px, `text-base` is 14px, `rounded-sm` is 4px, `rounded-md` is 8px, `rounded-lg` is 12px, and `rounded-xl` is 24px in this project.
+- **Don't** reintroduce `text-xs`, `text-2xs`, or anything below `text-sm`. They are clamped to the same 12px floor, but introduce redundant names for the metadata tier.
 - **Don't** name a font family in the theme without an `@font-face` for it in `src/fonts/fonts.css`, and don't name a Latin-only family as the body face without a Cyrillic-covering face directly behind it.
 - **Don't** put a generic fallback ahead of the Cyrillic-covering face in a font stack. Russian returns to the system UI stack silently, and nothing fails.
 - **Don't** ship an interactive component without a visible focus-visible state, and don't express focus with color alone.
@@ -1296,7 +1276,7 @@ rather than working around it.
 - **Don't** add a decorative background. `src/styles.css` carries no pattern or texture; its one gradient is `--gradient-accent`, which is a component fill rather than a decoration, and the auth screens want neither. The transcript pane's wash is the one decorative exception and is specified under Message Bubbles; it earns it by reading a token rather than a literal color, by staying under the bubble fill in both modes, and by being static. A second exception needs the same three arguments.
 - **Don't** add a top bar. Identity, navigation, notifications, and the account live in the rail; color mode and language live in Settings under Appearance; every page owns its own title.
 - **Don't** redirect on a failed query. Render the error with a retry — a failed check is not a known-empty result.
-- **Don't** cite a verification command for anything in this document. None exists; `package.json` is the complete list of what can be run.
+- **Don't** treat a passing command as a complete visual audit. `pnpm verify` checks generated font-floor drift and unit/build correctness; `pnpm test:e2e` checks the specific rendered workflows listed in Known drift. `package.json` is the command reference.
 
 ## Quality Gates
 
@@ -1313,8 +1293,9 @@ is wrong even if everything it says is true.
 
 ## QA Checklist
 
-Before a UI change ships. None of this is automated; all of it is reading and
-looking.
+Before a UI change ships. Run the automated checks above, then review the
+remaining visual and interaction criteria below. Automation covers named
+regressions, not every route or every possible content state.
 
 **Tokens**
 

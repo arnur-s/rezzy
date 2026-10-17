@@ -256,9 +256,9 @@ product defect, not a localization chore.
   locale was active on first import. Export `createXSchema()` and call it
   through `useLocalizedSchema`.
 - **Never hardcode user-facing English**, including in validation messages and
-  API-layer fallbacks. Key parity, undefined keys, and placeholder mismatches
-  between locales matter just as much, and nothing checks any of the four
-  automatically — read the two catalogues against each other.
+  API-layer fallbacks. Unit tests check key parity and interpolation inputs;
+  typechecking catches undefined message exports. Review translated meaning and
+  plural forms as well as the automated contract checks.
 - **Astryx is English-only.** It ships no Russian catalogue, and a few of its
   strings (`isRequired` / `isOptional` on `Field`) are hardcoded past its own
   translator. Prefer the app's catalogue: see `src/lib/field-label.ts`.
@@ -267,8 +267,8 @@ product defect, not a localization chore.
   a budget in `src/lib/message-lengths.test.ts` for any string inside a
   fixed-width control.
 
-The only i18n command is `pnpm i18n:compile`, which `pnpm typecheck` runs for
-you. Nothing enforces key parity or Russian layout automatically.
+`pnpm i18n:compile` runs through `pnpm typecheck`. `pnpm test` checks locale
+contracts; `pnpm test:e2e` checks representative English/Russian auth layouts.
 
 jsdom has no layout, so overflow and truncation are invisible to the unit
 suite. For copy or layout changes, view the affected route in Russian at phone
@@ -307,20 +307,27 @@ next upgrade. If a declaration inside Astryx has to be overridden, derive the
 selector from the installed `astryx.css` in a generator rather than transcribing
 it.
 
-`src/generated/astryx-font-floor.css` is the one file that does this, for the
-12px readable floor. It has no generator and no drift check, so it is
-effectively pinned to `@astryxdesign/core@0.1.8` — the installed version.
+`src/generated/astryx-font-floor.css` enforces the 12px readable floor.
+Regenerate it with `pnpm astryx:font-floor` after an Astryx dependency update.
+`pnpm astryx:font-floor:check` verifies installed selectors and runs in CI.
 Re-derive the hashes from the installed package by hand before upgrading, or
 those rules stop matching without failing anything.
 
-## Test Account
+## Development Test Accounts
 
-For manual and browser-driven verification against the development Supabase project, use the shared test account:
+Use isolated local Supabase users for automated and manual regression tests.
+Create disposable accounts through local Auth, keep generated passwords only in
+ignored local environment files or process memory, and clean up test data afterward.
+Browser fixtures must use loopback endpoints or mocked provider APIs; never a
+shared hosted account. See README.md for the local workflow.
 
-- Email: `ncase01@gmail.com`
-- Password: `123456789`
+If hosted provider verification is explicitly authorized, retrieve temporary
+credentials from the team secret manager and inject them through the environment.
+Never store credentials in tracked documentation, fixtures, logs, or PRs.
 
-This is a disposable test login for the dev environment only. Never reuse these credentials for production data or real customer workspaces.
+The formerly documented shared account must have its password rotated and active
+sessions revoked by its owner. Removing these lines does not revoke access or
+erase credentials from Git history.
 
 ## Testing and Validation
 
@@ -339,14 +346,14 @@ pnpm build
 pnpm test:db
 ```
 
-`pnpm verify` chains typecheck, lint, test, and build in that order and stops at
-the first failure.
+`pnpm verify` checks the generated font floor, then chains typecheck, lint,
+test, and build in that order and stops at the first failure.
 
-`package.json` is the complete list of what can be run. There is no browser-check
-suite: contrast, font size, overflow, mobile navigation, shell elevation, and
-i18n key parity have no automated check at all, so do not assume those invariants
-are enforced. Several are load-bearing and are now held by review alone (see the
-"Known drift" list in `DESIGN.md`).
+`package.json` is the complete list of runnable checks. `pnpm test:e2e` covers
+local authentication/onboarding, contact workflows, membership permissions,
+mobile inbox navigation, and representative theme/locale layout and contrast.
+Start local Supabase before running the authenticated fixtures. These checks
+are representative, not a complete visual audit; see `DESIGN.md` for limits.
 
 jsdom has no layout and does not run the real bundle, so overflow, truncation,
 and anything that depends on computed styles remain invisible to the unit
@@ -428,8 +435,8 @@ Do not open a pull request for work that is still in progress, and do not open
 one to ask a question — answer the user instead. `--draft` covers work that is
 worth pushing but not worth reviewing yet.
 
-CI (`.github/workflows/ci.yml`) runs `pnpm verify` and the database tests on
-every pull request. `gh` requires a one-time `gh auth login`; without it the
+CI (`.github/workflows/ci.yml`) runs `pnpm verify`, browser regressions, and the
+database permission and concurrency tests on every pull request. `gh` requires a one-time `gh auth login`; without it the
 branch still pushes and the script prints the GitHub compare URL to finish by
 hand.
 
